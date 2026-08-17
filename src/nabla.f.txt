@@ -197,7 +197,7 @@ IntOnIntλ = LAMBDA(
                             "FUNCTION:      →IntOnIntλ( Principal, Rate)¶" & 
                             "DESCRIPTION:   →Calculate Interest on Interest (Interest only). Use to determine amount ¶" &
                                            "→needed to cover borrowed interest¶" & 
-                            "WEBSITE:       →<Coming soon>¶" &
+                            "WEBSITE:       →https://github.com/ryanduguid/Nabla¶" &
                             "VERSION:       →18 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Principal     →(Required) Principal amount¶" & 
@@ -230,7 +230,7 @@ IRRλ = LAMBDA(
     LET(Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →IRRλ( Values, Dates)¶" & 
                             "DESCRIPTION:   →Calculates IRR, correcting for when the first investment is not in the first period¶" & 
-                            "WEBSITE:       →<Coming soon>¶" &
+                            "WEBSITE:       →https://github.com/ryanduguid/Nabla¶" &
                             "VERSION:       →18 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Values         →(Required) A row of investments (negative) and distributions (positive)¶" & 
@@ -241,7 +241,7 @@ IRRλ = LAMBDA(
                             "→¶" &
                             "EXAMPLES:      →¶" & 
                             "Result         →Formula (nabla.f is assumed to be the module's name)¶" &
-                            "Dates          →=EDATE(""1/1/23"", SEQUENCE(,24, 0))¶" &
+                            "Dates          →=EDATE(""1/1/2025"", SEQUENCE(,24, 0))¶" &
                             "Values         →={0,0,-150,0,-100,10,20,30,40,50,60,70}¶" & 
                             "→¶" &
                             "Result         →Formula¶" &
@@ -277,7 +277,7 @@ Movementλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →Movementλ( [BeginningValue], Values)¶" &
                             "DESCRIPTION:   →Create a row of differences from column to column¶" & 
-                            "WEBPAGE:       →<coming soon>¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Nabla¶" &
                             "VERSION:       →18 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "BeginningValues→(Optional) Defaults to 0¶" & 
@@ -327,7 +327,7 @@ Reversalλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →Reversalλ( [OpeningValue], RowToReverse)¶" &
                             "DESCRIPTION:   →Create a row that reverses input values in the next period.¶" & 
-                            "WEBPAGE:       →<coming soon>¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Nabla¶" &
                             "VERSION:       →18 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "OpeningValue   →(Optional) Defaults to 0¶" & 
@@ -362,7 +362,7 @@ Cumulativeλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →Cumulativeλ( Totals, [OpeningBalance])¶" &
                             "DESCRIPTION:   →Creates a row or column of cumulative totals from a total row or column¶" & 
-                            "WEBPAGE:       →<coming soon>¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Nabla¶" &
                             "VERSION:       →18 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Totals         →(Required) A row or column of totals from which to run cumulative totals¶" & 
@@ -394,7 +394,7 @@ RollingAvgλ = LAMBDA(
                             "FUNCTION:      →RollingAvgλ( Values, Size)¶" &
                             "DESCRIPTION:   →Creates averages for preceding values of a set size moving¶" &
                                            "→from beginning to end over a row of values¶" & 
-                            "WEBPAGE:       →<coming soon>¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Nabla¶" &
                             "VERSION:       →18 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Values         →(Required) A row of values to be averaged.¶" & 
@@ -442,7 +442,7 @@ RollingMaxλ = LAMBDA(
                             "FUNCTION:      →RollingMaxλ( Values, Size)¶" &
                             "DESCRIPTION:   →Creates the maximum for preceding values of a set size moving from beginning to end over a row of values.¶" &
                                            "→from beginning to end over a row of values¶" & 
-                            "WEBPAGE:       →<coming soon>¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Nabla¶" &
                             "VERSION:       →18 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Values         →(Required) A row of values to be maxed.¶" & 
@@ -490,7 +490,7 @@ RollingMinλ = LAMBDA(
                             "FUNCTION:      RollingMinλ( Values, Size)¶" &
                             "DESCRIPTION:   →Creates the minimum for preceding values of a set size moving from beginning to end over a row of values.¶" &
                                            "→from beginning to end over a row of values¶" & 
-                            "WEBPAGE:       →<coming soon>¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Nabla¶" &
                             "VERSION:       →18 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Values         →(Required) A row of values to be minned.¶" & 
@@ -538,7 +538,7 @@ RollingSumλ = LAMBDA(
                             "FUNCTION:      →RollingSumλ( Values, Size)¶" &
                             "DESCRIPTION:   →Creates totals for preceding values of a set size moving¶" &
                                            "→from beginning to end over a row of values¶" & 
-                            "WEBPAGE:       →<coming soon>¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Nabla¶" &
                             "VERSION:       →18 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Values         →(Required) A row of values to be totalled.¶" & 
@@ -590,7 +590,7 @@ SumContainsλ = LAMBDA(
                             "FUNCTION:      →SumContainsλ(ValuesToFilter, ValueLabels, FilterByText, [IgnoreCase?])¶" &
                             "DESCRIPTION:   →Creates a row of column totals for each row in an array where¶" & 
                                            "→its labels contain a unique letter, word, or phrase.¶" & 
-                            "WEBPAGE:       →<Coming soon>¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Nabla¶" & 
                             "VERSION:       →18 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "ValuesToFilter →(Required) An array of values to be filtered¶" &                   
@@ -637,7 +637,7 @@ SumPeriodsλ = LAMBDA(
                             "DESCRIPTION:   →Summarises values where each value column is for one day ¶" & 
                                            "→into one column for each period. ¶" & 
                             "VERSION:       →18 Aug 2026¶" &
-                            "WEBPAGE:       →<coming soon>¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Nabla¶" &
                             "PARAMETERS:→¶" & 
                             "Values         →(Required) A two dimensional array/range containing values to be summed where" & 
                                             "each column is for a specific day¶" & 
@@ -1195,7 +1195,7 @@ Allocateλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →Allocateλ(Amounts, [FromInterval], [ToInterval])¶" &
                             "DESCRIPTION:   →Divide one or more amounts equally across smaller periods¶" &
-                            "WEBPAGE:       →<coming soon>¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Nabla¶" & 
                             "VERSION:       →18 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Amounts        →(Required) One amount or a row of amounts to allocate.¶" &                   
@@ -1261,7 +1261,7 @@ PeriodDiffλ = LAMBDA(
                             "FUNCTION:      PeriodDiffλ(StartDate, EndDate, Interval)¶" &
                             "DESCRIPTION:   →Determine the number of periods between two dates.¶" &
                             "NOTES!         →This improves on, and corrects problems w/Excel's deprecated DATEDIF() function.¶" &
-                            "WEBPAGE:       →<coming soon>¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Nabla¶" & 
                             "VERSION:       →18 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "StartDate      →(Required) Start Date.¶" &                   
@@ -1307,7 +1307,7 @@ SLNλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →SLNλ(Cost, Salvage, Life)¶" &
                             "DESCRIPTION:   →Straight Line Depreciation Method for one asset or asset class.¶" &
-                            "WEBPAGE:       →<coming soon>¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Nabla¶" & 
                             "VERSION:       →18 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Cost           →(Required) Asset's initial cost.¶" &                   
@@ -1347,7 +1347,7 @@ SYDλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →SYDλ(Cost, Salvage, Life)¶" &
                             "DESCRIPTION:   →Sum-of-years' digits depreciation method for one asset or asset class.¶" &
-                            "WEBPAGE:       →<coming soon>¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Nabla¶" & 
                             "VERSION:       →18 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Cost           →(Required) Asset's initial cost.¶" &                   
@@ -1388,7 +1388,7 @@ DBλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →DBλ(Cost, Salvage, Life, [Month])¶" &
                             "DESCRIPTION:   →Fixed declining balance depreciation method for one asset or asset class¶" &
-                            "WEBPAGE:       →<coming soon>¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Nabla¶" & 
                             "VERSION:       →18 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Cost           →(Required) Asset's initial cost.¶" &                   
@@ -1433,7 +1433,7 @@ DDBλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →DBλ(Cost, Salvage, Life, [Factor])¶" &
                             "DESCRIPTION:   →Double-declining balance depreciation method for one asset or asset class.¶" &
-                            "WEBPAGE:       →<coming soon>¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Nabla¶" & 
                             "VERSION:       →18 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Cost           →(Required) Asset's initial cost.¶" &                   
@@ -1479,7 +1479,7 @@ VDBλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →VDBλ(Cost, Salvage, Life, [Factor], [No_Switch])¶" &
                             "DESCRIPTION:   →Variable declining balance depreciation method for one asset or asset class.¶" &
-                            "WEBPAGE:       →<coming soon>¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Nabla¶" & 
                             "VERSION:       →18 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Cost           →(Required) Asset's initial cost.¶" &                   
@@ -1777,7 +1777,7 @@ TimelineOffsetλ = LAMBDA(
                             "FUNCTION:      →TimelineOffsetλ(ArrayStart, Timeline)¶" &
                             "DESCRIPTION:   →Determines in which period, relative to the timeline's start and interval,¶" &
                                            "→a date falls within.¶" & 
-                            "WEBPAGE:       →<coming soon>¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Nabla¶" & 
                             "VERSION:       →18 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Date           →(Required) A starting date¶" & 
@@ -1828,7 +1828,7 @@ TimelinePositionλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →TimelinePositionλ(Array, Timeline, Offset)¶" &
                             "DESCRIPTION:   →Position an array relative to the model's timeline¶" &
-                            "WEBPAGE:       →<coming soon>¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Nabla¶" & 
                             "VERSION:       →18 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) The array to be positioned relative to a model's timeline¶" & 
@@ -1891,7 +1891,7 @@ FilterContainsλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      FilterContainsλ( ArrayToFilter, FilterByArray, Text, [IgnoreCase?] )¶" &
                             "DESCRIPTION:   →Filter an array by another array that contains specific text.¶" & 
-                            "WEBPAGE:       →<Coming soon>¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Nabla¶" & 
                             "VERSION:       →18 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "ArrayToFilter  →(Required) An array to be filtered¶" &                   
@@ -1935,7 +1935,7 @@ RangeToDAλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →RangeToDAλ( Cell, [Rows], [Columns])¶" &
                             "DESCRIPTION:   →Create a dynamic array from a static range¶" & 
-                            "WEBPAGE:       →<coming soon>¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Nabla¶" &
                             "VERSION:       →18 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Cell           →(Required) The upper left cell of a range to convert¶" & 
@@ -1972,7 +1972,7 @@ PeriodStartλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →PeriodStartλ(AnyPeriodStart, MonthsPerPeriod, DateOfInterest)¶" &
                             "DESCRIPTION:   →Determine when the period containing a date of interest starts.¶" &
-                            "WEBPAGE:       →<coming soon>¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Nabla¶" & 
                             "VERSION:       →18 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "AnyPeriodStart →(Required) Any start date within a timeline.¶" &                   
