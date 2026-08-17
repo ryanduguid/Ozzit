@@ -15,5 +15,5 @@ The workbook material is Ryan Duguid's own work.
 - Calibri replaced with Aptos; US date formats replaced with day-first formats; sample data currency set to AUD.
 - All sample and demonstration dates moved forward two years, calendar-aware (29 February maps to 28 February in non-leap targets); function version stamps set to 18 August 2026.
 - Defects repaired: the undefined `Sheetλ` title formula on 46 worksheets, the undefined `the earlier namespace Aboutλ` function, locale-fragile `RANDBETWEEN` text-date arguments, a dead table-of-contents link, and assorted typos.
-- Added `nabla.f.DiminishingValueλ` (ATO 200% diminishing value method).
-- Removed an empty Power Query data mashup and orphaned rich-value image residue.
+- The foreign depreciation regime was removed outright, and five Australian functions were added: ATO diminishing value and prime cost depreciation, two GST helpers and a financial-year label.
+- Removed an empty Power Query data mashup, orphaned rich-value image residue, and the embedded printer configuration.
