@@ -14,7 +14,7 @@ Absent a licence, the workbook author Ryan Duguid retains all rights in the orig
 
 ## What changed from Ryan Duguid's predecessor workbook
 
-- All namespaces renamed: the predecessor namespaces became `nabla.d`/`nabla.e`/`nabla.f`/`nabla.r`/`nabla.u`/`nabla.debt`; predecessor branding, branded artwork, the cover video thumbnails and their YouTube link, and Dropbox file links removed. One maths-citation link (a Diarmuid Early video, credited in an IRRλ source comment) was retained deliberately.
+- All namespaces renamed: the predecessor namespaces became `nabla.d`/`nabla.e`/`nabla.f`/`nabla.r`/`nabla.u`/`nabla.debt`; predecessor branding, branded artwork, the cover video thumbnails and their YouTube link, and Dropbox file links removed. One maths-citation link (a Diarmuid Early video, credited in an IntOnIntλ source comment) was retained deliberately.
 - Help-block links that pointed at the workbook author Ryan Duguid's gists and site now point at this repository, relabelled from "Gist URL" to "Repository".
 - The author's name is preserved in the revision histories inside the module sources (one predecessor misspelling, "the workbook author Ryan Duguid", corrected), and the workbook's creator metadata credits him. Branding was removed; authorship records were not.
 - American English converted to Australian English throughout, including function renames (`Amortizeλ` family to `Amortiseλ`).
