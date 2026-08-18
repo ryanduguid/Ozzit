@@ -276,7 +276,7 @@ MaxColsλ = LAMBDA(
 //  Help
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →MaxColsλ( Array)¶" &
-                            "DESCRIPTION:   →Get the minimum for each Column¶" & 
+                            "DESCRIPTION:   →Get the maximum for each Column¶" & 
                             "WEBPAGE:       →https://github.com/ryanduguid/Nabla¶" &
                             "VERSION:       →18 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
@@ -327,7 +327,7 @@ CountARowsλ = LAMBDA(
 
 
 /*  FUNCTION NAME:  CountAColsλ
-    DESCRIPTION:*//**Count everything in each row*/
+    DESCRIPTION:*//**Count everything in each column*/
 CountAColsλ = LAMBDA(
 //  Parameter Declarations
     [Array],
@@ -385,13 +385,13 @@ CountRowsλ = LAMBDA(
 
 
 /*  FUNCTION NAME:  CountColsλ
-    DESCRIPTION:*//**Count numbers in each row*/
+    DESCRIPTION:*//**Count numbers in each column*/
 CountColsλ = LAMBDA(
 //  Parameter Declarations
     [Array],
 //  Help
     LET(Help,       TRIM(TEXTSPLIT( 
-                            "FUNCTION:      →CountColsλ( Array,)¶" &
+                            "FUNCTION:      →CountColsλ( Array)¶" &
                             "DESCRIPTION:   →Count numbers in each column¶" & 
                             "WEBPAGE:       →https://github.com/ryanduguid/Nabla¶" &
                             "VERSION:       →18 Aug 2026¶" &
@@ -457,7 +457,7 @@ IsBetweenEλ = LAMBDA(
 
 
 /*  FUNCTION NAME:      IsInListλ
-    DESCRIPTION:*//**Determine if a value is between a lower and upper limit*/
+    DESCRIPTION:*//**Determine whether a value is one of a list of items*/
 IsInListλ = LAMBDA(
 //  Parameter Declarations
     [Value],
