@@ -6,6 +6,12 @@ nabla was built from scratch by Ryan Duguid. The 6 July 2024 workbook it was reb
 
 The workbook material is Ryan Duguid's own work.
 
+The repository's own work is separately licensed. [LICENCE](LICENCE) is MIT and covers `tools/`, `.github/`, the Markdown files and `assets/`, which were written for this repository. It does not extend to `nabla.xlsx`, `src/` or `functions.csv`.
+
+## The build input
+
+`tools/transform_from_earlier.py` rebuilds `nabla.xlsx` from Ryan Duguid's earlier workbook, which is not committed to this repository. The build was last run against a file of 1,478,643 bytes, sha256 `f38dbc83b4a18fc7d71d0f4bcf39680d74694b9aa129f5b3deb39b014e0bbb67`, holding 224 parts. A rebuild that starts from that file reproduces `src/` and `functions.csv` exactly; anything else is a different input and the build's own assertions will say so.
+
 ## What changed from Ryan Duguid's earlier workbook
 
 - All namespaces renamed: the earlier namespaces were replaced by a single `nb.` prefix, with a one-letter tag where two modules shared a function name; earlier branding, branded artwork, the cover video thumbnails and their YouTube link, and Dropbox file links removed. One maths-citation link (a Diarmuid Early video, credited in an IntOnIntλ source comment) was retained deliberately.
