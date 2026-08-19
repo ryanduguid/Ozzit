@@ -1,6 +1,6 @@
 # Attribution
 
-nabla is a derivative work. The underlying function library and documentation workbook were created by **the workbook author Ryan Duguid** and published as the **predecessor workbook** for his predecessor modelling ecosystem (the predecessor listing; the 6 July 2024 release, the latest located as at 18 August 2026). Copyright in the original work remains with the original author. This repository is not affiliated with or endorsed by him.
+Ozzit is a derivative work. The underlying function library and documentation workbook were created by **the workbook author Ryan Duguid** and published as the **predecessor workbook** for his predecessor modelling ecosystem (the predecessor listing; the 6 July 2024 release, the latest located as at 18 August 2026). Copyright in the original work remains with the original author. This repository is not affiliated with or endorsed by him.
 
 ## Licence status
 
@@ -12,15 +12,15 @@ No open-source licence could be located for the predecessor work as at 18 August
 
 Absent a licence, the workbook author Ryan Duguid retains all rights in the original material. Treat the derived portions of this repository accordingly. If you are the workbook author Ryan Duguid and want changes to this repository, open an issue.
 
-The repository's own work is separately licensed. [LICENCE](LICENCE) is MIT and covers `tools/`, `.github/`, the Markdown files and `assets/`, which were written for this repository. It does not extend to `nabla.xlsx`, `src/` or `functions.csv`.
+The repository's own work is separately licensed. [LICENCE](LICENCE) is MIT and covers `tools/`, `.github/`, the Markdown files and `assets/`, which were written for this repository. It does not extend to `ozzit.xlsx`, `src/` or `functions.csv`.
 
 ## The build input
 
-`tools/transform_from_predecessor.py` rebuilds `nabla.xlsx` from Ryan Duguid's predecessor workbook, which is not committed to this repository. The build was last run against a file of 1,478,643 bytes, sha256 `f38dbc83b4a18fc7d71d0f4bcf39680d74694b9aa129f5b3deb39b014e0bbb67`, holding 224 parts. A rebuild that starts from that file reproduces `src/` and `functions.csv` exactly; anything else is a different input and the build's own assertions will say so.
+`tools/transform_from_predecessor.py` rebuilds `ozzit.xlsx` from Ryan Duguid's predecessor workbook, which is not committed to this repository. The build was last run against a file of 1,478,643 bytes, sha256 `f38dbc83b4a18fc7d71d0f4bcf39680d74694b9aa129f5b3deb39b014e0bbb67`, holding 224 parts. A rebuild that starts from that file reproduces `src/` and `functions.csv` exactly; anything else is a different input and the build's own assertions will say so.
 
 ## What changed from Ryan Duguid's predecessor workbook
 
-- All namespaces renamed: the predecessor namespaces were replaced by a single `nb.` prefix, with a one-letter tag where two modules shared a function name; predecessor branding, branded artwork, the cover video thumbnails and their YouTube link, and Dropbox file links removed. One maths-citation link (a Diarmuid Early video, credited in an IntOnIntλ source comment) was retained deliberately.
+- All namespaces renamed: the predecessor namespaces were replaced by a single `oz.` prefix, with a one-letter tag where two modules shared a function name; predecessor branding, branded artwork, the cover video thumbnails and their YouTube link, and Dropbox file links removed. One maths-citation link (a Diarmuid Early video, credited in an IntOnIntλ source comment) was retained deliberately.
 - Help-block links that pointed at the workbook author Ryan Duguid's gists and site now point at this repository, relabelled from "Gist URL" to "Repository".
 - The author's name is preserved in the revision histories inside the module sources (one predecessor misspelling, "the workbook author Ryan Duguid", corrected), and the workbook's creator metadata credits him. Branding was removed; authorship records were not.
 - American English converted to Australian English throughout, including function renames (`Amortizeλ` family to `Amortiseλ`).
