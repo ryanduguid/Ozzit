@@ -16,7 +16,7 @@ AboutFinancialλ = TRIM(TEXTSPLIT(
     "IRRλ               →Calculates IRR, correcting for when the first investment is not in the first period¶" & 
     "Movementλ          →Create a row of differences from column to column¶" & 
     "Reversalλ          →Create a row that reverses input values in the next period.¶" & 
-    "RollingAvgλ        →Finds the maximum value the n preceding values in a set moving from beginning to end over a row of values.¶" &
+    "RollingAvgλ        →Creates averages for preceding values of a set size moving from beginning to end over a row of values.¶" &
     "RollingMaxλ        →Finds the maximum value the n preceding values in a set moving from beginning to end over a row of values.¶" &
     "RollingMinλ        →Finds the minimum value the n preceding values in a set moving from beginning to end over a row of values.¶" &
     "RollingSumλ        →Creates totals for preceding values of a set size moving from beginning to end over a row of values.¶" &
@@ -75,7 +75,7 @@ Corkscrewλ = LAMBDA(
         Help,       TRIM(TEXTSPLIT( 
                         "FUNCTION:      →Corkscrewλ( Opening, Flow1, [Flow2], [Flow3], [Flow4])¶" &
                         "DESCRIPTION:   →Create a corkscrew section that sums the opening balance and up to 4 independent flows¶" & 
-                        "WEBPAGE:       →<Coming Soon>¶" & 
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
                         "VERSION:       →20 Aug 2026¶" &
                         "PARAMETERS:→¶" & 
                         "Opening        →(Required) First periods opening balance.¶" & 
@@ -134,7 +134,7 @@ CorkScrewReversalλ=LAMBDA(
     LET(Help,           TRIM(TEXTSPLIT(
                         "FUNCTION:      →CorkScrewReversalλ( Opening, ReversalFlags, Flow1, [Flow2], [Flow3], [Flow4])¶" & 
                         "DESCRIPTION:   →Create a corkscrew where the opening balance is reversed in the next period based on a timing parameter¶" & 
-                        "WEBPAGE:       →<Coming Soon>¶" &
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
                         "VERSION:       →20 Aug 2026¶" & 
                         "PARAMETERS:→¶" & 
                         "Opening        →(Required) First periods opening balance.¶" & 
@@ -1627,7 +1627,7 @@ AmortiseλDV = LAMBDA(
 
 
 /*  FUNCTION NAME:  CorkscrewλDV
-    DESCRIPTION:*//**Provides extended data validation of arguments for Depreciateλ.*/
+    DESCRIPTION:*//**Provides extended data validation of arguments for Corkscrewλ.*/
 CorkscrewλDV = LAMBDA(
 //  Parameter Declarations
     [Opening],
