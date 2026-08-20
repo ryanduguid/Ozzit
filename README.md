@@ -104,7 +104,7 @@ Each module has its own tab colour, gridlines are hidden, and every sheet opens 
 | `src/*.txt` | Plain-text LAMBDA source per group (Dates, Essentials, Financial, Ratios, Utilities, Debt), diffable and importable |
 | `ATTRIBUTION.md` | Provenance and predecessor copyright |
 | `functions.csv` | Machine-readable index of every function |
-| `tools/` | The build and maintenance pipeline: rebuilds the v3.0.0 workbook baseline from the predecessor workbook, synchronises the AFE store, canonicalises/polishes it, and checks it |
+| `tools/` | The build and maintenance pipeline: rebuilds the v3.0.0 workbook baseline from the predecessor workbook (the current release is later; see CHANGELOG), synchronises the AFE store, canonicalises/polishes it, and checks it |
 | `CHANGELOG.md` | What changed in this release |
 | `assets/` | Logo |
 | `LICENCE` | MIT, and what it does and does not cover |
