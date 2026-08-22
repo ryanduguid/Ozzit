@@ -257,6 +257,6 @@ The other 85 functions (all of Ratios, Utilities and Debt, the depreciation-meth
 
 ## Attribution and licence
 
-Ozzit is Ryan Duguid's own LAMBDA library, rebuilt from his earlier workbook. See [ATTRIBUTION.md](ATTRIBUTION.md) for provenance and the full list of changes.
+Ozzit is Ryan Duguid's own LAMBDA library, rebuilt from his earlier workbook. See [ATTRIBUTION.md](ATTRIBUTION.md) for provenance and the full list of changes. This repository adds Australian GST, financial-year and modelling-depreciation helpers; it is not an individual-tax or Division 7A engine.
 
 [LICENCE](LICENCE) is MIT and covers only what was written for this repository: `tools/`, `.github/`, the Markdown files and `assets/`. It does not cover `ozzit.xlsx`, `src/` or `functions.csv`, which were carved out at the time.
