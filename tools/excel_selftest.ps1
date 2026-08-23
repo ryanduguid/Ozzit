@@ -385,6 +385,111 @@ Near 'TimelinePosition: its table spells timeline' `
 Near 'LabelDepreciate: its table spells the' `
      "SUMPRODUCT(--ISNUMBER(SEARCH(`" teh `",$ld())))" '0'
 
+# --- AASB 16 leases. The liability is checked against NPV(), which is Excel's own
+# discounting and so an independent oracle rather than a restatement of the same
+# arithmetic. The schedule is checked by identity: a corkscrew that closes to nil and
+# rolls forward is right whatever the rate, and both identities name a row and vary
+# down the row, because a whole-block total cancels the very row under test.
+$lli  = "oz.LeaseLiability$L"
+$lsch = "oz.LeaseSchedule$L"
+$lrou = "oz.ROUSchedule$L"
+$lrem = "oz.LeaseRemeasure$L"
+
+Near 'Lease liability matches NPV in arrears' "$lli({100,100,100},0.05)" 'NPV(0.05,100,100,100)'
+Near 'Lease liability uneven payments match NPV' `
+     "$lli({120,100,80,60},0.0075)" 'NPV(0.0075,120,100,80,60)'
+# A payment in advance is discounted one period less, so the first one is not discounted.
+Near 'Lease liability in advance' "$lli({100,100,100},0.05,TRUE)" '100+NPV(0.05,100,100)'
+Near 'Lease liability in advance exceeds arrears by one period' `
+     "$lli({100,100,100},0.05,TRUE)-$lli({100,100,100},0.05)*1.05" '0'
+Near 'Lease liability reads a column the same as a row' `
+     "$lli({100;100;100},0.05)-$lli({100,100,100},0.05)" '0'
+Near 'Lease liability at a nil rate is the undiscounted total' "$lli({100,100,100},0)" '300'
+Same 'Lease liability: help with no args' "INDEX($lli(),1,1)" 'FUNCTION:'
+
+# The schedule must close to nil on any rate, any term and either timing, because its
+# opening balance is by construction the present value of the payments it then unwinds.
+foreach ($rate in '0', '0.0025', '0.05', '0.15') {
+    foreach ($n in '1', '2', '5', '12') {
+        foreach ($adv in 'FALSE', 'TRUE') {
+            $p = "SEQUENCE(,$n,100,0)"
+            $s = "$lsch($p,$rate,$adv)"
+            Near "Lease schedule closes to nil, rate $rate, $n periods, advance $adv" `
+                 "INDEX($s,4,$n)" '0'
+            Near "Lease schedule shape, rate $rate, $n periods, advance $adv" `
+                 "ROWS($s)*1000+COLUMNS($s)" "4000+$n"
+            # Closing = opening less payment plus interest, in every period, either timing.
+            Near "Lease schedule reconciles each period, rate $rate, $n periods, advance $adv" `
+                 ("SUMPRODUCT(ABS(CHOOSEROWS($s,4)-CHOOSEROWS($s,1)" +
+                  "+CHOOSEROWS($s,2)-CHOOSEROWS($s,3)))") '0'
+            Near "Lease schedule never goes negative, rate $rate, $n periods, advance $adv" `
+                 "SUMPRODUCT(--(CHOOSEROWS($s,4)<-0.000001))" '0'
+        }
+    }
+}
+# Each opening balance is the closing balance before it. One period has none to compare.
+foreach ($adv in 'FALSE', 'TRUE') {
+    $s = "$lsch(SEQUENCE(,6,100,0),0.04,$adv)"
+    Near "Lease schedule rolls forward, advance $adv" `
+         "SUMPRODUCT(ABS(DROP(CHOOSEROWS($s,1),,1)-DROP(CHOOSEROWS($s,4),,-1)))" '0'
+    Near "Lease schedule opens on the liability, advance $adv" `
+         "INDEX($s,1,1)-$lli(SEQUENCE(,6,100,0),0.04,$adv)" '0'
+    Near "Lease schedule echoes its payments, advance $adv" `
+         "SUMPRODUCT(ABS(CHOOSEROWS($s,2)-SEQUENCE(,6,100,0)))" '0'
+}
+# Total interest is the cash paid less what was recognised as a liability.
+Near 'Lease schedule interest totals payments less liability' `
+     "SUM(CHOOSEROWS($lsch({100,100,100},0.05),3))" 'SUM({100,100,100})-NPV(0.05,100,100,100)'
+# A single payment in advance is settled before any interest can accrue.
+Near 'Lease schedule, one payment in advance, no interest' "INDEX($lsch({100},0.05,TRUE),3,1)" '0'
+Near 'Lease schedule, one payment in arrears, interest on the discounted balance' `
+     "INDEX($lsch({100},0.05),3,1)" '100-100/1.05'
+Same 'Lease schedule: help with no args' "INDEX($lsch(),1,1)" 'FUNCTION:'
+
+# --- Right-of-use asset
+foreach ($n in '1', '3', '12', '60') {
+    Near "ROU depreciation sums to cost, $n periods" "SUM(CHOOSEROWS($lrou(1200,$n),2))" '1200'
+    Near "ROU closes to nil, $n periods" "INDEX($lrou(1200,$n),3,$n)" '0'
+    Near "ROU opens at cost, $n periods" "INDEX($lrou(1200,$n),1,1)" '1200'
+    Near "ROU shape, $n periods" "ROWS($lrou(1200,$n))*1000+COLUMNS($lrou(1200,$n))" "3000+$n"
+}
+Same 'ROU documented example' `
+     "TEXTJOIN(`",`",FALSE,TEXT($lrou(300,3),`"0`"))" '300,200,100,100,100,100,200,100,0'
+Same 'ROU refuses nought periods' "$lrou(300,0)" "ROUSchedule$L needs a numeric Cost and Periods of at least 1"
+Same 'ROU refuses text periods' "$lrou(300,`"three`")" "ROUSchedule$L needs a numeric Cost and Periods of at least 1"
+Same 'ROU: help with no args' "INDEX($lrou(),1,1)" 'FUNCTION:'
+
+# The pair is what makes AASB 16 front-loaded: interest falls while depreciation does not,
+# so the first period costs more than the last even though the rent never changes.
+Near 'Lease expense is front-loaded' `
+     ("--(INDEX($lsch(SEQUENCE(,12,100,0),0.005),3,1)+INDEX($lrou($lli(SEQUENCE(,12,100,0),0.005),12),2,1)" +
+      ">INDEX($lsch(SEQUENCE(,12,100,0),0.005),3,12)+INDEX($lrou($lli(SEQUENCE(,12,100,0),0.005),12),2,12))") '1'
+
+# --- Remeasurement
+Same 'Remeasure documented example' `
+     "TEXTJOIN(`",`",FALSE,TEXT($lrem({110,110},0.05,185.94,181.55),`"0.00`"))" '204.54,18.60,200.15,0.00'
+Near 'Remeasure restates the liability' `
+     "INDEX($lrem({110,110},0.05,185.94,181.55),1,1)-$lli({110,110},0.05)" '0'
+Near 'Remeasure adjustment is the movement' `
+     "INDEX($lrem({110,110},0.05,185.94,181.55),2,1)-($lli({110,110},0.05)-185.94)" '0'
+Near 'Remeasure takes the adjustment to the asset' `
+     "INDEX($lrem({110,110},0.05,185.94,181.55),3,1)-(181.55+$lli({110,110},0.05)-185.94)" '0'
+Near 'Remeasure leaves profit or loss alone while the asset absorbs it' `
+     "INDEX($lrem({110,110},0.05,185.94,181.55),4,1)" '0'
+# Paragraph 39: the asset stops at nil and the rest is recognised in profit or loss.
+Near 'Remeasure floors the asset at nil' "INDEX($lrem({10,10},0.05,185.94,5),3,1)" '0'
+Near 'Remeasure takes the remainder to profit or loss' `
+     "INDEX($lrem({10,10},0.05,185.94,5),4,1)-(5+$lli({10,10},0.05)-185.94)" '0'
+# Whatever the split, the asset and the remainder together are the unfloored movement.
+foreach ($rou0 in '0', '5', '50', '400') {
+    Near "Remeasure splits without loss, asset $rou0" `
+         ("INDEX($lrem({10,10},0.05,185.94,$rou0),3,1)+INDEX($lrem({10,10},0.05,185.94,$rou0),4,1)" +
+          "-($rou0+INDEX($lrem({10,10},0.05,185.94,$rou0),2,1))") '0'
+}
+Near 'Remeasure honours payments in advance' `
+     "INDEX($lrem({110,110},0.05,185.94,181.55,TRUE),1,1)-$lli({110,110},0.05,TRUE)" '0'
+Same 'Remeasure: help with no args' "INDEX($lrem(),1,1)" 'FUNCTION:'
+
 $xl = $null; $wb = $null; $tmp = $null; $exit = 0
 
 # Excel rejects incoming COM calls while it is mid-calculation (RPC_E_CALL_REJECTED),
