@@ -7,3 +7,11 @@ __pycache__/
 .backup-*/
 .ruff_cache/
 .superpowers/
+
+# Credentials must never be committed.
+.env
+.env.*
+!.env.example
+*.token
+*.tokens
+*.pem
