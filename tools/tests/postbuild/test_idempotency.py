@@ -22,6 +22,7 @@ XML_PASSES = [
     (TOOLS / "postbuild" / "gst_help_text.py", True),
     (TOOLS / "postbuild" / "help_links.py", True),
     (TOOLS / "postbuild" / "sheet_names.py", False),
+    (TOOLS / "postbuild" / "strip_revision_history.py", True),
 ]
 
 

@@ -1,4 +1,4 @@
-# Build ozzit.xlsx from the earlier Financial Starter Pack workbook.
+# Build ozzit.xlsx from Ryan Duguid's earlier workbook.
 # Pure zip/XML surgery. Never resaves via openpyxl (preserves cached values, extensions, rich parts).
 import zipfile, re, shutil, io, os, sys, datetime
 import base64, json
@@ -147,8 +147,8 @@ put("xl/sharedStrings.xml", ss)
 
 # ---------- 7. Global transforms over text parts + UTF-16 bins ----------
 BRAND = [
-    # earlier typo only; author names in revision histories are preserved (attribution, not branding)
-    ("Ryan Duguid", "Ryan Duguid"),
+    # Per-function revision histories are removed after this stage by
+    # tools/postbuild/strip_revision_history.py, so no author name is mapped here.
     ("GIST URL:", "REPOSITORY:"),
     ("Gist URL:", "Repository:"),
     ("Displays the URL to this module's Gist which includes documentation",
@@ -213,7 +213,7 @@ AU_WORD = [("gray", "grey"), ("Gray", "Grey")]
 AU_DATA = [(">Paycheck<", ">Pay<"), (">Home Owners Insurance<", ">Home insurance<"),
            (">HOA Dues<", ">Strata levies<"), (">Gas<", ">Petrol<")]
 
-URL_RE = re.compile(r'https://(?:sites\.google\.com/site/beyondexcel|gist\.github\.com/earlier)[^\s"<>&¶]*')
+URL_RE = re.compile(r'https://(?:sites\.google\.com/site/beyondexcel|gist\.github\.com/[A-Za-z0-9._-]+)[^\s"<>&¶]*')
 
 # Sample/demo date refresh: +2 years, calendar-aware (29 Feb -> 28 Feb when target year is not a leap year)
 YEAR_SHIFT = 2
@@ -324,9 +324,9 @@ def build_afe(spec):
     return (
         "/*  FUNCTION NAME:  %s\n" % spec["name"]
         + "    DESCRIPTION:*//**%s*/\n" % spec["desc"].rstrip(".")
-        + "/*  REVISIONS:      Date        Developer       Description  \n"
-        + "                    %s ozzit           Original development\n" % TODAY_AU
-        + "*/\n\n"
+        # No REVISIONS block: the library carries no per-function revision history,
+        # and tools/postbuild/strip_revision_history.py removes any that survive.
+        + "\n"
         + "%s = LAMBDA(\n" % spec["name"]
         + "//  Parameter Declaration\n"
         + "".join("    [%s],\n" % p for p, _ in spec["params"])
