@@ -7,6 +7,13 @@ out by design, because src/Debt.txt documents that Excel Labs cannot hold its
 recursive functions. The pass preserves the store's schema, locale, project
 name order and JSON layout, re-encodes UTF-16LE/base64, and writes through the
 canonical archive writer.
+
+The store holds two views of the same library: the module texts, and a flat
+projectNames index. verify_afe.py gates both, so both are synchronised here.
+Only the texts were, until a function was added and the index did not follow.
+A name still shipping keeps its place in the index, so the existing grouping
+survives; a new one is filed after the last name from its own module, and a
+name that no longer ships is dropped.
 """
 
 from __future__ import annotations
@@ -18,9 +25,32 @@ import zipfile
 from pathlib import Path
 
 from sanitise_workbook import write_deterministic
-from verify_afe import DEBT_NAMES, find_afe_blob
+from verify_afe import DEBT_NAMES, find_afe_blob, workbook_names
+from verify_sources import NAME, statements
 
 MODULES = ("Dates", "Essentials", "Financial", "Ratios", "Utilities")
+NAMESPACE = "oz"
+
+
+def module_of(src: Path) -> dict[str, str]:
+    """Every shipped name mapped to the module that declares it."""
+    out = {}
+    for path in sorted(src.glob("*.txt")):
+        for statement in statements(path.read_text(encoding="utf-8")):
+            match = NAME.match(statement)
+            if match:
+                out[f"{NAMESPACE}.{match.group(1)}"] = path.stem
+    return out
+
+
+def index_order(current: list[str], expected: set[str], owner: dict[str, str]) -> list[str]:
+    """The projectNames index, keeping what is there and filing what is not."""
+    kept = [name for name in current if name in expected]
+    for name in sorted(expected - set(kept), key=str.lower):
+        module = owner.get(name)
+        after = [i for i, held in enumerate(kept) if owner.get(held) == module]
+        kept.insert(after[-1] + 1 if after else len(kept), name)
+    return kept
 
 
 def sync(workbook: Path, src: Path) -> list[str]:
@@ -43,6 +73,19 @@ def sync(workbook: Path, src: Path) -> list[str]:
         elif files[path].get("text") != expected:
             files[path]["text"] = expected
             changes.append(f"synced AFE module {path}")
+
+    # The flat index the task pane reads, which the gate checks against the workbook.
+    shipped = workbook_names(workbook) - DEBT_NAMES
+    current = list(store.get("projectNames", []))
+    wanted = index_order(current, shipped, module_of(src))
+    if wanted != current:
+        added = len(set(wanted) - set(current))
+        dropped = len(set(current) - set(wanted))
+        store["projectNames"] = wanted
+        changes.append(
+            f"synced AFE projectNames: {added} added, {dropped} dropped, "
+            f"{len(wanted)} listed"
+        )
 
     if "/projects/Debt" in files or any(
         name in store.get("projectNames", []) for name in DEBT_NAMES

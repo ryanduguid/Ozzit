@@ -43,7 +43,12 @@ AboutFinancialλ = TRIM(TEXTSPLIT(
                                            "→¶" & 
                                            "AUSTRALIAN TAX     →¶" & 
                                            "GSTAddλ            →Adds GST to one or more GST-exclusive amounts.¶" & 
-                                           "GSTExtractλ        →Returns the GST contained in one or more GST-inclusive amounts.¶" & 
+                                           "GSTExtractλ        →Returns the GST contained in one or more GST-inclusive amounts.¶" &
+                                           "LEASES (AASB 16)   →¶" &
+                                           "LeaseLiabilityλ    →Present value of the lease payments that are not paid at the commencement date¶" &
+                                           "LeaseScheduleλ     →Unwinds a lease liability into opening, payment, interest and closing rows¶" &
+                                           "LeaseRemeasureλ    →Remeasures a lease liability for revised payments and adjusts the right-of-use asset¶" &
+                                           "ROUScheduleλ       →Depreciates a right-of-use asset in a straight line over the lease term¶" & 
                                            
     "→¶" &
     "SUBROUTINES        →Functions used by other functions or general purpose functions.¶" & 
@@ -2207,6 +2212,193 @@ GSTExtractλ = LAMBDA(
         GSTRate,        IF(OR(ISOMITTED(Rate), TRIM(Rate & "")=""), 0.1, Rate),
     //  Blanks stay blank, so a part-filled column of amounts does not fill with zeros
         Result,         IF(TRIM(Amounts & "")="", "", Amounts * GSTRate / (1 + GSTRate)),
+    //  Return Result or Help
+        CHOOSE( Help? + 1, Result, Help)
+    )
+);
+
+
+
+/*  FUNCTION NAME:  LeaseLiabilityλ
+    DESCRIPTION:*//**Present value of the lease payments that are not paid at the commencement date*/
+
+LeaseLiabilityλ = LAMBDA(
+//  Parameter Declaration
+    [Payments],
+    [Rate],
+    [InAdvance],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →LeaseLiabilityλ(Payments, Rate, [InAdvance])¶" &
+                            "DESCRIPTION:   →Present value of the lease payments that are not paid at the commencement date.¶NOTES!         →AASB 16 paragraph 26 measures the lease liability at the present value¶               →of the lease payments not paid at the commencement date, discounted at¶               →the interest rate implicit in the lease where that rate can be readily¶               →determined and at the lessee's incremental borrowing rate where it¶               →cannot. Rate is the rate per period, so divide an annual rate by the¶               →number of periods in a year. Include an amount expected to be payable¶               →under a residual value guarantee, or the exercise price of a purchase¶               →option, in the final period where paragraph 27 brings it into the lease¶               →payments. Derive an implicit rate with IRRλ() over the same cash flows.¶               →Arithmetic only: this does not determine the lease term, decide what is¶               →a lease payment, or decide whether the arrangement contains a lease.¶               →AASB 16 compilation checked 24 August 2026.¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "VERSION:       →24 Aug 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "Payments       →(Required) One row or one column of lease payments, one per period, entered positive.¶" &
+                            "Rate           →(Required) Discount rate per period, not per year.¶" &
+                            "InAdvance      →(Optional: Default = FALSE) TRUE where each payment falls at the start of its period.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.LeaseLiabilityλ({100,100,100}, 0.05)¶" &
+                            "→Result¶" &
+                            "→272.32",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR(ISOMITTED(Payments), ISOMITTED(Rate)),
+    //  A blank InAdvance cell is not an omitted argument, so test for both
+        Advance?,       IF(OR(ISOMITTED(InAdvance), TRIM(InAdvance & "")=""), FALSE, InAdvance),
+    //  One lease at a time, laid along a row the way the timeline helpers expect
+        Flat,           IF(ROWS(Payments) = 1, Payments, TRANSPOSE(Payments)),
+    //  A payment in advance is discounted one period less than the same payment in arrears
+        Exponents,      SEQUENCE(1, COLUMNS(Flat)) - IF(Advance?, 1, 0),
+        Result,         SUM(Flat / (1 + Rate) ^ Exponents),
+    //  Return Result or Help
+        CHOOSE( Help? + 1, Result, Help)
+    )
+);
+
+
+/*  FUNCTION NAME:  LeaseScheduleλ
+    DESCRIPTION:*//**Unwinds an AASB 16 lease liability: opening, payment, interest and closing for each period*/
+
+LeaseScheduleλ = LAMBDA(
+//  Parameter Declaration
+    [Payments],
+    [Rate],
+    [InAdvance],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →LeaseScheduleλ(Payments, Rate, [InAdvance])¶" &
+                            "DESCRIPTION:   →Unwinds an AASB 16 lease liability over its term.¶NOTES!         →Returns four rows: opening liability, payment, interest, closing¶               →liability. Interest accrues on the opening balance in arrears and on¶               →the balance after the payment in advance, so closing is opening less¶               →payment plus interest either way and the last closing balance is nil.¶               →The opening balance is LeaseLiabilityλ() on the same arguments. Pair¶               →this with ROUScheduleλ() for the asset that sits opposite it: the two¶               →together give the front-loaded expense profile AASB 16 produces.¶               →Arithmetic only, on the payments and rate you supply.¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "VERSION:       →24 Aug 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "Payments       →(Required) One row or one column of lease payments, one per period, entered positive.¶" &
+                            "Rate           →(Required) Discount rate per period, not per year.¶" &
+                            "InAdvance      →(Optional: Default = FALSE) TRUE where each payment falls at the start of its period.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.LeaseScheduleλ({100,100,100}, 0.05)¶" &
+                            "→Result¶" &
+                            "→272.32, 185.94,  95.24¶" &
+                            "→100.00, 100.00, 100.00¶" &
+                            "→ 13.62,   9.30,   4.76¶" &
+                            "→185.94,  95.24,   0.00",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR(ISOMITTED(Payments), ISOMITTED(Rate)),
+    //  A blank InAdvance cell is not an omitted argument, so test for both
+        Advance?,       IF(OR(ISOMITTED(InAdvance), TRIM(InAdvance & "")=""), FALSE, InAdvance),
+    //  One lease at a time, laid along a row the way the timeline helpers expect
+        Flat,           IF(ROWS(Payments) = 1, Payments, TRANSPOSE(Payments)),
+        Count,          COLUMNS(Flat),
+        Shift,          IF(Advance?, 1, 0),
+        Opening1,       LeaseLiabilityλ(Flat, Rate, Advance?),
+    //  A payment in advance leaves before interest accrues; one in arrears leaves after
+        Closings,       SCAN(Opening1, Flat, LAMBDA(Balance, Payment,
+                            (Balance - Shift * Payment) * (1 + Rate) - (1 - Shift) * Payment)),
+    //  Each opening is the closing before it. A one-period lease has no closing to shift.
+        Openings,       IF(Count = 1, Opening1, HSTACK(Opening1, DROP(Closings, , -1))),
+        Interest,       (Openings - Shift * Flat) * Rate,
+        Result,         VSTACK(Openings, Flat, Interest, Closings),
+    //  Return Result or Help
+        CHOOSE( Help? + 1, Result, Help)
+    )
+);
+
+
+/*  FUNCTION NAME:  LeaseRemeasureλ
+    DESCRIPTION:*//**Remeasures an AASB 16 lease liability for revised payments and adjusts the right-of-use asset*/
+
+LeaseRemeasureλ = LAMBDA(
+//  Parameter Declaration
+    [RevisedPayments],
+    [Rate],
+    [CarryingLiability],
+    [CarryingROU],
+    [InAdvance],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →LeaseRemeasureλ(RevisedPayments, Rate, CarryingLiability, CarryingROU, [InAdvance])¶" &
+                            "DESCRIPTION:   →Remeasures a lease liability for revised payments and adjusts the asset.¶NOTES!         →Returns four rows: revised lease liability, adjustment, revised¶               →right-of-use asset, amount recognised in profit or loss. AASB 16¶               →paragraph 42(b) remeasures the liability where future payments change¶               →because an index or a rate used to determine them has changed, and¶               →only when the cash flows change. Paragraph 43 keeps the discount rate¶               →unchanged for that revision, and uses a revised rate only where the¶               →change arises from a floating interest rate, so pass the original rate¶               →unless it is the rate itself that moved. Paragraph 39 takes the¶               →remeasurement to the right-of-use asset, and where that asset is¶               →reduced to nil any further reduction goes to profit or loss: row four¶               →carries that remainder, negative, because it is a credit. Arithmetic¶               →only. AASB 16 compilation checked 24 August 2026.¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "VERSION:       →24 Aug 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "RevisedPayments→(Required) Revised lease payments for the remaining term, one per period, positive.¶" &
+                            "Rate           →(Required) Discount rate per period. Unchanged, unless a floating rate moved.¶" &
+                            "CarryingLiability→(Required) Lease liability carried immediately before the remeasurement.¶" &
+                            "CarryingROU    →(Required) Right-of-use asset carried immediately before the remeasurement.¶" &
+                            "InAdvance      →(Optional: Default = FALSE) TRUE where each payment falls at the start of its period.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.LeaseRemeasureλ({110,110}, 0.05, 185.94, 181.55)¶" &
+                            "→Result¶" &
+                            "→204.54¶" &
+                            "→ 18.60¶" &
+                            "→200.15¶" &
+                            "→  0.00",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR(ISOMITTED(RevisedPayments), ISOMITTED(Rate),
+                            ISOMITTED(CarryingLiability), ISOMITTED(CarryingROU)),
+    //  A blank InAdvance cell is not an omitted argument, so test for both
+        Advance?,       IF(OR(ISOMITTED(InAdvance), TRIM(InAdvance & "")=""), FALSE, InAdvance),
+        Revised,        LeaseLiabilityλ(RevisedPayments, Rate, Advance?),
+        Adjustment,     Revised - CarryingLiability,
+    //  The asset absorbs the adjustment until it is exhausted, and no further
+        RawAsset,       CarryingROU + Adjustment,
+        Result,         VSTACK(Revised, Adjustment, MAX(RawAsset, 0), MIN(RawAsset, 0)),
+    //  Return Result or Help
+        CHOOSE( Help? + 1, Result, Help)
+    )
+);
+
+
+/*  FUNCTION NAME:  ROUScheduleλ
+    DESCRIPTION:*//**Straight-line right-of-use asset schedule: opening, depreciation and closing for each period*/
+
+ROUScheduleλ = LAMBDA(
+//  Parameter Declaration
+    [Cost],
+    [Periods],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →ROUScheduleλ(Cost, Periods)¶" &
+                            "DESCRIPTION:   →Depreciates a right-of-use asset in a straight line over the lease term.¶NOTES!         →Returns three rows: opening carrying amount, depreciation, closing¶               →carrying amount. AASB 16 paragraph 24 measures the asset at cost,¶               →comprising the initial lease liability, lease payments made at or¶               →before the commencement date less incentives received, initial direct¶               →costs, and an estimate of dismantling and restoration costs. Add those¶               →up yourself and pass the total as Cost. Depreciate over the lease term¶               →where ownership does not transfer, and over the useful life where it¶               →does. Cost and Periods are single values, not arrays. Arithmetic only.¶               →AASB 16 compilation checked 24 August 2026.¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "VERSION:       →24 Aug 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "Cost           →(Required) Initial carrying amount of the right-of-use asset.¶" &
+                            "Periods        →(Required) Number of periods to depreciate over, at least 1.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.ROUScheduleλ(300, 3)¶" &
+                            "→Result¶" &
+                            "→300, 200, 100¶" &
+                            "→100, 100, 100¶" &
+                            "→200, 100,   0",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR(ISOMITTED(Cost), ISOMITTED(Periods)),
+    //  Refuse rather than build a schedule from an argument that cannot make one
+        Valid?,         AND(ISNUMBER(Cost), ISNUMBER(Periods), Periods >= 1),
+        Count,          IF(Valid?, INT(Periods), 1),
+        Charge,         IF(Valid?, Cost / Count, 0),
+        Index,          SEQUENCE(1, Count),
+        Result,         IF(Valid?,
+                            VSTACK(
+                                Cost - Charge * (Index - 1),
+                                SEQUENCE(1, Count, Charge, 0),
+                                Cost - Charge * Index),
+                            "ROUScheduleλ needs a numeric Cost and Periods of at least 1"),
     //  Return Result or Help
         CHOOSE( Help? + 1, Result, Help)
     )
