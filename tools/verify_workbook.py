@@ -20,7 +20,12 @@ if hasattr(sys.stdout, "reconfigure"):
 
 WORKBOOK = sys.argv[1] if len(sys.argv) > 1 else "ozzit.xlsx"
 
-# Tokens that must never reappear: predecessor branding, and any foreign tax content.
+# The legacy creator marker, in the shipped spelling and the predecessor misspelling.
+# Assembled rather than written out, so no file in this repository spells it.
+LEGACY_CREATOR_MARKER = "|".join(("H[a]t(?:maker|maekr)", "H[a]t(?:maker|maekr)"))
+
+# Tokens that must never reappear: predecessor branding, the legacy creator marker,
+# and any foreign tax content.
 BANNED = re.compile(
     r"BX[DEFRLU]\.|BXLDebt|\bBXL\b|ozzit\.[a-z]+\.|beyondexcel|Eloquens|dropbox|Leonardo"
     r"|Starter Pack|Calibri|MACRS|Modified Accelerated|US GAAP|IRS Depreciation"
@@ -28,6 +33,7 @@ BANNED = re.compile(
     # every release up to v2.2.0 published a path off the build machine. On a machine
     # whose account is not named "-" that path carries the account name with it.
     r"|x15ac:absPath|[A-Za-z]:\\{1,2}Users\\{1,2}|/Users/|/home/"
+    "|" + LEGACY_CREATOR_MARKER
 )
 SHEET_RE = re.compile(r"xl/worksheets/sheet\d+\.xml$")
 TOKEN_RE = re.compile(r"oz\.[A-Za-z0-9_]+λ?(?:DV)?")

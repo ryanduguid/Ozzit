@@ -11,17 +11,22 @@ the ones that are deterministic and safe to re-run.
 python tools/postbuild/fy27_help_text.py ozzit.xlsx src
 python tools/postbuild/workbook_palette.py ozzit.xlsx
 python tools/postbuild/gst_help_text.py ozzit.xlsx src
+python tools/postbuild/strip_revision_history.py ozzit.xlsx src
 python tools/sync_afe_store.py ozzit.xlsx src
 python tools/sanitise_workbook.py ozzit.xlsx   # always last, after any Excel save
 ```
 
-All three postbuild passes are idempotent: on a current workbook each reports "already
+All postbuild passes are idempotent: on a current workbook each reports "already
 applied" and writes nothing. A workbook whose anchors do not match the recorded counts
 fails loudly rather than writing a partial result. `sync_afe_store.py` then copies the
 five non-recursive `src/` modules into the workbook's Advanced Formula Environment
 store; this step is required after a text pass changes `src/`. The FY27 and palette passes
 record the v3.0.0 → v3.1.0 swaps. The GST help pass records a later insert against the
-committed v3.1.0 workbook and `src/`.
+committed v3.1.0 workbook and `src/`. The revision-history pass removes the
+per-function REVISIONS blocks, the Advanced Formula Environment copies of them and
+the workbook's creator credit; it resynchronises the AFE store itself, so it must
+run after any text pass that touches `src/`. A build that starts from the predecessor
+workbook still emits those blocks at v3.0.0, so this pass is what removes them.
 
 ## What is intentionally not here
 

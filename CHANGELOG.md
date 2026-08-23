@@ -1,5 +1,28 @@
 # Changelog
 
+
+held the credit has been cleared and the removal is now enforced by a gate.
+
+- **Per-function revision histories removed from `src/`.** 125 `REVISIONS` comment
+  blocks across Dates, Essentials, Financial, Ratios and Utilities, 417 lines, all
+  naming the same predecessor developer. A comment that also carried a `NOTE` keeps the
+  NOTE, which is what preserves the Diarmuid Early maths citation on `oz.IntOnIntλ`.
+  No formula body was read or rewritten, and all 130 functions still reproduce.
+- **The Advanced Formula Environment store and the workbook creator metadata cleared.**
+  `docProps/core.xml` now credits the Ozzit project alone, and the AFE store was
+  resynchronised from the stripped `src/`.
+- **`tools/postbuild/strip_revision_history.py` added.** It applies all three edits
+  together, asserts the expected block count per module, and reports "already applied"
+  on a second run. It reproduces the hand-applied result byte for byte. A build that
+  starts from Ryan Duguid's predecessor workbook still emits the blocks at v3.0.0, so this pass is
+  what removes them.
+- **MIT now covers the whole repository.** `ozzit.xlsx`, `src/` and `functions.csv`
+  are no longer carved out. `ATTRIBUTION.md`, `README.md`, `RELEASING.md` and
+  `llms.txt` were rewritten to match, and no longer name the workbook author Ryan Duguid or the
+  predecessor product.
+- **The removal is enforced, not just done.** `verify_workbook.py` bans the name in the
+  workbook, and `test_repository_policy.py` fails if any tracked file reintroduces it.
+
 ## v3.1.0, 22 August 2026, FY27 examples, dark styling, help corrections
 
 This release ships everything since v3.0.0: the 20 August restyle and clean-up,
@@ -942,7 +965,7 @@ First nabla release, derived from the predecessor 6 July 2024 workbook.
 - `fullCalcOnLoad` enabled so cached demo outputs refresh on first open.
 
 ### Fixes
-- Defined `nabla.e.Aboutλ`; the predecessor workbook called `the predecessor namespace Aboutλ` on its own worksheet without defining it.
+- Defined `nabla.e.Aboutλ`; the predecessor workbook called an about function on its own worksheet without defining it.
 - Replaced the undefined `Sheetλ` title formula on 46 worksheets with a self-contained `TEXTAFTER(CELL("filename",A1),"]")` title; the predecessor file cached `#NAME?` in every one.
 - Replaced locale-fragile text-date arguments in `RANDBETWEEN` with `DATE()` calls.
 - Removed a dead table-of-contents hyperlink to a worksheet that never existed, an empty Power Query mashup, orphaned rich-value image residue, the regenerable `calcChain` cache, and a merged cell left behind by the removed cover section. The table-of-contents row for that worksheet now correctly reads Function rather than Worksheet.

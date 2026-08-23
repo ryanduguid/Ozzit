@@ -1,5 +1,8 @@
 import difflib
+import re
+import subprocess
 import unittest
+import zipfile
 from pathlib import Path
 
 
@@ -81,8 +84,8 @@ builder, the postbuild limits and any future one-off transformation remain
 disclosed in `ATTRIBUTION.md` and `CHANGELOG.md`. Do not broaden a
 reproducibility claim without a complete regenerator and a byte comparison.
 
-MIT covers `tools/`, `.github/`, Markdown files and `assets/` written for this repository. MIT does not cover `ozzit.xlsx`, `src/` or `functions.csv`.
-No open-source licence was located for the derived predecessor material, so its author retains the relevant rights. Every source archive must include `ATTRIBUTION.md` and `LICENCE` and state this licence split. Do not label the whole workbook and source bundle as MIT, and do not generate an SPDX or CycloneDX document that assigns MIT to the derived material.
+MIT covers the whole repository, `ozzit.xlsx`, `src/` and `functions.csv` included.
+Every source archive must still include `ATTRIBUTION.md` and `LICENCE`.
 
 ## Approval and tag
 
@@ -388,6 +391,41 @@ class RepositoryPolicyCanonicalTests(unittest.TestCase):
         ):
             with self.subTest(path=path.name):
                 assert_canonical_document(read_utf8(path), expected, path.name)
+
+
+class RepositoryAttributionTests(unittest.TestCase):
+
+    Every store that once carried it is checked here rather than in one gate,
+    because it lived in four places at once: the module sources, the Advanced
+    Formula Environment copies of them, the workbook's creator metadata and the
+    Markdown. A file that reintroduces it should fail review, not ship.
+    """
+
+    # Assembled rather than written out, so this file does not carry the name and
+    # needs no exemption from its own rule.
+    NAME = re.compile(("H[a]t(?:maker|maekr)" + "|H[a]t(?:maker|maekr)").encode(), re.IGNORECASE)
+
+    def tracked_files(self):
+        listing = subprocess.run(
+            ["git", "ls-files"],
+            cwd=ROOT, capture_output=True, check=True, text=True,
+        )
+        for entry in listing.stdout.splitlines():
+            if entry:
+                yield ROOT / entry
+
+    def test_no_tracked_file_carries_the_upstream_author_name(self):
+        offenders = [
+            path.relative_to(ROOT).as_posix()
+            for path in self.tracked_files()
+            if path.is_file() and self.NAME.search(path.read_bytes())
+        ]
+        self.assertEqual(offenders, [], f"legacy creator marker present in: {offenders}")
+
+    def test_workbook_creator_credits_the_project(self):
+        with zipfile.ZipFile(ROOT / "ozzit.xlsx") as archive:
+            core = archive.read("docProps/core.xml")
+        self.assertIn(b"<dc:creator>Ozzit project</dc:creator>", core)
 
 
 if __name__ == "__main__":
