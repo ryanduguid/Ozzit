@@ -4,7 +4,7 @@
 ## Package Overview
 - **Repository**: https://github.com/ryanduguid/Ozzit
 - **Domain**: Library of 130 native Excel `LAMBDA` functions for dynamic-array financial modelling. Australian additions are GST add/extract, a 1 July financial-year label, and two modelling depreciation schedules.
-- **Provenance**: Derivative of the upstream author's upstream workbook (upstream). See ATTRIBUTION.md. The 130-function count is real; this file must not invent tax engines the workbook does not ship.
+- **Provenance**: Derivative of a third-party Excel LAMBDA workbook, released as open source with the original author's written permission. See ATTRIBUTION.md. The 130-function count is real; this file must not invent tax engines the workbook does not ship.
 - **Source Context**: Native Excel financial-modelling conventions (amortisation, corkscrews, ratios, debt sculpting) plus the five Australian helpers listed below.
 
 ## Functional Categories
