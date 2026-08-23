@@ -32,8 +32,8 @@ builder, the postbuild limits and any future one-off transformation remain
 disclosed in `ATTRIBUTION.md` and `CHANGELOG.md`. Do not broaden a
 reproducibility claim without a complete regenerator and a byte comparison.
 
-MIT covers `tools/`, `.github/`, Markdown files and `assets/` written for this repository. MIT does not cover `ozzit.xlsx`, `src/` or `functions.csv`.
-No open-source licence was located for the derived upstream material, so its author retains the relevant rights. Every source archive must include `ATTRIBUTION.md` and `LICENCE` and state this licence split. Do not label the whole workbook and source bundle as MIT, and do not generate an SPDX or CycloneDX document that assigns MIT to the derived material.
+MIT covers the whole repository, `ozzit.xlsx`, `src/` and `functions.csv` included. The upstream author granted written permission for the derived material to be released as open source and waived attribution, so the licence split that applied up to v3.1.0 is retired.
+Every source archive must still include `ATTRIBUTION.md` and `LICENCE`. Keep the written permission on file outside this repository: it is the only record of why MIT reaches the derived material, and `ATTRIBUTION.md` no longer names the grantor.
 
 ## Approval and tag
 

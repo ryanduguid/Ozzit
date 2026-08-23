@@ -132,12 +132,12 @@ Each module has its own tab colour, gridlines are hidden, and every sheet opens 
 |---|---|
 | `ozzit.xlsx` | The library and its documentation workbook |
 | `src/*.txt` | Plain-text LAMBDA source per group (Dates, Essentials, Financial, Ratios, Utilities, Debt), diffable and importable |
-| `ATTRIBUTION.md` | Provenance and upstream copyright |
+| `ATTRIBUTION.md` | Provenance and licence scope |
 | `functions.csv` | Machine-readable index of every function |
 | `tools/` | The build and maintenance pipeline: `transform_from_upstream.py` rebuilds the v3.0.0 baseline from an uncommitted upstream workbook and stops there; later tracked postbuild passes start from the committed `ozzit.xlsx` and `src/` (see ATTRIBUTION.md), then the AFE store is synchronised, the workbook is canonicalised/polished, and the gates check it |
 | `CHANGELOG.md` | What changed in this release |
 | `assets/` | Logo |
-| `LICENCE` | MIT, verbatim; its scope is stated in ATTRIBUTION.md and the licence section below |
+| `LICENCE` | MIT, verbatim; it covers the whole repository, see ATTRIBUTION.md and the licence section below |
 
 `src/` and `functions.csv` are generated from `ozzit.xlsx` by the build, not edited by hand, so the published source of a function is always the definition that ships.
 
@@ -257,6 +257,6 @@ The other 86 functions, including all of Ratios, Utilities and Debt and every mo
 
 ## Attribution and licence
 
-Ozzit is a renamed and reworked derivative of the upstream author's upstream workbook (upstream). See [ATTRIBUTION.md](ATTRIBUTION.md) for provenance, upstream copyright and the full list of changes. This repository adds Australian GST, financial-year and modelling-depreciation helpers; it is not an individual-tax or Division 7A engine.
+Ozzit is a renamed and reworked derivative of a third-party Excel LAMBDA workbook, published as open source with the original author's written permission. See [ATTRIBUTION.md](ATTRIBUTION.md) for provenance and the full list of changes. This repository adds Australian GST, financial-year and modelling-depreciation helpers; it is not an individual-tax or Division 7A engine.
 
-[LICENCE](LICENCE) is MIT and covers only what was written for this repository: `tools/`, `.github/`, the Markdown files and `assets/`. It does not cover `ozzit.xlsx`, `src/` or `functions.csv`, which derive from the upstream workbook. No licence for that work could be located, so its author retains all rights in the original material.
+[LICENCE](LICENCE) is MIT and covers the whole repository, `ozzit.xlsx`, `src/` and `functions.csv` included. Releases up to v3.1.0 limited that grant to what was written for this repository; [ATTRIBUTION.md](ATTRIBUTION.md) records why the limitation no longer applies.
