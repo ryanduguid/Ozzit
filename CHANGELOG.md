@@ -1,6 +1,51 @@
 # Changelog
 
-## Unreleased, upstream attribution removed under written waiver
+## Unreleased
+
+### AASB 16 lease functions
+
+Four lessee functions, the library's first coverage of an accounting standard rather
+than a tax rule. Nothing existing changed: no formula was rewritten, no worksheet was
+added, and all 20,228 cached values are the ones v3.1.0 shipped.
+
+- **`oz.LeaseLiabilityλ(Payments, Rate, [InAdvance])`.** Present value of the lease
+  payments not paid at the commencement date, AASB 16 paragraph 26. `Rate` is the rate
+  per period. `InAdvance` discounts each payment one period less, which is the timing
+  most property leases actually use and the one that is easiest to get wrong.
+- **`oz.LeaseScheduleλ(Payments, Rate, [InAdvance])`.** Unwinds that liability into
+  opening, payment, interest and closing rows. Interest accrues on the opening balance
+  in arrears and on the balance after the payment in advance, so closing is opening
+  less payment plus interest either way.
+- **`oz.ROUScheduleλ(Cost, Periods)`.** Straight-line right-of-use asset, returning
+  opening, depreciation and closing rows. It takes a cost rather than assembling one,
+  because paragraph 24 adds four components a schedule cannot infer.
+- **`oz.LeaseRemeasureλ(RevisedPayments, Rate, CarryingLiability, CarryingROU,
+  [InAdvance])`.** Remeasures the liability for revised payments under paragraph 42(b),
+  at the unchanged discount rate paragraph 43 requires. Paragraph 39 takes the
+  adjustment to the right-of-use asset and the rest to profit or loss once that asset
+  reaches nil, so the fourth row it returns carries that remainder.
+- **They are arithmetic, not determinations.** None of them decides the lease term,
+  what counts as a lease payment, or whether an arrangement contains a lease. Every
+  paragraph reference was read against the AASB 16 compilation on 24 August 2026, not
+  carried across from a search result.
+- **`tools/postbuild/aasb16_leases.py` added.** One spec per function generates both
+  the published source and the stored defined name, rather than the two being written
+  in parallel and left to drift. Each generated definition is round-tripped through
+  `verify_sources.py`'s own comparison before anything is written.
+- **`sync_afe_store.py` now synchronises `projectNames`, not only the module texts.**
+  The Advanced Formula Environment store holds two views of the library and
+  `verify_afe.py` gates both, but only one was ever written. Adding a function
+  therefore failed that gate with the index four names short. A name still shipping
+  keeps its place, a new one is filed after the last name from its own module, and a
+  name that no longer ships is dropped.
+- **`excel_selftest.ps1` grew from 259 assertions to 438.** The liability is checked
+  against Excel's own `NPV`, an independent oracle rather than a restatement of the
+  same arithmetic. The schedule is checked by identity across four rates, four term
+  lengths and both timings: it closes to nil, each opening is the closing before it,
+  and every period reconciles. Both identities name a row, because a whole-block total
+  cancels the row under test.
+
+### Upstream attribution removed under written waiver
 
 The upstream author granted written permission for this repository to be published
 as open source and waived the attribution earlier releases carried. Every store that

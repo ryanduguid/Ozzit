@@ -71,6 +71,9 @@ oz.IsInListλ,Essentials,nabla.e.IsInListλ,"IsInListλ( Value, List)",Determine
 oz.IsOccurrenceDateλ,Dates,nabla.d.IsOccurrenceDateλ,"IsOccurrenceDateλ(Dates, FirstOccurrence, [LastOccurrence], [Repeats])","Returns TRUE if Date passed is when something happens. This was developed for budgeting where we have expenses that start, and sometimes repeat at regular intervals."
 oz.LabelAmortiseλ,Financial,nabla.f.LabelAmortiseλ,"LabelAmortiseλ(LoanNames, [LoanAmounts], [LoanAPRs], [LoanTerms])",Create labels for Amortiseλ
 oz.LabelDepreciateλ,Financial,nabla.f.LabelDepreciateλ,LabelDepreciateλ( AssetNames),Create labels for Depreciateλ
+oz.LeaseLiabilityλ,Financial,,"LeaseLiabilityλ(Payments, Rate, [InAdvance])",Present value of the lease payments that are not paid at the commencement date
+oz.LeaseRemeasureλ,Financial,,"LeaseRemeasureλ(RevisedPayments, Rate, CarryingLiability, CarryingROU, [InAdvance])",Remeasures an AASB 16 lease liability for revised payments and adjusts the right-of-use asset
+oz.LeaseScheduleλ,Financial,,"LeaseScheduleλ(Payments, Rate, [InAdvance])","Unwinds an AASB 16 lease liability: opening, payment, interest and closing for each period"
 oz.MaxColsUλ,Utilities,nabla.u.MaxColsλ,MaxColsUλ( Array),Get the maximum for each Column
 oz.MaxColsλ,Essentials,nabla.e.MaxColsλ,MaxColsλ( Array),Get the maximum for each Column
 oz.MaxRowsUλ,Utilities,nabla.u.MaxRowsλ,MaxRowsUλ( Array),Get the maximum for each row
@@ -100,6 +103,7 @@ oz.ROAλ,Ratios,nabla.r.ROAλ,"ROAλ( NetIncome, TotalAssets)",Return on assets 
 oz.ROEλ,Ratios,nabla.r.ROEλ,"ROEλ( NetIncome, ShareholdersEquity)",Return on equity (ROE) ratio is a measure of financial performance (Net Income/Shareholders Equity)
 oz.ROICλ,Ratios,nabla.r.ROICλ,"ROICλ( NetOperatingProfitAfterTax, InvestedCapital)",Return on Invested capital assesses a company’s efficiency in allocating capital to profitable investments (Net Operating Profit After Tax/Invested Capital)
 oz.ROIλ,Ratios,nabla.r.ROIλ,"ROIλ( NetReturnonInvestment, CostofInvestment)",Return on Investment (ROI) ratio measures the profitability of an investment by comparing the gain or loss to its cost (Net Return on Investment/Cost of Investment).
+oz.ROUScheduleλ,Financial,,"ROUScheduleλ(Cost, Periods)","Straight-line right-of-use asset schedule: opening, depreciation and closing for each period"
 oz.RangeToDAEλ,Essentials,nabla.e.RangeToDAλ,"RangeToDAEλ(Range, [Rows], [Columns])",Convert a range reference to a dynamic array reference
 oz.RangeToDAUλ,Utilities,nabla.u.RangeToDAλ,"RangeToDAUλ(Range, [Rows], [Columns])",Convert a range reference to a dynamic array reference
 oz.RangeToDAλ,Financial,nabla.f.RangeToDAλ,"RangeToDAλ( Cell, [Rows], [Columns])",Create a dynamic array from a static range

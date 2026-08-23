@@ -4,7 +4,7 @@
 
 A LAMBDA function library for building dynamic-array financial models in Excel.
 
-`ozzit.xlsx` ships 130 named functions under a single `oz.` prefix. Every function carries inline help, and the core functions each have a demonstration worksheet with live, editable examples. The **Australian tax** worksheet demonstrates the depreciation, GST and financial-year helpers. Every function is built from native Excel functions only, so models assembled with Ozzit save as ordinary `.xlsx` workbooks with no add-ins and no macros.
+`ozzit.xlsx` ships 134 named functions under a single `oz.` prefix. Every function carries inline help, and the core functions each have a demonstration worksheet with live, editable examples. The **Australian tax** worksheet demonstrates the depreciation, GST and financial-year helpers. Every function is built from native Excel functions only, so models assembled with Ozzit save as ordinary `.xlsx` workbooks with no add-ins and no macros.
 
 **Version: 20 August 2026**
 
@@ -24,7 +24,7 @@ part of the name.
 |---|---|---|
 | Dates | 13 | Dates and timelines: periods, schedules, overlaps, occurrence tests, financial-year labels |
 | Essentials | 17 | Array essentials: row and column totals, averages, counts, range conversion |
-| Financial | 39 | Financial building blocks: amortisation, depreciation, corkscrews, IRR, rolling sums, GST |
+| Financial | 43 | Financial building blocks: amortisation, depreciation, corkscrews, IRR, rolling sums, GST, AASB 16 leases |
 | Ratios | 39 | Financial ratios: liquidity, leverage, margins, returns, market multiples |
 | Utilities | 17 | Standalone copies of the Essentials functions, each carrying a `U` suffix |
 | Debt | 5 | Debt sculpting: amortisation schedule, fixed and variable DSCR sculpting, sculpting interest |
@@ -81,6 +81,33 @@ The same scope note is embedded as NOTES! rows in the `oz.GSTAddλ` and `oz.GSTE
 **These are modelling schedules, not tax calculations.** They take a cost and an effective life and nothing else: no acquisition date, no income year, no days held, and no disposal. `oz.DiminishingValueλ` also writes the whole undeducted residual off in its final period, which a diminishing-balance calculation does not do on its own, so the schedule totals to cost by construction. For a cost of 1,000 over five years it returns 400, 240, 144, 86.40 and 129.60, where the last figure is the residual rather than a computed deduction.
 
 Use them for modelling. Do not use them to prepare a return, and do not treat any output as a deduction the ATO would accept. Apportion for part-year ownership yourself.
+
+## AASB 16 leases
+
+Four functions cover lessee accounting. They compose: the liability feeds the schedule, the schedule's opening balance feeds the right-of-use asset, and a later index review feeds the remeasurement.
+
+| Function | Purpose |
+|---|---|
+| `oz.LeaseLiabilityλ(Payments, Rate, [InAdvance])` | Present value of the lease payments not paid at the commencement date |
+| `oz.LeaseScheduleλ(Payments, Rate, [InAdvance])` | Opening, payment, interest and closing rows for each period |
+| `oz.ROUScheduleλ(Cost, Periods)` | Opening, depreciation and closing rows for the right-of-use asset |
+| `oz.LeaseRemeasureλ(RevisedPayments, Rate, CarryingLiability, CarryingROU, [InAdvance])` | Revised liability, adjustment, revised asset and the remainder taken to profit or loss |
+
+`Rate` is the rate **per period**, not per year: divide an annual rate by the number of periods in a year before passing it. `InAdvance` is the argument most often set wrong. A property lease is usually paid at the start of each period, which discounts every payment one period less and raises the liability by a whole period of interest.
+
+Three things the functions take rather than decide:
+
+- **The payments.** Include an amount expected to be payable under a residual value guarantee, or the exercise price of a purchase option, in the final period where [AASB 16](https://standards.aasb.gov.au/aasb-16-nov-2022) paragraph 27 brings it into the lease payments. Leave out variable payments that depend on sales or usage.
+- **The rate.** Paragraph 26 discounts at the interest rate implicit in the lease where that rate can be readily determined, and at the lessee's incremental borrowing rate where it cannot. Where you have the fair value and the residual, `oz.IRRλ` over the same cash flows gives the implicit rate.
+- **The asset's cost.** Paragraph 24 builds it from the initial liability, payments made at or before commencement less incentives received, initial direct costs, and an estimate of dismantling and restoration costs. Add those four up and pass the total as `Cost`.
+
+Together the liability and the asset produce the expense profile AASB 16 is known for. Interest falls as the liability unwinds while straight-line depreciation does not, so a lease costs more in its first period than its last even though the rent never moves. That is the shape the schedule is for.
+
+Remeasurement follows paragraphs 39 to 43. A change in future payments caused by a change in an index or a rate is remeasured under paragraph 42(b), and only when the cash flows actually change. Paragraph 43 holds the discount rate unchanged for that revision, and uses a revised rate only where the change arises from a floating interest rate. Paragraph 39 takes the adjustment to the right-of-use asset, and where that asset is already nil the remainder goes to profit or loss, which is the fourth row `oz.LeaseRemeasureλ` returns.
+
+Paragraph references were read against the AASB 16 compilation on 24 August 2026. Recheck the current compilation at the time of use.
+
+**These are schedules, not determinations.** They do not decide the lease term, decide what counts as a lease payment, decide whether an arrangement contains a lease, or apply the short-term and low-value recognition exemptions. There is no lessor accounting here. Use them to build and check a model, not to conclude on the standard.
 
 ## Dynamic-Array Formula Walkthrough
 
@@ -191,7 +218,7 @@ Tooling: exercises the workbook sanitiser against clean and simulated Excel-save
 powershell -ExecutionPolicy Bypass -File tools/excel_selftest.ps1
 ```
 
-Arithmetic: opens the workbook in a real Excel, forces a full rebuild, fails on any error cell, then runs 259 assertions over the Australian functions, the worksheet that demonstrates them, the timeline and allocation helpers on period lengths from a day to a year, and the balance identities of the debt sculpting schedules. Needs Excel with LAMBDA support, so it cannot run on GitHub's runners and stays a local gate. It opens Excel over COM and quits it when finished, so it refuses to start if Excel is already running rather than closing your workbooks; it never saves the file it tests.
+Arithmetic: opens the workbook in a real Excel, forces a full rebuild, fails on any error cell, then runs 438 assertions over the Australian functions, the AASB 16 lease and right-of-use schedules, the worksheet that demonstrates them, the timeline and allocation helpers on period lengths from a day to a year, and the balance identities of the debt sculpting schedules. Needs Excel with LAMBDA support, so it cannot run on GitHub's runners and stays a local gate. It opens Excel over COM and quits it when finished, so it refuses to start if Excel is already running rather than closing your workbooks; it never saves the file it tests.
 
 ```bash
 python tools/verify_cache.py ozzit.xlsx
@@ -253,10 +280,10 @@ Presentation is reproducible too: `python tools/polish_workbook.py ozzit.xlsx` a
 | `oz.RangeToDAEλ` | Convert a static range into a dynamic array |
 | `oz.FinancialRatios` | Three dozen financial Ratios |
 
-The other 86 functions, including all of Ratios, Utilities and Debt and every module About table except `oz.AboutEssentialsλ`, have no dedicated worksheet; call any of them with no arguments for inline help, `oz.FinancialRatios` demonstrates the ratio suite on one worksheet, and [functions.csv](functions.csv) lists every function with its signature.
+The other 90 functions, including all of Ratios, Utilities, Debt and the AASB 16 lease helpers and every module About table except `oz.AboutEssentialsλ`, have no dedicated worksheet; call any of them with no arguments for inline help, `oz.FinancialRatios` demonstrates the ratio suite on one worksheet, and [functions.csv](functions.csv) lists every function with its signature.
 
 ## Attribution and licence
 
-Ozzit is a renamed and reworked derivative of a third-party Excel LAMBDA workbook, published as open source with the original author's written permission. See [ATTRIBUTION.md](ATTRIBUTION.md) for provenance and the full list of changes. This repository adds Australian GST, financial-year and modelling-depreciation helpers; it is not an individual-tax or Division 7A engine.
+Ozzit is a renamed and reworked derivative of a third-party Excel LAMBDA workbook, published as open source with the original author's written permission. See [ATTRIBUTION.md](ATTRIBUTION.md) for provenance and the full list of changes. This repository adds Australian GST, financial-year, modelling-depreciation and AASB 16 lease helpers; it is not an individual-tax or Division 7A engine.
 
 [LICENCE](LICENCE) is MIT and covers the whole repository, `ozzit.xlsx`, `src/` and `functions.csv` included. Releases up to v3.1.0 limited that grant to what was written for this repository; [ATTRIBUTION.md](ATTRIBUTION.md) records why the limitation no longer applies.
