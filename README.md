@@ -1,5 +1,19 @@
 # Ozzit
 
+```
++----------------------------------------------------------------------+
+|                                Ozzit                                 |
++----------------------------------------------------------------------+
+|          134 native Excel LAMBDA functions for AU modelling          |
++----------------------------------+-----------------------------------+
+| DR  what it gives you            | CR  what it needs                 |
++----------------------------------+-----------------------------------+
+| 134 Excel LAMBDA functions       | Excel 365 or 2024 or newer        |
+| inline help per function         | -                                 |
+| AU GST and depreciation rules    | -                                 |
++----------------------------------+-----------------------------------+
+```
+
 ![Ozzit](assets/ozzit.svg)
 
 A LAMBDA function library for building dynamic-array financial models in Excel.
