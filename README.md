@@ -20,7 +20,11 @@ A LAMBDA function library for building dynamic-array financial models in Excel.
 
 `ozzit.xlsx` ships 134 named functions under a single `oz.` prefix. Every function carries inline help, and the core functions each have a demonstration worksheet with live, editable examples. The **Australian tax** worksheet demonstrates the depreciation, GST and financial-year helpers. Every function is built from native Excel functions only, so models assembled with Ozzit save as ordinary `.xlsx` workbooks with no add-ins and no macros.
 
+**Scope:** The workbook demonstrates arithmetic and modelling helpers, not tax classifications or individual-tax or Division 7A decisions.
+
 **Version: 20 August 2026**
+
+This is the workbook's version stamp. The later tagged repository release is [v3.1.0](https://github.com/ryanduguid/Ozzit/releases/tag/v3.1.0), dated 23 August 2026; citation metadata is in [CITATION.cff](CITATION.cff).
 
 ## Requirements
 
