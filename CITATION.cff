@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use Ozzit, please cite it using this metadata."
+title: Ozzit
+abstract: >-
+  A library of native Microsoft Excel LAMBDA functions for building
+  dynamic-array financial models under Australian conventions.
+authors:
+  - family-names: Duguid
+    given-names: Ryan
+type: software
+version: 3.1.0
+date-released: 2026-08-23
+repository-code: "https://github.com/ryanduguid/Ozzit"
+license: MIT
+keywords:
+  - Microsoft Excel
+  - LAMBDA
+  - dynamic arrays
+  - financial modelling
+  - Australia
