@@ -108,7 +108,7 @@ Use these AUD thousands input arrays for rows `10:17` and `22:41`, multiplying b
 41 other operating: 5,5,5,5,5,5,5,5,5,5,5,5,5
 ```
 
-At Base, the independently expected closing cash series is AUD `358k, 349k, 325k, 293k, 201k, 133k, 217k, 160k, 152k, 172k, 134k, 117k, 66k`. Week 13 must be below the AUD 100k buffer without cash becoming negative.
+At Base, the independently expected closing cash series is AUD `358k, 349k, 325k, 293k, 201k, 133k, 217k, 160k, 117k, 137k, 99k, 82k, 31k`. This reconciles the Week 9 GST/BAS and PAYG instalment outflows in the input arrays. Weeks 11–13 are below the AUD 100k buffer and cash never becomes negative.
 
 ## Task 1: Contract-first workbook scaffold and controls
 
