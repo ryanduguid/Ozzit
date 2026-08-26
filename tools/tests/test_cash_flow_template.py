@@ -9,6 +9,8 @@ from posixpath import dirname, join, normpath
 
 ROOT = Path(__file__).resolve().parents[2]
 WORKBOOK = ROOT / "templates" / "13-week-cash-flow-forecast.xlsx"
+TEMPLATE_README = ROOT / "templates" / "README.md"
+MAIN_README = ROOT / "README.md"
 MAIN = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
 REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
 NS = {"m": MAIN, "r": REL}
@@ -585,6 +587,29 @@ class CashFlowTemplateContractTests(unittest.TestCase):
         for formula in formulas_without_string_literals(parts):
             unquoted_formula = re.sub(r'"(?:[^"]|"")*"', '""', formula)
             self.assertIsNone(volatile_pattern.search(unquoted_formula), formula)
+
+    def test_template_documentation_contract(self):
+        """The repository documentation change is the production change that makes this pass."""
+        template_readme = TEMPLATE_README.read_text(encoding="utf-8")
+        main_readme = MAIN_README.read_text(encoding="utf-8")
+
+        self.assertIn("13-week-cash-flow-forecast.xlsx", template_readme)
+        self.assertIn("Excel 2024 and later", template_readme)
+        self.assertIn("illustrative data", template_readme.lower())
+        self.assertIn("## Weekly workflow", template_readme)
+        for number in range(1, 6):
+            self.assertIn(f"{number}. **", template_readme)
+        for step in ("replace", "assumptions", "weekly", "dashboard", "checks", "archive"):
+            self.assertIn(step, template_readme.lower())
+        for scenario in ("Base", "Upside", "Downside"):
+            self.assertIn(scenario, template_readme)
+        self.assertIn("scenario receipt", template_readme.lower())
+        self.assertIn("scenario variable-payment", template_readme.lower())
+        self.assertIn("Checks & Sources", template_readme)
+        self.assertIn("not tax advice", template_readme.lower())
+        self.assertIn("statutory", template_readme.lower())
+        self.assertRegex(main_readme, r"`templates/`.*13-week-cash-flow-forecast\.xlsx")
+        self.assertIn("templates/README.md", main_readme)
 
 
 if __name__ == "__main__":
