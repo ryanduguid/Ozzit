@@ -48,6 +48,9 @@ FORECAST_ROW_MAP = {
     50: "Headroom / (gap)", 51: "Liquidity status",
 }
 BASE_CLOSING_CASH = [358000, 349000, 325000, 293000, 201000, 133000, 217000, 160000, 117000, 137000, 99000, 82000, 31000]
+FORECAST_COLUMNS = "BCDEFGHIJKLMN"
+FLOW_ROWS = (*range(10, 20), *range(22, 44))
+TERMINAL_ROWS = (46, 47, 48, 49, 50, 51)
 PALETTE_ANCHORS = ("5C2D91", "04001F", "2B2733", "B1AFAD", "DED9E8", "F3F1F6", "7A5AB5", "C00000")
 BANNED_SOURCE_TEXT = ("tradepoint", "1099", "federal tax", "state tax", "tradepointcfo")
 WORKING_SHEETS = EXPECTED_SHEETS[1:]
@@ -108,6 +111,13 @@ def formulas_by_address(parts, path):
     }
 
 
+def cached_value(parts, path, address):
+    root = ET.fromstring(parts[path])
+    cell = root.find(f".//m:c[@r='{address}']", NS)
+    value = cell.find("m:v", NS)
+    return None if value is None else value.text or ""
+
+
 def excel_serial(value):
     return str((value - EXCEL_EPOCH).days)
 
@@ -132,9 +142,36 @@ def comments_text(parts):
     return b" ".join(payload.lower() for name, payload in parts.items() if "comments" in name and name.endswith(".xml"))
 
 
+def comment_text(parts, address):
+    for name, payload in parts.items():
+        if not name.startswith("xl/comments") or not name.endswith(".xml"):
+            continue
+        root = ET.fromstring(payload)
+        for comment in root.findall("m:commentList/m:comment", NS):
+            if comment.attrib.get("ref", "").upper() == address.upper():
+                return "".join(comment.itertext()).lower().encode()
+    return b""
+
+
 def conditional_formulas(parts, path):
     root = ET.fromstring(parts[path])
     return [formula.text for formula in root.findall(".//m:conditionalFormatting/m:cfRule/m:formula", NS)]
+
+
+def forecast_formula_contract(column, previous_column):
+    return {
+        7: f'IF({column}6<=\'Assumptions\'!$B$9,"Actual","Forecast")',
+        18: f'IF({column}$7="Actual",0,SUM({column}10:{column}12)*(INDEX(Assumptions!$C$15:$C$17,MATCH(Assumptions!$B$12,Assumptions!$B$15:$B$17,0))-1))',
+        19: f"SUM({column}10:{column}18)",
+        42: f'IF({column}$7="Actual",0,SUM({column}22,{column}31,{column}33,{column}41)*(INDEX(Assumptions!$D$15:$D$17,MATCH(Assumptions!$B$12,Assumptions!$B$15:$B$17,0))-1))',
+        43: f"SUM({column}22:{column}42)",
+        46: "'Assumptions'!$B$10" if previous_column is None else f"{previous_column}48",
+        47: f"{column}19-{column}43",
+        48: f"{column}46+{column}47",
+        49: "'Assumptions'!$B$11",
+        50: f"{column}48-{column}49",
+        51: f'IF({column}48<{column}49,"BELOW BUFFER",IF({column}48<={column}49*1.25,"WATCH","OK"))',
+    }
 
 
 def row_bounds(reference):
@@ -298,34 +335,19 @@ class CashFlowTemplateContractTests(unittest.TestCase):
 
         for row, label in FORECAST_ROW_MAP.items():
             self.assertEqual(forecast_values.get(f"A{row}"), label)
-        self.assertEqual([forecast_values.get(f"{column}7") for column in "BCDEFGHIJKLMN"], ["Actual", *["Forecast"] * 12])
-        self.assertEqual([int(float(forecast_values[f"{column}48"])) for column in "BCDEFGHIJKLMN"], BASE_CLOSING_CASH)
+        self.assertEqual([forecast_values.get(f"{column}7") for column in FORECAST_COLUMNS], ["Actual", *["Forecast"] * 12])
+        self.assertEqual([int(float(forecast_values[f"{column}48"])) for column in FORECAST_COLUMNS], BASE_CLOSING_CASH)
+        for index, column in enumerate(FORECAST_COLUMNS):
+            previous_column = FORECAST_COLUMNS[index - 1] if index else None
+            for row, expected_formula in forecast_formula_contract(column, previous_column).items():
+                self.assertEqual(forecast_formulas.get(f"{column}{row}"), expected_formula)
 
-        self.assertEqual(
-            forecast_formulas.get("B18"),
-            'IF(B$7="Actual",0,SUM(B10:B12)*(INDEX(Assumptions!$C$15:$C$17,MATCH(Assumptions!$B$12,Assumptions!$B$15:$B$17,0))-1))',
-        )
-        self.assertEqual(
-            forecast_formulas.get("B42"),
-            'IF(B$7="Actual",0,SUM(B22,B31,B33,B41)*(INDEX(Assumptions!$D$15:$D$17,MATCH(Assumptions!$B$12,Assumptions!$B$15:$B$17,0))-1))',
-        )
-        self.assertEqual(forecast_formulas.get("B19"), "SUM(B10:B18)")
-        self.assertEqual(forecast_formulas.get("B43"), "SUM(B22:B42)")
-        self.assertEqual(forecast_formulas.get("B46"), "'Assumptions'!$B$10")
-        self.assertEqual(forecast_formulas.get("C46"), "B48")
-        self.assertEqual(forecast_formulas.get("B47"), "B19-B43")
-        self.assertEqual(forecast_formulas.get("B48"), "B46+B47")
-        self.assertEqual(forecast_formulas.get("B49"), "'Assumptions'!$B$11")
-        self.assertEqual(forecast_formulas.get("B50"), "B48-B49")
-        self.assertEqual(forecast_formulas.get("B51"), 'IF(B48<B49,"BELOW BUFFER",IF(B48<=B49*1.25,"WATCH","OK"))')
-        self.assertEqual(
-            forecast_formulas.get("C18"),
-            'IF(C$7="Actual",0,SUM(C10:C12)*(INDEX(Assumptions!$C$15:$C$17,MATCH(Assumptions!$B$12,Assumptions!$B$15:$B$17,0))-1))',
-        )
-        self.assertEqual(
-            forecast_formulas.get("C42"),
-            'IF(C$7="Actual",0,SUM(C22,C31,C33,C41)*(INDEX(Assumptions!$D$15:$D$17,MATCH(Assumptions!$B$12,Assumptions!$B$15:$B$17,0))-1))',
-        )
+        for row in FLOW_ROWS:
+            self.assertEqual(forecast_formulas.get(f"O{row}"), f"SUM(B{row}:N{row})")
+            self.assertEqual(int(float(forecast_values[f"O{row}"])), sum(int(float(forecast_values[f"{column}{row}"])) for column in FORECAST_COLUMNS))
+        for row in TERMINAL_ROWS:
+            self.assertEqual(forecast_formulas.get(f"O{row}"), f"N{row}")
+            self.assertEqual(forecast_values.get(f"O{row}"), forecast_values.get(f"N{row}"))
 
         self.assertEqual(style_for_cell(parts, forecast_path, "B10"), ("FF0000FF", "FFF3F1F6"))
         self.assertEqual(style_for_cell(parts, forecast_path, "B18")[0], "FF000000")
@@ -336,6 +358,7 @@ class CashFlowTemplateContractTests(unittest.TestCase):
         comment_payload = comments_text(parts)
         for phrase in (b"scenario receipt", b"scenario payment", b"gst / bas", b"payg income-tax"):
             self.assertIn(phrase, comment_payload)
+        self.assertIn(b"current customer receipts, overdue receipts and cash / eftpos sales", comment_text(parts, "B18"))
 
         review_path = sheet_map["Weekly Review"]
         review_values = values_by_address(parts, review_path)
@@ -345,10 +368,14 @@ class CashFlowTemplateContractTests(unittest.TestCase):
             ["Week", "Week ending", "Forecast closing cash", "Actual closing cash", "Variance", "Rolling forecast note", "Owner", "Action", "Status"],
         )
         self.assertEqual([review_values.get(f"A{row}") for row in range(6, 19)], [str(index) for index in range(1, 14)])
-        self.assertEqual(review_formulas.get("B6"), "'13-Week Forecast'!B$6")
-        self.assertEqual(review_formulas.get("C6"), "'13-Week Forecast'!B$48")
-        self.assertEqual(review_formulas.get("E6"), 'IF(D6="","",D6-C6)')
-        self.assertEqual(review_values.get("D6"), "")
+        for index, column in enumerate(FORECAST_COLUMNS, start=6):
+            self.assertEqual(review_formulas.get(f"B{index}"), f"'13-Week Forecast'!{column}$6")
+            self.assertEqual(review_formulas.get(f"C{index}"), f"'13-Week Forecast'!{column}$48")
+            self.assertEqual(review_formulas.get(f"E{index}"), f'IF(D{index}="","",D{index}-C{index})')
+            self.assertEqual(review_values.get(f"B{index}"), forecast_values.get(f"{column}6"))
+            self.assertEqual(review_values.get(f"C{index}"), forecast_values.get(f"{column}48"))
+            self.assertEqual(review_values.get(f"D{index}"), "")
+            self.assertIsNone(cached_value(parts, review_path, f"E{index}"))
         self.assertEqual(style_for_cell(parts, review_path, "B6")[0], "FF008000")
         self.assertEqual(style_for_cell(parts, review_path, "D6"), ("FF0000FF", "FFF3F1F6"))
         review_root = ET.fromstring(parts[review_path])
