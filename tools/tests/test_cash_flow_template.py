@@ -129,6 +129,13 @@ def excel_serial(value):
     return str((value - EXCEL_EPOCH).days)
 
 
+def markdown_section(markdown, heading, next_heading=None):
+    start_marker = f"## {heading}\n"
+    start = markdown.index(start_marker) + len(start_marker)
+    end = len(markdown) if next_heading is None else markdown.index(f"## {next_heading}\n", start)
+    return markdown[start:end]
+
+
 def style_for_cell(parts, path, address):
     sheet = ET.fromstring(parts[path])
     cell = sheet.find(f".//m:c[@r='{address}']", NS)
@@ -592,24 +599,60 @@ class CashFlowTemplateContractTests(unittest.TestCase):
         """The repository documentation change is the production change that makes this pass."""
         template_readme = TEMPLATE_README.read_text(encoding="utf-8")
         main_readme = MAIN_README.read_text(encoding="utf-8")
+        workflow = markdown_section(template_readme, "Weekly workflow", "Scenario behaviour")
+        scenario = markdown_section(template_readme, "Scenario behaviour", "Checks and limitations")
+        limitations = markdown_section(template_readme, "Checks and limitations")
+        getting_started = markdown_section(main_readme, "Getting started", "Australian conventions")
+        repository_layout = markdown_section(main_readme, "Repository layout", "Checks")
 
         self.assertIn("13-week-cash-flow-forecast.xlsx", template_readme)
         self.assertIn("Excel 2024 and later", template_readme)
         self.assertIn("illustrative data", template_readme.lower())
-        self.assertIn("## Weekly workflow", template_readme)
-        for number in range(1, 6):
-            self.assertIn(f"{number}. **", template_readme)
-        for step in ("replace", "assumptions", "weekly", "dashboard", "checks", "archive"):
-            self.assertIn(step, template_readme.lower())
-        for scenario in ("Base", "Upside", "Downside"):
-            self.assertIn(scenario, template_readme)
-        self.assertIn("scenario receipt", template_readme.lower())
-        self.assertIn("scenario variable-payment", template_readme.lower())
-        self.assertIn("Checks & Sources", template_readme)
-        self.assertIn("not tax advice", template_readme.lower())
-        self.assertIn("statutory", template_readme.lower())
-        self.assertRegex(main_readme, r"`templates/`.*13-week-cash-flow-forecast\.xlsx")
-        self.assertIn("templates/README.md", main_readme)
+        self.assertEqual(len(re.findall(r"(?m)^\d+\. \*\*[^*]+\*\*", workflow)), 5)
+        for action in (
+            "replace the blue input cells",
+            "enter the business name, forecast start date, as-at date, opening cash and minimum cash buffer",
+            "select `Base`, `Upside` or `Downside`",
+            "refresh the forecast inputs and enter available actual closing cash",
+            "use `Dashboard`",
+            "use `Weekly Review`",
+            "review `Checks & Sources`",
+            "save the reviewed file as the period's archive",
+            "copy it for the next cycle",
+        ):
+            self.assertIn(action.lower(), workflow.lower())
+
+        self.assertIn("Scenario factors apply only to weeks labelled `Forecast`.", scenario)
+        self.assertIn("Weeks labelled `Actual` remain unchanged.", scenario)
+        for scenario_name, receipt_factor, payment_factor in (
+            ("Base", "100%", "100%"),
+            ("Upside", "108%", "98%"),
+            ("Downside", "85%", "105%"),
+        ):
+            self.assertIn(
+                f"`{scenario_name}` uses {receipt_factor} receipts and {payment_factor} selected variable payments.",
+                scenario,
+            )
+        self.assertIn(
+            "The scenario receipt adjustment is calculated from customer receipts, overdue receipts and cash / EFTPOS sales.",
+            scenario,
+        )
+        self.assertIn(
+            "The scenario variable-payment adjustment is calculated from suppliers and inventory, marketing, freight / vehicles / travel and other operating payments.",
+            scenario,
+        )
+        for excluded in (
+            "GST refunds or credits, other operating receipts, asset sale proceeds, equity or owner funding, or loan proceeds",
+            "wages, PAYG withholding, superannuation, payroll tax",
+            "GST / BAS payments, income-tax instalments",
+            "FBT, interest, loan principal, capital expenditure or dividends",
+        ):
+            self.assertIn(excluded, scenario)
+
+        self.assertIn("not tax advice", limitations.lower())
+        self.assertIn("statutory", limitations.lower())
+        self.assertIn("[Ozzit 13-week cash-flow forecast template](templates/README.md)", getting_started)
+        self.assertIn("| `templates/` | `13-week-cash-flow-forecast.xlsx` and its user guide |", repository_layout)
 
 
 if __name__ == "__main__":

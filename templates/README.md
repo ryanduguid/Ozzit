@@ -14,7 +14,7 @@ The workbook opens with illustrative data from an Australian business so that th
 
 ## Scenario behaviour
 
-The selected scenario in `Assumptions` applies across the forecast. `Base` uses 100% receipts and 100% selected variable payments. `Upside` uses 108% receipts and 98% selected variable payments. `Downside` uses 85% receipts and 105% selected variable payments.
+Scenario factors apply only to weeks labelled `Forecast`. Weeks labelled `Actual` remain unchanged. The selected scenario is set in `Assumptions`. `Base` uses 100% receipts and 100% selected variable payments. `Upside` uses 108% receipts and 98% selected variable payments. `Downside` uses 85% receipts and 105% selected variable payments.
 
 The scenario receipt adjustment is calculated from customer receipts, overdue receipts and cash / EFTPOS sales. It does not change GST refunds or credits, other operating receipts, asset sale proceeds, equity or owner funding, or loan proceeds. The scenario variable-payment adjustment is calculated from suppliers and inventory, marketing, freight / vehicles / travel and other operating payments. It does not change wages, PAYG withholding, superannuation, payroll tax, rent, utilities, insurance, software, professional services, GST / BAS payments, income-tax instalments, FBT, interest, loan principal, capital expenditure or dividends.
 
