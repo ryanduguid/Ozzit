@@ -112,8 +112,20 @@ def style_for_cell(parts, path, address):
 
 def row_bounds(reference):
     endpoints = reference.split(":")
-    rows = [int("".join(character for character in endpoint if character.isdigit())) for endpoint in endpoints]
+    rows = [cell_row(endpoint) for endpoint in endpoints]
     return min(rows), max(rows)
+
+
+def cell_row(reference):
+    return int("".join(character for character in reference if character.isdigit()))
+
+
+def column_number(reference):
+    value = 0
+    for character in reference:
+        if character.isalpha():
+            value = value * 26 + ord(character.upper()) - ord("A") + 1
+    return value
 
 
 class CashFlowTemplateContractTests(unittest.TestCase):
@@ -137,6 +149,15 @@ class CashFlowTemplateContractTests(unittest.TestCase):
         self.assertEqual(forecast_values.get("O5"), "13-week total / terminal")
         self.assertEqual(forecast_values.get("O6"), "Week 13 value")
         self.assertEqual(forecast_values.get("O7"), "")
+        forecast_root = ET.fromstring(parts[sheet_map["13-Week Forecast"]])
+        header_cells_after_terminal = [
+            cell.attrib["r"]
+            for cell in forecast_root.findall(".//m:c", NS)
+            if cell_row(cell.attrib["r"]) in {5, 6, 7}
+            and column_number(cell.attrib["r"]) > 15
+            and any(cell.find(path, NS) is not None for path in ("m:v", "m:f", "m:is"))
+        ]
+        self.assertEqual(header_cells_after_terminal, [])
 
         start_here_values = values_by_address(parts, sheet_map["Start Here"])
         self.assertEqual(start_here_values.get("A1"), "Ozzit | 13-Week Cash-Flow Forecast")
@@ -175,9 +196,14 @@ class CashFlowTemplateContractTests(unittest.TestCase):
 
         workbook = ET.fromstring(parts["xl/workbook.xml"])
         defined_names = {
-            item.attrib["name"] for item in workbook.findall("m:definedNames/m:definedName", NS)
+            item.attrib["name"]: item.text
+            for item in workbook.findall("m:definedNames/m:definedName", NS)
         }
-        self.assertTrue({"CashFlowSelectedScenario", "CashFlowScenarioList"} <= defined_names)
+        self.assertEqual(defined_names, {
+            "CashFlowScenario": "'Assumptions'!$B$12",
+            "CashFlowSelectedScenario": "'Assumptions'!$B$12",
+            "CashFlowScenarioList": "'Assumptions'!$B$15:$B$17",
+        })
         assumptions_values = values_by_address(parts, sheet_map["Assumptions"])
         self.assertEqual(
             {address: assumptions_values.get(address) for address in ("B5", "B6", "B7", "B8", "B9", "B10", "B11", "B12")},
@@ -197,7 +223,11 @@ class CashFlowTemplateContractTests(unittest.TestCase):
         self.assertEqual([assumptions_values.get(f"D{row}") for row in range(15, 18)], ["1", "0.98", "1.05"])
         self.assertEqual(assumptions_values.get("A20"), "Data-quality notes")
         self.assertIn("Monday forecast start", assumptions_values.get("A21", ""))
-        self.assertEqual(style_for_cell(parts, sheet_map["Assumptions"], "B10"), ("FF0000FF", "FFB1AFAD"))
+        input_style = style_for_cell(parts, sheet_map["Assumptions"], "B10")
+        link_style = style_for_cell(parts, sheet_map["Start Here"], "D7")
+        self.assertEqual(input_style, ("FF0000FF", "FFB1AFAD"))
+        self.assertEqual(link_style, ("FF008000", None))
+        self.assertNotEqual(link_style, input_style)
 
         assumptions_root = ET.fromstring(parts[sheet_map["Assumptions"]])
         validations = assumptions_root.findall("m:dataValidations/m:dataValidation", NS)
@@ -213,7 +243,6 @@ class CashFlowTemplateContractTests(unittest.TestCase):
             self.assertIsNotNone(margins, sheet_name)
             self.assertTrue(all(float(margins.attrib[key]) > 0 for key in ("left", "right", "top", "bottom")), sheet_name)
 
-        forecast_root = ET.fromstring(parts[sheet_map["13-Week Forecast"]])
         calculation_merges = [
             merge.attrib["ref"]
             for merge in forecast_root.findall("m:mergeCells/m:mergeCell", NS)
