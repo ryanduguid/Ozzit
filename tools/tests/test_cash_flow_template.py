@@ -91,10 +91,10 @@ PROHIBITED_RELATIONSHIP_MARKERS = (
     "/attachedtemplate", "/externallink",
 )
 FORMULA_ERROR_COUNT_FORMULA = (
-    "SUMPRODUCT(--ISERROR('Assumptions'!$B$5:$E$19))"
+    "SUMPRODUCT(--ISERROR('Assumptions'!$B$5:$E$24))"
     "+SUMPRODUCT(--ISERROR('13-Week Forecast'!$B$5:$O$51))"
-    "+SUMPRODUCT(--ISERROR('Weekly Review'!$A$4:$N$18))"
-    "+SUMPRODUCT(--ISERROR('Dashboard'!$A$6:$J$30))"
+    "+SUMPRODUCT(--ISERROR('Weekly Review'!$A$4:$O$18))"
+    "+SUMPRODUCT(--ISERROR('Dashboard'!$A$6:$J$36))"
     "+SUMPRODUCT(--ISERROR('Dashboard'!$P$4:$S$49))"
 )
 
@@ -516,26 +516,26 @@ class CashFlowTemplateContractTests(unittest.TestCase):
         self.assertIn("ILLUSTRATIVE DATA", start_here_values.get("A4", ""))
         self.assertEqual(start_here_values.get("D6"), "Workbook sheets")
         self.assertEqual(start_here_values.get("A6"), "Version")
-        self.assertEqual(start_here_values.get("B6"), "Release 1.1")
+        self.assertEqual(start_here_values.get("B6"), "Release 1.2")
         self.assertEqual(start_here_values.get("A7"), "Prepared date")
-        self.assertEqual(start_here_values.get("B7"), excel_serial(date(2026, 8, 26)))
-        self.assertEqual(start_here_values.get("A12"), "Five-step weekly update process")
-        self.assertEqual([start_here_values.get(f"A{row}") for row in range(13, 18)], ["1", "2", "3", "4", "5"])
-        self.assertEqual([start_here_values.get(f"B{row}") for row in range(13, 18)], [
+        self.assertEqual(start_here_values.get("B7"), excel_serial(date(2026, 8, 27)))
+        self.assertEqual(start_here_values.get("A16"), "Five-step weekly update process")
+        self.assertEqual([start_here_values.get(f"A{row}") for row in range(17, 22)], ["1", "2", "3", "4", "5"])
+        self.assertEqual([start_here_values.get(f"B{row}") for row in range(17, 22)], [
             "Update the Assumptions control panel and selected scenario.",
             "Replace blue cash-receipt and cash-payment inputs with the latest weekly view.",
             "Review closing cash, headroom and liquidity status in the 13-Week Forecast.",
             "Snapshot the original forecast as values, then record actuals and owner commentary in Weekly Review.",
             "Resolve any control failure in Checks & Sources before management review.",
         ])
-        self.assertEqual(start_here_values.get("A19"), "Colour legend")
-        self.assertEqual([start_here_values.get(f"A{row}") for row in range(20, 25)], [
+        self.assertEqual(start_here_values.get("A23"), "Colour legend")
+        self.assertEqual([start_here_values.get(f"A{row}") for row in range(24, 29)], [
             "Blue text / lavender fill", "Black text", "Green text", "Red text / pale-red fill", "Dark green / pale-green fill",
         ])
-        self.assertEqual([start_here_values.get(f"B{row}") for row in range(20, 25)], [
+        self.assertEqual([start_here_values.get(f"B{row}") for row in range(24, 29)], [
             "Editable user input", "Formula or calculation", "Cross-sheet link", "Warning or exception", "Passing check",
         ])
-        self.assertIn("not tax, payroll, legal or financial advice", start_here_values.get("A27", ""))
+        self.assertIn("not tax, payroll, legal or financial advice", start_here_values.get("A31", ""))
         for row, sheet_name in enumerate(WORKING_SHEETS, start=7):
             self.assertEqual(start_here_values.get(f"D{row}"), sheet_name)
 
@@ -568,8 +568,8 @@ class CashFlowTemplateContractTests(unittest.TestCase):
         self.assertEqual([assumptions_values.get(f"D{row}") for row in range(15, 18)], ["1", "0.98", "1.05"])
         self.assertEqual(assumptions_values.get("A19"), "Liquidity action lead time (weeks)")
         self.assertEqual(assumptions_values.get("B19"), "2")
-        self.assertEqual(assumptions_values.get("A20"), "Data-quality notes")
-        self.assertIn("Monday forecast start", assumptions_values.get("A21", ""))
+        self.assertEqual(assumptions_values.get("A26"), "Data-quality notes")
+        self.assertIn("Monday forecast start", assumptions_values.get("A27", ""))
         input_style = style_for_cell(parts, sheet_map["Assumptions"], "B10")
         link_style = style_for_cell(parts, sheet_map["Start Here"], "D7")
         self.assertEqual(input_style, ("FF0000FF", "FFB1AFAD"))
@@ -910,6 +910,90 @@ class CashFlowTemplateContractTests(unittest.TestCase):
         self.assertEqual(checks_status_styles['E4="ACTION REQUIRED"'], ("FFC00000", "FFFCE4D6"))
         self.assertEqual(checks_status_styles['E4="OK"'], ("FF008000", "FFE2F0D9"))
         self.assertEqual(font_and_number_format(parts, checks_path, "B11")[1], AUD_FORMAT)
+
+    def test_v12_forecast_accuracy_governance_contract(self):
+        """Removing the V1.2 management controls must break this contract."""
+        parts = workbook_parts()
+        sheet_map = dict(sheet_paths(parts))
+
+        start_path = sheet_map["Start Here"]
+        start_values = values_by_address(parts, start_path)
+        start_formulas = formulas_by_address(parts, start_path)
+        self.assertEqual(start_values.get("B6"), "Release 1.2")
+        self.assertEqual(
+            [start_values.get(f"A{row}") for row in range(8, 12)],
+            ["Prepared by", "Reviewed by", "Forecast owner", "Next review date"],
+        )
+        self.assertEqual(
+            {address: start_formulas.get(address) for address in ("B8", "B9", "B10", "B11", "B14")},
+            {
+                "B8": "'Assumptions'!$B$21",
+                "B9": "'Assumptions'!$B$22",
+                "B10": "'Assumptions'!$B$23",
+                "B11": "'Assumptions'!$B$24",
+                "B14": "'Assumptions'!$B$12",
+            },
+        )
+        self.assertEqual(font_and_number_format(parts, start_path, "B11")[1], DATE_FORMAT)
+
+        assumptions_path = sheet_map["Assumptions"]
+        assumptions_values = values_by_address(parts, assumptions_path)
+        self.assertEqual(assumptions_values.get("A20"), "Forecast governance")
+        self.assertEqual(
+            [assumptions_values.get(f"A{row}") for row in range(21, 25)],
+            ["Prepared by", "Reviewed by", "Forecast owner", "Next review date"],
+        )
+        self.assertEqual(
+            [assumptions_values.get(f"B{row}") for row in range(21, 25)],
+            ["Finance Manager", "CFO / Business Owner", "Finance Manager", excel_serial(date(2026, 9, 13))],
+        )
+        for address in ("B21", "B22", "B23", "B24"):
+            self.assertEqual(style_for_cell(parts, assumptions_path, address), ("FF0000FF", "FFF3F1F6"))
+        self.assertEqual(font_and_number_format(parts, assumptions_path, "B24")[1], DATE_FORMAT)
+
+        review_path = sheet_map["Weekly Review"]
+        review_values = values_by_address(parts, review_path)
+        review_formulas = formulas_by_address(parts, review_path)
+        self.assertEqual(review_values.get("O5"), "Review status")
+        for row in range(6, 19):
+            expected = f'IF(COUNTA(D{row},H{row},L{row},N{row})=0,"NOT STARTED",IF(AND(A{row}<>"",B{row}<>"",C{row}<>"",D{row}<>"",G{row}<>"",H{row}<>"",K{row}<>"",L{row}<>"",N{row}<>""),"COMPLETE","INCOMPLETE"))'
+            self.assertEqual(review_formulas.get(f"O{row}"), expected)
+            self.assertEqual(review_values.get(f"O{row}"), "NOT STARTED")
+        review_status_styles = conditional_rule_styles(parts, review_path)
+        self.assertEqual(review_status_styles['O6="COMPLETE"'], ("FF008000", "FFE2F0D9"))
+        self.assertEqual(review_status_styles['O6="INCOMPLETE"'], ("FFC00000", "FFFCE4D6"))
+
+        dashboard_path = sheet_map["Dashboard"]
+        dashboard_values = values_by_address(parts, dashboard_path)
+        dashboard_formulas = formulas_by_address(parts, dashboard_path)
+        self.assertEqual(
+            [dashboard_values.get(f"{column}32") for column in "ABCDE"],
+            ["Weeks actualised", "Receipt variance %", "Payment variance %", "Closing-cash bias", "Review completeness"],
+        )
+        expected_dashboard_formulas = {
+            "A33": 'COUNTIFS(\'Weekly Review\'!$D$6:$D$18,"<>",\'Weekly Review\'!$H$6:$H$18,"<>",\'Weekly Review\'!$L$6:$L$18,"<>")',
+            "B33": 'IF(A33=0,"",IF(SUMIF(\'Weekly Review\'!$D$6:$D$18,"<>",\'Weekly Review\'!$C$6:$C$18)=0,"",SUM(\'Weekly Review\'!$E$6:$E$18)/SUMIF(\'Weekly Review\'!$D$6:$D$18,"<>",\'Weekly Review\'!$C$6:$C$18)))',
+            "C33": 'IF(A33=0,"",IF(SUMIF(\'Weekly Review\'!$H$6:$H$18,"<>",\'Weekly Review\'!$G$6:$G$18)=0,"",SUM(\'Weekly Review\'!$I$6:$I$18)/SUMIF(\'Weekly Review\'!$H$6:$H$18,"<>",\'Weekly Review\'!$G$6:$G$18)))',
+            "D33": 'IF(A33=0,"",SUM(\'Weekly Review\'!$M$6:$M$18)/A33)',
+            "E33": 'IF(COUNTIF(\'Weekly Review\'!$O$6:$O$18,"INCOMPLETE")>0,"INCOMPLETE",IF(COUNTIF(\'Weekly Review\'!$O$6:$O$18,"COMPLETE")>0,"COMPLETE","NOT STARTED"))',
+        }
+        self.assertEqual(
+            {address: dashboard_formulas.get(address) for address in expected_dashboard_formulas},
+            expected_dashboard_formulas,
+        )
+        self.assertEqual(dashboard_values.get("A33"), "0")
+        for address in ("B33", "C33", "D33"):
+            self.assertIsNone(cached_value(parts, dashboard_path, address))
+        self.assertEqual(dashboard_values.get("E33"), "NOT STARTED")
+        self.assertEqual(font_and_number_format(parts, dashboard_path, "B33")[1], PERCENT_FORMAT)
+        self.assertEqual(font_and_number_format(parts, dashboard_path, "D33")[1], AUD_FORMAT)
+        dashboard_status_styles = conditional_rule_styles(parts, dashboard_path)
+        self.assertEqual(dashboard_status_styles['E33="COMPLETE"'], ("FF008000", "FFE2F0D9"))
+        self.assertEqual(dashboard_status_styles['E33="INCOMPLETE"'], ("FFC00000", "FFFCE4D6"))
+
+        checks_path = sheet_map["Checks & Sources"]
+        checks_formulas = formulas_by_address(parts, checks_path)
+        self.assertEqual(checks_formulas.get("B16"), FORMULA_ERROR_COUNT_FORMULA)
 
     def test_template_documentation_contract(self):
         """The repository documentation change is the production change that makes this pass."""
