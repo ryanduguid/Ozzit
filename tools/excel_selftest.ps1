@@ -398,10 +398,10 @@ $lrem = "oz.LeaseRemeasure$L"
 Near 'Lease liability matches NPV in arrears' "$lli({100,100,100},0.05)" 'NPV(0.05,100,100,100)'
 Near 'Lease liability uneven payments match NPV' `
      "$lli({120,100,80,60},0.0075)" 'NPV(0.0075,120,100,80,60)'
-# A payment in advance is discounted one period less, so the first one is not discounted.
-Near 'Lease liability in advance' "$lli({100,100,100},0.05,TRUE)" '100+NPV(0.05,100,100)'
-Near 'Lease liability in advance exceeds arrears by one period' `
-     "$lli({100,100,100},0.05,TRUE)-$lli({100,100,100},0.05)*1.05" '0'
+# The first payment in advance is paid at commencement and is not part of the liability.
+Near 'Lease liability in advance' "$lli({100,100,100},0.05,TRUE)" 'NPV(0.05,100,100)'
+Near 'Lease liability with only a commencement payment is nil' `
+     "$lli({100},0.05,TRUE)" '0'
 Near 'Lease liability reads a column the same as a row' `
      "$lli({100;100;100},0.05)-$lli({100,100,100},0.05)" '0'
 Near 'Lease liability at a nil rate is the undiscounted total' "$lli({100,100,100},0)" '300'
@@ -414,10 +414,11 @@ foreach ($rate in '0', '0.0025', '0.05', '0.15') {
         foreach ($adv in 'FALSE', 'TRUE') {
             $p = "SEQUENCE(,$n,100,0)"
             $s = "$lsch($p,$rate,$adv)"
+            $columns = if ($adv -eq 'TRUE') { [Math]::Max(1, [int]$n - 1) } else { [int]$n }
             Near "Lease schedule closes to nil, rate $rate, $n periods, advance $adv" `
-                 "INDEX($s,4,$n)" '0'
+                 "INDEX($s,4,$columns)" '0'
             Near "Lease schedule shape, rate $rate, $n periods, advance $adv" `
-                 "ROWS($s)*1000+COLUMNS($s)" "4000+$n"
+                 "ROWS($s)*1000+COLUMNS($s)" "4000+$columns"
             # Closing = opening less payment plus interest, in every period, either timing.
             Near "Lease schedule reconciles each period, rate $rate, $n periods, advance $adv" `
                  ("SUMPRODUCT(ABS(CHOOSEROWS($s,4)-CHOOSEROWS($s,1)" +
@@ -430,12 +431,13 @@ foreach ($rate in '0', '0.0025', '0.05', '0.15') {
 # Each opening balance is the closing balance before it. One period has none to compare.
 foreach ($adv in 'FALSE', 'TRUE') {
     $s = "$lsch(SEQUENCE(,6,100,0),0.04,$adv)"
+    $payments = if ($adv -eq 'TRUE') { 'DROP(SEQUENCE(,6,100,0),,1)' } else { 'SEQUENCE(,6,100,0)' }
     Near "Lease schedule rolls forward, advance $adv" `
          "SUMPRODUCT(ABS(DROP(CHOOSEROWS($s,1),,1)-DROP(CHOOSEROWS($s,4),,-1)))" '0'
     Near "Lease schedule opens on the liability, advance $adv" `
          "INDEX($s,1,1)-$lli(SEQUENCE(,6,100,0),0.04,$adv)" '0'
     Near "Lease schedule echoes its payments, advance $adv" `
-         "SUMPRODUCT(ABS(CHOOSEROWS($s,2)-SEQUENCE(,6,100,0)))" '0'
+         "SUMPRODUCT(ABS(CHOOSEROWS($s,2)-$payments))" '0'
 }
 # Total interest is the cash paid less what was recognised as a liability.
 Near 'Lease schedule interest totals payments less liability' `
@@ -487,7 +489,7 @@ foreach ($rou0 in '0', '5', '50', '400') {
           "-($rou0+INDEX($lrem({10,10},0.05,185.94,$rou0),2,1))") '0'
 }
 Near 'Remeasure honours payments in advance' `
-     "INDEX($lrem({110,110},0.05,185.94,181.55,TRUE),1,1)-$lli({110,110},0.05,TRUE)" '0'
+     "INDEX($lrem({110,110},0.05,185.94,181.55,TRUE),1,1)-NPV(0.05,110)" '0'
 Same 'Remeasure: help with no args' "INDEX($lrem(),1,1)" 'FUNCTION:'
 
 $xl = $null; $wb = $null; $tmp = $null; $exit = 0

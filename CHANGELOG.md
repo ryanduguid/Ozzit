@@ -10,12 +10,11 @@ added, and all 20,228 cached values are the ones v3.1.0 shipped.
 
 - **`oz.LeaseLiabilityλ(Payments, Rate, [InAdvance])`.** Present value of the lease
   payments not paid at the commencement date, AASB 16 paragraph 26. `Rate` is the rate
-  per period. `InAdvance` discounts each payment one period less, which is the timing
-  most property leases actually use and the one that is easiest to get wrong.
+  per period. With `InAdvance`, the first supplied payment is made at the measurement
+  date and excluded from the liability; the remaining payments start one period later.
 - **`oz.LeaseScheduleλ(Payments, Rate, [InAdvance])`.** Unwinds that liability into
-  opening, payment, interest and closing rows. Interest accrues on the opening balance
-  in arrears and on the balance after the payment in advance, so closing is opening
-  less payment plus interest either way.
+  opening, payment, interest and closing rows. The payment row omits an in-advance
+  measurement-date payment, then each remaining payment follows a period of interest.
 - **`oz.ROUScheduleλ(Cost, Periods)`.** Straight-line right-of-use asset, returning
   opening, depreciation and closing rows. It takes a cost rather than assembling one,
   because paragraph 24 adds four components a schedule cannot infer.
