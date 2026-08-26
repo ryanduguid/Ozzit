@@ -62,6 +62,8 @@ utilities copies. The five About tables take words instead: `oz.AboutFinancialλ
 4. Grey-shaded cells on each worksheet are inputs. Change them and watch the function respond.
 5. To use the functions in your own workbook, copy a green-shaded cell across (Excel brings the named LAMBDA with it), or import the plain-text source from `src/` with the Advanced Formula Environment in the Excel Labs add-in.
 
+   The repository also includes an [Ozzit 13-week cash-flow forecast template](templates/README.md) for Australian FP&A planning.
+
    Importing `src/` that way recreates the functions under the module container's own
    name, so `Dates.txt` produces `Dates.CountDOWλ` rather than `oz.CountDOWλ`: the
    Advanced Formula Environment takes the prefix from the container, and one flat
@@ -176,6 +178,7 @@ Each module has its own tab colour, gridlines are hidden, and every sheet opens 
 | Path | Contents |
 |---|---|
 | `ozzit.xlsx` | The library and its documentation workbook |
+| `templates/` | `13-week-cash-flow-forecast.xlsx` and its user guide |
 | `src/*.txt` | Plain-text LAMBDA source per group (Dates, Essentials, Financial, Ratios, Utilities, Debt), diffable and importable |
 | `ATTRIBUTION.md` | Provenance and licence scope |
 | `functions.csv` | Machine-readable index of every function |
