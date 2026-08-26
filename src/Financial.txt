@@ -2231,13 +2231,13 @@ LeaseLiabilityλ = LAMBDA(
     //  Help
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →LeaseLiabilityλ(Payments, Rate, [InAdvance])¶" &
-                            "DESCRIPTION:   →Present value of the lease payments that are not paid at the commencement date.¶NOTES!         →AASB 16 paragraph 26 measures the lease liability at the present value¶               →of the lease payments not paid at the commencement date, discounted at¶               →the interest rate implicit in the lease where that rate can be readily¶               →determined and at the lessee's incremental borrowing rate where it¶               →cannot. Rate is the rate per period, so divide an annual rate by the¶               →number of periods in a year. Include an amount expected to be payable¶               →under a residual value guarantee, or the exercise price of a purchase¶               →option, in the final period where paragraph 27 brings it into the lease¶               →payments. Derive an implicit rate with IRRλ() over the same cash flows.¶               →Arithmetic only: this does not determine the lease term, decide what is¶               →a lease payment, or decide whether the arrangement contains a lease.¶               →AASB 16 compilation checked 24 August 2026.¶" &
+                            "DESCRIPTION:   →Present value of the lease payments that are not paid at the commencement date.¶NOTES!         →AASB 16 paragraph 26 measures the lease liability at the present value¶               →of the lease payments not paid at the commencement date, discounted at¶               →the interest rate implicit in the lease where that rate can be readily¶               →determined and at the lessee's incremental borrowing rate where it¶               →cannot. When InAdvance is TRUE, the first supplied payment is paid at¶               →the measurement date and excluded from the liability. Add a payment¶               →made at or before commencement to the right-of-use asset cost instead.¶               →Rate is the rate per period, so divide an annual rate by the number of¶               →periods in a year. Include an amount expected to be payable under a¶               →residual value guarantee, or the exercise price of a purchase option,¶               →in the final period where paragraph 27 brings it into the lease¶               →payments. Derive an implicit rate with IRRλ() over the same cash flows.¶               →Arithmetic only: this does not determine the lease term, decide what is¶               →a lease payment, or decide whether the arrangement contains a lease.¶               →AASB 16 compilation checked 24 August 2026.¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
                             "VERSION:       →24 Aug 2026¶" &
                             "PARAMETERS:    →¶" &
-                            "Payments       →(Required) One row or one column of lease payments, one per period, entered positive.¶" &
+                            "Payments       →(Required) One row or one column of lease payments, one per period, entered positive. Include the measurement-date payment first when InAdvance is TRUE.¶" &
                             "Rate           →(Required) Discount rate per period, not per year.¶" &
-                            "InAdvance      →(Optional: Default = FALSE) TRUE where each payment falls at the start of its period.¶" &
+                            "InAdvance      →(Optional: Default = FALSE) TRUE when the first supplied payment is paid at the measurement date.¶" &
                             "EXAMPLES:      →¶" &
                             "→Formula (oz is assumed to be the module's name)¶" &
                             "→=oz.LeaseLiabilityλ({100,100,100}, 0.05)¶" &
@@ -2251,9 +2251,13 @@ LeaseLiabilityλ = LAMBDA(
         Advance?,       IF(OR(ISOMITTED(InAdvance), TRIM(InAdvance & "")=""), FALSE, InAdvance),
     //  One lease at a time, laid along a row the way the timeline helpers expect
         Flat,           IF(ROWS(Payments) = 1, Payments, TRANSPOSE(Payments)),
-    //  A payment in advance is discounted one period less than the same payment in arrears
-        Exponents,      SEQUENCE(1, COLUMNS(Flat)) - IF(Advance?, 1, 0),
-        Result,         SUM(Flat / (1 + Rate) ^ Exponents),
+        Count,          COLUMNS(Flat),
+    //  The first in-advance payment is made at the measurement date, not left unpaid
+        LiabilityPayments, IF(AND(Advance?, Count > 1),
+                                DROP(Flat, , 1),
+                                IF(Advance?, 0, Flat)),
+        Exponents,      SEQUENCE(1, COLUMNS(LiabilityPayments)),
+        Result,         SUM(LiabilityPayments / (1 + Rate) ^ Exponents),
     //  Return Result or Help
         CHOOSE( Help? + 1, Result, Help)
     )
@@ -2272,13 +2276,13 @@ LeaseScheduleλ = LAMBDA(
     //  Help
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →LeaseScheduleλ(Payments, Rate, [InAdvance])¶" &
-                            "DESCRIPTION:   →Unwinds an AASB 16 lease liability over its term.¶NOTES!         →Returns four rows: opening liability, payment, interest, closing¶               →liability. Interest accrues on the opening balance in arrears and on¶               →the balance after the payment in advance, so closing is opening less¶               →payment plus interest either way and the last closing balance is nil.¶               →The opening balance is LeaseLiabilityλ() on the same arguments. Pair¶               →this with ROUScheduleλ() for the asset that sits opposite it: the two¶               →together give the front-loaded expense profile AASB 16 produces.¶               →Arithmetic only, on the payments and rate you supply.¶" &
+                            "DESCRIPTION:   →Unwinds an AASB 16 lease liability over its term.¶NOTES!         →Returns four rows: opening liability, payment, interest, closing¶               →liability. When InAdvance is TRUE, the first supplied payment is paid¶               →at the measurement date and is excluded from both the opening liability¶               →and the payment row. Each remaining payment follows one period of¶               →interest, so closing is opening plus interest less payment and the last¶               →closing balance is nil. The result has one fewer column for payments in¶               →advance; a sole measurement-date payment returns one zero column. The¶               →opening balance is LeaseLiabilityλ() on the same arguments. Pair this¶               →with ROUScheduleλ() for the asset that sits opposite it: the two¶               →together give the front-loaded expense profile AASB 16 produces.¶               →Arithmetic only, on the payments and rate you supply.¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
                             "VERSION:       →24 Aug 2026¶" &
                             "PARAMETERS:    →¶" &
-                            "Payments       →(Required) One row or one column of lease payments, one per period, entered positive.¶" &
+                            "Payments       →(Required) One row or one column of lease payments, one per period, entered positive. Include the measurement-date payment first when InAdvance is TRUE.¶" &
                             "Rate           →(Required) Discount rate per period, not per year.¶" &
-                            "InAdvance      →(Optional: Default = FALSE) TRUE where each payment falls at the start of its period.¶" &
+                            "InAdvance      →(Optional: Default = FALSE) TRUE when the first supplied payment is paid at the measurement date.¶" &
                             "EXAMPLES:      →¶" &
                             "→Formula (oz is assumed to be the module's name)¶" &
                             "→=oz.LeaseScheduleλ({100,100,100}, 0.05)¶" &
@@ -2295,16 +2299,19 @@ LeaseScheduleλ = LAMBDA(
         Advance?,       IF(OR(ISOMITTED(InAdvance), TRIM(InAdvance & "")=""), FALSE, InAdvance),
     //  One lease at a time, laid along a row the way the timeline helpers expect
         Flat,           IF(ROWS(Payments) = 1, Payments, TRANSPOSE(Payments)),
-        Count,          COLUMNS(Flat),
-        Shift,          IF(Advance?, 1, 0),
+        InputCount,     COLUMNS(Flat),
+        LiabilityPayments, IF(AND(Advance?, InputCount > 1),
+                                DROP(Flat, , 1),
+                                IF(Advance?, 0, Flat)),
+        Count,          COLUMNS(LiabilityPayments),
         Opening1,       LeaseLiabilityλ(Flat, Rate, Advance?),
-    //  A payment in advance leaves before interest accrues; one in arrears leaves after
-        Closings,       SCAN(Opening1, Flat, LAMBDA(Balance, Payment,
-                            (Balance - Shift * Payment) * (1 + Rate) - (1 - Shift) * Payment)),
+    //  Every payment left in the liability vector follows one period of interest
+        Closings,       SCAN(Opening1, LiabilityPayments, LAMBDA(Balance, Payment,
+                            Balance * (1 + Rate) - Payment)),
     //  Each opening is the closing before it. A one-period lease has no closing to shift.
         Openings,       IF(Count = 1, Opening1, HSTACK(Opening1, DROP(Closings, , -1))),
-        Interest,       (Openings - Shift * Flat) * Rate,
-        Result,         VSTACK(Openings, Flat, Interest, Closings),
+        Interest,       Openings * Rate,
+        Result,         VSTACK(Openings, LiabilityPayments, Interest, Closings),
     //  Return Result or Help
         CHOOSE( Help? + 1, Result, Help)
     )
@@ -2325,15 +2332,15 @@ LeaseRemeasureλ = LAMBDA(
     //  Help
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →LeaseRemeasureλ(RevisedPayments, Rate, CarryingLiability, CarryingROU, [InAdvance])¶" &
-                            "DESCRIPTION:   →Remeasures a lease liability for revised payments and adjusts the asset.¶NOTES!         →Returns four rows: revised lease liability, adjustment, revised¶               →right-of-use asset, amount recognised in profit or loss. AASB 16¶               →paragraph 42(b) remeasures the liability where future payments change¶               →because an index or a rate used to determine them has changed, and¶               →only when the cash flows change. Paragraph 43 keeps the discount rate¶               →unchanged for that revision, and uses a revised rate only where the¶               →change arises from a floating interest rate, so pass the original rate¶               →unless it is the rate itself that moved. Paragraph 39 takes the¶               →remeasurement to the right-of-use asset, and where that asset is¶               →reduced to nil any further reduction goes to profit or loss: row four¶               →carries that remainder, negative, because it is a credit. Arithmetic¶               →only. AASB 16 compilation checked 24 August 2026.¶" &
+                            "DESCRIPTION:   →Remeasures a lease liability for revised payments and adjusts the asset.¶NOTES!         →Returns four rows: revised lease liability, adjustment, revised¶               →right-of-use asset, amount recognised in profit or loss. AASB 16¶               →paragraph 42(b) remeasures the liability where future payments change¶               →because an index or a rate used to determine them has changed, and¶               →only when the cash flows change. Paragraph 43 keeps the discount rate¶               →unchanged for that revision, and uses a revised rate only where the¶               →change arises from a floating interest rate, so pass the original rate¶               →unless it is the rate itself that moved. When InAdvance is TRUE, the¶               →first revised payment is paid at the remeasurement date and excluded¶               →from the revised liability. Paragraph 39 takes the remeasurement to the¶               →right-of-use asset, and where that asset is reduced to nil any further¶               →reduction goes to profit or loss: row four carries that remainder,¶               →negative, because it is a credit. Arithmetic only.¶               →AASB 16 compilation checked 24 August 2026.¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
                             "VERSION:       →24 Aug 2026¶" &
                             "PARAMETERS:    →¶" &
-                            "RevisedPayments→(Required) Revised lease payments for the remaining term, one per period, positive.¶" &
+                            "RevisedPayments→(Required) Revised lease payments for the remaining term, one per period, positive. Include a payment made at the remeasurement date first when InAdvance is TRUE.¶" &
                             "Rate           →(Required) Discount rate per period. Unchanged, unless a floating rate moved.¶" &
                             "CarryingLiability→(Required) Lease liability carried immediately before the remeasurement.¶" &
                             "CarryingROU    →(Required) Right-of-use asset carried immediately before the remeasurement.¶" &
-                            "InAdvance      →(Optional: Default = FALSE) TRUE where each payment falls at the start of its period.¶" &
+                            "InAdvance      →(Optional: Default = FALSE) TRUE when the first revised payment is paid at the remeasurement date.¶" &
                             "EXAMPLES:      →¶" &
                             "→Formula (oz is assumed to be the module's name)¶" &
                             "→=oz.LeaseRemeasureλ({110,110}, 0.05, 185.94, 181.55)¶" &
