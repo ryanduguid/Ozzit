@@ -206,6 +206,15 @@ def column_number(reference):
     return value
 
 
+def column_width(parts, path, reference):
+    target = column_number(reference)
+    root = ET.fromstring(parts[path])
+    for column in root.findall("m:cols/m:col", NS):
+        if int(column.attrib["min"]) <= target <= int(column.attrib["max"]):
+            return float(column.attrib["width"])
+    return None
+
+
 def relationship_target(parts, source_path, relationship_id):
     rels_path = join(dirname(source_path), "_rels", Path(source_path).name + ".rels")
     relationships = ET.fromstring(parts[rels_path])
@@ -370,6 +379,11 @@ class CashFlowTemplateContractTests(unittest.TestCase):
         self.assertNotEqual(link_style, input_style)
 
         assumptions_root = ET.fromstring(parts[sheet_map["Assumptions"]])
+        self.assertGreaterEqual(
+            column_width(parts, sheet_map["Assumptions"], "D"),
+            22,
+            "Assumptions!D14 must show 'Variable-payment factor' without clipping into Description.",
+        )
         validations = assumptions_root.findall("m:dataValidations/m:dataValidation", NS)
         self.assertEqual(len(validations), 1)
         self.assertEqual(validations[0].attrib.get("sqref"), "B12")
