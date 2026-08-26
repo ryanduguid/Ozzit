@@ -30,6 +30,24 @@ FORECAST_LABELS = {
     48: "Closing cash balance",
     51: "Liquidity status",
 }
+FORECAST_ROW_MAP = {
+    5: "Week commencing", 6: "Week ending", 7: "Actual / Forecast",
+    9: "CASH RECEIPTS", 10: "Customer receipts", 11: "Overdue receipts",
+    12: "Cash / EFTPOS sales", 13: "GST refunds / credits", 14: "Other operating",
+    15: "Asset sale proceeds", 16: "Equity / owner funding", 17: "Loan proceeds",
+    18: "Scenario receipt adjustment", 19: "Total cash receipts",
+    21: "CASH PAYMENTS", 22: "Suppliers and inventory", 23: "Net wages",
+    24: "PAYG withholding", 25: "Superannuation", 26: "Payroll tax / workers compensation",
+    27: "Rent", 28: "Utilities", 29: "Insurance", 30: "Software and subscriptions",
+    31: "Marketing", 32: "Professional services", 33: "Freight, vehicles and travel",
+    34: "GST / BAS payments", 35: "PAYG income tax instalments", 36: "FBT / other tax",
+    37: "Interest and bank fees", 38: "Loan principal", 39: "Capital expenditure",
+    40: "Dividends / distributions", 41: "Other operating", 42: "Scenario payment adjustment",
+    43: "Total cash payments", 45: "CASH POSITION", 46: "Opening cash balance",
+    47: "Net cash movement", 48: "Closing cash balance", 49: "Minimum cash buffer",
+    50: "Headroom / (gap)", 51: "Liquidity status",
+}
+BASE_CLOSING_CASH = [358000, 349000, 325000, 293000, 201000, 133000, 217000, 160000, 117000, 137000, 99000, 82000, 31000]
 PALETTE_ANCHORS = ("5C2D91", "04001F", "2B2733", "B1AFAD", "DED9E8", "F3F1F6", "7A5AB5", "C00000")
 BANNED_SOURCE_TEXT = ("tradepoint", "1099", "federal tax", "state tax", "tradepointcfo")
 WORKING_SHEETS = EXPECTED_SHEETS[1:]
@@ -108,6 +126,15 @@ def style_for_cell(parts, path, address):
         next((node.attrib.get("rgb") for node in font.findall("m:color", NS)), None),
         next((node.attrib.get("rgb") for node in fill.findall(".//m:fgColor", NS)), None),
     )
+
+
+def comments_text(parts):
+    return b" ".join(payload.lower() for name, payload in parts.items() if "comments" in name and name.endswith(".xml"))
+
+
+def conditional_formulas(parts, path):
+    root = ET.fromstring(parts[path])
+    return [formula.text for formula in root.findall(".//m:conditionalFormatting/m:cfRule/m:formula", NS)]
 
 
 def row_bounds(reference):
@@ -260,6 +287,73 @@ class CashFlowTemplateContractTests(unittest.TestCase):
         styles = parts["xl/styles.xml"].upper()
         for colour in PALETTE_ANCHORS:
             self.assertIn(colour.encode(), styles)
+
+    def test_forecast_engine_and_weekly_review_contract(self):
+        """The formula-driven forecast generator is the production change that makes this pass."""
+        parts = workbook_parts()
+        sheet_map = dict(sheet_paths(parts))
+        forecast_path = sheet_map["13-Week Forecast"]
+        forecast_values = values_by_address(parts, forecast_path)
+        forecast_formulas = formulas_by_address(parts, forecast_path)
+
+        for row, label in FORECAST_ROW_MAP.items():
+            self.assertEqual(forecast_values.get(f"A{row}"), label)
+        self.assertEqual([forecast_values.get(f"{column}7") for column in "BCDEFGHIJKLMN"], ["Actual", *["Forecast"] * 12])
+        self.assertEqual([int(float(forecast_values[f"{column}48"])) for column in "BCDEFGHIJKLMN"], BASE_CLOSING_CASH)
+
+        self.assertEqual(
+            forecast_formulas.get("B18"),
+            'IF(B$7="Actual",0,SUM(B10:B12)*(INDEX(Assumptions!$C$15:$C$17,MATCH(Assumptions!$B$12,Assumptions!$B$15:$B$17,0))-1))',
+        )
+        self.assertEqual(
+            forecast_formulas.get("B42"),
+            'IF(B$7="Actual",0,SUM(B22,B31,B33,B41)*(INDEX(Assumptions!$D$15:$D$17,MATCH(Assumptions!$B$12,Assumptions!$B$15:$B$17,0))-1))',
+        )
+        self.assertEqual(forecast_formulas.get("B19"), "SUM(B10:B18)")
+        self.assertEqual(forecast_formulas.get("B43"), "SUM(B22:B42)")
+        self.assertEqual(forecast_formulas.get("B46"), "'Assumptions'!$B$10")
+        self.assertEqual(forecast_formulas.get("C46"), "B48")
+        self.assertEqual(forecast_formulas.get("B47"), "B19-B43")
+        self.assertEqual(forecast_formulas.get("B48"), "B46+B47")
+        self.assertEqual(forecast_formulas.get("B49"), "'Assumptions'!$B$11")
+        self.assertEqual(forecast_formulas.get("B50"), "B48-B49")
+        self.assertEqual(forecast_formulas.get("B51"), 'IF(B48<B49,"BELOW BUFFER",IF(B48<=B49*1.25,"WATCH","OK"))')
+        self.assertEqual(
+            forecast_formulas.get("C18"),
+            'IF(C$7="Actual",0,SUM(C10:C12)*(INDEX(Assumptions!$C$15:$C$17,MATCH(Assumptions!$B$12,Assumptions!$B$15:$B$17,0))-1))',
+        )
+        self.assertEqual(
+            forecast_formulas.get("C42"),
+            'IF(C$7="Actual",0,SUM(C22,C31,C33,C41)*(INDEX(Assumptions!$D$15:$D$17,MATCH(Assumptions!$B$12,Assumptions!$B$15:$B$17,0))-1))',
+        )
+
+        self.assertEqual(style_for_cell(parts, forecast_path, "B10"), ("FF0000FF", "FFF3F1F6"))
+        self.assertEqual(style_for_cell(parts, forecast_path, "B18")[0], "FF000000")
+        self.assertEqual(style_for_cell(parts, forecast_path, "B46")[0], "FF008000")
+        self.assertTrue(any("BELOW BUFFER" in formula for formula in conditional_formulas(parts, forecast_path)))
+        self.assertTrue(any("WATCH" in formula for formula in conditional_formulas(parts, forecast_path)))
+        self.assertTrue(any("OK" in formula for formula in conditional_formulas(parts, forecast_path)))
+        comment_payload = comments_text(parts)
+        for phrase in (b"scenario receipt", b"scenario payment", b"gst / bas", b"payg income-tax"):
+            self.assertIn(phrase, comment_payload)
+
+        review_path = sheet_map["Weekly Review"]
+        review_values = values_by_address(parts, review_path)
+        review_formulas = formulas_by_address(parts, review_path)
+        self.assertEqual(
+            [review_values.get(f"{column}5") for column in "ABCDEFGHI"],
+            ["Week", "Week ending", "Forecast closing cash", "Actual closing cash", "Variance", "Rolling forecast note", "Owner", "Action", "Status"],
+        )
+        self.assertEqual([review_values.get(f"A{row}") for row in range(6, 19)], [str(index) for index in range(1, 14)])
+        self.assertEqual(review_formulas.get("B6"), "'13-Week Forecast'!B$6")
+        self.assertEqual(review_formulas.get("C6"), "'13-Week Forecast'!B$48")
+        self.assertEqual(review_formulas.get("E6"), 'IF(D6="","",D6-C6)')
+        self.assertEqual(review_values.get("D6"), "")
+        self.assertEqual(style_for_cell(parts, review_path, "B6")[0], "FF008000")
+        self.assertEqual(style_for_cell(parts, review_path, "D6"), ("FF0000FF", "FFF3F1F6"))
+        review_root = ET.fromstring(parts[review_path])
+        validations = review_root.findall("m:dataValidations/m:dataValidation", NS)
+        self.assertEqual([(item.attrib.get("sqref"), item.findtext("m:formula1", namespaces=NS)) for item in validations], [("I6:I18", '"Open,In progress,Complete"')])
 
 
 if __name__ == "__main__":
