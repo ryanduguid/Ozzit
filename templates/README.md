@@ -7,9 +7,9 @@ The workbook opens with illustrative data from an Australian business so that th
 ## Weekly workflow
 
 1. **Replace the sample data.** On `13-Week Forecast`, replace the blue input cells with the business's expected receipts and payments. Use whole AUD unless the assumptions say otherwise.
-2. **Set the assumptions and scenario.** On `Assumptions`, enter the business name, forecast start date, as-at date, opening cash and minimum cash buffer. Select `Base`, `Upside` or `Downside` in the scenario control.
-3. **Update weekly inputs.** Each week, refresh the forecast inputs and enter available actual receipts, actual payments and actual closing cash on `Weekly Review`. Record owner commentary and keep the source or rationale for material changes with the working papers.
-4. **Review the outputs.** Use `Dashboard` for the 13-week cash and buffer view, then use `Weekly Review` to compare receipt, payment and closing-cash variances.
+2. **Set the assumptions and scenario.** On `Assumptions`, enter the business name, forecast start date, as-at date, opening cash and minimum cash buffer. Enter the liquidity action lead time, then select `Base`, `Upside` or `Downside` in the scenario control.
+3. **Preserve the weekly forecast, then update.** Before refreshing the live forecast, paste the original period dates, forecast receipts, forecast payments and forecast closing cash into the blue snapshot cells on `Weekly Review` as values. Snapshot cells must not link to the live forecast. Then refresh the forecast inputs and enter available actual receipts, actual payments and actual closing cash. Record owner commentary and keep the source or rationale for material changes with the working papers.
+4. **Review the outputs.** Use `Dashboard` for the 13-week cash and buffer view, first buffer breach, funding requirement, action deadline and three-scenario comparison. Then use `Weekly Review` to compare receipt, payment and closing-cash variances.
 5. **Resolve checks, then archive or roll forward.** Before sharing the forecast, review `Checks & Sources`, fix any failed model check and record decisions. Save the reviewed file as the period's archive, then copy it for the next cycle and update the dates, actuals and forecast inputs.
 
 ## Scenario behaviour

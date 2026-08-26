@@ -57,6 +57,11 @@ FORECAST_ROW_MAP = {
     50: "Headroom / (gap)", 51: "Liquidity status",
 }
 BASE_CLOSING_CASH = [358000, 349000, 325000, 293000, 201000, 133000, 217000, 160000, 117000, 137000, 99000, 82000, 31000]
+SCENARIO_CLOSING_CASH = {
+    "Base": BASE_CLOSING_CASH,
+    "Upside": [358000, 364380, 354920, 336680, 257940, 203320, 300000, 256060, 226480, 260600, 237020, 234980, 199320],
+    "Downside": [358000, 318800, 266150, 206900, 88550, -6050, 52600, -30500, -100300, -108350, -174900, -221400, -302550],
+}
 FORECAST_COLUMNS = "BCDEFGHIJKLMN"
 FLOW_ROWS = (*range(10, 20), *range(22, 44), 47)
 TERMINAL_ROWS = (46, 48, 49, 50, 51)
@@ -86,11 +91,11 @@ PROHIBITED_RELATIONSHIP_MARKERS = (
     "/attachedtemplate", "/externallink",
 )
 FORMULA_ERROR_COUNT_FORMULA = (
-    "SUMPRODUCT(--ISERROR('Assumptions'!$B$5:$D$17))"
+    "SUMPRODUCT(--ISERROR('Assumptions'!$B$5:$E$19))"
     "+SUMPRODUCT(--ISERROR('13-Week Forecast'!$B$5:$O$51))"
-    "+SUMPRODUCT(--ISERROR('Weekly Review'!$A$5:$N$18))"
-    "+SUMPRODUCT(--ISERROR('Dashboard'!$A$6:$J$24))"
-    "+SUMPRODUCT(--ISERROR('Dashboard'!$P$4:$R$34))"
+    "+SUMPRODUCT(--ISERROR('Weekly Review'!$A$4:$N$18))"
+    "+SUMPRODUCT(--ISERROR('Dashboard'!$A$6:$J$30))"
+    "+SUMPRODUCT(--ISERROR('Dashboard'!$P$4:$S$49))"
 )
 
 
@@ -493,7 +498,7 @@ class CashFlowTemplateContractTests(unittest.TestCase):
         self.assertIn("ILLUSTRATIVE DATA", start_here_values.get("A4", ""))
         self.assertEqual(start_here_values.get("D6"), "Workbook sheets")
         self.assertEqual(start_here_values.get("A6"), "Version")
-        self.assertEqual(start_here_values.get("B6"), "Release 1.0")
+        self.assertEqual(start_here_values.get("B6"), "Release 1.1")
         self.assertEqual(start_here_values.get("A7"), "Prepared date")
         self.assertEqual(start_here_values.get("B7"), excel_serial(date(2026, 8, 26)))
         self.assertEqual(start_here_values.get("A12"), "Five-step weekly update process")
@@ -502,7 +507,7 @@ class CashFlowTemplateContractTests(unittest.TestCase):
             "Update the Assumptions control panel and selected scenario.",
             "Replace blue cash-receipt and cash-payment inputs with the latest weekly view.",
             "Review closing cash, headroom and liquidity status in the 13-Week Forecast.",
-            "Record actual receipts, payments, closing cash and owner commentary in Weekly Review.",
+            "Snapshot the original forecast as values, then record actuals and owner commentary in Weekly Review.",
             "Resolve any control failure in Checks & Sources before management review.",
         ])
         self.assertEqual(start_here_values.get("A19"), "Colour legend")
@@ -543,6 +548,8 @@ class CashFlowTemplateContractTests(unittest.TestCase):
         self.assertEqual([assumptions_values.get(f"B{row}") for row in range(15, 18)], ["Base", "Upside", "Downside"])
         self.assertEqual([assumptions_values.get(f"C{row}") for row in range(15, 18)], ["1", "1.08", "0.85"])
         self.assertEqual([assumptions_values.get(f"D{row}") for row in range(15, 18)], ["1", "0.98", "1.05"])
+        self.assertEqual(assumptions_values.get("A19"), "Liquidity action lead time (weeks)")
+        self.assertEqual(assumptions_values.get("B19"), "2")
         self.assertEqual(assumptions_values.get("A20"), "Data-quality notes")
         self.assertIn("Monday forecast start", assumptions_values.get("A21", ""))
         input_style = style_for_cell(parts, sheet_map["Assumptions"], "B10")
@@ -558,9 +565,14 @@ class CashFlowTemplateContractTests(unittest.TestCase):
             "Assumptions!D14 must show 'Variable-payment factor' without clipping into Description.",
         )
         validations = assumptions_root.findall("m:dataValidations/m:dataValidation", NS)
-        self.assertEqual(len(validations), 1)
-        self.assertEqual(validations[0].attrib.get("sqref"), "B12")
-        self.assertEqual(validations[0].findtext("m:formula1", namespaces=NS), "CashFlowScenarioList")
+        self.assertEqual({validation.attrib.get("sqref") for validation in validations}, {"B12", "B19"})
+        scenario_validation = next(validation for validation in validations if validation.attrib.get("sqref") == "B12")
+        lead_time_validation = next(validation for validation in validations if validation.attrib.get("sqref") == "B19")
+        self.assertEqual(scenario_validation.findtext("m:formula1", namespaces=NS), "CashFlowScenarioList")
+        self.assertEqual(lead_time_validation.attrib.get("type"), "whole")
+        self.assertEqual(lead_time_validation.attrib.get("operator"), "between")
+        self.assertEqual(lead_time_validation.findtext("m:formula1", namespaces=NS), "0")
+        self.assertEqual(lead_time_validation.findtext("m:formula2", namespaces=NS), "13")
 
         for sheet_name, path in sheets:
             root = ET.fromstring(parts[path])
@@ -639,24 +651,21 @@ class CashFlowTemplateContractTests(unittest.TestCase):
         self.assertEqual(
             [review_values.get(f"{column}5") for column in "ABCDEFGHIJKLMN"],
             [
-                "Week start", "Week end", "Forecast receipts", "Actual receipts",
-                "Receipt variance $", "Receipt variance %", "Forecast payments",
+                "Snapshot week start", "Snapshot week end", "Forecast snapshot receipts", "Actual receipts",
+                "Receipt variance $", "Receipt variance %", "Forecast snapshot payments",
                 "Actual payments", "Payment variance $", "Payment variance %",
-                "Forecast closing cash", "Actual closing cash", "Closing-cash variance",
+                "Forecast snapshot closing cash", "Actual closing cash", "Closing-cash variance",
                 "Owner commentary",
             ],
         )
+        self.assertIn("as values", review_values.get("A4", "").lower())
+        self.assertIn("must not link", review_values.get("A4", "").lower())
         for row, column in enumerate(FORECAST_COLUMNS, start=6):
             expected_formulas = {
-                "A": f"'13-Week Forecast'!{column}$5",
-                "B": f"'13-Week Forecast'!{column}$6",
-                "C": f"'13-Week Forecast'!{column}$19",
                 "E": f'IF(D{row}="","",D{row}-C{row})',
                 "F": f'IF(OR(D{row}="",C{row}=0),"",(D{row}-C{row})/C{row})',
-                "G": f"'13-Week Forecast'!{column}$43",
                 "I": f'IF(H{row}="","",G{row}-H{row})',
                 "J": f'IF(OR(H{row}="",G{row}=0),"",(G{row}-H{row})/G{row})',
-                "K": f"'13-Week Forecast'!{column}$48",
                 "M": f'IF(L{row}="","",L{row}-K{row})',
             }
             for review_column, expected_formula in expected_formulas.items():
@@ -666,11 +675,14 @@ class CashFlowTemplateContractTests(unittest.TestCase):
             self.assertEqual(review_values.get(f"C{row}"), forecast_values.get(f"{column}19"))
             self.assertEqual(review_values.get(f"G{row}"), forecast_values.get(f"{column}43"))
             self.assertEqual(review_values.get(f"K{row}"), forecast_values.get(f"{column}48"))
+            for snapshot_column in "ABCGK":
+                self.assertNotIn(f"{snapshot_column}{row}", review_formulas)
             for input_column in "DHLN":
                 self.assertEqual(review_values.get(f"{input_column}{row}"), "")
             for variance_column in "EFIJM":
                 self.assertIsNone(cached_value(parts, review_path, f"{variance_column}{row}"))
-        self.assertEqual(style_for_cell(parts, review_path, "A6")[0], "FF008000")
+        for address in ("A6", "B6", "C6", "G6", "K6"):
+            self.assertEqual(style_for_cell(parts, review_path, address), ("FF0000FF", "FFF3F1F6"))
         self.assertEqual(style_for_cell(parts, review_path, "D6"), ("FF0000FF", "FFF3F1F6"))
         self.assertEqual(style_for_cell(parts, review_path, "H6"), ("FF0000FF", "FFF3F1F6"))
         self.assertEqual(style_for_cell(parts, review_path, "L6"), ("FF0000FF", "FFF3F1F6"))
@@ -724,6 +736,24 @@ class CashFlowTemplateContractTests(unittest.TestCase):
             self.assertEqual(font_and_number_format(parts, dashboard_path, address)[1], AUD_FORMAT)
         self.assertEqual(font_and_number_format(parts, dashboard_path, "H7")[1], DATE_FORMAT)
         self.assertEqual(
+            [dashboard_values.get(f"{column}9") for column in "ABCD"],
+            ["First buffer breach", "Weeks until breach", "Funding required", "Action deadline"],
+        )
+        expected_action_formulas = {
+            "A10": 'IF(COUNTIF(\'13-Week Forecast\'!$B$51:$N$51,"BELOW BUFFER")=0,"None",INDEX(\'13-Week Forecast\'!$B$6:$N$6,1,MATCH("BELOW BUFFER",\'13-Week Forecast\'!$B$51:$N$51,0)))',
+            "B10": 'IF(A10="None","13+",MAX(0,ROUNDUP((A10-\'Assumptions\'!$B$9)/7,0)))',
+            "C10": "MAX(0,-MIN('13-Week Forecast'!$B$50:$N$50))",
+            "D10": 'IF(A10="None","None",A10-7*\'Assumptions\'!$B$19)',
+        }
+        self.assertEqual({address: dashboard_formulas.get(address) for address in expected_action_formulas}, expected_action_formulas)
+        self.assertEqual(
+            [dashboard_values.get(f"{column}10") for column in "ABCD"],
+            [excel_serial(date(2026, 11, 15)), "10", "69000", excel_serial(date(2026, 11, 1))],
+        )
+        self.assertEqual(font_and_number_format(parts, dashboard_path, "A10")[1], DATE_FORMAT)
+        self.assertEqual(font_and_number_format(parts, dashboard_path, "C10")[1], AUD_FORMAT)
+        self.assertEqual(font_and_number_format(parts, dashboard_path, "D10")[1], DATE_FORMAT)
+        self.assertEqual(
             [dashboard_values.get(f"{column}11") for column in "ABCDE"],
             ["Week", "Week ending", "Closing cash", "Headroom", "Liquidity status"],
         )
@@ -744,6 +774,33 @@ class CashFlowTemplateContractTests(unittest.TestCase):
             self.assertEqual(dashboard_formulas.get(f"P{index}"), f"TEXT('13-Week Forecast'!{column}$6,\"dd mmm\")")
             self.assertEqual(dashboard_formulas.get(f"Q{index}"), f"'13-Week Forecast'!{column}$19")
             self.assertEqual(dashboard_formulas.get(f"R{index}"), f"'13-Week Forecast'!{column}$43")
+
+        self.assertEqual(
+            [dashboard_values.get(f"{column}27") for column in "ABCDE"],
+            ["Scenario", "Week 13 cash", "Minimum cash", "First buffer breach", "Funding required"],
+        )
+        scenario_expected = {
+            28: ("Base", 31000, 31000, date(2026, 11, 15), 69000),
+            29: ("Upside", 199320, 199320, "None", 0),
+            30: ("Downside", -302550, -302550, date(2026, 10, 4), 402550),
+        }
+        for row, (name, week_13, minimum, breach, funding) in scenario_expected.items():
+            self.assertEqual(dashboard_values.get(f"A{row}"), name)
+            self.assertIn(f"A{row}", dashboard_formulas)
+            self.assertEqual(int(float(dashboard_values[f"B{row}"])), week_13)
+            self.assertEqual(int(float(dashboard_values[f"C{row}"])), minimum)
+            expected_breach = excel_serial(breach) if isinstance(breach, date) else breach
+            self.assertEqual(dashboard_values.get(f"D{row}"), expected_breach)
+            self.assertEqual(int(float(dashboard_values[f"E{row}"])), funding)
+            for column in "BCDE":
+                self.assertIn(f"{column}{row}", dashboard_formulas)
+
+        self.assertEqual([dashboard_values.get(f"{column}36") for column in "PQRS"], ["Week ending", "Base closing cash", "Upside closing cash", "Downside closing cash"])
+        for scenario_column, scenario_name in zip("QRS", ("Base", "Upside", "Downside")):
+            actual_values = [int(float(dashboard_values[f"{scenario_column}{row}"])) for row in range(37, 50)]
+            self.assertEqual(actual_values, SCENARIO_CLOSING_CASH[scenario_name])
+            self.assertTrue(all(f"{scenario_column}{row}" in dashboard_formulas for row in range(37, 50)))
+        self.assertEqual([dashboard_values.get(f"{column}37") for column in "QRS"], ["358000", "358000", "358000"])
 
         charts = dashboard_charts(parts, dashboard_path)
         self.assertEqual(len(charts), 2)
@@ -854,7 +911,13 @@ class CashFlowTemplateContractTests(unittest.TestCase):
             "enter the business name, forecast start date, as-at date, opening cash and minimum cash buffer",
             "select `Base`, `Upside` or `Downside`",
             "refresh the forecast inputs and enter available actual receipts, actual payments and actual closing cash",
+            "before refreshing the live forecast",
+            "paste the original period dates, forecast receipts, forecast payments and forecast closing cash into the blue snapshot cells",
+            "as values",
+            "must not link to the live forecast",
             "use `Dashboard`",
+            "action deadline",
+            "three-scenario comparison",
             "use `Weekly Review`",
             "compare receipt, payment and closing-cash variances",
             "record owner commentary",
