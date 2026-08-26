@@ -3,6 +3,7 @@ import xml.etree.ElementTree as ET
 import zipfile
 from datetime import date, timedelta
 from pathlib import Path
+from posixpath import dirname, join, normpath
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -10,6 +11,9 @@ WORKBOOK = ROOT / "templates" / "13-week-cash-flow-forecast.xlsx"
 MAIN = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
 REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
 NS = {"m": MAIN, "r": REL}
+DRAWING = "http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing"
+CHART = "http://schemas.openxmlformats.org/drawingml/2006/chart"
+DRAWING_NS = {"xdr": DRAWING, "c": CHART, "r": REL, "a": "http://schemas.openxmlformats.org/drawingml/2006/main"}
 EXPECTED_SHEETS = [
     "Start Here",
     "Dashboard",
@@ -190,6 +194,45 @@ def column_number(reference):
         if character.isalpha():
             value = value * 26 + ord(character.upper()) - ord("A") + 1
     return value
+
+
+def relationship_target(parts, source_path, relationship_id):
+    rels_path = join(dirname(source_path), "_rels", Path(source_path).name + ".rels")
+    relationships = ET.fromstring(parts[rels_path])
+    target = next(item.attrib["Target"] for item in relationships if item.attrib["Id"] == relationship_id)
+    return normpath(join(dirname(source_path), target)).lstrip("/")
+
+
+def dashboard_charts(parts, dashboard_path):
+    dashboard = ET.fromstring(parts[dashboard_path])
+    drawing = dashboard.find("m:drawing", NS)
+    drawing_path = relationship_target(parts, dashboard_path, drawing.attrib[f"{{{REL}}}id"])
+    drawing_root = ET.fromstring(parts[drawing_path])
+    charts = []
+    for anchor in drawing_root.findall("xdr:twoCellAnchor", DRAWING_NS):
+        chart_ref = anchor.find(".//c:chart", DRAWING_NS)
+        if chart_ref is None:
+            continue
+        chart_path = relationship_target(parts, drawing_path, chart_ref.attrib[f"{{{REL}}}id"])
+        chart_root = ET.fromstring(parts[chart_path])
+        charts.append({
+            "type": next(child.tag.rsplit("}", 1)[-1] for child in chart_root.find("c:chart/c:plotArea", DRAWING_NS)),
+            "title": "".join(node.text or "" for node in chart_root.findall(".//a:t", DRAWING_NS)),
+            "categories": [node.text for node in chart_root.findall(".//c:cat//c:f", DRAWING_NS)],
+            "series": [node.text for node in chart_root.findall(".//c:val//c:f", DRAWING_NS)],
+            "anchor": tuple(
+                int(anchor.findtext(f"xdr:{edge}/xdr:{coordinate}", namespaces=DRAWING_NS))
+                for edge, coordinate in (("from", "col"), ("from", "row"), ("to", "col"), ("to", "row"))
+            ),
+        })
+    return charts
+
+
+def sum_abs_differences(left_sheet, left_cells, right_sheet, right_cells):
+    return "+".join(
+        f"ABS('{left_sheet}'!${left_column}${left_row}-'{right_sheet}'!${right_column}${right_row})"
+        for (left_column, left_row), (right_column, right_row) in zip(left_cells, right_cells)
+    )
 
 
 class CashFlowTemplateContractTests(unittest.TestCase):
@@ -381,6 +424,110 @@ class CashFlowTemplateContractTests(unittest.TestCase):
         review_root = ET.fromstring(parts[review_path])
         validations = review_root.findall("m:dataValidations/m:dataValidation", NS)
         self.assertEqual([(item.attrib.get("sqref"), item.findtext("m:formula1", namespaces=NS)) for item in validations], [("I6:I18", '"Open,In progress,Complete"')])
+
+    def test_dashboard_controls_charts_and_sources_contract(self):
+        """The dashboard-and-controls generator change is required for this contract."""
+        parts = workbook_parts()
+        sheet_map = dict(sheet_paths(parts))
+        dashboard_path = sheet_map["Dashboard"]
+        checks_path = sheet_map["Checks & Sources"]
+        dashboard_values = values_by_address(parts, dashboard_path)
+        dashboard_formulas = formulas_by_address(parts, dashboard_path)
+        self.assertEqual(
+            [dashboard_values.get(f"{column}6") for column in "ABCDEFGH"],
+            ["Selected scenario", "Opening cash", "Lowest closing cash", "Minimum headroom", "Weeks below buffer", "Week of lowest cash", "MODEL STATUS", "LIQUIDITY STATUS"],
+        )
+        expected_kpis = {
+            "A7": "'Assumptions'!$B$12",
+            "B7": "'Assumptions'!$B$10",
+            "C7": "MIN('13-Week Forecast'!$B$48:$N$48)",
+            "D7": "MIN('13-Week Forecast'!$B$50:$N$50)",
+            "E7": "COUNTIF('13-Week Forecast'!$B$50:$N$50,\"<0\")",
+            "F7": "INDEX('13-Week Forecast'!$B$6:$N$6,1,MATCH(C7,'13-Week Forecast'!$B$48:$N$48,0))",
+            "G7": "'Checks & Sources'!$B$4",
+            "H7": "'Checks & Sources'!$E$4",
+        }
+        self.assertEqual({address: dashboard_formulas.get(address) for address in expected_kpis}, expected_kpis)
+        self.assertEqual(
+            [dashboard_values.get(f"{column}7") for column in "ABCDEFGH"],
+            ["Base", "400000", "31000", "-69000", "3", excel_serial(date(2026, 11, 29)), "PASS", "ACTION REQUIRED"],
+        )
+        self.assertEqual(
+            [dashboard_values.get(f"{column}11") for column in "ABCDE"],
+            ["Week", "Week ending", "Closing cash", "Headroom", "Liquidity status"],
+        )
+        for index, column in enumerate(FORECAST_COLUMNS, start=12):
+            self.assertEqual(dashboard_formulas.get(f"A{index}"), f"ROW()-11")
+            self.assertEqual(dashboard_formulas.get(f"B{index}"), f"'13-Week Forecast'!{column}$6")
+            self.assertEqual(dashboard_formulas.get(f"C{index}"), f"'13-Week Forecast'!{column}$48")
+            self.assertEqual(dashboard_formulas.get(f"D{index}"), f"'13-Week Forecast'!{column}$50")
+            self.assertEqual(dashboard_formulas.get(f"E{index}"), f"'13-Week Forecast'!{column}$51")
+
+        self.assertEqual([dashboard_values.get(f"{column}4") for column in "PQR"], ["Week ending", "Closing cash", "Minimum buffer"])
+        self.assertEqual([dashboard_values.get(f"{column}21") for column in "PQR"], ["Week ending", "Total cash receipts", "Total cash payments"])
+        for index, column in enumerate(FORECAST_COLUMNS, start=5):
+            self.assertEqual(dashboard_formulas.get(f"P{index}"), f"TEXT('13-Week Forecast'!{column}$6,\"dd mmm\")")
+            self.assertEqual(dashboard_formulas.get(f"Q{index}"), f"'13-Week Forecast'!{column}$48")
+            self.assertEqual(dashboard_formulas.get(f"R{index}"), f"'13-Week Forecast'!{column}$49")
+        for index, column in enumerate(FORECAST_COLUMNS, start=22):
+            self.assertEqual(dashboard_formulas.get(f"P{index}"), f"TEXT('13-Week Forecast'!{column}$6,\"dd mmm\")")
+            self.assertEqual(dashboard_formulas.get(f"Q{index}"), f"'13-Week Forecast'!{column}$19")
+            self.assertEqual(dashboard_formulas.get(f"R{index}"), f"'13-Week Forecast'!{column}$43")
+
+        charts = dashboard_charts(parts, dashboard_path)
+        self.assertEqual(len(charts), 2)
+        line_chart = next(chart for chart in charts if chart["title"] == "Closing cash vs minimum buffer (AUD)")
+        receipts_chart = next(chart for chart in charts if chart["title"] == "Weekly receipts vs payments (AUD)")
+        self.assertEqual(line_chart["type"], "lineChart")
+        self.assertEqual(line_chart["categories"], ["'Dashboard'!$P$5:$P$17", "'Dashboard'!$P$5:$P$17"])
+        self.assertEqual(line_chart["series"], ["'Dashboard'!$Q$5:$Q$17", "'Dashboard'!$R$5:$R$17"])
+        self.assertEqual(line_chart["anchor"], (5, 9, 15, 25))
+        self.assertEqual(receipts_chart["type"], "barChart")
+        self.assertEqual(receipts_chart["categories"], ["'Dashboard'!$P$22:$P$34", "'Dashboard'!$P$22:$P$34"])
+        self.assertEqual(receipts_chart["series"], ["'Dashboard'!$Q$22:$Q$34", "'Dashboard'!$R$22:$R$34"])
+        self.assertEqual(receipts_chart["anchor"], (5, 26, 15, 42))
+
+        checks_values = values_by_address(parts, checks_path)
+        checks_formulas = formulas_by_address(parts, checks_path)
+        self.assertEqual(checks_values.get("A4"), "MODEL STATUS")
+        self.assertEqual(checks_formulas.get("B4"), 'IF(COUNTIF(F8:F16,"PASS")=9,"PASS","FAIL")')
+        self.assertEqual(checks_values.get("B4"), "PASS")
+        self.assertEqual(checks_values.get("D4"), "LIQUIDITY STATUS")
+        self.assertEqual(checks_formulas.get("E4"), 'IF(COUNTIF(\'13-Week Forecast\'!$B$51:$N$51,"BELOW BUFFER")>0,"ACTION REQUIRED",IF(COUNTIF(\'13-Week Forecast\'!$B$51:$N$51,"WATCH")>0,"WATCH","HEALTHY"))')
+        self.assertEqual(checks_values.get("E4"), "ACTION REQUIRED")
+        self.assertEqual([checks_values.get(f"{column}7") for column in "ABCDEFGH"], ["Check", "Actual", "Expected", "Difference", "Tolerance", "Status", "Where to fix", "Notes"])
+        expected_checks = [
+            ("Forecast starts Monday", "WEEKDAY('Assumptions'!$B$8,2)", "1", "B8-C8", "Assumptions!B8"),
+            ("As-at date in forecast horizon", "--AND('Assumptions'!$B$9>='13-Week Forecast'!$B$5,'Assumptions'!$B$9<='13-Week Forecast'!$N$6)", "1", "B9-C9", "Assumptions!B9"),
+            ("Selected scenario recognised", "COUNTIF('Assumptions'!$B$15:$B$17,'Assumptions'!$B$12)", "1", "B10-C10", "Assumptions!B12"),
+            ("Week 1 opening cash ties", "'13-Week Forecast'!$B$46", "'Assumptions'!$B$10", "B11-C11", "13-Week Forecast!B46"),
+            ("Opening cash roll-forward continuity", sum_abs_differences("13-Week Forecast", [(column, 46) for column in "CDEFGHIJKLMN"], "13-Week Forecast", [(column, 48) for column in "BCDEFGHIJKLM"]), "0", "B12-C12", "13-Week Forecast!C46:N46"),
+            ("Cash receipt totals reconcile", "SUM('13-Week Forecast'!$B$19:$N$19)", "SUM('13-Week Forecast'!$B$10:$N$18)", "B13-C13", "13-Week Forecast!B19:N19"),
+            ("Cash payment totals reconcile", "SUM('13-Week Forecast'!$B$43:$N$43)", "SUM('13-Week Forecast'!$B$22:$N$42)", "B14-C14", "13-Week Forecast!B43:N43"),
+            ("Closing cash equation", "'13-Week Forecast'!$N$48", "'Assumptions'!$B$10+SUM('13-Week Forecast'!$B$47:$N$47)", "B15-C15", "13-Week Forecast!N48"),
+            ("Weekly Review linkage", sum_abs_differences("Weekly Review", [("C", row) for row in range(6, 19)], "13-Week Forecast", [(column, 48) for column in FORECAST_COLUMNS]), "0", "B16-C16", "Weekly Review!C6:C18"),
+        ]
+        for row, (label, actual, expected, difference, where_to_fix) in enumerate(expected_checks, start=8):
+            self.assertEqual(checks_values.get(f"A{row}"), label)
+            self.assertEqual(checks_formulas.get(f"B{row}"), actual)
+            self.assertEqual(checks_formulas.get(f"C{row}"), expected)
+            self.assertEqual(checks_formulas.get(f"D{row}"), difference)
+            self.assertEqual(checks_values.get(f"E{row}"), "0")
+            self.assertEqual(checks_formulas.get(f"F{row}"), f'IF(ABS(D{row})<=E{row},"PASS","FAIL")')
+            self.assertEqual(checks_values.get(f"F{row}"), "PASS")
+            self.assertEqual(checks_values.get(f"G{row}"), where_to_fix)
+
+        source_urls = [
+            "https://www.legislation.gov.au/C2004A00446/latest/text",
+            "https://www.ato.gov.au/businesses-and-organisations/preparing-lodging-and-paying/business-activity-statements-bas/due-dates-for-lodging-and-paying-your-bas",
+            "https://www.ato.gov.au/tax-rates-and-codes/key-superannuation-rates-and-thresholds/super-guarantee",
+            "https://softwaredevelopers.ato.gov.au/PaydaySuper",
+        ]
+        self.assertEqual([checks_values.get(f"B{row}") for row in range(22, 26)], source_urls)
+        self.assertEqual([checks_values.get(f"D{row}") for row in range(22, 26)], ["26 August 2026"] * 4)
+        source_text = " ".join(value for value in checks_values.values() if isinstance(value, str)).lower()
+        for phrase in ("gst default: 10%", "issued bas controls", "12.0%", "from 1 july 2026", "seventh business day after payday", "entity-specific lodgement dates and tax classifications must be confirmed by the user or adviser"):
+            self.assertIn(phrase, source_text)
 
 
 if __name__ == "__main__":
