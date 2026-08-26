@@ -1,6 +1,6 @@
 # Build ozzit.xlsx from the upstream workbook.
 # Pure zip/XML surgery. Never resaves via openpyxl (preserves cached values, extensions, rich parts).
-import zipfile, re, shutil, io, os, sys, datetime
+import zipfile, re, os, sys, datetime
 import base64, json
 
 # The progress lines name functions, and every function name carries a λ, which a Windows
