@@ -1,6 +1,7 @@
 import unittest
 import xml.etree.ElementTree as ET
 import zipfile
+import re
 from datetime import date, timedelta
 from pathlib import Path
 from posixpath import dirname, join, normpath
@@ -215,8 +216,13 @@ def dashboard_charts(parts, dashboard_path):
             continue
         chart_path = relationship_target(parts, drawing_path, chart_ref.attrib[f"{{{REL}}}id"])
         chart_root = ET.fromstring(parts[chart_path])
+        chart_element = next(child for child in chart_root.find("c:chart/c:plotArea", DRAWING_NS))
+        bar_direction = chart_element.find("c:barDir", DRAWING_NS)
+        grouping = chart_element.find("c:grouping", DRAWING_NS)
         charts.append({
-            "type": next(child.tag.rsplit("}", 1)[-1] for child in chart_root.find("c:chart/c:plotArea", DRAWING_NS)),
+            "type": chart_element.tag.rsplit("}", 1)[-1],
+            "barDir": bar_direction.attrib.get("val") if bar_direction is not None else None,
+            "grouping": grouping.attrib.get("val") if grouping is not None else None,
             "title": "".join(node.text or "" for node in chart_root.findall(".//a:t", DRAWING_NS)),
             "categories": [node.text for node in chart_root.findall(".//c:cat//c:f", DRAWING_NS)],
             "series": [node.text for node in chart_root.findall(".//c:val//c:f", DRAWING_NS)],
@@ -233,6 +239,24 @@ def sum_abs_differences(left_sheet, left_cells, right_sheet, right_cells):
         f"ABS('{left_sheet}'!${left_column}${left_row}-'{right_sheet}'!${right_column}${right_row})"
         for (left_column, left_row), (right_column, right_row) in zip(left_cells, right_cells)
     )
+
+
+def conditional_rule_styles(parts, path):
+    sheet = ET.fromstring(parts[path])
+    styles = ET.fromstring(parts["xl/styles.xml"])
+    dxfs = styles.find("m:dxfs", NS)
+    rules = {}
+    for rule in sheet.findall(".//m:conditionalFormatting/m:cfRule", NS):
+        dxf = dxfs[int(rule.attrib["dxfId"])]
+        font_colour = next((node.attrib.get("rgb") for node in dxf.findall("m:font/m:color", NS)), None)
+        fill_colour = next((node.attrib.get("rgb") for node in dxf.findall("m:fill/m:patternFill/m:bgColor", NS)), None)
+        rules[rule.findtext("m:formula", namespaces=NS)] = (font_colour, fill_colour)
+    return rules
+
+
+def formulas_without_string_literals(parts):
+    for path in dict(sheet_paths(parts)).values():
+        yield from formulas_by_address(parts, path).values()
 
 
 class CashFlowTemplateContractTests(unittest.TestCase):
@@ -483,6 +507,8 @@ class CashFlowTemplateContractTests(unittest.TestCase):
         self.assertEqual(line_chart["series"], ["'Dashboard'!$Q$5:$Q$17", "'Dashboard'!$R$5:$R$17"])
         self.assertEqual(line_chart["anchor"], (5, 9, 15, 25))
         self.assertEqual(receipts_chart["type"], "barChart")
+        self.assertEqual(receipts_chart["barDir"], "col")
+        self.assertEqual(receipts_chart["grouping"], "clustered")
         self.assertEqual(receipts_chart["categories"], ["'Dashboard'!$P$22:$P$34", "'Dashboard'!$P$22:$P$34"])
         self.assertEqual(receipts_chart["series"], ["'Dashboard'!$Q$22:$Q$34", "'Dashboard'!$R$22:$R$34"])
         self.assertEqual(receipts_chart["anchor"], (5, 26, 15, 42))
@@ -517,17 +543,48 @@ class CashFlowTemplateContractTests(unittest.TestCase):
             self.assertEqual(checks_values.get(f"F{row}"), "PASS")
             self.assertEqual(checks_values.get(f"G{row}"), where_to_fix)
 
-        source_urls = [
-            "https://www.legislation.gov.au/C2004A00446/latest/text",
-            "https://www.ato.gov.au/businesses-and-organisations/preparing-lodging-and-paying/business-activity-statements-bas/due-dates-for-lodging-and-paying-your-bas",
-            "https://www.ato.gov.au/tax-rates-and-codes/key-superannuation-rates-and-thresholds/super-guarantee",
-            "https://softwaredevelopers.ato.gov.au/PaydaySuper",
-        ]
-        self.assertEqual([checks_values.get(f"B{row}") for row in range(22, 26)], source_urls)
-        self.assertEqual([checks_values.get(f"D{row}") for row in range(22, 26)], ["26 August 2026"] * 4)
-        source_text = " ".join(value for value in checks_values.values() if isinstance(value, str)).lower()
-        for phrase in ("gst default: 10%", "issued bas controls", "12.0%", "from 1 july 2026", "seventh business day after payday", "entity-specific lodgement dates and tax classifications must be confirmed by the user or adviser"):
-            self.assertIn(phrase, source_text)
+        source_rows = {
+            checks_values[f"A{row}"]: {column: checks_values.get(f"{column}{row}", "") for column in "BCDEF"}
+            for row in range(22, 26)
+        }
+        self.assertEqual(source_rows["GST standard rate"]["B"], "https://www.legislation.gov.au/C2004A00446/latest/text")
+        self.assertIn("GST default: 10%", source_rows["GST standard rate"]["C"])
+        self.assertIn("taxable supply", source_rows["GST standard rate"]["C"])
+        self.assertIn("does not decide", source_rows["GST standard rate"]["E"])
+        self.assertEqual(source_rows["BAS due dates"]["B"], "https://www.ato.gov.au/businesses-and-organisations/preparing-lodging-and-paying/business-activity-statements-bas/due-dates-for-lodging-and-paying-your-bas")
+        self.assertIn("planning pattern", source_rows["BAS due dates"]["C"].lower())
+        self.assertIn("issued or entity-specific BAS due date controls", source_rows["BAS due dates"]["E"])
+        self.assertNotIn("all entities", " ".join(source_rows["BAS due dates"].values()).lower())
+        self.assertEqual(source_rows["Super guarantee"]["B"], "https://www.ato.gov.au/tax-rates-and-codes/key-superannuation-rates-and-thresholds/super-guarantee")
+        self.assertIn("12.0%", source_rows["Super guarantee"]["C"])
+        self.assertIn("worker eligibility", source_rows["Super guarantee"]["E"].lower())
+        self.assertEqual(source_rows["Payday Super"]["B"], "https://softwaredevelopers.ato.gov.au/PaydaySuper")
+        payday_text = " ".join(source_rows["Payday Super"].values()).lower()
+        self.assertIn("from 1 july 2026", payday_text)
+        self.assertIn("generally receive it by the seventh business day after payday", payday_text)
+        self.assertIn("eligible longer period", payday_text)
+        self.assertNotIn("must be received by the seventh business day after payday", payday_text)
+        self.assertTrue(all(row["D"] == "26 August 2026" for row in source_rows.values()))
+        disclaimer = checks_values.get("A27", "").lower()
+        for phrase in ("illustrative fp&a cash-planning model only", "not tax, bas, payroll, superannuation or legal advice", "entity-specific lodgement dates and tax classifications must be confirmed by the user or adviser"):
+            self.assertIn(phrase, disclaimer)
+
+        self.assertEqual(style_for_cell(parts, dashboard_path, "A1"), ("FFFFFFFF", "FF5C2D91"))
+        self.assertEqual(style_for_cell(parts, dashboard_path, "A6"), ("FFFFFFFF", "FF04001F"))
+        self.assertEqual(style_for_cell(parts, dashboard_path, "B7"), ("FF04001F", "FFFFFFFF"))
+        self.assertEqual(style_for_cell(parts, checks_path, "A21"), ("FFFFFFFF", "FF04001F"))
+        dashboard_status_styles = conditional_rule_styles(parts, dashboard_path)
+        checks_status_styles = conditional_rule_styles(parts, checks_path)
+        self.assertEqual(dashboard_status_styles['G7="PASS"'], ("FF008000", "FFE2F0D9"))
+        self.assertEqual(dashboard_status_styles['H7="ACTION REQUIRED"'], ("FFC00000", "FFFCE4D6"))
+        self.assertEqual(checks_status_styles['B4="PASS"'], ("FF008000", "FFE2F0D9"))
+        self.assertEqual(checks_status_styles['E4="ACTION REQUIRED"'], ("FFC00000", "FFFCE4D6"))
+
+        volatile_functions = "TODAY|NOW|RAND|RANDBETWEEN|OFFSET|INDIRECT|CELL|INFO|RTD"
+        volatile_pattern = re.compile(rf"(?<![A-Z0-9_.])(?:{volatile_functions})\s*\(", re.IGNORECASE)
+        for formula in formulas_without_string_literals(parts):
+            unquoted_formula = re.sub(r'"(?:[^"]|"")*"', '""', formula)
+            self.assertIsNone(volatile_pattern.search(unquoted_formula), formula)
 
 
 if __name__ == "__main__":
