@@ -75,21 +75,22 @@ VOLATILE_PATTERN = re.compile(
 )
 PROHIBITED_PART_MARKERS = (
     "vbaproject", "/activex/", "/oleobjects/", "/ctrlprops/", "/embeddings/",
-    "customui/", "attachedtemplate",
+    "customui/", "attachedtemplate", "/externallinks/",
 )
 PROHIBITED_CONTENT_TYPE_MARKERS = (
     "vba", "activex", "oleobject", "macroenabled", "attachedtemplate",
-    "control", "customui", "embedded",
+    "control", "customui", "embedded", "externallink",
 )
 PROHIBITED_RELATIONSHIP_MARKERS = (
     "/vbaproject", "/activex", "/oleobject", "/control", "/customui",
-    "/attachedtemplate",
+    "/attachedtemplate", "/externallink",
 )
 FORMULA_ERROR_COUNT_FORMULA = (
     "SUMPRODUCT(--ISERROR('Assumptions'!$B$5:$D$17))"
     "+SUMPRODUCT(--ISERROR('13-Week Forecast'!$B$5:$O$51))"
     "+SUMPRODUCT(--ISERROR('Weekly Review'!$A$5:$N$18))"
     "+SUMPRODUCT(--ISERROR('Dashboard'!$A$6:$J$24))"
+    "+SUMPRODUCT(--ISERROR('Dashboard'!$P$4:$R$34))"
 )
 
 
@@ -429,6 +430,30 @@ def formulas_without_string_literals(parts):
 
 
 class CashFlowTemplateContractTests(unittest.TestCase):
+    def test_package_contract_rejects_internal_external_link_parts(self):
+        """An internal externalLink package must fail even without TargetMode=External."""
+        parts = workbook_parts()
+        external_link_path = "xl/externalLinks/externalLink1.xml"
+        parts[external_link_path] = b"<externalLink/>"
+
+        content_types = ET.fromstring(parts["[Content_Types].xml"])
+        ET.SubElement(content_types, f"{{{CONTENT_TYPES}}}Override", {
+            "PartName": f"/{external_link_path}",
+            "ContentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.externalLink+xml",
+        })
+        parts["[Content_Types].xml"] = ET.tostring(content_types)
+
+        workbook_relationships = ET.fromstring(parts["xl/_rels/workbook.xml.rels"])
+        ET.SubElement(workbook_relationships, f"{{{PACKAGE_REL}}}Relationship", {
+            "Id": "rIdSyntheticExternalLink",
+            "Type": "http://schemas.openxmlformats.org/officeDocument/2006/relationships/externalLink",
+            "Target": "/xl/externalLinks/externalLink1.xml",
+        })
+        parts["xl/_rels/workbook.xml.rels"] = ET.tostring(workbook_relationships)
+
+        with self.assertRaises(AssertionError):
+            assert_package_and_formula_safe(self, parts)
+
     def test_scaffold_package_contract(self):
         """The artifact-tool scaffold is the production change that makes this pass."""
         self.assertTrue(
