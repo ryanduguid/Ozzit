@@ -55,18 +55,6 @@ ABOUT_ANCHOR = (
 )
 
 
-def _help(rows: list[tuple[str, str]]) -> str:
-    """Render help rows as the padded two-column text the library uses."""
-    out = []
-    for label, text in rows:
-        if label:
-            assert len(label) <= 15, f"help label too wide: {label!r}"
-            out.append(f"{label:<15}→{text}¶")
-        else:
-            out.append(f"→{text}¶")
-    return "".join(out)
-
-
 LEASE_LIABILITY_SRC = '''/*  FUNCTION NAME:  LeaseLiabilityλ
     DESCRIPTION:*//**Present value of the lease payments that are not paid at the commencement date*/
 
