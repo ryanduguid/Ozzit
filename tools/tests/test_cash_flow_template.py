@@ -13,6 +13,8 @@ TEMPLATE_README = ROOT / "templates" / "README.md"
 MAIN_README = ROOT / "README.md"
 MAIN = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
 REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+PACKAGE_REL = "http://schemas.openxmlformats.org/package/2006/relationships"
+CONTENT_TYPES = "http://schemas.openxmlformats.org/package/2006/content-types"
 NS = {"m": MAIN, "r": REL}
 DRAWING = "http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing"
 CHART = "http://schemas.openxmlformats.org/drawingml/2006/chart"
@@ -56,13 +58,39 @@ FORECAST_ROW_MAP = {
 }
 BASE_CLOSING_CASH = [358000, 349000, 325000, 293000, 201000, 133000, 217000, 160000, 117000, 137000, 99000, 82000, 31000]
 FORECAST_COLUMNS = "BCDEFGHIJKLMN"
-FLOW_ROWS = (*range(10, 20), *range(22, 44))
-TERMINAL_ROWS = (46, 47, 48, 49, 50, 51)
+FLOW_ROWS = (*range(10, 20), *range(22, 44), 47)
+TERMINAL_ROWS = (46, 48, 49, 50, 51)
 PALETTE_ANCHORS = ("5C2D91", "04001F", "2B2733", "B1AFAD", "DED9E8", "F3F1F6", "7A5AB5", "C00000")
 BANNED_SOURCE_TEXT = ("tradepoint", "1099", "federal tax", "state tax", "tradepointcfo")
 WORKING_SHEETS = EXPECTED_SHEETS[1:]
 EXCEL_EPOCH = date(1899, 12, 30)
 START_DATE = date(2026, 8, 31)
+AUD_FORMAT = '"$"#,##0;[Red]("$"#,##0);-'
+DATE_FORMAT = "dd mmm yyyy"
+PERCENT_FORMAT = "0.0%"
+ERROR_TOKENS = ("#REF!", "#DIV/0!", "#VALUE!", "#NAME?", "#N/A", "#NUM!", "#NULL!")
+VOLATILE_PATTERN = re.compile(
+    r"(?<![A-Z0-9_.])(?:_xlfn\.)?(?:TODAY|NOW|RAND|RANDARRAY|RANDBETWEEN|OFFSET|INDIRECT|CELL|INFO|RTD)\s*\(",
+    re.IGNORECASE,
+)
+PROHIBITED_PART_MARKERS = (
+    "vbaproject", "/activex/", "/oleobjects/", "/ctrlprops/", "/embeddings/",
+    "customui/", "attachedtemplate",
+)
+PROHIBITED_CONTENT_TYPE_MARKERS = (
+    "vba", "activex", "oleobject", "macroenabled", "attachedtemplate",
+    "control", "customui", "embedded",
+)
+PROHIBITED_RELATIONSHIP_MARKERS = (
+    "/vbaproject", "/activex", "/oleobject", "/control", "/customui",
+    "/attachedtemplate",
+)
+FORMULA_ERROR_COUNT_FORMULA = (
+    "SUMPRODUCT(--ISERROR('Assumptions'!$B$5:$D$17))"
+    "+SUMPRODUCT(--ISERROR('13-Week Forecast'!$B$5:$O$51))"
+    "+SUMPRODUCT(--ISERROR('Weekly Review'!$A$5:$N$18))"
+    "+SUMPRODUCT(--ISERROR('Dashboard'!$A$6:$J$24))"
+)
 
 
 def workbook_parts():
@@ -150,6 +178,106 @@ def style_for_cell(parts, path, address):
         next((node.attrib.get("rgb") for node in font.findall("m:color", NS)), None),
         next((node.attrib.get("rgb") for node in fill.findall(".//m:fgColor", NS)), None),
     )
+
+
+def font_and_number_format(parts, path, address):
+    sheet = ET.fromstring(parts[path])
+    cell = sheet.find(f".//m:c[@r='{address}']", NS)
+    styles = ET.fromstring(parts["xl/styles.xml"])
+    style = styles.find("m:cellXfs", NS)[int(cell.attrib.get("s", "0"))]
+    font = styles.find("m:fonts", NS)[int(style.attrib.get("fontId", "0"))]
+    name = font.find("m:name", NS)
+    number_format_id = int(style.attrib.get("numFmtId", "0"))
+    custom_formats = {
+        int(item.attrib["numFmtId"]): item.attrib["formatCode"]
+        for item in styles.findall("m:numFmts/m:numFmt", NS)
+    }
+    return name.attrib.get("val") if name is not None else None, custom_formats.get(number_format_id, "General")
+
+
+def relationship_records(parts):
+    for relationships_path, payload in parts.items():
+        if not relationships_path.endswith(".rels"):
+            continue
+        root = ET.fromstring(payload)
+        if relationships_path == "_rels/.rels":
+            source_part = ""
+        else:
+            prefix, relationship_file = relationships_path.rsplit("/_rels/", 1)
+            source_part = join(prefix, relationship_file[:-5])
+        for relationship in root.findall(f"{{{PACKAGE_REL}}}Relationship"):
+            target = relationship.attrib.get("Target", "")
+            if target.startswith("/"):
+                resolved_target = normpath(target.lstrip("/"))
+            else:
+                resolved_target = normpath(join(dirname(source_part), target)).lstrip("/")
+            yield {
+                "source": source_part,
+                "type": relationship.attrib.get("Type", ""),
+                "target": target,
+                "target_mode": relationship.attrib.get("TargetMode", "Internal"),
+                "resolved_target": resolved_target,
+            }
+
+
+def formulas_and_cached_values(parts):
+    for sheet_name, path in sheet_paths(parts):
+        root = ET.fromstring(parts[path])
+        for cell in root.findall(".//m:c", NS):
+            formula = cell.find("m:f", NS)
+            cached = cell.find("m:v", NS)
+            yield {
+                "sheet": sheet_name,
+                "address": cell.attrib["r"],
+                "formula": "" if formula is None else formula.text or "",
+                "cached": "" if cached is None else cached.text or "",
+                "type": cell.attrib.get("t", ""),
+            }
+
+
+def worksheet_references(formula):
+    unquoted_formula = re.sub(r'"(?:[^"]|"")*"', '""', formula)
+    return {
+        (quoted.replace("''", "'") if quoted else bare).strip()
+        for quoted, bare in re.findall(r"(?:'((?:[^']|'')+)'|([A-Za-z0-9 _&-]+))!", unquoted_formula)
+    }
+
+
+def assert_package_and_formula_safe(test_case, parts):
+    lower_names = [name.lower() for name in parts]
+    test_case.assertFalse([
+        name for name in lower_names
+        if any(marker in name for marker in PROHIBITED_PART_MARKERS)
+    ])
+
+    content_types = ET.fromstring(parts["[Content_Types].xml"])
+    declared_types = [item.attrib.get("ContentType", "").lower() for item in content_types]
+    test_case.assertFalse([
+        content_type for content_type in declared_types
+        if any(marker in content_type for marker in PROHIBITED_CONTENT_TYPE_MARKERS)
+    ])
+
+    relationships = list(relationship_records(parts))
+    test_case.assertFalse([item for item in relationships if item["target_mode"].lower() == "external"])
+    test_case.assertFalse([
+        item for item in relationships
+        if any(marker in item["type"].lower() for marker in PROHIBITED_RELATIONSHIP_MARKERS)
+        or item["type"].lower().endswith("/package")
+    ])
+    unresolved = [
+        item for item in relationships
+        if item["target_mode"].lower() != "external" and item["resolved_target"] not in parts
+    ]
+    test_case.assertEqual(unresolved, [])
+
+    sheets = {name for name, _ in sheet_paths(parts)}
+    for cell in formulas_and_cached_values(parts):
+        location = f"{cell['sheet']}!{cell['address']}"
+        test_case.assertNotEqual(cell["type"], "e", location)
+        test_case.assertFalse([token for token in ERROR_TOKENS if token in cell["formula"] or token in cell["cached"]], location)
+        test_case.assertEqual(worksheet_references(cell["formula"]) - sheets, set(), location)
+        formula_without_strings = re.sub(r'"(?:[^"]|"")*"', '""', cell["formula"])
+        test_case.assertIsNone(VOLATILE_PATTERN.search(formula_without_strings), location)
 
 
 def comments_text(parts):
@@ -259,6 +387,29 @@ def sum_abs_differences(left_sheet, left_cells, right_sheet, right_cells):
     )
 
 
+def max_abs_formula(expressions):
+    return "MAX(" + ",".join(f"ABS({expression})" for expression in expressions) + ")"
+
+
+def cash_roll_forward_check_formula():
+    equations = [
+        f"'13-Week Forecast'!${column}$48-'13-Week Forecast'!${column}$46-'13-Week Forecast'!${column}$47"
+        for column in FORECAST_COLUMNS
+    ]
+    continuity = [
+        f"'13-Week Forecast'!${column}$46-'13-Week Forecast'!${previous}$48"
+        for previous, column in zip(FORECAST_COLUMNS, FORECAST_COLUMNS[1:])
+    ]
+    return max_abs_formula([*equations, *continuity])
+
+
+def weekly_total_check_formula(total_row, component_start, component_end):
+    return max_abs_formula([
+        f"'13-Week Forecast'!${column}${total_row}-SUM('13-Week Forecast'!${column}${component_start}:${column}${component_end})"
+        for column in FORECAST_COLUMNS
+    ])
+
+
 def conditional_rule_styles(parts, path):
     sheet = ET.fromstring(parts[path])
     styles = ET.fromstring(parts["xl/styles.xml"])
@@ -315,8 +466,9 @@ class CashFlowTemplateContractTests(unittest.TestCase):
             "A practical weekly liquidity model for Australian finance teams and small-business operators.",
         )
         self.assertIn("ILLUSTRATIVE DATA", start_here_values.get("A4", ""))
+        self.assertEqual(start_here_values.get("D6"), "Workbook sheets")
         self.assertEqual(start_here_values.get("A6"), "Version")
-        self.assertEqual(start_here_values.get("B6"), "1.0 scaffold")
+        self.assertEqual(start_here_values.get("B6"), "Release 1.0")
         self.assertEqual(start_here_values.get("A7"), "Prepared date")
         self.assertEqual(start_here_values.get("B7"), excel_serial(date(2026, 8, 26)))
         self.assertEqual(start_here_values.get("A12"), "Five-step weekly update process")
@@ -325,7 +477,7 @@ class CashFlowTemplateContractTests(unittest.TestCase):
             "Update the Assumptions control panel and selected scenario.",
             "Replace blue cash-receipt and cash-payment inputs with the latest weekly view.",
             "Review closing cash, headroom and liquidity status in the 13-Week Forecast.",
-            "Record actual results, actions and owners in Weekly Review.",
+            "Record actual receipts, payments, closing cash and owner commentary in Weekly Review.",
             "Resolve any control failure in Checks & Sources before management review.",
         ])
         self.assertEqual(start_here_values.get("A19"), "Colour legend")
@@ -336,12 +488,8 @@ class CashFlowTemplateContractTests(unittest.TestCase):
             "Editable user input", "Formula or calculation", "Cross-sheet link", "Warning or exception", "Passing check",
         ])
         self.assertIn("not tax, payroll, legal or financial advice", start_here_values.get("A27", ""))
-        start_here_formulas = formulas_by_address(parts, sheet_map["Start Here"])
         for row, sheet_name in enumerate(WORKING_SHEETS, start=7):
-            self.assertEqual(
-                start_here_formulas.get(f"D{row}"),
-                f'HYPERLINK("#\'{sheet_name}\'!A1","{sheet_name}")',
-            )
+            self.assertEqual(start_here_values.get(f"D{row}"), sheet_name)
 
         workbook = ET.fromstring(parts["xl/workbook.xml"])
         defined_names = {
@@ -375,7 +523,7 @@ class CashFlowTemplateContractTests(unittest.TestCase):
         input_style = style_for_cell(parts, sheet_map["Assumptions"], "B10")
         link_style = style_for_cell(parts, sheet_map["Start Here"], "D7")
         self.assertEqual(input_style, ("FF0000FF", "FFB1AFAD"))
-        self.assertEqual(link_style, ("FF008000", None))
+        self.assertEqual(link_style, ("FF2B2733", None))
         self.assertNotEqual(link_style, input_style)
 
         assumptions_root = ET.fromstring(parts[sheet_map["Assumptions"]])
@@ -404,16 +552,22 @@ class CashFlowTemplateContractTests(unittest.TestCase):
         ]
         self.assertEqual(calculation_merges, [])
 
-        names = set(parts)
-        self.assertFalse(any("vbaProject" in name or "externalLink" in name for name in names))
-        rel_parts = [payload for name, payload in parts.items() if name.endswith(".rels")]
-        self.assertFalse(any(b'TargetMode="External"' in payload for payload in rel_parts))
+        assert_package_and_formula_safe(self, parts)
+        self.assertIsNotNone(VOLATILE_PATTERN.search("=_xlfn.RANDARRAY(2,2)"))
         all_xml = b" ".join(payload.lower() for name, payload in parts.items() if name.endswith((".xml", ".rels")))
         for banned in BANNED_SOURCE_TEXT:
             self.assertNotIn(banned.encode(), all_xml)
         styles = parts["xl/styles.xml"].upper()
         for colour in PALETTE_ANCHORS:
             self.assertIn(colour.encode(), styles)
+
+        for sheet_name, path in sheets:
+            self.assertEqual(font_and_number_format(parts, path, "A1")[0], "Aptos Display", sheet_name)
+            self.assertEqual(font_and_number_format(parts, path, "A2")[0], "Aptos", sheet_name)
+        self.assertEqual(font_and_number_format(parts, sheet_map["Start Here"], "B7")[1], DATE_FORMAT)
+        self.assertEqual(font_and_number_format(parts, sheet_map["Assumptions"], "B8")[1], DATE_FORMAT)
+        self.assertEqual(font_and_number_format(parts, sheet_map["Assumptions"], "B10")[1], AUD_FORMAT)
+        self.assertEqual(font_and_number_format(parts, sheet_map["Assumptions"], "C15")[1], PERCENT_FORMAT)
 
     def test_forecast_engine_and_weekly_review_contract(self):
         """The formula-driven forecast generator is the production change that makes this pass."""
@@ -438,10 +592,14 @@ class CashFlowTemplateContractTests(unittest.TestCase):
         for row in TERMINAL_ROWS:
             self.assertEqual(forecast_formulas.get(f"O{row}"), f"N{row}")
             self.assertEqual(forecast_values.get(f"O{row}"), forecast_values.get(f"N{row}"))
+        self.assertEqual(forecast_formulas.get("O47"), "SUM(B47:N47)")
+        self.assertEqual(forecast_values.get("O47"), "-369000")
 
         self.assertEqual(style_for_cell(parts, forecast_path, "B10"), ("FF0000FF", "FFF3F1F6"))
         self.assertEqual(style_for_cell(parts, forecast_path, "B18")[0], "FF000000")
         self.assertEqual(style_for_cell(parts, forecast_path, "B46")[0], "FF008000")
+        self.assertEqual(font_and_number_format(parts, forecast_path, "B5")[1], DATE_FORMAT)
+        self.assertEqual(font_and_number_format(parts, forecast_path, "B47")[1], AUD_FORMAT)
         self.assertTrue(any("BELOW BUFFER" in formula for formula in conditional_formulas(parts, forecast_path)))
         self.assertTrue(any("WATCH" in formula for formula in conditional_formulas(parts, forecast_path)))
         self.assertTrue(any("OK" in formula for formula in conditional_formulas(parts, forecast_path)))
@@ -454,23 +612,54 @@ class CashFlowTemplateContractTests(unittest.TestCase):
         review_values = values_by_address(parts, review_path)
         review_formulas = formulas_by_address(parts, review_path)
         self.assertEqual(
-            [review_values.get(f"{column}5") for column in "ABCDEFGHI"],
-            ["Week", "Week ending", "Forecast closing cash", "Actual closing cash", "Variance", "Rolling forecast note", "Owner", "Action", "Status"],
+            [review_values.get(f"{column}5") for column in "ABCDEFGHIJKLMN"],
+            [
+                "Week start", "Week end", "Forecast receipts", "Actual receipts",
+                "Receipt variance $", "Receipt variance %", "Forecast payments",
+                "Actual payments", "Payment variance $", "Payment variance %",
+                "Forecast closing cash", "Actual closing cash", "Closing-cash variance",
+                "Owner commentary",
+            ],
         )
-        self.assertEqual([review_values.get(f"A{row}") for row in range(6, 19)], [str(index) for index in range(1, 14)])
-        for index, column in enumerate(FORECAST_COLUMNS, start=6):
-            self.assertEqual(review_formulas.get(f"B{index}"), f"'13-Week Forecast'!{column}$6")
-            self.assertEqual(review_formulas.get(f"C{index}"), f"'13-Week Forecast'!{column}$48")
-            self.assertEqual(review_formulas.get(f"E{index}"), f'IF(D{index}="","",D{index}-C{index})')
-            self.assertEqual(review_values.get(f"B{index}"), forecast_values.get(f"{column}6"))
-            self.assertEqual(review_values.get(f"C{index}"), forecast_values.get(f"{column}48"))
-            self.assertEqual(review_values.get(f"D{index}"), "")
-            self.assertIsNone(cached_value(parts, review_path, f"E{index}"))
-        self.assertEqual(style_for_cell(parts, review_path, "B6")[0], "FF008000")
+        for row, column in enumerate(FORECAST_COLUMNS, start=6):
+            expected_formulas = {
+                "A": f"'13-Week Forecast'!{column}$5",
+                "B": f"'13-Week Forecast'!{column}$6",
+                "C": f"'13-Week Forecast'!{column}$19",
+                "E": f'IF(D{row}="","",D{row}-C{row})',
+                "F": f'IF(OR(D{row}="",C{row}=0),"",(D{row}-C{row})/C{row})',
+                "G": f"'13-Week Forecast'!{column}$43",
+                "I": f'IF(H{row}="","",G{row}-H{row})',
+                "J": f'IF(OR(H{row}="",G{row}=0),"",(G{row}-H{row})/G{row})',
+                "K": f"'13-Week Forecast'!{column}$48",
+                "M": f'IF(L{row}="","",L{row}-K{row})',
+            }
+            for review_column, expected_formula in expected_formulas.items():
+                self.assertEqual(review_formulas.get(f"{review_column}{row}"), expected_formula)
+            self.assertEqual(review_values.get(f"A{row}"), forecast_values.get(f"{column}5"))
+            self.assertEqual(review_values.get(f"B{row}"), forecast_values.get(f"{column}6"))
+            self.assertEqual(review_values.get(f"C{row}"), forecast_values.get(f"{column}19"))
+            self.assertEqual(review_values.get(f"G{row}"), forecast_values.get(f"{column}43"))
+            self.assertEqual(review_values.get(f"K{row}"), forecast_values.get(f"{column}48"))
+            for input_column in "DHLN":
+                self.assertEqual(review_values.get(f"{input_column}{row}"), "")
+            for variance_column in "EFIJM":
+                self.assertIsNone(cached_value(parts, review_path, f"{variance_column}{row}"))
+        self.assertEqual(style_for_cell(parts, review_path, "A6")[0], "FF008000")
         self.assertEqual(style_for_cell(parts, review_path, "D6"), ("FF0000FF", "FFF3F1F6"))
+        self.assertEqual(style_for_cell(parts, review_path, "H6"), ("FF0000FF", "FFF3F1F6"))
+        self.assertEqual(style_for_cell(parts, review_path, "L6"), ("FF0000FF", "FFF3F1F6"))
+        self.assertEqual(style_for_cell(parts, review_path, "N6"), ("FF0000FF", "FFF3F1F6"))
+        self.assertEqual(font_and_number_format(parts, review_path, "A6")[1], DATE_FORMAT)
+        self.assertEqual(font_and_number_format(parts, review_path, "C6")[1], AUD_FORMAT)
+        self.assertEqual(font_and_number_format(parts, review_path, "F6")[1], PERCENT_FORMAT)
+        review_status_styles = conditional_rule_styles(parts, review_path)
+        for formula in ("E6>0", "I6>0", "M6>0"):
+            self.assertEqual(review_status_styles[formula], ("FF008000", "FFE2F0D9"))
+        for formula in ("E6<0", "I6<0", "M6<0"):
+            self.assertEqual(review_status_styles[formula], ("FFC00000", "FFFCE4D6"))
         review_root = ET.fromstring(parts[review_path])
-        validations = review_root.findall("m:dataValidations/m:dataValidation", NS)
-        self.assertEqual([(item.attrib.get("sqref"), item.findtext("m:formula1", namespaces=NS)) for item in validations], [("I6:I18", '"Open,In progress,Complete"')])
+        self.assertEqual(review_root.findall("m:dataValidations/m:dataValidation", NS), [])
 
     def test_dashboard_controls_charts_and_sources_contract(self):
         """The dashboard-and-controls generator change is required for this contract."""
@@ -481,24 +670,34 @@ class CashFlowTemplateContractTests(unittest.TestCase):
         dashboard_values = values_by_address(parts, dashboard_path)
         dashboard_formulas = formulas_by_address(parts, dashboard_path)
         self.assertEqual(
-            [dashboard_values.get(f"{column}6") for column in "ABCDEFGH"],
-            ["Selected scenario", "Opening cash", "Lowest closing cash", "Minimum headroom", "Weeks below buffer", "Week of lowest cash", "MODEL STATUS", "LIQUIDITY STATUS"],
+            [dashboard_values.get(f"{column}6") for column in "ABCDEFGHIJ"],
+            [
+                "Selected scenario", "Week 13 closing cash", "Lowest closing cash",
+                "Minimum cash buffer", "Minimum headroom", "Weeks below buffer",
+                "13-week net cash change", "Week of lowest cash", "MODEL STATUS",
+                "LIQUIDITY STATUS",
+            ],
         )
         expected_kpis = {
             "A7": "'Assumptions'!$B$12",
-            "B7": "'Assumptions'!$B$10",
+            "B7": "'13-Week Forecast'!$N$48",
             "C7": "MIN('13-Week Forecast'!$B$48:$N$48)",
-            "D7": "MIN('13-Week Forecast'!$B$50:$N$50)",
-            "E7": "COUNTIF('13-Week Forecast'!$B$50:$N$50,\"<0\")",
-            "F7": "INDEX('13-Week Forecast'!$B$6:$N$6,1,MATCH(C7,'13-Week Forecast'!$B$48:$N$48,0))",
-            "G7": "'Checks & Sources'!$B$4",
-            "H7": "'Checks & Sources'!$E$4",
+            "D7": "'Assumptions'!$B$11",
+            "E7": "MIN('13-Week Forecast'!$B$50:$N$50)",
+            "F7": "COUNTIF('13-Week Forecast'!$B$50:$N$50,\"<0\")",
+            "G7": "SUM('13-Week Forecast'!$B$47:$N$47)",
+            "H7": "INDEX('13-Week Forecast'!$B$6:$N$6,1,MATCH(C7,'13-Week Forecast'!$B$48:$N$48,0))",
+            "I7": "'Checks & Sources'!$B$4",
+            "J7": "'Checks & Sources'!$E$4",
         }
         self.assertEqual({address: dashboard_formulas.get(address) for address in expected_kpis}, expected_kpis)
         self.assertEqual(
-            [dashboard_values.get(f"{column}7") for column in "ABCDEFGH"],
-            ["Base", "400000", "31000", "-69000", "3", excel_serial(date(2026, 11, 29)), "PASS", "ACTION REQUIRED"],
+            [dashboard_values.get(f"{column}7") for column in "ABCDEFGHIJ"],
+            ["Base", "31000", "31000", "100000", "-69000", "3", "-369000", excel_serial(date(2026, 11, 29)), "PASS", "ACTION REQUIRED"],
         )
+        for address in ("B7", "C7", "D7", "E7", "G7"):
+            self.assertEqual(font_and_number_format(parts, dashboard_path, address)[1], AUD_FORMAT)
+        self.assertEqual(font_and_number_format(parts, dashboard_path, "H7")[1], DATE_FORMAT)
         self.assertEqual(
             [dashboard_values.get(f"{column}11") for column in "ABCDE"],
             ["Week", "Week ending", "Closing cash", "Headroom", "Liquidity status"],
@@ -542,19 +741,19 @@ class CashFlowTemplateContractTests(unittest.TestCase):
         self.assertEqual(checks_formulas.get("B4"), 'IF(COUNTIF(F8:F16,"PASS")=9,"PASS","FAIL")')
         self.assertEqual(checks_values.get("B4"), "PASS")
         self.assertEqual(checks_values.get("D4"), "LIQUIDITY STATUS")
-        self.assertEqual(checks_formulas.get("E4"), 'IF(COUNTIF(\'13-Week Forecast\'!$B$51:$N$51,"BELOW BUFFER")>0,"ACTION REQUIRED",IF(COUNTIF(\'13-Week Forecast\'!$B$51:$N$51,"WATCH")>0,"WATCH","HEALTHY"))')
+        self.assertEqual(checks_formulas.get("E4"), 'IF(COUNTIF(\'13-Week Forecast\'!$B$51:$N$51,"BELOW BUFFER")>0,"ACTION REQUIRED",IF(COUNTIF(\'13-Week Forecast\'!$B$51:$N$51,"WATCH")>0,"WATCH","OK"))')
         self.assertEqual(checks_values.get("E4"), "ACTION REQUIRED")
         self.assertEqual([checks_values.get(f"{column}7") for column in "ABCDEFGH"], ["Check", "Actual", "Expected", "Difference", "Tolerance", "Status", "Where to fix", "Notes"])
         expected_checks = [
-            ("Forecast starts Monday", "WEEKDAY('Assumptions'!$B$8,2)", "1", "B8-C8", "Assumptions!B8"),
-            ("As-at date in forecast horizon", "--AND('Assumptions'!$B$9>='13-Week Forecast'!$B$5,'Assumptions'!$B$9<='13-Week Forecast'!$N$6)", "1", "B9-C9", "Assumptions!B9"),
+            ("Exactly 13 forecast weeks", "COLUMNS('13-Week Forecast'!$B$5:$N$5)", "13", "B8-C8", "13-Week Forecast!B5:N5"),
+            ("Forecast starts Monday", "WEEKDAY('Assumptions'!$B$8,2)", "1", "B9-C9", "Assumptions!B8"),
             ("Selected scenario recognised", "COUNTIF('Assumptions'!$B$15:$B$17,'Assumptions'!$B$12)", "1", "B10-C10", "Assumptions!B12"),
             ("Week 1 opening cash ties", "'13-Week Forecast'!$B$46", "'Assumptions'!$B$10", "B11-C11", "13-Week Forecast!B46"),
-            ("Opening cash roll-forward continuity", sum_abs_differences("13-Week Forecast", [(column, 46) for column in "CDEFGHIJKLMN"], "13-Week Forecast", [(column, 48) for column in "BCDEFGHIJKLM"]), "0", "B12-C12", "13-Week Forecast!C46:N46"),
-            ("Cash receipt totals reconcile", "SUM('13-Week Forecast'!$B$19:$N$19)", "SUM('13-Week Forecast'!$B$10:$N$18)", "B13-C13", "13-Week Forecast!B19:N19"),
-            ("Cash payment totals reconcile", "SUM('13-Week Forecast'!$B$43:$N$43)", "SUM('13-Week Forecast'!$B$22:$N$42)", "B14-C14", "13-Week Forecast!B43:N43"),
-            ("Closing cash equation", "'13-Week Forecast'!$N$48", "'Assumptions'!$B$10+SUM('13-Week Forecast'!$B$47:$N$47)", "B15-C15", "13-Week Forecast!N48"),
-            ("Weekly Review linkage", sum_abs_differences("Weekly Review", [("C", row) for row in range(6, 19)], "13-Week Forecast", [(column, 48) for column in FORECAST_COLUMNS]), "0", "B16-C16", "Weekly Review!C6:C18"),
+            ("Weekly cash roll-forward equations", cash_roll_forward_check_formula(), "0", "B12-C12", "13-Week Forecast!B46:N48"),
+            ("Cash receipt totals reconcile", weekly_total_check_formula(19, 10, 18), "0", "B13-C13", "13-Week Forecast!B19:N19"),
+            ("Cash payment totals reconcile", weekly_total_check_formula(43, 22, 42), "0", "B14-C14", "13-Week Forecast!B43:N43"),
+            ("Week 13 closing cash equation", "'13-Week Forecast'!$N$48", "'Assumptions'!$B$10+SUM('13-Week Forecast'!$B$47:$N$47)", "B15-C15", "13-Week Forecast!N48"),
+            ("Formula-error count", FORMULA_ERROR_COUNT_FORMULA, "0", "B16-C16", "Assumptions, Forecast, Weekly Review and Dashboard"),
         ]
         for row, (label, actual, expected, difference, where_to_fix) in enumerate(expected_checks, start=8):
             self.assertEqual(checks_values.get(f"A{row}"), label)
@@ -568,7 +767,7 @@ class CashFlowTemplateContractTests(unittest.TestCase):
 
         source_rows = {
             checks_values[f"A{row}"]: {column: checks_values.get(f"{column}{row}", "") for column in "BCDEF"}
-            for row in range(22, 26)
+            for row in range(22, 27)
         }
         self.assertEqual(source_rows["GST standard rate"]["B"], "https://www.legislation.gov.au/C2004A00446/latest/text")
         self.assertIn("GST default: 10%", source_rows["GST standard rate"]["C"])
@@ -578,6 +777,12 @@ class CashFlowTemplateContractTests(unittest.TestCase):
         self.assertIn("planning pattern", source_rows["BAS due dates"]["C"].lower())
         self.assertIn("issued or entity-specific BAS due date controls", source_rows["BAS due dates"]["E"])
         self.assertNotIn("all entities", " ".join(source_rows["BAS due dates"].values()).lower())
+        self.assertEqual(source_rows["PAYG withholding"]["B"], "https://www.ato.gov.au/businesses-and-organisations/hiring-and-paying-your-workers/payg-withholding")
+        payg_text = " ".join(source_rows["PAYG withholding"].values()).lower()
+        self.assertIn("business size", payg_text)
+        self.assertIn("circumstances", payg_text)
+        self.assertIn("user-entered", payg_text)
+        self.assertIn("confirmed", payg_text)
         self.assertEqual(source_rows["Super guarantee"]["B"], "https://www.ato.gov.au/tax-rates-and-codes/key-superannuation-rates-and-thresholds/super-guarantee")
         self.assertIn("12.0%", source_rows["Super guarantee"]["C"])
         self.assertIn("worker eligibility", source_rows["Super guarantee"]["E"].lower())
@@ -588,7 +793,7 @@ class CashFlowTemplateContractTests(unittest.TestCase):
         self.assertIn("eligible longer period", payday_text)
         self.assertNotIn("must be received by the seventh business day after payday", payday_text)
         self.assertTrue(all(row["D"] == "26 August 2026" for row in source_rows.values()))
-        disclaimer = checks_values.get("A27", "").lower()
+        disclaimer = checks_values.get("A28", "").lower()
         for phrase in ("illustrative fp&a cash-planning model only", "not tax, bas, payroll, superannuation or legal advice", "entity-specific lodgement dates and tax classifications must be confirmed by the user or adviser"):
             self.assertIn(phrase, disclaimer)
 
@@ -598,16 +803,12 @@ class CashFlowTemplateContractTests(unittest.TestCase):
         self.assertEqual(style_for_cell(parts, checks_path, "A21"), ("FFFFFFFF", "FF04001F"))
         dashboard_status_styles = conditional_rule_styles(parts, dashboard_path)
         checks_status_styles = conditional_rule_styles(parts, checks_path)
-        self.assertEqual(dashboard_status_styles['G7="PASS"'], ("FF008000", "FFE2F0D9"))
-        self.assertEqual(dashboard_status_styles['H7="ACTION REQUIRED"'], ("FFC00000", "FFFCE4D6"))
+        self.assertEqual(dashboard_status_styles['I7="PASS"'], ("FF008000", "FFE2F0D9"))
+        self.assertEqual(dashboard_status_styles['J7="ACTION REQUIRED"'], ("FFC00000", "FFFCE4D6"))
         self.assertEqual(checks_status_styles['B4="PASS"'], ("FF008000", "FFE2F0D9"))
         self.assertEqual(checks_status_styles['E4="ACTION REQUIRED"'], ("FFC00000", "FFFCE4D6"))
-
-        volatile_functions = "TODAY|NOW|RAND|RANDBETWEEN|OFFSET|INDIRECT|CELL|INFO|RTD"
-        volatile_pattern = re.compile(rf"(?<![A-Z0-9_.])(?:{volatile_functions})\s*\(", re.IGNORECASE)
-        for formula in formulas_without_string_literals(parts):
-            unquoted_formula = re.sub(r'"(?:[^"]|"")*"', '""', formula)
-            self.assertIsNone(volatile_pattern.search(unquoted_formula), formula)
+        self.assertEqual(checks_status_styles['E4="OK"'], ("FF008000", "FFE2F0D9"))
+        self.assertEqual(font_and_number_format(parts, checks_path, "B11")[1], AUD_FORMAT)
 
     def test_template_documentation_contract(self):
         """The repository documentation change is the production change that makes this pass."""
@@ -627,9 +828,11 @@ class CashFlowTemplateContractTests(unittest.TestCase):
             "replace the blue input cells",
             "enter the business name, forecast start date, as-at date, opening cash and minimum cash buffer",
             "select `Base`, `Upside` or `Downside`",
-            "refresh the forecast inputs and enter available actual closing cash",
+            "refresh the forecast inputs and enter available actual receipts, actual payments and actual closing cash",
             "use `Dashboard`",
             "use `Weekly Review`",
+            "compare receipt, payment and closing-cash variances",
+            "record owner commentary",
             "review `Checks & Sources`",
             "save the reviewed file as the period's archive",
             "copy it for the next cycle",
@@ -665,6 +868,8 @@ class CashFlowTemplateContractTests(unittest.TestCase):
 
         self.assertIn("not tax advice", limitations.lower())
         self.assertIn("statutory", limitations.lower())
+        self.assertIn("exactly 13 weeks", limitations.lower())
+        self.assertIn("formula errors", limitations.lower())
         self.assertIn("[Ozzit 13-week cash-flow forecast template](templates/README.md)", getting_started)
         self.assertIn("| `templates/` | `13-week-cash-flow-forecast.xlsx` and its user guide |", repository_layout)
 

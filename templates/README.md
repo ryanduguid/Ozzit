@@ -8,8 +8,8 @@ The workbook opens with illustrative data from an Australian business so that th
 
 1. **Replace the sample data.** On `13-Week Forecast`, replace the blue input cells with the business's expected receipts and payments. Use whole AUD unless the assumptions say otherwise.
 2. **Set the assumptions and scenario.** On `Assumptions`, enter the business name, forecast start date, as-at date, opening cash and minimum cash buffer. Select `Base`, `Upside` or `Downside` in the scenario control.
-3. **Update weekly inputs.** Each week, refresh the forecast inputs and enter available actual closing cash and owner notes on `Weekly Review`. Keep the source or rationale for material changes with the working papers.
-4. **Review the outputs.** Use `Dashboard` for the 13-week cash and buffer view, then use `Weekly Review` to compare forecast closing cash with actual closing cash and record actions.
+3. **Update weekly inputs.** Each week, refresh the forecast inputs and enter available actual receipts, actual payments and actual closing cash on `Weekly Review`. Record owner commentary and keep the source or rationale for material changes with the working papers.
+4. **Review the outputs.** Use `Dashboard` for the 13-week cash and buffer view, then use `Weekly Review` to compare receipt, payment and closing-cash variances.
 5. **Resolve checks, then archive or roll forward.** Before sharing the forecast, review `Checks & Sources`, fix any failed model check and record decisions. Save the reviewed file as the period's archive, then copy it for the next cycle and update the dates, actuals and forecast inputs.
 
 ## Scenario behaviour
@@ -20,6 +20,6 @@ The scenario receipt adjustment is calculated from customer receipts, overdue re
 
 ## Checks and limitations
 
-`Checks & Sources` contains separate `MODEL STATUS` and `LIQUIDITY STATUS` results. Model checks test links, totals, roll-forwards and the weekly review linkage. A liquidity warning is a business alert and is not a model-integrity failure. The same sheet records the official sources and the scope notes used when the workbook was prepared.
+`Checks & Sources` contains separate `MODEL STATUS` and `LIQUIDITY STATUS` results. Its nine model checks confirm exactly 13 weeks, a Monday start, a valid scenario, the opening-cash tie, weekly roll-forwards, weekly receipt and payment totals, the Week 13 closing-cash equation and the absence of formula errors. A liquidity warning is a business alert and is not a model-integrity failure. The same sheet records the official sources and the scope notes used when the workbook was prepared.
 
 This is an illustrative FP&A cash-planning model. It is not tax advice, and it is not BAS, payroll, superannuation, financial or legal advice. Statutory amounts, payment timing and dates are planning assumptions confirmed by the user or adviser. The workbook does not determine tax classifications, entity-specific lodgement dates or payroll treatment, and it does not import transaction-level actuals. Confirm the completed forecast with the responsible finance professional before relying on it.
