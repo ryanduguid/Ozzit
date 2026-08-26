@@ -111,11 +111,11 @@ Four functions cover lessee accounting. They compose: the liability feeds the sc
 | `oz.ROUScheduleλ(Cost, Periods)` | Opening, depreciation and closing rows for the right-of-use asset |
 | `oz.LeaseRemeasureλ(RevisedPayments, Rate, CarryingLiability, CarryingROU, [InAdvance])` | Revised liability, adjustment, revised asset and the remainder taken to profit or loss |
 
-`Rate` is the rate **per period**, not per year: divide an annual rate by the number of periods in a year before passing it. `InAdvance` is the argument most often set wrong. A property lease is usually paid at the start of each period, which discounts every payment one period less and raises the liability by a whole period of interest.
+`Rate` is the rate **per period**, not per year: divide an annual rate by the number of periods in a year before passing it. Set `InAdvance` to `TRUE` when the first supplied payment is made at the measurement date. That payment is excluded from the liability and the schedule's payment row; the remaining payments unwind after one period of interest. A schedule with payments in advance therefore has one fewer liability period. Add a payment made at or before commencement to the right-of-use asset cost instead.
 
 Three things the functions take rather than decide:
 
-- **The payments.** Include an amount expected to be payable under a residual value guarantee, or the exercise price of a purchase option, in the final period where [AASB 16](https://standards.aasb.gov.au/aasb-16-nov-2022) paragraph 27 brings it into the lease payments. Leave out variable payments that depend on sales or usage.
+- **The payments.** Supply all payments in order, including the measurement-date payment first when `InAdvance` is `TRUE`. Include an amount expected to be payable under a residual value guarantee, or the exercise price of a purchase option, in the final period where [AASB 16](https://standards.aasb.gov.au/aasb-16-nov-2022) paragraph 27 brings it into the lease payments. Leave out variable payments that depend on sales or usage.
 - **The rate.** Paragraph 26 discounts at the interest rate implicit in the lease where that rate can be readily determined, and at the lessee's incremental borrowing rate where it cannot. Where you have the fair value and the residual, `oz.IRRλ` over the same cash flows gives the implicit rate.
 - **The asset's cost.** Paragraph 24 builds it from the initial liability, payments made at or before commencement less incentives received, initial direct costs, and an estimate of dismantling and restoration costs. Add those four up and pass the total as `Cost`.
 
