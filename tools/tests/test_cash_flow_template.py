@@ -201,6 +201,24 @@ def font_and_number_format(parts, path, address):
     return name.attrib.get("val") if name is not None else None, custom_formats.get(number_format_id, "General")
 
 
+def used_cell_font_names(parts):
+    styles = ET.fromstring(parts["xl/styles.xml"])
+    fonts = styles.find("m:fonts", NS)
+    cell_xfs = styles.find("m:cellXfs", NS)
+    font_names = [
+        font.find("m:name", NS).attrib.get("val")
+        if font.find("m:name", NS) is not None else None
+        for font in fonts
+    ]
+    names = set()
+    for _, path in sheet_paths(parts):
+        sheet = ET.fromstring(parts[path])
+        for cell in sheet.findall(".//m:c", NS):
+            style = cell_xfs[int(cell.attrib.get("s", "0"))]
+            names.add(font_names[int(style.attrib.get("fontId", "0"))])
+    return names
+
+
 def relationship_records(parts):
     for relationships_path, payload in parts.items():
         if not relationships_path.endswith(".rels"):
@@ -599,8 +617,9 @@ class CashFlowTemplateContractTests(unittest.TestCase):
             self.assertIn(colour.encode(), styles)
 
         for sheet_name, path in sheets:
-            self.assertEqual(font_and_number_format(parts, path, "A1")[0], "Aptos Display", sheet_name)
+            self.assertEqual(font_and_number_format(parts, path, "A1")[0], "Aptos", sheet_name)
             self.assertEqual(font_and_number_format(parts, path, "A2")[0], "Aptos", sheet_name)
+        self.assertEqual(used_cell_font_names(parts), {"Aptos"})
         self.assertEqual(font_and_number_format(parts, sheet_map["Start Here"], "B7")[1], DATE_FORMAT)
         self.assertEqual(font_and_number_format(parts, sheet_map["Assumptions"], "B8")[1], DATE_FORMAT)
         self.assertEqual(font_and_number_format(parts, sheet_map["Assumptions"], "B10")[1], AUD_FORMAT)
