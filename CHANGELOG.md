@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Deterministic release candidate staging
+
+- **`tools/prepare_release_bundle.py` added.** From a clean candidate it copies the exact tracked workbook into a fresh external staging directory, reruns the six workbook-bound gates and emits only `ozzit.xlsx`, canonical `provenance.json` and canonical `SHA256SUMS`. A second mode independently verifies the closed inventory, hashes, base lock and gate evidence. The tool neither tags nor publishes, refuses to overwrite a destination and cleans an unpublished staging directory after failure.
+- **The shipped workbook now has an explicit byte lock.** `release/workbook-base.json` records its SHA-256, byte length, Git blob and last workbook-changing commit. This is honest copy-only provenance: the post-v3.0.0 process still does not regenerate the present workbook from upstream.
+- **The binary migration is recoverable.** `ozzit.xlsx` remains tracked until one release asset has been published, downloaded independently and matched to both its checksum and exact signed tag. Removing it, rewriting history or force-pushing is outside this change.
+- **Release counts and tests are current.** The release guide now names all ten gates and the 438-assertion native baseline. Fifteen release-bundle regression contracts cover deterministic output, tampering, closed inputs, base drift, Git-history binding, shell avoidance, output isolation, no-overwrite behaviour and failure cleanup.
+
 ### AASB 16 lease functions
 
 Four lessee functions, the library's first coverage of an accounting standard rather
