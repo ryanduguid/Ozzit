@@ -66,6 +66,7 @@ class RepositoryPolicyTests(unittest.TestCase):
     def test_workflow_and_dependabot_match_reviewed_controls(self):
         workflow = read_utf8(VERIFY_WORKFLOW)
         self.assertIn("persist-credentials: false", workflow)
+        self.assertIn("fetch-depth: 0", workflow)
         self.assertIn("python tools/verify_workbook.py ozzit.xlsx", workflow)
         self.assertIn("python tools/verify_sources.py ozzit.xlsx src", workflow)
         self.assertIn("python -m unittest discover -s tools/tests -v", workflow)
