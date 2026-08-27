@@ -27,6 +27,7 @@ import html
 import re
 import sys
 import zipfile
+from collections.abc import Collection
 from pathlib import Path
 
 # Every function name carries a λ, and a Windows console defaults to cp1252, which
@@ -45,14 +46,14 @@ NAME = re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_.λ]*)\s*=\s*(.+)$", re.DOTALL)
 OPTIONAL = re.compile(r"_xlop\.([A-Za-z_][A-Za-z0-9_]*\??)")   # ? is legal in a parameter name
 PREFIX = re.compile(r"_xl[a-z]+\.", re.IGNORECASE)
 
-failures = []
+failures: list[str] = []
 
 
-def fail(msg):
+def fail(msg: str) -> None:
     failures.append(msg)
 
 
-def read_string(text, i):
+def read_string(text: str, i: int) -> tuple[str, int]:
     """Copy a double-quoted literal verbatim, honouring the "" escape."""
     lit, n = ['"'], len(text)
     i += 1
@@ -70,7 +71,7 @@ def read_string(text, i):
     return "".join(lit), i
 
 
-def statements(text):
+def statements(text: str) -> list[str]:
     """Split a module into top-level statements, honouring strings and comments."""
     out, buf, depth = [], [], 0
     i, n = 0, len(text)
@@ -104,9 +105,11 @@ def statements(text):
     return out
 
 
-def split_literals(formula):
+def split_literals(formula: str) -> list[tuple[bool, str]]:
     """Alternating (is_string, chunk) pairs."""
-    out, buf, i, n = [], [], 0, len(formula)
+    out: list[tuple[bool, str]] = []
+    buf: list[str] = []
+    i, n = 0, len(formula)
     while i < n:
         if formula[i] == '"':
             if buf:
@@ -122,7 +125,7 @@ def split_literals(formula):
     return out
 
 
-def unwrap_single(s):
+def unwrap_single(s: str) -> str:
     """SINGLE(expr) is how the file format stores the @ implicit-intersection operator."""
     while True:
         at = s.find("SINGLE(")
@@ -142,7 +145,7 @@ def unwrap_single(s):
         s = s[:at] + "@" + s[at + len("SINGLE("):i] + s[i + 1:]
 
 
-def canonical(formula):
+def canonical(formula: str) -> str:
     """Whitespace-free, upper-cased outside strings, in the typed form."""
     formula = OPTIONAL.sub(r"[\1]", formula)          # BEFORE the generic prefix strip
     formula = PREFIX.sub("", formula).replace("[0]!", "")
@@ -159,7 +162,7 @@ def canonical(formula):
     return unwrap_single("".join(parts))
 
 
-def qualify(formula, module, names):
+def qualify(formula: str, module: str, names: Collection[str]) -> str:
     """Turn each module-local call into the qualified name AFE compiles it to."""
     chunks = []
     for is_string, chunk in split_literals(formula):
@@ -171,7 +174,7 @@ def qualify(formula, module, names):
     return "".join(chunks)
 
 
-def dead_conversions(body):
+def dead_conversions(body: str) -> list[str]:
     """Names bound to a converted argument that nothing ever reads.
 
     Several functions take a date that may be written as text, convert it to a serial
@@ -189,7 +192,7 @@ def dead_conversions(body):
     return sorted({n for n in seen if seen.count(n) == 1})
 
 
-def main():
+def main() -> int:
     # Two passes: the namespace is flat, so a call in one module may name a function
     # declared in another, and every declaration has to be known before any is qualified.
     raw = {}
