@@ -191,7 +191,14 @@ Each module has its own tab colour, gridlines are hidden, and every sheet opens 
 
 ## Checks
 
-Nine gates, because they answer different questions. Seven run in CI; the two that need Excel run locally.
+Ten gates, because they answer different questions. Eight run in CI; the two that need Excel run locally.
+
+```bash
+python -m pip install "mypy==2.3.1"
+python -m mypy --config-file mypy.ini
+```
+
+Type safety: all 146 production tool functions have complete parameter and return annotations, and Mypy checks the 20 production Python modules without suppressing error categories. The checker version is pinned so local and CI results agree.
 
 ```bash
 python tools/verify_workbook.py ozzit.xlsx
@@ -209,7 +216,7 @@ Provenance: every function in `src/` must match the defined name that ships, and
 python tools/verify_signatures.py src
 ```
 
-Documentation: every function states its parameters twice, once as the signature on its help's FUNCTION line and again as a table below it, and ends with worked examples a reader is meant to copy. All three are hand-written text inside a string literal, so nothing else in the build ever reads them and they drift separately: one function's table described a different function's arguments for six releases, and three worked examples called a neighbouring function rather than the one they were printed under. It reads 117 signatures, 122 parameter tables and 119 example blocks, checks that every function named in a help is one the library declares, accounts for every declaration in every module, and refuses to pass if it parsed too few. Also runs in CI.
+Documentation: every function states its parameters twice, once as the signature on its help's FUNCTION line and again as a table below it, and ends with worked examples a reader is meant to copy. All three are hand-written text inside a string literal, so nothing else in the build ever reads them and they drift separately: one function's table described a different function's arguments for six releases, and three worked examples called a neighbouring function rather than the one they were printed under. It reads 121 signatures, 126 parameter tables and 123 example blocks, checks that every function named in a help is one the library declares, accounts for every declaration in every module, and refuses to pass if it parsed too few. Also runs in CI.
 
 ```bash
 python tools/verify_previous_names.py functions.csv
@@ -233,7 +240,7 @@ Advanced Formula Environment: the AFE task pane is the documented editing surfac
 python -m unittest discover -s tools/tests -v
 ```
 
-Tooling: exercises the workbook sanitiser against clean and simulated Excel-saved files, deterministic compression, failed atomic replacement, malformed input and privacy leaks; proves the cache refresh delegates to the same implementation; and regression-tests the source and signature parsers against new modules and LAMBDAs without a top-level `LET`. Runs in CI so maintenance edits cannot quietly weaken the gates or corrupt a workbook while replacing it.
+Tooling: exercises the workbook sanitiser against clean and simulated Excel-saved files, deterministic compression, failed atomic replacement, malformed input and privacy leaks; proves the cache refresh delegates to the same implementation; and regression-tests the transform, AASB 16 post-build parser, cached-value reader, AFE boundary, source parser and signature parser. A policy test keeps the physical test/tool ratio at or above 0.50. Runs in CI so maintenance edits cannot quietly weaken the gates or corrupt a workbook while replacing it.
 
 ```bash
 powershell -ExecutionPolicy Bypass -File tools/excel_selftest.ps1

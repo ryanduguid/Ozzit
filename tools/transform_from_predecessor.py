@@ -2,6 +2,8 @@
 # Pure zip/XML surgery. Never resaves via openpyxl (preserves cached values, extensions, rich parts).
 import zipfile, re, os, sys, datetime
 import base64, json
+from collections.abc import Mapping
+from typing import Any
 
 # The progress lines name functions, and every function name carries a λ, which a Windows
 # console's cp1252 cannot encode: without this the build dies partway through reporting
@@ -16,7 +18,7 @@ TODAY_AU = "18 Aug 2026"
 NOW_ISO = "2026-08-18T00:00:00Z"
 
 zin = zipfile.ZipFile(SRC)
-parts = {n: zin.read(n) for n in zin.namelist()}
+parts: dict[str, bytes] = {n: zin.read(n) for n in zin.namelist()}
 
 REMOVE = {
     "xl/richData/richValueRel.xml",
@@ -36,8 +38,8 @@ for r in REMOVE:
     assert r in parts, r
     del parts[r]
 
-def get(n): return parts[n].decode("utf-8")
-def put(n, s): parts[n] = s.encode("utf-8")
+def get(n: str) -> str: return parts[n].decode("utf-8")
+def put(n: str, s: str) -> None: parts[n] = s.encode("utf-8")
 
 # ---------- 1. Content types: drop richData overrides + png default ----------
 ct = get("[Content_Types].xml")
@@ -219,38 +221,41 @@ URL_RE = re.compile(r'https://(?:sites\.google\.com/site/beyondexcel|gist\.githu
 YEAR_SHIFT = 2
 EPOCH = datetime.datetime(1899, 12, 30)
 
-def _shift_ymd(y, m, d):
+def _shift_ymd(y: int, m: int, d: int) -> tuple[int, int, int]:
+    datetime.date(y, m, d)
     y2 = y + YEAR_SHIFT
     try:
         datetime.date(y2, m, d)
     except ValueError:
+        if (m, d) != (2, 29):
+            raise
         d = 28
     return y2, m, d
 
-def _shift_serial(v):
+def _shift_serial(v: float) -> float:
     frac = v - int(v)
     dt = EPOCH + datetime.timedelta(days=int(v))
     y2, m, d = _shift_ymd(dt.year, dt.month, dt.day)
     return (datetime.datetime(y2, m, d) - EPOCH).days + frac
 
-def _mdy_to_au(mo):
+def _mdy_to_au(mo: re.Match[str]) -> str:
     m_, d_, y_ = int(mo.group(1)), int(mo.group(2)), int(mo.group(3))
     if y_ < 100:  # predecessor also wrote two-digit years, e.g. 02/26/23
         y_ += 2000
     y2, mm, dd = _shift_ymd(y_, m_, d_)
     return "%d/%d/%d" % (dd, mm, y2)
 
-def _iso_shift(mo):
+def _iso_shift(mo: re.Match[str]) -> str:
     y2, mm, dd = _shift_ymd(int(mo.group(1)), int(mo.group(2)), int(mo.group(3)))
     return "%04d-%02d-%02d" % (y2, mm, dd)
 
-def _arr_shift(mo):
+def _arr_shift(mo: re.Match[str]) -> str:
     return re.sub(r'\d{5}',
                   lambda n: str(int(_shift_serial(float(n.group(0)))))
                   if 40000 < int(n.group(0)) < 48000 else n.group(0),
                   mo.group(0))
 
-def transform_text(s):
+def transform_text(s: str) -> str:
     s = URL_RE.sub(REPO_URL, s)
     for old, new in BRAND:
         s = s.replace(old, new)
@@ -287,10 +292,10 @@ def transform_text(s):
 # Each spec generates both the compiled defined-name body and the readable AFE module source
 # from one description, so the two representations cannot drift apart.
 
-def xesc(s):
+def xesc(s: str) -> str:
     return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
-def help_lines(spec):
+def help_lines(spec: dict[str, Any]) -> list[str]:
     out = ['FUNCTION:      →%s¶' % spec["sig"],
            'DESCRIPTION:   →%s¶' % spec["desc"],
            'WEBPAGE:       →%s¶' % REPO_URL,
@@ -307,7 +312,7 @@ def help_lines(spec):
 # published source silently drifted apart; de-prefixing makes that impossible.
 DEPREFIX = re.compile(r"_xl[a-z]+\.")   # _xlfn. _xlpm. _xlop. _xlws. and friends
 
-def build_xml(spec):
+def build_xml(spec: dict[str, Any]) -> str:
     hl = help_lines(spec)
     help_expr = ('TRIM(_xlfn.TEXTSPLIT(' + " &amp; ".join('"%s"' % xesc(l) for l in hl) + ', "→", "¶"))')
     lets = ['_xlpm.Help, ' + help_expr, '_xlpm.Help?, ' + xesc(spec["help_test"])]
@@ -315,7 +320,7 @@ def build_xml(spec):
     return '_xlfn.LAMBDA(%s, _xlfn.LET(%s, CHOOSE(_xlpm.Help? + 1, _xlpm.Result, _xlpm.Help)))' % (
         spec["xml_decl"], ', '.join(lets))
 
-def build_afe(spec):
+def build_afe(spec: dict[str, Any]) -> str:
     hl = help_lines(spec)
     body = "".join('                            "%s"%s\n' % (l, ' &' if i < len(hl) - 1 else ',')
                    for i, l in enumerate(hl))
@@ -343,7 +348,7 @@ def build_afe(spec):
         + "    )\n"
         + ");\n")
 
-FUNCS = [
+FUNCS: list[dict[str, Any]] = [
     {
         "module": "ozzit.f", "name": "DiminishingValueλ",
         "sig": "DiminishingValueλ(Cost, Life)",
@@ -481,7 +486,9 @@ m = re.search(r'>([A-Za-z0-9+/=]{100,})<', afe)
 assert m
 j = base64.b64decode(m.group(1)).decode("utf-16-le")
 obj_afe = json.loads(transform_text(j))
-mods = {f["path"].rsplit("/", 1)[1]: f for f in obj_afe["files"]}
+mods: dict[str, dict[str, Any]] = {
+    f["path"].rsplit("/", 1)[1]: f for f in obj_afe["files"]
+}
 # drop the duplicated "Website:" About line now that the text is unescaped
 dropped = 0
 for f in obj_afe["files"]:
@@ -571,8 +578,13 @@ for _fn, _wrong, _in_mods in HELP_NAMES_ITSELF:
         assert _blk.count(_from) == 1, (_fn, _mod)
         mods[_mod]["text"] = _t[:_a] + _blk.replace(_from, _to) + _t[_b:]
 
-    _hits = []
-    def _name_itself(m, _from=_from, _to=_to, _hits=_hits):
+    _hits: list[str] = []
+    def _name_itself(
+        m: re.Match[str],
+        _from: str = _from,
+        _to: str = _to,
+        _hits: list[str] = _hits,
+    ) -> str:
         body = m.group(2)
         if _from in body:
             _hits.append(m.group(1))
@@ -636,7 +648,7 @@ for _wrong, _right in HELP_PARAM_TYPOS:
 # from, here, and the defined name Excel installs, further down. They are patched at
 # different points because they are swept for spelling and rebranded at different points,
 # and a fragment written in Australian English matches only after that sweep.
-HELP_SIGNATURES = [
+HELP_SIGNATURES: list[tuple[str, ...]] = [
     # module,     function,          what the signature said,          what the function takes
     ("ozzit.f", "CorkScrewReversalλ", "( Opening, Flow1,", "( Opening, ReversalFlags, Flow1,"),
     ("ozzit.f", "Movementλ", "( [BeginningValue], Values)", "( [BeginningValues], Values)"),
@@ -777,7 +789,9 @@ HELP_SIGNATURES = [
 ]
 
 
-def stores(entry):
+def stores(
+    entry: tuple[str, ...],
+) -> tuple[str, str, tuple[str, str], tuple[str, str]]:
     """One correction as (module, function, source pair, defined-name pair).
 
     The two forms differ only when a replacement spans more than one row: the module
@@ -794,7 +808,7 @@ def stores(entry):
 ISINLIST = ("ozzit.e", "ozzit.u")
 
 
-def function_block(module, fn):
+def function_block(module: str, fn: str) -> tuple[int, int]:
     """The span of one function's definition in its module source."""
     text = mods[module]["text"]
     start = re.search(r"(?m)^%s\s*=\s*LAMBDA" % re.escape(fn), text)
@@ -831,7 +845,7 @@ BANNER_NAMES = [
 for _mod, _fn, _old, _new in BANNER_FIXES:
     _pat = re.compile(r"(FUNCTION NAME:\s+%s\s+DESCRIPTION:\*//\*\*)%s(\*/)"
                       % (re.escape(_fn), re.escape(_old)))
-    mods[_mod]["text"], _n = _pat.subn(lambda m, w=_new: m.group(1) + w + m.group(2),
+    mods[_mod]["text"], _n = _pat.subn(lambda m: m.group(1) + _new + m.group(2),
                                        mods[_mod]["text"])
     assert _n == 1, (_mod, _fn, _n)
 
@@ -881,7 +895,7 @@ print("corrected %d help signatures in the module sources, renamed IsInListλ's 
 # the module source here, the defined name Excel installs further down. The entries that
 # carry six values give the stored form separately, because Excel prefixes every parameter
 # with _xlpm. and writes < and > as XML entities.
-LOGIC_FIXES = [
+LOGIC_FIXES: list[tuple[str, ...]] = [
     # OverLapDaysλ converts all four of its dates, so that a date written as text becomes
     # a serial number, and then compares the raw arguments anyway. The four conversions
     # are never read. Two text dates therefore compare as text, which orders "17/1/2025"
@@ -1393,7 +1407,7 @@ print("fixed %d defects in the module sources across %d functions"
 # defined names only, and so does this build. They therefore get the defined-name pass
 # alone: there is no module source to correct first, and no demonstration sheet has ever
 # called one, so nothing is cached either.
-DEBT_FIXES = [
+DEBT_FIXES: list[tuple[str, ...]] = [
     # DebtSculptVariableLRVλ subtracted the interest when working out the payment and then
     # added it back into the closing balance. Subtracting it is only right if the interest
     # is paid out of the period's cash, which is what a debt service coverage ratio means;
@@ -1506,8 +1520,8 @@ for n in list(parts):
     if n.endswith((".xml", ".rels")):
         put(n, transform_text(get(n)))
     elif re.match(r'xl/customProperty\d+\.bin$', n):
-        txt = parts[n].decode("utf-16-le")
-        parts[n] = transform_text(txt).encode("utf-16-le")
+        binary_text = parts[n].decode("utf-16-le")
+        parts[n] = transform_text(binary_text).encode("utf-16-le")
 
 # ---------- help signatures, second store ----------
 # The module sources were corrected before the AFE store was written. The defined names
@@ -1517,11 +1531,17 @@ for n in list(parts):
 _wbx = get("xl/workbook.xml")
 for _entry in HELP_SIGNATURES + LOGIC_FIXES + DEBT_FIXES:
     _mod, _fn, _, (_old, _new) = stores(_entry)
-    _hit = []
+    _hit: list[str] = []
 
     # the full name, not the base: several functions exist in more than one module, and
     # a correction belongs to the copy the table names
-    def _fix(m, _old=_old, _new=_new, _hit=_hit, _want=_mod + "." + _fn):
+    def _fix(
+        m: re.Match[str],
+        _old: str = _old,
+        _new: str = _new,
+        _hit: list[str] = _hit,
+        _want: str = _mod + "." + _fn,
+    ) -> str:
         if m.group(1) != _want or _old not in m.group(2):
             return m.group(0)
         _hit.append(m.group(1))
@@ -1534,21 +1554,24 @@ for _entry in HELP_SIGNATURES + LOGIC_FIXES + DEBT_FIXES:
 # _xlpm. on the references, both already normalised to the declared spelling
 _renamed = 0
 for _mod in ISINLIST:
-    _hit = []
+    _rename_hits: list[int] = []
 
-    def _rename(m, _hit=_hit):
+    def _rename(
+        m: re.Match[str],
+        _rename_hits: list[int] = _rename_hits,
+    ) -> str:
         if m.group(1) != _mod + ".IsInListλ":
             return m.group(0)
         body, n = re.subn(r"(_xl(?:op|pm)\.)LIST\b", lambda k: k.group(1) + "List", m.group(2))
-        _hit.append(n)
+        _rename_hits.append(n)
         # and its missing column delimiter, stored the same way it is written
         _old, _new = TEXTSPLIT_ARGS
         assert body.count(_old) == 1, (_mod, "defined name", "TEXTSPLIT", body.count(_old))
         return m.group(0).replace(m.group(2), body.replace(_old, _new))
 
     _wbx = re.sub(r'<definedName name="([^"]+)"[^>]*>(.*?)</definedName>', _rename, _wbx, flags=re.S)
-    assert _hit == [3], (_mod, "defined name", _hit)   # one declaration, two references
-    _renamed += _hit[0]
+    assert _rename_hits == [3], (_mod, "defined name", _rename_hits)
+    _renamed += _rename_hits[0]  # one declaration, two references
 put("xl/workbook.xml", _wbx)
 print("corrected %d help signatures and %d defects in the defined names, %d of them in the "
       "debt module, renamed %d LIST tokens, restored 2 column delimiters"
@@ -1561,7 +1584,7 @@ print("corrected %d help signatures and %d defects in the defined names, %d of t
 # the help is a two-column table and TRIM() has already run on it.
 
 
-def cached_forms(fragment):
+def cached_forms(fragment: str) -> tuple[bool, str]:
     """The fragment as a cached spill holds it, and whether it is a whole cell.
 
     Returns (is_whole_cell, value). A parameter label spills into a cell of its own, so
@@ -1578,7 +1601,12 @@ def cached_forms(fragment):
 CACHED_VALUE = re.compile(r"<v>(.*?)</v>", re.S)
 
 
-def refresh_cached(text, whole, old, new):
+def refresh_cached(
+    text: str,
+    whole: bool,
+    old: str,
+    new: str,
+) -> tuple[str, int]:
     """Replace inside cached values only, never inside a formula.
 
     A worksheet holds both: <f> is what Excel will recalculate, <v> is what it last
@@ -1589,7 +1617,7 @@ def refresh_cached(text, whole, old, new):
     """
     hits = [0]
 
-    def one(m):
+    def one(m: re.Match[str]) -> str:
         value = m.group(1)
         if whole:
             if value.strip() != old:
@@ -1604,14 +1632,14 @@ def refresh_cached(text, whole, old, new):
     return CACHED_VALUE.sub(one, text), hits[0]
 
 
-_refreshed = {}
+_refreshed: dict[str, list[str]] = {}
 for _entry in HELP_SIGNATURES:
     _mod, _fn, (_old, _new), _ = stores(_entry)
     _whole, _co = cached_forms(_old)
     _cn = cached_forms(_new)[1]
     for _sheet in [n for n in list(parts) if re.match(r"xl/worksheets/sheet\d+\.xml$", n)]:
-        _text, _hits = refresh_cached(get(_sheet), _whole, _co, _cn)
-        if not _hits:
+        _text, _cache_hits = refresh_cached(get(_sheet), _whole, _co, _cn)
+        if not _cache_hits:
             continue
         put(_sheet, _text)
         _refreshed.setdefault(_sheet, []).append(_fn)
@@ -1624,9 +1652,14 @@ print("refreshed cached help on %d sheets: %s"
                                     for s, f in sorted(_refreshed.items()))))
 
 
-def left_of(ref):
+def left_of(ref: str) -> str:
     """The cell one column to the left of an A1-style reference."""
-    col, row = re.match(r"([A-Z]+)(\d+)$", ref).groups()
+    match = re.fullmatch(r"([A-Z]+)(\d+)", ref)
+    if match is None:
+        raise ValueError(f"not an A1-style cell reference: {ref}")
+    col, row = match.groups()
+    if int(row) < 1:
+        raise ValueError(f"row must be at least 1: {ref}")
     n = 0
     for ch in col:
         n = n * 26 + ord(ch) - 64
@@ -1662,7 +1695,9 @@ for _marker, _was, _now in CACHED_EXAMPLES:
         assert len(_rows) == 1, (_sheet, _marker, _rows)
         _label = left_of(_rows[0])
         assert _cells[_label] == "<v>%s</v>" % _was, (_sheet, _label, _cells[_label])
-        _open = re.search(r'<c r="%s"[^>]*>' % _label, _text).group(0)
+        _open_match = re.search(r'<c r="%s"[^>]*>' % _label, _text)
+        assert _open_match, (_sheet, _label, "cell opening tag missing")
+        _open = _open_match.group(0)
         _text = _text.replace(_open + _cells[_label], _open + "<v>%s</v>" % _now, 1)
         put(_sheet, _text)
         _found.append("%s!%s" % (_sheet.rsplit("/", 1)[1], _label))
@@ -1677,7 +1712,7 @@ for _marker, _was, _now in CACHED_EXAMPLES:
 # reproduces. Correcting them here means the file agrees with itself before Excel is opened.
 # Cells are named outright rather than searched for, because a cached number is not
 # distinctive enough to find, and each one carries the value it must be replacing.
-CACHED_SHEET_CELLS = [
+CACHED_SHEET_CELLS: list[tuple[str, list[tuple[str, str, str]]]] = [
     ("Periodsλ(A25:A29,B25:B29,C25:C29)", [
         ("B8", "* End Date is inclusive",
          "* Counts the period starts crossed, so a part period at the end counts"),
@@ -1721,7 +1756,9 @@ for n in list(parts):
 
 # demo input cells stored as date serials: +2 years, calendar-aware
 st_now = get("xl/styles.xml")
-cellxfs = re.search(r'<cellXfs count="\d+">(.*?)</cellXfs>', st_now, re.S).group(1)
+cellxfs_match = re.search(r'<cellXfs count="\d+">(.*?)</cellXfs>', st_now, re.S)
+assert cellxfs_match, "styles.xml has no cellXfs collection"
+cellxfs = cellxfs_match.group(1)
 xfs = re.findall(r'<xf [^>]*numFmtId="(\d+)"[^>]*/?>', cellxfs)
 DATE_BUILTIN = set(range(14, 23)) | set(range(27, 37)) | {45, 46, 47} | set(range(50, 59))
 custom_date = set()
@@ -1734,7 +1771,7 @@ shifted_cells = 0
 for n in list(parts):
     if re.match(r'xl/worksheets/sheet\d+\.xml$', n):
         d = get(n)
-        def _cell(mo):
+        def _cell(mo: re.Match[str]) -> str:
             global shifted_cells
             sid = int(mo.group("s") or 0)
             if sid in date_styles and 20000 <= float(mo.group("v")) <= 80000:
@@ -1973,8 +2010,11 @@ print("cleared cached MACRS text on", cache_fixes, "sheets")
 
 # ---------- 9e. Data Validation sheet: add the prime cost method row ----------
 ss = get("xl/sharedStrings.xml")
-cnt = int(re.search(r'count="(\d+)"', ss).group(1))
-uniq = int(re.search(r'uniqueCount="(\d+)"', ss).group(1))
+count_match = re.search(r'count="(\d+)"', ss)
+unique_match = re.search(r'uniqueCount="(\d+)"', ss)
+assert count_match and unique_match, "sharedStrings.xml counts are missing"
+cnt = int(count_match.group(1))
+uniq = int(unique_match.group(1))
 new_si = ["PC", "Straight line"]
 ss = ss.replace("</sst>", "".join("<si><t>%s</t></si>" % v for v in new_si) + "</sst>")
 ss = ss.replace('count="%d" uniqueCount="%d"' % (cnt, uniq),
@@ -2024,6 +2064,7 @@ put("xl/worksheets/sheet2.xml",
 # ---------- 9e3. Cover: drop the merge left behind by the removed section ----------
 cov = get("xl/worksheets/sheet1.xml")
 m_cnt = re.search(r'<mergeCells count="(\d+)">', cov)
+assert m_cnt, "Cover sheet has no mergeCells count"
 cov2 = cov.replace('<mergeCell ref="A29:B29"/>', "")
 assert cov2 != cov
 cov2 = cov2.replace(m_cnt.group(0), '<mergeCells count="%d">' % (int(m_cnt.group(1)) - 1))
@@ -2069,6 +2110,7 @@ print("printer configuration removed; A4 set on 3 sheets")
 # The five additions had no demonstration sheet, unlike every other headline function.
 st_now = get("xl/styles.xml")
 cellxfs_m = re.search(r'<cellXfs count="(\d+)">', st_now)
+assert cellxfs_m, "styles.xml has no cellXfs count"
 base_xf = int(cellxfs_m.group(1))
 NEW_XFS = ('<xf numFmtId="0" fontId="4" fillId="0" borderId="0" xfId="0" applyFont="1"/>'      # heading
            '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'  # currency
@@ -2078,16 +2120,16 @@ st_now = st_now.replace("</cellXfs>", NEW_XFS + "</cellXfs>", 1)
 put("xl/styles.xml", st_now)
 H, MONEY, DATE = base_xf, base_xf + 1, base_xf + 2
 
-def txt(ref, s, value):
+def txt(ref: str, s: int, value: object) -> str:
     return '<c r="%s" s="%d" t="inlineStr"><is><t>%s</t></is></c>' % (ref, s, value)
-def num(ref, s, value):
+def num(ref: str, s: int, value: object) -> str:
     return '<c r="%s" s="%d"><v>%s</v></c>' % (ref, s, value)
-def fml(ref, s, formula, spill=None):
+def fml(ref: str, s: int, formula: str, spill: str | None = None) -> str:
     f = ('<f t="array" ref="%s">%s</f>' % (spill, xesc(formula))) if spill else '<f>%s</f>' % xesc(formula)
     cm = ' cm="1"' if spill else ''
     return '<c r="%s" s="%d"%s>%s</c>' % (ref, s, cm, f)
 
-AU_ROWS = {
+AU_ROWS: dict[int, str] = {
     1:  '<c r="A1" s="270" t="str"><f>_xlfn.TEXTAFTER(CELL("filename",A1),"]")</f><v>Australian tax</v></c>',
     2:  txt("A2", 0, "The Australian additions to this library. Change the input cells and the results follow."),
     4:  txt("A4", H, "DEPRECIATION"),
@@ -2194,7 +2236,7 @@ put("xl/tables/table1.xml", t1)
 
 toc = get("xl/worksheets/sheet2.xml")
 unhidden = 0
-def _show(m):
+def _show(m: re.Match[str]) -> str:
     global unhidden
     row = int(m.group(1))
     if not (5 <= row <= 70):        # only the table's own data rows
@@ -2231,7 +2273,11 @@ print("listed the new worksheet in docProps/app.xml")
 # 38 RANDBETWEEN formulas made 93% of the workbook's formula cells volatile, so every edit
 # recalculated almost everything. The sample data does not need to be random: fixed values
 # make the demonstrations reproducible and cost nothing to recalculate.
-def static_cells(part, values, numeric=True):
+def static_cells(
+    part: str,
+    values: Mapping[str, object],
+    numeric: bool = True,
+) -> None:
     """Replace whole cells with literal values, dropping their formulas."""
     d = get(part)
     for cell, val in values.items():
@@ -2250,10 +2296,10 @@ def static_cells(part, values, numeric=True):
 # can never name a customer the lookup cannot find.
 _ss = get("xl/sharedStrings.xml")
 _si = re.findall(r'<si>(.*?)</si>', _ss, re.S)
-def _shared(i):
+def _shared(i: int) -> str:
     return "".join(re.findall(r'<t[^>]*>([^<]*)</t>', _si[i]))
 _s13 = get("xl/worksheets/sheet13.xml")
-CUSTOMERS = []
+CUSTOMERS: list[str] = []
 for _r in range(28, 33):
     _m = re.search(r'<c r="B%d"[^>]*t="s"[^>]*><v>(\d+)</v></c>' % _r, _s13)
     assert _m, "tblCT customer row %d not found" % _r
@@ -2300,7 +2346,7 @@ put("xl/worksheets/sheet26.xml", s26)
 
 # RANDARRAY is volatile too. Replace each with a deterministic MAKEARRAY over the same
 # shape and range, so the grids stay varied but stop recalculating on every edit.
-def _split_args(text, start):
+def _split_args(text: str, start: int) -> tuple[list[str], int]:
     """Split the argument list of a call whose '(' is at `start`; returns (args, end)."""
     depth, args, cur, in_str, i = 0, [], "", False, start
     while i < len(text):
@@ -2359,7 +2405,7 @@ for n in list(parts):
     if not re.match(r'xl/worksheets/sheet\d+\.xml$', n):
         continue
     d = get(n)
-    def strip_flags(mo):
+    def strip_flags(mo: re.Match[str]) -> str:
         global cleared
         cell = mo.group(0)
         if "CELL(" in cell:       # the A1 title formula is legitimately volatile
@@ -2471,7 +2517,7 @@ ABOUT_ENTRY_FIXES = {
 AFE_MODULES = [("ozzit.debt", "Debt"), ("ozzit.d", "Dates"), ("ozzit.e", "Essentials"),
                ("ozzit.f", "Financial"), ("ozzit.r", "Ratios"), ("ozzit.u", "Utilities")]
 
-def flatten_names(s):
+def flatten_names(s: str) -> str:
     for a, b in FLAT_EXPLICIT:
         s = s.replace(a, b)
     for a, b in FLAT_PREFIX:
@@ -2480,13 +2526,13 @@ def flatten_names(s):
         s = s.replace(a, b)
     return s
 
-def capitalise_brand(s):
+def capitalise_brand(s: str) -> str:
     # the chart template filename and the theme colour scheme are asset ids, not prose
     s = s.replace("ozzit Combo Area", "@@CRTX@@").replace("ozzit TnC", "@@TNC@@")
     s = re.sub(r"(?<![A-Za-z/])ozzit(?![A-Za-z])", "Ozzit", s)
     return s.replace("@@CRTX@@", "ozzit Combo Area").replace("@@TNC@@", "ozzit TnC")
 
-def fix_about_entries(s):
+def fix_about_entries(s: str) -> str:
     for nm, subs in ABOUT_ENTRY_FIXES.items():
         m = re.search(r'(<definedName name="%s"[^>]*>)(.*?)(</definedName>)' % re.escape(nm), s, re.S)
         if not m:
@@ -2564,7 +2610,7 @@ AFE_BARE_FIXES = {
     ],
 }
 
-def fix_self_names(s):
+def fix_self_names(s: str) -> str:
     for full, ob, nb_ in SELF_NAME_FIXES:
         m = re.search(r'(<definedName name="%s"[^>]*>)(.*?)(</definedName>)' % re.escape(full), s, re.S)
         if not m:
@@ -2572,12 +2618,12 @@ def fix_self_names(s):
         body = re.sub(r"(?<![A-Za-z])" + re.escape(ob), nb_, m.group(2))
         s = s[:m.start()] + m.group(1) + body + m.group(3) + s[m.end():]
     return s
-def flat_text(s):
+def flat_text(s: str) -> str:
     return capitalise_brand(flatten_names(s))
 
 # Which module each function came from, captured before the prefixes disappear.
 # The exporters below need it: one namespace leaves nothing in the name to group by.
-FLAT_MODULE_OF = {}
+FLAT_MODULE_OF: dict[str, str] = {}
 # What each function was called before the prefixes collapsed. functions.csv publishes
 # it, because renaming every name in the library breaks every formula written against
 # the old ones and a reader needs somewhere to look the replacement up.
@@ -2592,7 +2638,7 @@ with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), RELEASED),
     BASELINE = {ln.strip() for ln in _fh if ln.strip() and not ln.startswith("#")}
 assert len(BASELINE) == 130, (RELEASED, len(BASELINE))
 
-FLAT_PREVIOUS_OF = {}
+FLAT_PREVIOUS_OF: dict[str, str] = {}
 _pre_wb = get("xl/workbook.xml")
 _mod_word = dict(AFE_MODULES)
 for _m in re.finditer(r'<definedName name="(ozzit\.(?:debt|d|e|f|r|u))\.([^"]+)"', _pre_wb):
@@ -2673,9 +2719,14 @@ repo = os.path.dirname(os.path.abspath(DST))
 src_dir = os.path.join(repo, "src")
 os.makedirs(src_dir, exist_ok=True)
 
-store = json.loads(base64.b64decode(
-    re.search(r">([A-Za-z0-9+/=]{100,})<",
-              parts["customXml/item1.xml"].decode("utf-8")).group(1)).decode("utf-16-le"))
+store_match = re.search(
+    r">([A-Za-z0-9+/=]{100,})<",
+    parts["customXml/item1.xml"].decode("utf-8"),
+)
+assert store_match, "AFE store payload missing after transform"
+store = json.loads(
+    base64.b64decode(store_match.group(1)).decode("utf-16-le")
+)
 exported = []
 for f in store["files"]:
     mod = f["path"].rsplit("/", 1)[-1]
@@ -2699,7 +2750,7 @@ entries = [(n, a, html.unescape(b)) for n, a, b in NAME_RE.findall(wbx_final)]
 #                is a bare reference.
 OPTIONAL = re.compile(r"_xlop\.([A-Za-z_][A-Za-z0-9_]*\??)")
 
-def as_typed(body):
+def as_typed(body: str) -> str:
     body = OPTIONAL.sub(r"[\1]", body)
     return DEPREFIX.sub("", body).replace("[0]!", "").lstrip("=")
 

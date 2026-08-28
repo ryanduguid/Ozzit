@@ -46,7 +46,7 @@ BASELINE = (sys.argv[2] if len(sys.argv) > 2
 FLOOR = 100          # the library ships 130 functions; reading far fewer is a bug
 
 
-def main():
+def main() -> int:
     with open(BASELINE, encoding="utf-8") as fh:
         released = {ln.strip() for ln in fh if ln.strip() and not ln.startswith("#")}
     with open(CSV, encoding="utf-8-sig", newline="") as fh:
@@ -60,8 +60,8 @@ def main():
         sys.exit("only %d functions and %d baseline names read: the check is not reading them"
                  % (len(rows), len(released)))
 
-    failures = []
-    claimed = {}
+    failures: list[str] = []
+    claimed: dict[str, str] = {}
     for row in rows:
         was = row["previous_name"].strip()
         if not was:

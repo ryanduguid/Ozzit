@@ -292,9 +292,11 @@ for _name, _comment, _block, _about in FUNCTIONS:
 # --------------------------------------------------------------------------- #
 
 
-def _split_literals(text: str):
+def _split_literals(text: str) -> list[tuple[bool, str]]:
     """Alternating (is_string, chunk) pairs, honouring the "" escape."""
-    out, buf, i, n = [], [], 0, len(text)
+    out: list[tuple[bool, str]] = []
+    buf: list[str] = []
+    i, n = 0, len(text)
     while i < n:
         if text[i] == '"':
             if buf:
@@ -342,7 +344,7 @@ def _strip_comments(text: str) -> str:
     return "".join(out)
 
 
-def _read_string(text: str, i: int):
+def _read_string(text: str, i: int) -> tuple[str, int]:
     lit, n = ['"'], len(text)
     i += 1
     while i < n:
