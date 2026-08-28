@@ -67,7 +67,7 @@ INTERNAL = "DoNotUse"        # an internal counter, documented but kept out of t
 FLOOR = 100                  # the library ships 130 functions; reading far fewer is a bug
 
 
-def literals(text):
+def literals(text: str) -> str:
     """Concatenate every double-quoted literal in order, honouring the "" escape."""
     out, i, n = [], 0, len(text)
     while i < n:
@@ -88,9 +88,9 @@ def literals(text):
     return "".join(out)
 
 
-def help_rows(body):
+def help_rows(body: str) -> list[list[str]]:
     """The help as (label, text) rows, with wrapped rows rejoined onto their label."""
-    rows = []
+    rows: list[list[str]] = []
     for raw in literals(body).split("¶"):
         label, sep, text = raw.partition("→")
         if not sep:
@@ -102,12 +102,12 @@ def help_rows(body):
     return rows
 
 
-def names(text):
+def names(text: str) -> list[str]:
     """Bare parameter names, with the optional-marker brackets dropped."""
     return [p.strip().strip("[]").strip() for p in text.split(",") if p.strip()]
 
 
-def declared(body):
+def declared(body: str) -> list[str]:
     """The parameter names the LAMBDA takes."""
     head = re.sub(r"//[^\n]*", "", body[body.index("LAMBDA(") + len("LAMBDA("):])
     depth, in_string, commas = 0, False, []
@@ -134,7 +134,7 @@ def declared(body):
     return names(head[: commas[-1]])
 
 
-def worked_examples(body):
+def worked_examples(body: str) -> list[str]:
     """The calls in the help's EXAMPLES table, which is where a reader copies from."""
     calls, started = [], False
     for label, text in help_rows(body):
@@ -152,7 +152,7 @@ def worked_examples(body):
     return calls
 
 
-def parameter_table(body):
+def parameter_table(body: str) -> list[str] | None:
     """The labels of the help's parameter table, or None if it has no such table.
 
     The table runs from the PARAMETERS row to the next section heading, which is any
@@ -171,7 +171,7 @@ def parameter_table(body):
     return labels if started else None
 
 
-def main():
+def main() -> int:
     paths = sorted(glob.glob(os.path.join(SRC, "*.txt")))
     if not paths:
         sys.exit("no source modules found in %s/" % SRC)
@@ -186,7 +186,10 @@ def main():
             if m:
                 declared_names.add(m.group(1))
 
-    failures, no_signature, no_table, not_lambda = [], [], [], []
+    failures: list[str] = []
+    no_signature: list[str] = []
+    no_table: list[str] = []
+    not_lambda: list[str] = []
     signatures = tables = examples = read = 0
     for path, module_statements in modules.items():
         for st in module_statements:
@@ -202,7 +205,7 @@ def main():
                     failures.append("%s: its WEBPAGE still says Coming Soon" % name)
 
             if name.startswith("About"):
-                seen_desc = {}
+                seen_desc: dict[str, str] = {}
                 for label, text in rows:
                     if label not in declared_names or label == name:
                         continue

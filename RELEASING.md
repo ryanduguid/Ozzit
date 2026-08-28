@@ -61,9 +61,16 @@ The independent verifier must record and compare GitHub's API `digest` for the u
 
 ## Verification gates
 
-Run the following seven static and repository gates from the clean candidate:
+Install the pinned type checker in the clean candidate:
 
 ```powershell
+python -m pip install "mypy==2.3.1"
+```
+
+Then run the following eight static and repository gates:
+
+```powershell
+python -m mypy --config-file mypy.ini
 python tools/verify_workbook.py ozzit.xlsx
 python tools/verify_sources.py ozzit.xlsx src
 python tools/verify_signatures.py src
@@ -73,7 +80,7 @@ python tools/verify_afe.py ozzit.xlsx src
 python -m unittest discover -s tools/tests -v
 ```
 
-All seven commands must exit zero. Record their substantive function,
+All eight gate commands must exit zero. Record their substantive type-check, function,
 signature, table, example, index, module and test counts rather than only their
 exit status.
 

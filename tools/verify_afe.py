@@ -15,6 +15,7 @@ import re
 import sys
 import zipfile
 from pathlib import Path
+from typing import TextIO, TypedDict, cast
 
 WORKBOOK = sys.argv[1] if len(sys.argv) > 1 else "ozzit.xlsx"
 SRC = Path(sys.argv[2] if len(sys.argv) > 2 else "src")
@@ -30,6 +31,17 @@ DEBT_NAMES = {
 AFE_BLOB_RE = rb"[A-Za-z0-9+/]{100,}={0,2}"
 
 
+class AfeFile(TypedDict):
+    path: str
+    text: str
+
+
+class AfeStore(TypedDict):
+    schema: str
+    files: list[AfeFile]
+    projectNames: list[str]
+
+
 def find_afe_blob(raw: bytes) -> bytes:
     """Return the longest base64 payload in the AFE store XML."""
     matches = re.findall(AFE_BLOB_RE, raw)
@@ -38,11 +50,11 @@ def find_afe_blob(raw: bytes) -> bytes:
     return max(matches, key=len)
 
 
-def fail(failures, message):
+def fail(failures: list[str], message: str) -> None:
     failures.append(message)
 
 
-def decode_store(workbook: Path):
+def decode_store(workbook: Path) -> AfeStore:
     try:
         with zipfile.ZipFile(workbook) as archive:
             raw = archive.read("customXml/item1.xml")
@@ -53,12 +65,32 @@ def decode_store(workbook: Path):
     except ValueError as exc:
         raise ValueError(str(exc)) from exc
     try:
-        return json.loads(base64.b64decode(encoded).decode("utf-16-le"))
+        store: object = json.loads(base64.b64decode(encoded).decode("utf-16-le"))
     except (ValueError, UnicodeDecodeError) as exc:
         raise ValueError(f"cannot decode AFE store: {exc}") from exc
+    if not isinstance(store, dict):
+        raise ValueError("cannot decode AFE store: root must be an object")
+    if not isinstance(store.get("schema"), str):
+        raise ValueError("cannot decode AFE store: schema must be a string")
+    files = store.get("files")
+    if not isinstance(files, list):
+        raise ValueError("cannot decode AFE store: files must be a list")
+    for index, item in enumerate(files):
+        if not isinstance(item, dict):
+            raise ValueError(f"cannot decode AFE store: files[{index}] must be an object")
+        if not isinstance(item.get("path"), str) or not isinstance(item.get("text"), str):
+            raise ValueError(
+                f"cannot decode AFE store: files[{index}] path and text must be strings"
+            )
+    project_names = store.get("projectNames")
+    if not isinstance(project_names, list) or not all(
+        isinstance(name, str) for name in project_names
+    ):
+        raise ValueError("cannot decode AFE store: projectNames must be a list of strings")
+    return cast(AfeStore, store)
 
 
-def workbook_names(workbook: Path):
+def workbook_names(workbook: Path) -> set[str]:
     with zipfile.ZipFile(workbook) as archive:
         text = archive.read("xl/workbook.xml").decode("utf-8")
     names = set()
@@ -70,16 +102,16 @@ def workbook_names(workbook: Path):
 
 
 def check(workbook: Path, src: Path) -> list[str]:
-    failures = []
+    failures: list[str] = []
     try:
         store = decode_store(workbook)
     except ValueError as exc:
         return [str(exc)]
 
-    if store.get("schema") != SCHEMA:
-        fail(failures, f"AFE schema is {store.get('schema')!r}")
+    if store["schema"] != SCHEMA:
+        fail(failures, f"AFE schema is {store['schema']!r}")
 
-    files = {item.get("path"): item.get("text") for item in store.get("files", [])}
+    files = {item["path"]: item["text"] for item in store["files"]}
     for module in MODULES:
         path = f"/projects/{module}"
         expected_path = src / f"{module}.txt"
@@ -110,7 +142,7 @@ def check(workbook: Path, src: Path) -> list[str]:
 
     shipped = workbook_names(workbook)
     expected_names = shipped - DEBT_NAMES
-    actual_names = set(store.get("projectNames", []))
+    actual_names = set(store["projectNames"])
     for name in sorted(actual_names & DEBT_NAMES):
         fail(failures, f"recursive Debt function {name} is present in the AFE store")
     for name in sorted(expected_names - actual_names):
@@ -121,7 +153,7 @@ def check(workbook: Path, src: Path) -> list[str]:
     return failures
 
 
-def emit_line(text: str, stream=None) -> None:
+def emit_line(text: str, stream: TextIO | None = None) -> None:
     """Write one line without losing unencodable diagnostic characters."""
     stream = sys.stdout if stream is None else stream
     encoding = getattr(stream, "encoding", None) or "utf-8"
