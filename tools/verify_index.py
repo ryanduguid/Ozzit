@@ -31,7 +31,7 @@ DESC_RE = re.compile(r"DESCRIPTION:\s*→(.*?)¶")
 ROW_RE = re.compile(r"→(.*?)¶")
 
 
-def index_fields(attrs, body, bare):
+def index_fields(attrs: str, body: str, bare: str) -> tuple[str, str]:
     """Derive the signature and description exported by the build."""
     signature = SIG_RE.search(body)
     text, end = (
@@ -60,7 +60,7 @@ def index_fields(attrs, body, bare):
     return text, re.sub(r"\s{2,}", " ", blurb)
 
 
-def source_modules(src):
+def source_modules(src: Path) -> dict[str, str]:
     """Map each qualified function to the source module declaring it."""
     modules = {}
     for path in sorted(src.glob("*.txt")):
@@ -71,13 +71,13 @@ def source_modules(src):
     return modules
 
 
-def main():
+def main() -> int:
     failures = []
     try:
         with zipfile.ZipFile(WORKBOOK) as archive:
             workbook = archive.read("xl/workbook.xml").decode("utf-8")
-        with INDEX.open(encoding="utf-8-sig", newline="") as source:
-            rows = list(csv.DictReader(source))
+        with INDEX.open(encoding="utf-8-sig", newline="") as index_file:
+            rows = list(csv.DictReader(index_file))
     except (OSError, KeyError, UnicodeDecodeError, zipfile.BadZipFile) as exc:
         print(f"FAIL: cannot read index inputs: {exc}")
         return 1
@@ -102,8 +102,8 @@ def main():
     for name in sorted(set(expected) & set(actual)):
         for field in ("module", "signature", "description"):
             if actual[name].get(field, "") != expected[name][field]:
-                source = "src/" if field == "module" else "workbook"
-                failures.append(f"{name}: {field} differs from {source}")
+                authority = "src/" if field == "module" else "workbook"
+                failures.append(f"{name}: {field} differs from {authority}")
 
     if failures:
         print(f"FAIL: {len(failures)} functions.csv problem(s)")

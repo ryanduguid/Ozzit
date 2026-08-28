@@ -11,6 +11,7 @@ import re
 import sys
 import xml.etree.ElementTree as ET
 import zipfile
+from collections.abc import Mapping
 
 # Every function name carries a λ, and a Windows console defaults to cp1252, which
 # cannot encode it: without this the check dies printing its own result.
@@ -46,14 +47,14 @@ FORBIDDEN_PARTS = (
     "xl/dialogsheets/",
 )
 
-failures = []
+failures: list[str] = []
 
 
-def fail(msg):
+def fail(msg: str) -> None:
     failures.append(msg)
 
 
-def check_xml_part(name, data):
+def check_xml_part(name: str, data: bytes) -> None:
     """Reject declarations with entity expansion before parsing workbook XML."""
     if b"<!DOCTYPE" in data.upper():
         fail(f"DOCTYPE declaration in {name}")
@@ -64,7 +65,7 @@ def check_xml_part(name, data):
         fail(f"malformed XML in {name}: {exc}")
 
 
-def main():
+def main() -> None:
     z = zipfile.ZipFile(WORKBOOK)
     parts = z.namelist()
 
@@ -148,7 +149,16 @@ def main():
                 break
 
     shared = ET.fromstring(z.read("xl/sharedStrings.xml").decode("utf-8"))
-    declared = int(shared.get("uniqueCount"))
+    unique_count = shared.get("uniqueCount")
+    if unique_count is None:
+        fail("sharedStrings uniqueCount is missing")
+        declared = -1
+    else:
+        try:
+            declared = int(unique_count)
+        except ValueError:
+            fail(f"sharedStrings uniqueCount is not an integer: {unique_count!r}")
+            declared = -1
     if declared != len(list(shared)):
         fail(f"sharedStrings uniqueCount {declared} != {len(list(shared))} entries")
 
@@ -172,11 +182,11 @@ def main():
         app = z.read("docProps/app.xml").decode("utf-8")
         titles = re.search(r"<TitlesOfParts>(.*?)</TitlesOfParts>", app, re.S)
         listed = re.findall(r"<vt:lpstr>([^<]*)</vt:lpstr>", titles.group(1) if titles else "")
-        sheets = re.findall(r'<sheet name="([^"]+)"', workbook)
-        if listed[:len(sheets)] != sheets:
+        app_sheets = re.findall(r'<sheet name="([^"]+)"', workbook)
+        if listed[:len(app_sheets)] != app_sheets:
             fail("docProps/app.xml lists %d sheet titles that do not match the workbook's %d, "
-                 "first difference at %r" % (len(listed), len(sheets),
-                 next((a for a, b in zip(listed, sheets) if a != b), "the end")))
+                 "first difference at %r" % (len(listed), len(app_sheets),
+                 next((a for a, b in zip(listed, app_sheets) if a != b), "the end")))
 
     # [MS-XLSX] requires each slicer cache to have a #N/A defined name of the same name.
     for part in parts:
@@ -189,13 +199,16 @@ def main():
     report(z, defined)
 
 
-def report(z, defined=None):
+def report(
+    z: zipfile.ZipFile,
+    defined: Mapping[str, str] | None = None,
+) -> None:
     if failures:
         print(f"FAIL: {len(failures)} problem(s) in {WORKBOOK}")
         for item in failures:
             print(f"  - {item}")
         sys.exit(1)
-    functions = sum(1 for name in defined if TOKEN_RE.fullmatch(name))
+    functions = sum(1 for name in (defined or {}) if TOKEN_RE.fullmatch(name))
     print(f"OK: {WORKBOOK}, {functions} functions, {len(z.namelist())} parts")
 
 

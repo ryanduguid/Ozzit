@@ -37,7 +37,7 @@ WORKBOOK = sys.argv[1] if len(sys.argv) > 1 else "ozzit.xlsx"
 HERE = Path(__file__).resolve().parent
 
 
-def main():
+def main() -> int:
     workbook = Path(WORKBOOK)
     if not workbook.exists():
         print(f"FAIL: no such workbook: {workbook}")
