@@ -1,3 +1,4 @@
+import ast
 import re
 import subprocess
 import unittest
@@ -10,6 +11,8 @@ SECURITY = ROOT / "SECURITY.md"
 RELEASING = ROOT / "RELEASING.md"
 VERIFY_WORKFLOW = ROOT / ".github" / "workflows" / "verify.yml"
 DEPENDABOT = ROOT / ".github" / "dependabot.yml"
+MYPY_CONFIG = ROOT / "mypy.ini"
+TOOLS = ROOT / "tools"
 
 
 DEPENDABOT_CANONICAL = """version: 2
@@ -35,6 +38,15 @@ def read_utf8(path: Path) -> str:
     return path.read_bytes().decode("utf-8")
 
 
+def physical_code_lines(paths):
+    return sum(
+        1
+        for path in paths
+        for line in read_utf8(path).splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    )
+
+
 class RepositoryPolicyTests(unittest.TestCase):
     def test_security_and_releasing_docs_exist_and_name_the_reporting_path(self):
         security = read_utf8(SECURITY)
@@ -53,6 +65,69 @@ class RepositoryPolicyTests(unittest.TestCase):
         self.assertIn("python tools/verify_sources.py ozzit.xlsx src", workflow)
         self.assertIn("python -m unittest discover -s tools/tests -v", workflow)
         self.assertEqual(read_utf8(DEPENDABOT).replace("\r\n", "\n"), DEPENDABOT_CANONICAL)
+
+    def test_production_type_check_is_pinned_and_rejects_untyped_definitions(self):
+        workflow = read_utf8(VERIFY_WORKFLOW)
+        config = read_utf8(MYPY_CONFIG)
+
+        self.assertIn('python -m pip install "mypy==2.3.1"', workflow)
+        self.assertIn("python -m mypy --config-file mypy.ini", workflow)
+        self.assertIn("files = tools", config)
+        self.assertIn("exclude = ^tools[/\\\\]tests[/\\\\]", config)
+        self.assertIn("disallow_untyped_defs = True", config)
+        self.assertIn("check_untyped_defs = True", config)
+        self.assertNotIn("disable_error_code", config)
+
+    def test_every_production_function_has_a_complete_signature(self):
+        production = sorted(
+            path
+            for path in TOOLS.rglob("*.py")
+            if "tests" not in path.relative_to(TOOLS).parts
+        )
+        functions = [
+            (path, function)
+            for path in production
+            for function in ast.walk(ast.parse(read_utf8(path), filename=str(path)))
+            if isinstance(function, (ast.FunctionDef, ast.AsyncFunctionDef))
+        ]
+        incomplete = []
+        for path, function in functions:
+            parameters = [
+                *function.args.posonlyargs,
+                *function.args.args,
+                *function.args.kwonlyargs,
+            ]
+            parameters.extend(
+                parameter
+                for parameter in (function.args.vararg, function.args.kwarg)
+                if parameter is not None
+            )
+            if function.returns is None or any(
+                parameter.annotation is None for parameter in parameters
+            ):
+                incomplete.append(
+                    f"{path.relative_to(ROOT).as_posix()}:{function.lineno}:{function.name}"
+                )
+
+        self.assertEqual(len(production), 20)
+        self.assertEqual(len(functions), 146)
+        self.assertEqual(incomplete, [])
+
+    def test_regression_tests_remain_proportionate_to_production_tools(self):
+        production = [
+            path
+            for path in TOOLS.rglob("*.py")
+            if "tests" not in path.relative_to(TOOLS).parts
+        ]
+        tests = list((TOOLS / "tests").rglob("*.py"))
+        production_lines = physical_code_lines(production)
+        test_lines = physical_code_lines(tests)
+
+        self.assertGreaterEqual(
+            test_lines / production_lines,
+            0.50,
+            f"test/tool physical-line ratio is {test_lines}/{production_lines}",
+        )
 
 
 class UpstreamAttributionTests(unittest.TestCase):

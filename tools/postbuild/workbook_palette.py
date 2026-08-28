@@ -101,7 +101,7 @@ RFONT_FAMILIES = {
 }
 
 
-def hue_map(hexrgb: str):
+def hue_map(hexrgb: str) -> str | None:
     r, g, b = (int(hexrgb[i : i + 2], 16) / 255 for i in (0, 2, 4))
     h, lightness, s = colorsys.rgb_to_hls(r, g, b)
     deg = h * 360
@@ -117,7 +117,7 @@ def hue_map(hexrgb: str):
     return f"{round(r2 * 255):02X}{round(g2 * 255):02X}{round(b2 * 255):02X}"
 
 
-def map_colour(hexrgb: str):
+def map_colour(hexrgb: str) -> str | None:
     up = hexrgb.upper()
     if up in KEEP or up in EXPLICIT.values():
         return None
@@ -129,7 +129,7 @@ def map_colour(hexrgb: str):
 def recolour(text: str) -> tuple[str, int]:
     count = 0
 
-    def rep8(match):
+    def rep8(match: re.Match[str]) -> str:
         nonlocal count
         pre, argb = match.group(1), match.group(2)
         alpha, rgb = argb[:2], argb[2:]
@@ -139,7 +139,7 @@ def recolour(text: str) -> tuple[str, int]:
         count += 1
         return f'{pre}"{alpha}{new}"'
 
-    def rep6(match):
+    def rep6(match: re.Match[str]) -> str:
         nonlocal count
         pre, rgb = match.group(1), match.group(2)
         new = map_colour(rgb)
