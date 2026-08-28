@@ -54,6 +54,8 @@ def sheet_paths(parts: dict[str, bytes]) -> dict[str, str]:
     targets = {rel.attrib["Id"]: rel.attrib["Target"] for rel in rels}
     rid = f"{{{DOC_REL_NS}}}id"
     sheets = workbook.find("m:sheets", NS)
+    if sheets is None:
+        raise ValueError("workbook has no sheets collection")
     return {
         sheet.attrib["name"]: "xl/" + targets[sheet.attrib[rid]].lstrip("/")
         for sheet in sheets
@@ -87,7 +89,10 @@ def set_existing_shared_cell(text: str, address: str, index: int) -> tuple[str, 
     match = pattern.search(text)
     if not match:
         raise ValueError(f"shared-string cell {address} not found")
-    current = int(re.search(r"\d+", match.group(0).split("<v>", 1)[1]).group())
+    current_match = re.search(r"\d+", match.group(0).split("<v>", 1)[1])
+    if current_match is None:
+        raise ValueError(f"shared-string cell {address} has no value index")
+    current = int(current_match.group())
     if current == index:
         return text, False
     return pattern.sub(rf"\g<1>{index}\2", text, count=1), True

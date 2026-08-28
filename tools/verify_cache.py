@@ -38,16 +38,19 @@ ERRORS = {-2146826288: "#NULL!", -2146826281: "#DIV/0!", -2146826273: "#VALUE!",
           -2146826246: "#N/A", -2146826245: "#GETTING_DATA"}
 
 CELL = re.compile(r'<c r="([A-Z]+)(\d+)"([^>]*)>((?:(?!<c[ /]).)*?)</c>', re.S)
+CellKey = tuple[int, int, int]
 
 
-def column(letters):
+def column(letters: str) -> int:
     n = 0
     for ch in letters:
         n = n * 26 + ord(ch) - 64
     return n
 
 
-def cached_values(path):
+def cached_values(
+    path: str | os.PathLike[str],
+) -> tuple[dict[CellKey, str], dict[int, str]]:
     """Every cached value in the workbook, keyed by (tab position, row, column).
 
     Keyed by position rather than by part name because Excel renumbers the sheet parts
@@ -60,7 +63,7 @@ def cached_values(path):
     order = [(m.group(1), rels[m.group(2)]) for m in
              re.finditer(r'<sheet name="([^"]+)"[^>]*r:id="([^"]+)"', book)]
 
-    shared = []
+    shared: list[str] = []
     if "xl/sharedStrings.xml" in z.namelist():
         for si in re.findall(r"<si>(.*?)</si>", z.read("xl/sharedStrings.xml").decode("utf-8"), re.S):
             shared.append(html.unescape(re.sub(r"<.*?>", "", si)))
@@ -73,14 +76,15 @@ def cached_values(path):
         raise SystemExit("FAIL: %s are not worksheets, so tab position no longer lines up "
                          "with Excel's Worksheets collection" % ", ".join(charts))
 
-    out, names = {}, {}
+    out: dict[CellKey, str] = {}
+    names: dict[int, str] = {}
     for pos, (name, target) in enumerate(order, start=1):
         names[pos] = name
         text = z.read("xl/" + target.lstrip("/")).decode("utf-8")
         for m in CELL.finditer(text):
             attrs, inner = m.group(3), m.group(4)
-            kind = re.search(r't="([^"]+)"', attrs)
-            kind = kind.group(1) if kind else "n"
+            kind_match = re.search(r't="([^"]+)"', attrs)
+            kind = kind_match.group(1) if kind_match else "n"
             if kind == "inlineStr":
                 got = re.search(r"<t[^>]*>(.*?)</t>", inner, re.S)
                 value = html.unescape(got.group(1)) if got else None
@@ -100,7 +104,7 @@ def cached_values(path):
     return out, names
 
 
-def fold(text):
+def fold(text: str) -> str:
     """One cell must be one line, the way the dumper writes it."""
     marker = chr(92) + "n"          # the two characters backslash and n
     return (text.replace(chr(13) + chr(10), marker)
@@ -108,7 +112,7 @@ def fold(text):
                 .replace(chr(13), marker))
 
 
-def agree(cached, live):
+def agree(cached: str, live: str) -> bool:
     if fold(cached) == live:
         return True
     try:
@@ -122,7 +126,7 @@ def agree(cached, live):
         return False
 
 
-def main():
+def main() -> int:
     if not os.path.exists(WORKBOOK):
         print("FAIL: no such workbook: %s" % WORKBOOK)
         return 1
@@ -140,7 +144,7 @@ def main():
             print((proc.stdout or proc.stderr or "").strip()[:2000])
             return 1
 
-        live = {}
+        live: dict[CellKey, str] = {}
         with open(dump, encoding="utf-8-sig") as fh:
             for line in fh:
                 bits = line.rstrip("\n").split("\t", 3)
