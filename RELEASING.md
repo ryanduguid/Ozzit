@@ -37,7 +37,7 @@ Every source archive must still include `ATTRIBUTION.md` and `LICENCE`.
 
 ## Approval and tag
 
-A human maintainer explicitly approves the exact candidate commit and release version after all nine gates pass.
+A human maintainer explicitly approves the exact candidate commit and release version after all ten gates pass.
 Create an annotated, cryptographically signed tag for that exact commit. Run
 `git verify-tag` and record the tag object SHA, peeled commit SHA and
 verification result.
@@ -47,17 +47,26 @@ Tag signing, remote tag publication and release publication are separate authori
 
 ## Future release bundle
 
-Use stable names derived from the approved tag:
+The uploaded bundle contains exactly three files:
 
-1. `ozzit.xlsx` — the consumer workbook from the tagged tree.
-2. `Ozzit-<version>-source.zip` — a `git archive` of the exact signed tag, including the tagged workbook, `src/`, `functions.csv`, tools, policy, `ATTRIBUTION.md` and `LICENCE`.
-3. `Ozzit-<version>-verification.txt` — captured gate evidence, Excel version and build, formula, error and assertion counts, cached-value comparison count, candidate commit and workbook before-and-after hashes.
-4. `release-manifest.json` — schema version, release version, tag object and peeled commit SHAs, workbook and source-archive hashes and sizes, build-input provenance, licence scopes, every payload asset name and media type, gate results and verifier identity and date.
-5. A genuine SPDX or CycloneDX inventory only when applicable and generated from real distributable components or dependencies. A cosmetic or all-MIT inventory is prohibited. The release manifest is the appropriate inventory for the present workbook-only project.
-6. `SHA256SUMS` — SHA-256 for every payload asset except `SHA256SUMS` itself, including the manifest, verification evidence and any genuine SBOM.
+1. `ozzit.xlsx` — the consumer workbook copied byte-for-byte from the tagged tree.
+2. `provenance.json` — canonical JSON binding the version and full candidate commit to the locked workbook hash, size, Git blob, last workbook change and deterministic workbook-gate results. It also states the copy-only build limit and the gates that remain outside the bundle.
+3. `SHA256SUMS` — canonical SHA-256 lines for `ozzit.xlsx` and `provenance.json`. It does not include itself, which avoids a checksum cycle.
 
-The standalone workbook, archived workbook and tagged workbook must have the same SHA-256.
-The independent verifier must record and compare GitHub's API `digest` for the uploaded checksum file. If a detached signature is added later, define whether it sits outside the checksum set and verify it separately; do not create a checksum and signature cycle.
+The signed tag and GitHub's generated source archive remain the source distribution. Inspect that archive as the equivalent of `git archive` for the exact tag; do not upload a redundant custom source archive. The standalone workbook and tagged workbook must have the same SHA-256.
+
+After all ten gates pass in a clean candidate, stage and independently verify the bundle in two fresh directories outside the repository:
+
+```powershell
+python tools/prepare_release_bundle.py create --version X.Y.Z --source-commit <full-commit-sha> --output <first-new-directory>
+python tools/prepare_release_bundle.py verify --bundle <first-new-directory> --version X.Y.Z --source-commit <full-commit-sha>
+python tools/prepare_release_bundle.py create --version X.Y.Z --source-commit <full-commit-sha> --output <second-new-directory>
+python tools/prepare_release_bundle.py verify --bundle <second-new-directory> --version X.Y.Z --source-commit <full-commit-sha>
+```
+
+Require all three files in both directories to be byte-identical. The tool refuses a dirty checkout, a mismatched workbook base, non-canonical version or commit values, an output inside the source repository and any existing output path. It runs commands as argument lists without a shell, stages under a fresh sibling directory and exposes the final name only after structural verification succeeds. It never tags, uploads or publishes anything.
+
+The independent verifier must record and compare GitHub's API `digest` for the uploaded checksum file. If a detached signature is added later, define whether it sits outside the checksum set and verify it separately; do not create a checksum and signature cycle. Do not add a cosmetic SPDX or CycloneDX inventory to this workbook-only bundle.
 
 ## Verification gates
 
@@ -92,7 +101,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\excel_selftest.p
 python tools/verify_cache.py ozzit.xlsx
 ```
 
-The current acceptance baseline is 1,129 formulas recalculated with zero error cells and 259 assertions run with zero failures.
+The current acceptance baseline is 1,129 formulas recalculated with zero error cells and 438 assertions run with zero failures.
 The cached-value gate must pass and report its actual comparison count. Record
 the Excel version and build. Hash the workbook immediately before and after
 both native gates and require the bytes to be byte-identical.
@@ -103,11 +112,11 @@ and review that change. Do not silently weaken a floor.
 
 ## Packaging, independent verification and immutability
 
-1. Build every asset from the signed tag into a fresh staging directory.
-2. Compute the manifest and `SHA256SUMS` only after every payload asset has its final bytes.
+1. Build the exact three-file bundle from the signed tag into a fresh staging directory outside the repository, then repeat it and compare every byte.
+2. Compute `provenance.json` and `SHA256SUMS` only after the workbook has its final bytes.
 3. Upload the assets to a draft release. A draft upload is not approval, publication or evidence of immutability.
 4. An independent verifier downloads every asset from GitHub rather than reading the builder's local staging directory.
-5. The independent verifier checks every checksum, API digest, filename and size; verifies the signed annotated tag; proves the standalone, archived and tagged workbooks have the same SHA-256; inspects the source archive; and repeats the static and native gates on the downloaded candidate where the required Excel environment is available.
+5. The independent verifier checks every checksum, API digest, filename and size; verifies the signed annotated tag; proves the standalone and tagged workbooks have the same SHA-256; inspects GitHub's source archive; and repeats the static and native gates on the downloaded candidate where the required Excel environment is available.
 6. Record the independent result in the release evidence. Only after it passes may an authorised maintainer publish the release.
 7. Re-query the published release. Claim immutability only when GitHub reports `immutable=true`. If the feature is unavailable, record that limit and retain the no-overwrite and new-version rule.
 8. After verification, do not delete or replace assets, move the tag or edit evidence to make a failed candidate appear successful. Correct an error under a new version and tag.

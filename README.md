@@ -182,6 +182,7 @@ Each module has its own tab colour, gridlines are hidden, and every sheet opens 
 | `src/*.txt` | Plain-text LAMBDA source per group (Dates, Essentials, Financial, Ratios, Utilities, Debt), diffable and importable |
 | `ATTRIBUTION.md` | Provenance and licence scope |
 | `functions.csv` | Machine-readable index of every function |
+| `release/workbook-base.json` | Hash, size, Git blob and last-change lock for the copy-only release workbook |
 | `tools/` | The build and maintenance pipeline: `transform_from_predecessor.py` rebuilds the v3.0.0 baseline from an uncommitted predecessor workbook and stops there; later tracked postbuild passes start from the committed `ozzit.xlsx` and `src/` (see ATTRIBUTION.md), then the AFE store is synchronised, the workbook is canonicalised/polished, and the gates check it |
 | `CHANGELOG.md` | What changed in this release |
 | `assets/` | Logo |
@@ -198,7 +199,7 @@ python -m pip install "mypy==2.3.1"
 python -m mypy --config-file mypy.ini
 ```
 
-Type safety: all 146 production tool functions have complete parameter and return annotations, and Mypy checks the 20 production Python modules without suppressing error categories. The checker version is pinned so local and CI results agree.
+Type safety: all 167 production tool functions have complete parameter and return annotations, and Mypy checks the 21 production Python modules without suppressing error categories. The checker version is pinned so local and CI results agree. The policy test preserves the original 146-function baseline without making an exact count a barrier to adding another fully typed tool.
 
 ```bash
 python tools/verify_workbook.py ozzit.xlsx
@@ -240,7 +241,7 @@ Advanced Formula Environment: the AFE task pane is the documented editing surfac
 python -m unittest discover -s tools/tests -v
 ```
 
-Tooling: exercises the workbook sanitiser against clean and simulated Excel-saved files, deterministic compression, failed atomic replacement, malformed input and privacy leaks; proves the cache refresh delegates to the same implementation; and regression-tests the transform, AASB 16 post-build parser, cached-value reader, AFE boundary, source parser and signature parser. A policy test keeps the physical test/tool ratio at or above 0.50. Runs in CI so maintenance edits cannot quietly weaken the gates or corrupt a workbook while replacing it.
+Tooling: exercises the workbook sanitiser against clean and simulated Excel-saved files, deterministic compression, failed atomic replacement, malformed input and privacy leaks; proves the cache refresh delegates to the same implementation; and regression-tests the transform, AASB 16 post-build parser, cached-value reader, AFE boundary, source parser, signature parser and release-bundle boundary. A policy test keeps the physical test/tool ratio at or above 0.50. Runs in CI so maintenance edits cannot quietly weaken the gates or corrupt a workbook while replacing it.
 
 ```bash
 powershell -ExecutionPolicy Bypass -File tools/excel_selftest.ps1
@@ -257,6 +258,19 @@ Cached values: an `.xlsx` stores a formula and the answer Excel last got from it
 Sanitising is a fixer, not a gate. Any save through Excel, not only the pipeline's, adds parts that do not belong in a distributed file: `printerSettings` binaries on machines with a printer installed, an `x15ac:absPath` recording the save directory, always-calculate flags on non-volatile cells, and empty worksheet rels. `python tools/sanitise_workbook.py ozzit.xlsx` strips all of it and rewrites the archive canonically, so two saves of the same content produce the same bytes. `refresh_cache.py` delegates its own save to the same sanitiser; run it directly after every other time Excel touched the file.
 
 Presentation is reproducible too: `python tools/polish_workbook.py ozzit.xlsx` applies the neutral help highlights, accessible strapline colour, locale-safe date styles and the reviewed function-sheet descriptions. The pass is idempotent and the CI presentation contract checks each of those rules.
+
+## Release distribution
+
+`tools/prepare_release_bundle.py` stages a deterministic, copy-only candidate outside the repository. It first requires the tracked workbook to match `release/workbook-base.json`, copies those exact bytes, reruns the six workbook-bound gates and writes only `ozzit.xlsx`, `provenance.json` and `SHA256SUMS`. It never tags, uploads or publishes a release, and it refuses to replace an existing destination.
+
+Run it only from a clean, reviewed candidate after the other gates in [RELEASING.md](RELEASING.md) have passed:
+
+```bash
+python tools/prepare_release_bundle.py create --version X.Y.Z --source-commit <full-commit-sha> --output <new-directory-outside-the-repository>
+python tools/prepare_release_bundle.py verify --bundle <new-directory-outside-the-repository> --version X.Y.Z --source-commit <full-commit-sha>
+```
+
+The workbook remains tracked while [issue #46](https://github.com/ryanduguid/Ozzit/issues/46) is open. Remove it only in a separate reviewed change after at least one release asset has been published, downloaded independently and verified against both `SHA256SUMS` and the workbook in its exact signed tag. This migration does not authorise a history rewrite or force-push.
 
 ## Worksheet catalogue
 
