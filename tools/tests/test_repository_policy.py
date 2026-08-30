@@ -3,6 +3,7 @@ import re
 import subprocess
 import unittest
 import zipfile
+from datetime import datetime
 from pathlib import Path
 
 
@@ -12,6 +13,11 @@ RELEASING = ROOT / "RELEASING.md"
 VERIFY_WORKFLOW = ROOT / ".github" / "workflows" / "verify.yml"
 DEPENDABOT = ROOT / ".github" / "dependabot.yml"
 MYPY_CONFIG = ROOT / "mypy.ini"
+EDITORCONFIG = ROOT / ".editorconfig"
+CITATION = ROOT / "CITATION.cff"
+CHANGELOG = ROOT / "CHANGELOG.md"
+README = ROOT / "README.md"
+SRC = ROOT / "src"
 TOOLS = ROOT / "tools"
 
 
@@ -118,6 +124,55 @@ class RepositoryPolicyTests(unittest.TestCase):
         self.assertGreaterEqual(len(production), 20)
         self.assertGreaterEqual(len(functions), 146)
         self.assertEqual(incomplete, [])
+
+    def test_editorconfig_exempts_the_bytes_the_afe_gate_compares(self):
+        # verify_afe.py compares src/*.txt with the workbook's store byte for byte.
+        # Under the [*] rules, saving a module in any editorconfig-honouring editor
+        # rewrites exactly those bytes and fails the gate with no hint why.
+        config = read_utf8(EDITORCONFIG)
+        self.assertIn("[src/*.txt]", config, ".editorconfig does not scope src/*.txt")
+        section = config[config.index("[src/*.txt]"):]
+        self.assertGreater(config.index("[src/*.txt]"), config.index("[*]"))
+        self.assertIn("trim_trailing_whitespace = false", section)
+        self.assertIn("insert_final_newline = false", section)
+
+        modules = sorted(SRC.glob("*.txt"))
+        self.assertGreaterEqual(len(modules), 6)
+        padded = sum(
+            1
+            for path in modules
+            for line in read_utf8(path).split("\n")
+            if line != line.rstrip()
+        )
+        self.assertGreater(padded, 1000, "the exemption is only needed while padding is")
+        self.assertTrue(
+            any(not read_utf8(path).endswith("\n") for path in modules),
+            "at least one module ends without a final newline",
+        )
+
+    def test_release_metadata_describes_the_newest_changelog_release(self):
+        changelog = read_utf8(CHANGELOG)
+        heading = re.search(r"^## v(\d+\.\d+\.\d+), (\d{1,2} \w+ \d{4}),", changelog, re.M)
+        self.assertIsNotNone(heading, "CHANGELOG.md has no dated release heading")
+        version, written = heading.group(1), heading.group(2)
+        released = datetime.strptime(written, "%d %B %Y").date()
+
+        citation = read_utf8(CITATION)
+        self.assertIn(f"version: {version}\n", citation)
+        self.assertIn(f"date-released: {released.isoformat()}\n", citation)
+
+        readme = read_utf8(README)
+        self.assertIn(f"releases/tag/v{version})", readme)
+        self.assertIn(f"dated {written};", readme)
+
+        # At a release commit the tag is the last word on which release this is.
+        tags = subprocess.run(
+            ["git", "tag", "--points-at", "HEAD"],
+            cwd=ROOT, capture_output=True, check=True, text=True,
+        ).stdout.split()
+        releases = [tag for tag in tags if re.fullmatch(r"v\d+\.\d+\.\d+", tag)]
+        for tag in releases:
+            self.assertEqual(tag, f"v{version}", "the tagged commit publishes another version")
 
     def test_regression_tests_remain_proportionate_to_production_tools(self):
         production = [
