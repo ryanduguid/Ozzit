@@ -2,12 +2,69 @@
 
 ## Unreleased
 
+### Functions that disagreed with their own help
+
+- **`oz.IsBetweenEλ` and `oz.IsBetweenUλ` now apply the `Inclusive` default they
+  document.** Neither bound the argument, and an omitted LAMBDA argument evaluates as
+  an empty value, so `IF( Inclusive, ...)` took the exclusive branch and both returned
+  the opposite of their own printed example: the help says `=oz.IsBetweenEλ(2, 2, 4)`
+  is TRUE and Excel returned FALSE. The binding added is the one Dates' `oz.IsBetweenλ`
+  has carried all along. The demonstration sheet named `oz.IsBetweenEλ` computes with
+  `oz.IsBetweenλ`, so no cached value changes.
+- **`oz.CorkscrewλDV` prints its diagnosis instead of `#VALUE!`.** `Errors2Show`
+  multiplied both message arrays by an undocumented sixth argument, `Diagnostics`.
+  Nothing told a caller to supply it. `verify_signatures.py` already reports that this
+  function carries neither a FUNCTION line nor a parameter table. Omitted, the argument
+  evaluated as 0, so a real problem fell through to `CHOOSE`'s third branch and
+  `=oz.CorkscrewλDV(0, {"a","b"})` returned `#VALUE!` where `oz.AmortiseλDV` and
+  `oz.DepreciateλDV` name the fault. Those two never carried the multiplier, so the
+  parameter is now gone.
+- **Four worked examples corrected.** `oz.Movementλ`'s passed three arguments to a
+  two-parameter LAMBDA, so it could not be evaluated. `oz.Reversalλ`'s printed the
+  negated input, `-100,-110,-130`, where the function returns the reversal one period
+  later, `0,-100,-110`. `oz.PeriodDiffλ`'s printed 1 for a span its formula counts as
+  2. `oz.AboutFinancialλ` and `README.md` listed Book Value among the rows
+  `oz.SumDepreciateλ` totals, a row that falls to the `SWITCH` default and stays 0.
+- **Five static strings, read by six cells, repeat a corrected claim and are corrected
+  with it.** A label or description column is typed into the sheet, not spilled into
+  it: the cell has no formula and sits under no spill anchor, so Excel never refreshes
+  it and correcting the defined name alone would have left the old sentence on screen.
+  The `oz.FinancialRatios` label column named `Aboutλ`, `DSIRatioλ` and
+  `DividendPayoutRatioλ`, three pre-rename names for `oz.AboutRatiosλ`, `oz.DSIλ` and
+  `oz.DPRλ`. The TOC row for `oz.SumDepreciateλ` and the heading of its own
+  demonstration sheet share the one string that listed Book Value. And
+  `oz.IsOccurrenceDateλ`'s sheet wrote its signature out with a fifth argument,
+  `[Diagnostics]`, that the LAMBDA does not declare and its own FUNCTION line does not
+  show.
+- **`oz.AboutDatesλ` no longer sends readers to functions that do not exist.** Its
+  DIAGNOSTICS block told them to insert `DV` and type `CountDOWλDV( Start, End, 1)`.
+  The library declares three `λDV` functions, all in Financial, and no release ever
+  defined a Dates one, so every call it named returned `#NAME?`.
+- **`oz.AboutRatiosλ` names `DSIλ` and `DPRλ`,** the names the library declares,
+  rather than the pre-rename `DSIRatioλ` and `DividendPayoutRatioλ`.
+- **`verify_signatures.py` now checks the About tables.** Its docstring already
+  promised that every function named in a help must be one the library declares, but
+  the not-a-LAMBDA guard skipped the five About tables before that check ran, which is
+  the hole the twelve names above lived in. The label column is checked too, since an
+  About table names a function without a following bracket.
+- **`tools/postbuild/help_corrections.py` added.** It applies every correction to the
+  defined names in `ozzit.xlsx` and to `src/` together, refreshes the two cells caching
+  the corrected examples on their demonstration sheets and the five shared strings the
+  static label and description cells read, and reports "already applied" on a second
+  run.
+- **`.editorconfig` exempts `src/*.txt`.** `verify_afe.py` compares those files with
+  the workbook's Advanced Formula Environment store byte for byte, and the `[*]` rules
+  told every editorconfig-honouring editor to trim the 1,592 lines of alignment padding
+  on save and add the final newline `src/Ratios.txt` does not carry.
+
+## v3.2.0, 30 August 2026, release bundles, AASB 16 leases, MIT throughout
+
 ### Deterministic release candidate staging
 
 - **`tools/prepare_release_bundle.py` added.** From a clean candidate it copies the exact tracked workbook into a fresh external staging directory, reruns the six workbook-bound gates and emits only `ozzit.xlsx`, canonical `provenance.json` and canonical `SHA256SUMS`. A second mode independently verifies the closed inventory, hashes, base lock and gate evidence. The tool neither tags nor publishes, refuses to overwrite a destination and cleans an unpublished staging directory after failure.
 - **The shipped workbook now has an explicit byte lock.** `release/workbook-base.json` records its SHA-256, byte length, Git blob and last workbook-changing commit. This is honest copy-only provenance: the post-v3.0.0 process still does not regenerate the present workbook from the predecessor workbook.
 - **The binary migration is recoverable.** `ozzit.xlsx` remains tracked until one release asset has been published, downloaded independently and matched to both its checksum and exact signed tag. Removing it, rewriting history or force-pushing is outside this change.
-- **Release counts and tests are current.** The release guide now names all ten gates and the 438-assertion native baseline. Fifteen release-bundle regression contracts cover deterministic output, tampering, closed inputs, base drift, Git-history binding, shell avoidance, output isolation, no-overwrite behaviour and failure cleanup.
+- **Release counts and tests are current.** The release guide now names all ten gates and the 438-assertion native baseline. Sixteen release-bundle regression contracts cover deterministic output, tampering, closed inputs, base drift, Git-history binding, shell avoidance, output isolation, no-overwrite behaviour and failure cleanup.
 
 ### AASB 16 lease functions
 

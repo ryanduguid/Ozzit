@@ -12,6 +12,7 @@ python tools/postbuild/fy27_help_text.py ozzit.xlsx src
 python tools/postbuild/workbook_palette.py ozzit.xlsx
 python tools/postbuild/gst_help_text.py ozzit.xlsx src
 python tools/postbuild/strip_revision_history.py ozzit.xlsx src
+python tools/postbuild/help_corrections.py ozzit.xlsx src
 python tools/sync_afe_store.py ozzit.xlsx src
 python tools/sanitise_workbook.py ozzit.xlsx   # always last, after any Excel save
 ```
@@ -26,7 +27,12 @@ committed v3.1.0 workbook and `src/`. The revision-history pass removes the
 per-function REVISIONS blocks, the Advanced Formula Environment copies of them and
 the workbook's creator credit; it resynchronises the AFE store itself, so it must
 run after any text pass that touches `src/`. A build that starts from the predecessor
-workbook still emits those blocks at v3.0.0, so this pass is what removes them.
+workbook still emits those blocks at v3.0.0, so this pass is what removes them. The
+help-corrections pass is the last text pass: it repairs the functions that shipped
+disagreeing with their own inline help. Two of the corrected examples are spilled onto
+demonstration worksheets, so it rewrites the cells caching that spill, and five of the
+corrected statements are also typed into label and description cells that no formula
+feeds, so it rewrites those shared strings too.
 
 ## What is intentionally not here
 
