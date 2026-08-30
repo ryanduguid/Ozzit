@@ -24,7 +24,7 @@ A LAMBDA function library for building dynamic-array financial models in Excel.
 
 **Version: 20 August 2026**
 
-This is the workbook's version stamp. The later tagged repository release is [v3.1.0](https://github.com/ryanduguid/Ozzit/releases/tag/v3.1.0), dated 23 August 2026; citation metadata is in [CITATION.cff](CITATION.cff).
+This is the workbook's version stamp. The later tagged repository release is [v3.2.0](https://github.com/ryanduguid/Ozzit/releases/tag/v3.2.0), dated 30 August 2026; citation metadata is in [CITATION.cff](CITATION.cff).
 
 ## Requirements
 
@@ -199,7 +199,7 @@ python -m pip install "mypy==2.3.1"
 python -m mypy --config-file mypy.ini
 ```
 
-Type safety: all 167 production tool functions have complete parameter and return annotations, and Mypy checks the 21 production Python modules without suppressing error categories. The checker version is pinned so local and CI results agree. The policy test preserves the original 146-function baseline without making an exact count a barrier to adding another fully typed tool.
+Type safety: all 179 production tool functions have complete parameter and return annotations, and Mypy checks the 22 production Python modules without suppressing error categories. The checker version is pinned so local and CI results agree. The policy test preserves the original 146-function baseline without making an exact count a barrier to adding another fully typed tool.
 
 ```bash
 python tools/verify_workbook.py ozzit.xlsx
@@ -294,7 +294,7 @@ The workbook remains tracked while [issue #46](https://github.com/ryanduguid/Ozz
 | `oz.Cumulativeλ` | Creates a row or column of cumulative totals from a total row or column |
 | `oz.Depreciateλ` | Create a block of CAPEX, Opening Balance, Depreciation Values, and Book Value for each asset |
 | `oz.LabelDepreciateλ` | Create row labels for Depreciateλ result |
-| `oz.SumDepreciateλ` | Create row totals for CAPEX, Depreciation, Book Value, Salvage Value, and Disposal costs in Depreciateλ results |
+| `oz.SumDepreciateλ` | Create row totals for CAPEX, Depreciation, Salvage Value, and Disposal costs in Depreciateλ results |
 | `oz.SumContainsλ` | Creates a row of totals for each row in an array where its labels contain a unique letter, word, or phrase. |
 | `oz.IntOnIntλ` | Calculate Interest on Interest. Use to determine amount needed to cover debt plus interest on debt |
 | `oz.IRRλ` | Calculates IRR, correcting for when the first investment is not in the first period |

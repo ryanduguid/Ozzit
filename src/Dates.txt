@@ -22,24 +22,7 @@ AboutDatesλ = TRIM(
         "ScheduleValuesByItemsλ →Schedules values in a timeline for each item in a list.¶" &
         "Timelineλ              →Creates a horizontal list of start or end dates for a timeline¶" & 
         "FinancialYearλ         →Labels dates with their Australian financial year, starting 1 July¶" &
-        "→¶" &
-        "DIAGNOSTICS            →These functions diagnose problems in their associate function's arguments.¶" & 
-                               "→Should a function not work, it may be because there is a problem with the arguments.¶" & 
-                               "→Argument problems can include text where numbers should be, invalid dates, etc.¶" & 
-                               "→To see if you have argument problems, insert 'DV' between 'λ' and '('. ¶" & 
-                               "→Here is an example: CountDOWλDV( Start, End, 1). Hit enter to run diagnostics.¶" & 
-                               "→When finished, remove 'DV' to return the function to normal operation¶" & 
-        "CountDOWλDV            →¶" &
-        "IsBetweenλDV           →¶" &
-        "IsOccurrenceDateλDV    →¶" &
-        "OverLapDaysλDV         →¶" &
-        "PeriodsλDV             →¶" &
-        "PeriodLabelλDV         →¶" &
-        "ScheduleRatesλDV       →¶" &
-        "ScheduleRatesByItemsλDV→¶" &
-        "ScheduleValuesλDV      →¶" &
-        "ScheduleValuesByItemsλDV→¶" &
-        "Timelineλ              →",  
+        "→",  
         "→", "¶"
     )
 );
