@@ -32,7 +32,11 @@ A worked example must call the function it is printed under. Three shipped calli
 neighbour instead, and because the result each claimed was correct for that neighbour,
 nothing looked wrong: copy the line and you run a different function. Every function
 named anywhere in a help must also be one the library declares, which catches a
-reference to LableAmortiseλ that no release ever defined.
+reference to LableAmortiseλ that no release ever defined. That runs on every
+declaration, About tables included: they are the one help a reader is told to copy
+names out of, and skipping them let AboutDatesλ ship a DIAGNOSTICS block naming ten
+λDV functions that have never existed. An About table also names functions in its
+label column, without a following bracket, so those are checked as well.
 
 The checks are independent, because the parts they read are independent: the debt
 module has never carried a FUNCTION line, but it does carry parameter tables and
@@ -63,6 +67,8 @@ SRC = sys.argv[1] if len(sys.argv) > 1 else "src"
 SIGNATURE = re.compile(r"^([A-Za-z0-9_.]*λ[A-Za-z0-9_]*)\s*\((.*)\)\s*$", re.DOTALL)
 # a call in help text, with or without the namespace the EXAMPLES header says to assume
 CALL = re.compile(r"(?<![A-Za-z0-9_.])(?:oz\.)?([A-Za-z_][A-Za-z0-9_]*λ[A-Za-z0-9_]*)\s*\(")
+# an About table's label column names a function outright, with no bracket after it
+LABEL = re.compile(r"^(?:oz\.)?([A-Za-z_][A-Za-z0-9_]*λ[A-Za-z0-9_]*)$")
 INTERNAL = "DoNotUse"        # an internal counter, documented but kept out of the signature
 FLOOR = 100                  # the library ships 130 functions; reading far fewer is a bug
 
@@ -207,6 +213,13 @@ def main() -> int:
             if name.startswith("About"):
                 seen_desc: dict[str, str] = {}
                 for label, text in rows:
+                    # The label column is a list of functions to go and type, so a
+                    # name there has to be one the library declares. Headings such as
+                    # DIAGNOSTICS or AMORTISATION SUITE carry no λ and are not names.
+                    named = LABEL.match(label)
+                    if named and named.group(1) not in declared_names:
+                        failures.append("%s's table lists %s, which the library does "
+                                        "not declare" % (name, label))
                     if label not in declared_names or label == name:
                         continue
                     key = re.sub(r"\s+", " ", text).strip().lower()
@@ -219,6 +232,13 @@ def main() -> int:
                         )
                     else:
                         seen_desc[key] = label
+
+            # Before the LAMBDA guard: the five About tables are not LAMBDAs, and they
+            # are exactly where a call to a function that does not exist survived.
+            for called in sorted(set(CALL.findall(literals(body)))):
+                if called not in declared_names:
+                    failures.append("%s's help calls %s, which the library does not declare"
+                                    % (name, called))
 
             if not body.startswith("LAMBDA("):
                 not_lambda.append(name)
@@ -254,10 +274,6 @@ def main() -> int:
                 if name not in calls:
                     failures.append("%s's worked examples never call it, they call %s"
                                     % (name, ", ".join(sorted(set(calls)))))
-            for called in sorted(set(CALL.findall(literals(body)))):
-                if called not in declared_names:
-                    failures.append("%s's help calls %s, which the library does not declare"
-                                    % (name, called))
 
             listed = parameter_table(body)
             if listed is None:
