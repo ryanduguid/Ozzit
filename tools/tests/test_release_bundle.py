@@ -306,6 +306,34 @@ class ReleaseBundleTests(unittest.TestCase):
                     or (isinstance(shell, ast.Constant) and shell.value is False)
                 )
 
+    def test_gate_evidence_is_independent_of_how_the_workbook_path_is_written(self):
+        """create records in-repo evidence and verify re-runs against the staged copy.
+
+        The gates echo the workbook path they are handed, so evidence recorded from
+        one spelling of that path has to match evidence re-run from another. The
+        bundle is always staged outside the repository, so the two spellings are
+        never identical in practice.
+        """
+        recorded = []
+
+        def echo_arguments(argv, **_):
+            recorded.append(argv)
+            return mock.Mock(returncode=0, stdout="OK: " + " ".join(argv[4:]) + "\n")
+
+        detoured = self.root / ".." / self.root.name / "ozzit.xlsx"
+        self.assertIn("..", str(detoured))
+
+        with mock.patch.object(release_bundle.subprocess, "run", echo_arguments):
+            direct = release_bundle.run_semantic_gates(self.root, self.workbook)
+            indirect = release_bundle.run_semantic_gates(self.root, detoured)
+
+        self.assertEqual(direct, indirect)
+        self.assertNotIn("..", json.dumps(direct))
+        for argv in recorded:
+            with self.subTest(argv=argv):
+                for argument in argv[4:]:
+                    self.assertTrue(Path(argument).is_absolute())
+
 
 if __name__ == "__main__":
     unittest.main()
