@@ -17,8 +17,24 @@ EDITORCONFIG = ROOT / ".editorconfig"
 CITATION = ROOT / "CITATION.cff"
 CHANGELOG = ROOT / "CHANGELOG.md"
 README = ROOT / "README.md"
+AGENTS = ROOT / "AGENTS.md"
+CLAUDE = ROOT / "CLAUDE.md"
+CONTRIBUTING = ROOT / "CONTRIBUTING.md"
 SRC = ROOT / "src"
 TOOLS = ROOT / "tools"
+
+
+VERIFY_COMMANDS = (
+    'python -m pip install "mypy==2.3.1"',
+    "python -m mypy --config-file mypy.ini",
+    "python tools/verify_workbook.py ozzit.xlsx",
+    "python tools/verify_sources.py ozzit.xlsx src",
+    "python tools/verify_signatures.py src",
+    "python tools/verify_previous_names.py functions.csv",
+    "python tools/verify_index.py ozzit.xlsx src functions.csv",
+    "python tools/verify_afe.py ozzit.xlsx src",
+    "python -m unittest discover -s tools/tests -v",
+)
 
 
 DEPENDABOT_CANONICAL = """version: 2
@@ -54,6 +70,34 @@ def physical_code_lines(paths):
 
 
 class RepositoryPolicyTests(unittest.TestCase):
+    def test_cross_runtime_contributor_guidance_preserves_workbook_authority(self):
+        self.assertTrue(AGENTS.is_file(), "AGENTS.md is required")
+        self.assertTrue(CLAUDE.is_file(), "CLAUDE.md is required")
+        self.assertTrue(CONTRIBUTING.is_file(), "CONTRIBUTING.md is required")
+
+        agents = read_utf8(AGENTS)
+        contributing = read_utf8(CONTRIBUTING)
+        self.assertIn("`ozzit.xlsx` is the shipped authority", agents)
+        self.assertIn("Never fabricate Excel recalculation or cached-value evidence.", agents)
+        self.assertIn("native Excel", agents)
+        self.assertIn("no macros", agents)
+        self.assertIn("RELEASING.md", agents)
+        for command in VERIFY_COMMANDS:
+            self.assertIn(command, agents)
+
+        self.assertEqual(read_utf8(CLAUDE), "@AGENTS.md\n")
+        self.assertIn("`ozzit.xlsx` is the shipped authority", contributing)
+        self.assertIn(
+            "`src/*.txt`, the AFE store and `functions.csv`",
+            contributing.replace("\n", " "),
+        )
+        self.assertIn(
+            "Cached formula results may change only with Excel-backed recalculation evidence.",
+            contributing,
+        )
+        for command in VERIFY_COMMANDS:
+            self.assertIn(command, contributing)
+
     def test_security_and_releasing_docs_exist_and_name_the_reporting_path(self):
         security = read_utf8(SECURITY)
         releasing = read_utf8(RELEASING)
