@@ -31,7 +31,7 @@ AboutFinancialλ = TRIM(TEXTSPLIT(
     "DEPRECIATION SUITE→¶" & 
     "Depreciateλ        →Create a block of CAPEX, Opening Balance, Depreciation Values, and Book Value for each asset¶" & 
     "LabelDepreciateλ   →Create row labels for Depreciateλ result¶" & 
-    "SumDepreciateλ     →Create row totals for CAPEX, Depreciation, Book Value, Salvage Value, and Disposal costs in Depreciateλ results¶" & 
+    "SumDepreciateλ     →Create row totals for CAPEX, Depreciation, Salvage Value, and Disposal costs in Depreciateλ results¶" & 
     "Allocateλ          →Divide one or more amounts equally across smaller periods¶" & 
     "SLNλ               →Straight Line depreciation method for one asset or asset class.¶" & 
     "SYDλ               →Sum-of-years' digits depreciation method for one asset or asset class.¶" & 
@@ -291,7 +291,7 @@ Movementλ = LAMBDA(
                             "Values         →(Required) A row of values to compare column to column¶" & 
                             "EXAMPLES:      →¶" & 
                             "Result         →Formula (oz is assumed to be the module's name)¶" &
-                            "100,10,20,-30  →=oz.Movementλ(,{100,110,130,100}, 4)",
+                            "100,10,20,-30  →=oz.Movementλ(,{100,110,130,100})",
                             "→", "¶" )
                     ),            
     //  Check inputs - Omitted required arguments
@@ -341,7 +341,7 @@ Reversalλ = LAMBDA(
                             "RowToReverse   →(Required) A row of values to reverse the following periods¶" & 
                             "EXAMPLES:      →¶" & 
                             "Result         →Formula (oz is assumed to be the module's name)¶" &
-                            "-100,-110,-130 →=oz.Reversalλ( , {100,110,130})",
+                            "0,-100,-110    →=oz.Reversalλ( , {100,110,130})",
                             "→", "¶" )
                     ),            
     //  Check inputs - Omitted required arguments
@@ -1311,7 +1311,7 @@ PeriodDiffλ = LAMBDA(
                             "Interval       →(Required) W=Week, M=Month, Q=Quarter, Y=Year.¶" & 
                             "EXAMPLES:      →¶" &
                             "Result         →Formula (oz is assumed to be the module's name)¶" &
-                            "1              →=oz.PeriodDiffλ(""2026-01-01"", ""2026-04-15"", ""Q"")", 
+                            "2              →=oz.PeriodDiffλ(""2026-01-01"", ""2026-04-15"", ""Q"")", 
                             "→", "¶"
                             )
                         ),
@@ -1640,7 +1640,6 @@ CorkscrewλDV = LAMBDA(
     [Flow2],
     [Flow3],
     [Flow4],
-    [Diagnostics],
 
     LET(
     //  Check inputs - Errors in argument values
@@ -1674,7 +1673,7 @@ CorkscrewλDV = LAMBDA(
         AnyErrors?,     OR(ErrorsInArgs, DVErrors),
 
     //  Assemble Error Messages Array (if errors found)
-        Errors2Show,    VSTACK( Diagnostics * ErrorsInArgs, Diagnostics * DVErrors), 
+        Errors2Show,    VSTACK( ErrorsInArgs, DVErrors), 
         ErrMsgs,        {"Opening contains errors in cells. Resolve errors first.";
                          "Flow1 contains errors in cells. Resolve errors first.";
                          "Flow2 contains errors in cells. Resolve errors first.";

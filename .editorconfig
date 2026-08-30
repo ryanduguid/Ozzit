@@ -13,3 +13,10 @@ indent_size = 2
 
 [*.md]
 trim_trailing_whitespace = false
+
+# src/*.txt is the workbook's own text, compared byte for byte with the Advanced
+# Formula Environment store by tools/verify_afe.py. Trimming the alignment padding
+# on save, or adding a final newline, breaks that gate with no hint why.
+[src/*.txt]
+trim_trailing_whitespace = false
+insert_final_newline = false

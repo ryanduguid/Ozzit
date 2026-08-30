@@ -439,6 +439,8 @@ IsBetweenUλ = LAMBDA(
                             "→", "¶"
                             )
                         ),
+    //  Check inputs - Set optional arguments defaults
+        Inclusive,      IF( ISLOGICAL( Inclusive), Inclusive, TRUE),
     //  Check inputs - Omitted required arguments
         Help?,          OR( ISOMITTED( Value),
                             ISOMITTED( Low),
