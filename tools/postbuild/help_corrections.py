@@ -60,13 +60,14 @@ changes src/.
 
 from __future__ import annotations
 
+import os
 import sys
 import zipfile
 from pathlib import Path
 from typing import NamedTuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from sanitise_workbook import write_deterministic
+from sanitise_workbook import deterministic_bytes
 
 MODULES = ("Dates", "Essentials", "Financial", "Ratios", "Utilities", "Debt")
 
@@ -386,6 +387,11 @@ def _write_text(path: Path, text: str) -> None:
         handle.write(text)
 
 
+def _staged(path: Path) -> Path:
+    """Return the temporary name staging writes before it replaces this path."""
+    return path.with_name(path.name + ".tmp")
+
+
 def run(workbook: Path, src_dir: Path) -> list[str]:
     failures: list[str] = []
 
@@ -432,15 +438,40 @@ def run(workbook: Path, src_dir: Path) -> list[str]:
     if updated_strings != parts["xl/sharedStrings.xml"]:
         parts["xl/sharedStrings.xml"] = updated_strings
         rewritten = True
-    if rewritten:
-        write_deterministic(workbook, parts)
-        changed.append("workbook")
+    # One correction, two stores. Staging writes every changed output under a
+    # temporary name and replaces the destinations only once all of them are on
+    # disk, the way tools/sanitise_workbook.py replaces the workbook. A
+    # permission, disk-space or interruption failure during staging therefore
+    # leaves both stores as they were, rather than a corrected workbook beside a
+    # module that still holds the pre-correction text or that lost its tail to a
+    # truncating rewrite. The list records each temporary name before the write,
+    # so the cleanup below also removes the half-written one a failure leaves.
+    staged: list[tuple[Path, Path]] = []
+    try:
+        if rewritten:
+            temporary = _staged(workbook)
+            staged.append((temporary, workbook))
+            temporary.write_bytes(deterministic_bytes(parts))
+            changed.append("workbook")
 
-    for module, original in src_originals.items():
-        text = apply_swaps(original, "src")
-        if text != original:
-            _write_text(src_dir / f"{module}.txt", text)
+        for module, original in src_originals.items():
+            text = apply_swaps(original, "src")
+            if text == original:
+                continue
+            destination = src_dir / f"{module}.txt"
+            temporary = _staged(destination)
+            staged.append((temporary, destination))
+            _write_text(temporary, text)
             changed.append(f"src/{module}.txt")
+
+        for temporary, destination in staged:
+            os.replace(temporary, destination)
+    finally:
+        for temporary, _destination in staged:
+            try:
+                temporary.unlink()
+            except FileNotFoundError:
+                pass
 
     return changed
 
