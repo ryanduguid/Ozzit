@@ -24,7 +24,7 @@ SRC = ROOT / "src"
 TOOLS = ROOT / "tools"
 
 
-VERIFY_COMMANDS = (
+EXPECTED_VERIFY_COMMANDS = (
     'python -m pip install "mypy==2.3.1"',
     "python -m mypy --config-file mypy.ini",
     "python tools/verify_workbook.py ozzit.xlsx",
@@ -60,6 +60,11 @@ def read_utf8(path: Path) -> str:
     return path.read_bytes().decode("utf-8")
 
 
+def workflow_commands(workflow: str) -> tuple[str, ...]:
+    """Read the simple, one-line Python commands used by this workflow."""
+    return tuple(re.findall(r"^\s*run:\s*(python [^\r\n]+?)\s*$", workflow, re.M))
+
+
 def physical_code_lines(paths):
     return sum(
         1
@@ -82,7 +87,15 @@ class RepositoryPolicyTests(unittest.TestCase):
         self.assertIn("native Excel", agents)
         self.assertIn("no macros", agents)
         self.assertIn("RELEASING.md", agents)
-        for command in VERIFY_COMMANDS:
+        commands = workflow_commands(read_utf8(VERIFY_WORKFLOW))
+        self.assertEqual(commands, EXPECTED_VERIFY_COMMANDS)
+        mutated = read_utf8(VERIFY_WORKFLOW).replace(
+            "python tools/verify_afe.py ozzit.xlsx src",
+            "python tools/verify_afe.py ozzit.xlsx changed-src",
+            1,
+        )
+        self.assertNotEqual(commands, workflow_commands(mutated))
+        for command in commands:
             self.assertIn(command, agents)
 
         self.assertEqual(read_utf8(CLAUDE), "@AGENTS.md\n")
@@ -95,7 +108,7 @@ class RepositoryPolicyTests(unittest.TestCase):
             "Cached formula results may change only with Excel-backed recalculation evidence.",
             contributing,
         )
-        for command in VERIFY_COMMANDS:
+        for command in commands:
             self.assertIn(command, contributing)
 
     def test_security_and_releasing_docs_exist_and_name_the_reporting_path(self):
