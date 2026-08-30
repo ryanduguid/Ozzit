@@ -206,6 +206,10 @@ def _normalise_gate_output(text: str, root: Path, workbook: Path) -> str:
 
 def run_semantic_gates(root: Path, workbook: Path) -> list[GateResult]:
     """Run the six deterministic gates bound to the staged workbook and source views."""
+    # Resolve before use. The gates echo the workbook path they are handed, so an
+    # unresolved path would both record checkout-specific evidence that a later
+    # verify run cannot reproduce and be re-interpreted against cwd=root below.
+    workbook = workbook.resolve()
     specifications: tuple[tuple[str, tuple[Path, ...], str], ...] = (
         (
             "verify_workbook.py",
