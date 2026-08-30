@@ -16,6 +16,7 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[3]
 TOOLS = ROOT / "tools"
@@ -159,6 +160,7 @@ class HelpCorrectionsTests(unittest.TestCase):
                     )
                     self.assertEqual(text.count(new), swap.hits)
                     self.assertNotIn(old, text)
+                    self.assertEqual(list(self.directory.rglob("*.tmp")), [])
                 finally:
                     shutil.rmtree(self.directory, ignore_errors=True)
                     self.directory.mkdir()
@@ -214,6 +216,35 @@ class HelpCorrectionsTests(unittest.TestCase):
         result = self._run(workbook, src)
         self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("FAIL", result.stdout + result.stderr)
+
+    def test_no_store_is_written_when_an_output_write_fails(self):
+        # Anchor validation catches the two failures above before any output.
+        # This one lands during the output phase, where the workbook and the
+        # modules are separate destinations: a permission or disk-space failure
+        # on one of them must leave both stores byte-identical, not a corrected
+        # workbook beside a module that still holds the pre-correction text or
+        # that lost its tail to a truncating rewrite.
+        workbook, src = self._copy_tree()
+        self._revert(workbook, src, SWAPS[0])
+        before = workbook.read_bytes()
+        src_before = {path.name: path.read_bytes() for path in src.glob("*.txt")}
+
+        def out_of_space(path, text):
+            # A full disk keeps the bytes it managed before the write raises.
+            path.write_text(text[: len(text) // 2], encoding="utf-8")
+            raise OSError("no space left on device")
+
+        with (
+            mock.patch.object(_mod, "_write_text", side_effect=out_of_space),
+            self.assertRaisesRegex(OSError, "no space left on device"),
+        ):
+            _mod.run(workbook, src)
+
+        self.assertEqual(workbook.read_bytes(), before)
+        self.assertEqual(
+            {path.name: path.read_bytes() for path in src.glob("*.txt")}, src_before
+        )
+        self.assertEqual(list(self.directory.rglob("*.tmp")), [])
 
     def test_documented_run_order_syncs_afe_after_this_pass(self):
         instructions = POSTBUILD_README.read_text(encoding="utf-8")
