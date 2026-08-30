@@ -36,7 +36,7 @@ AboutRatiosλ = TRIM(
         "→¶" & 
         "Efficiency Ratios→¶" &
         "AssetTurnoverRatioλ        →Measures the value of a company's sales or revenues relative to the value of its assets.¶" &
-        "DSIRatioλ                  →Days Sales in Inventory Ratio (aka Average age of inventory indicates the average time in days that a company takes to turn its inventory¶" &
+        "DSIλ                       →Days Sales in Inventory Ratio (aka Average age of inventory indicates the average time in days that a company takes to turn its inventory¶" &
         "OperatingRatioλ            →Shows how efficient management is at keeping costs low while generating revenue¶" &
         "→¶" & 
         "Profitability Margins & Ratios→¶" &
@@ -58,7 +58,7 @@ AboutRatiosλ = TRIM(
         "PriceToCashRatioλ          →Price to Cash (P/CF) Ratio is a stock valuation indicator or multiple that measures the value of a stock’s price relative to its operating cash flow per share¶" &
         "BVPSλ                      →Book value per share ratio is an indicator of the value of a company’s stock¶" &
         "CAPERatioλ                 →Measure that uses real earnings per share (EPS) over a 10-year period to smooth out fluctuations in corporate profits that occur over different periods of a business cycle (aka Shiller PE Ratio)¶" &
-        "DividendPayoutRatioλ       →Dividend Payout Ratio is the percentage of earnings paid to shareholders via dividends¶" &
+        "DPRλ                       →Dividend Payout Ratio is the percentage of earnings paid to shareholders via dividends¶" &
         "DividendYieldRatioλ        →Dividend yield ratio shows how much a company pays out in dividends¶" &
         "EPSλ                       →Earnings per share measures profitability indicating how much profit each outstanding share of common stock has earned ¶" &
         "RetentionRatioλ            →Retention Ratio is the proportion of earnings kept back in the business as retained earnings¶" &

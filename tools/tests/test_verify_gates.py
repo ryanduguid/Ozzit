@@ -116,6 +116,66 @@ class VerifyGateTests(unittest.TestCase):
         finally:
             shutil.rmtree(directory, ignore_errors=True)
 
+    def _signatures_on(self, directory):
+        output = io.StringIO()
+        with (
+            mock.patch.object(verify_signatures, "SRC", str(directory)),
+            redirect_stdout(output),
+        ):
+            result = verify_signatures.main()
+        return result, output.getvalue()
+
+    def test_verify_signatures_rejects_an_about_table_label_that_is_not_declared(self):
+        # The five About tables are the one help a reader copies names out of, and
+        # they are not LAMBDAs, so the whole reference check used to skip them.
+        directory = self._copy_src()
+        try:
+            path = directory / "Dates.txt"
+            path.write_text(
+                path.read_text(encoding="utf-8").replace(
+                    '"CountDOWλ              →Count instances',
+                    '"CountDOWλDV            →Count instances',
+                    1,
+                ),
+                encoding="utf-8",
+            )
+            result, printed = self._signatures_on(directory)
+            self.assertEqual(result, 1)
+            self.assertIn(
+                "AboutDatesλ's table lists CountDOWλDV, which the library does not declare",
+                printed,
+            )
+        finally:
+            shutil.rmtree(directory, ignore_errors=True)
+
+    def test_verify_signatures_rejects_a_call_in_an_about_table(self):
+        directory = self._copy_src()
+        try:
+            path = directory / "Ratios.txt"
+            path.write_text(
+                path.read_text(encoding="utf-8").replace(
+                    '"Notes:                     →Sources include',
+                    '"Notes:                     →Try DSIRatioλ( 1, 2). Sources include',
+                    1,
+                ),
+                encoding="utf-8",
+            )
+            result, printed = self._signatures_on(directory)
+            self.assertEqual(result, 1)
+            self.assertIn(
+                "AboutRatiosλ's help calls DSIRatioλ, which the library does not declare",
+                printed,
+            )
+        finally:
+            shutil.rmtree(directory, ignore_errors=True)
+
+    def test_verify_signatures_accepts_an_about_table_heading_that_is_not_a_name(self):
+        # Headings such as AMORTISATION SUITE or "*" share the label column with the
+        # function names and must not be read as references.
+        result, printed = self._signatures_on(ROOT / "src")
+        self.assertEqual(result, 0, printed)
+        self.assertIn("not a LAMBDA (5)", printed)
+
 
 if __name__ == "__main__":
     unittest.main()
