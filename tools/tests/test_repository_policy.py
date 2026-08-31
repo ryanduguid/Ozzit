@@ -61,8 +61,49 @@ def read_utf8(path: Path) -> str:
 
 
 def workflow_commands(workflow: str) -> tuple[str, ...]:
-    """Read the simple, one-line Python commands used by this workflow."""
-    return tuple(re.findall(r"^\s*run:\s*(python [^\r\n]+?)\s*$", workflow, re.M))
+    """Read every scalar and block ``run`` gate without a YAML dependency."""
+    lines = workflow.splitlines()
+    commands: list[str] = []
+    index = 0
+    while index < len(lines):
+        match = re.match(r"^\s*(?:-\s+)?run:\s*(.*?)\s*$", lines[index])
+        if match is None:
+            index += 1
+            continue
+
+        value = match.group(1)
+        block = re.fullmatch(r"(?P<style>[|>])[+-]?", value)
+        if block is None:
+            commands.append(value)
+            index += 1
+            continue
+
+        key_indent = lines[index].index("run:")
+        cursor = index + 1
+        while cursor < len(lines) and not lines[cursor].strip():
+            cursor += 1
+        if cursor == len(lines):
+            commands.append("")
+            break
+        content_indent = len(lines[cursor]) - len(lines[cursor].lstrip())
+        if content_indent <= key_indent:
+            commands.append("")
+            index = cursor
+            continue
+
+        body: list[str] = []
+        while cursor < len(lines):
+            line = lines[cursor]
+            indent = len(line) - len(line.lstrip())
+            if line.strip() and indent < content_indent:
+                break
+            if line.strip():
+                body.append(line[content_indent:].rstrip())
+            cursor += 1
+        separator = "\n" if block.group("style") == "|" else " "
+        commands.append(separator.join(body))
+        index = cursor
+    return tuple(commands)
 
 
 def physical_code_lines(paths):
@@ -110,6 +151,26 @@ class RepositoryPolicyTests(unittest.TestCase):
         )
         for command in commands:
             self.assertIn(command, contributing)
+
+    def test_workflow_command_parser_detects_non_python_and_multiline_gates(self):
+        workflow = read_utf8(VERIFY_WORKFLOW)
+        marker = "        run: python -m unittest discover -s tools/tests -v"
+        mutated = workflow.replace(
+            marker,
+            marker
+            + "\n      - name: Check PowerShell policy\n"
+            + "        run: pwsh -File tools/check_policy.ps1\n"
+            + "      - name: Check frontend assets\n"
+            + "        run: |\n"
+            + "          npm ci\n"
+            + "          npm test",
+            1,
+        )
+
+        self.assertEqual(
+            workflow_commands(mutated)[-2:],
+            ("pwsh -File tools/check_policy.ps1", "npm ci\nnpm test"),
+        )
 
     def test_security_and_releasing_docs_exist_and_name_the_reporting_path(self):
         security = read_utf8(SECURITY)
