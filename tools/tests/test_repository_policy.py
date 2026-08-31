@@ -17,8 +17,24 @@ EDITORCONFIG = ROOT / ".editorconfig"
 CITATION = ROOT / "CITATION.cff"
 CHANGELOG = ROOT / "CHANGELOG.md"
 README = ROOT / "README.md"
+AGENTS = ROOT / "AGENTS.md"
+CLAUDE = ROOT / "CLAUDE.md"
+CONTRIBUTING = ROOT / "CONTRIBUTING.md"
 SRC = ROOT / "src"
 TOOLS = ROOT / "tools"
+
+
+EXPECTED_VERIFY_COMMANDS = (
+    'python -m pip install "mypy==2.3.1"',
+    "python -m mypy --config-file mypy.ini",
+    "python tools/verify_workbook.py ozzit.xlsx",
+    "python tools/verify_sources.py ozzit.xlsx src",
+    "python tools/verify_signatures.py src",
+    "python tools/verify_previous_names.py functions.csv",
+    "python tools/verify_index.py ozzit.xlsx src functions.csv",
+    "python tools/verify_afe.py ozzit.xlsx src",
+    "python -m unittest discover -s tools/tests -v",
+)
 
 
 DEPENDABOT_CANONICAL = """version: 2
@@ -44,6 +60,52 @@ def read_utf8(path: Path) -> str:
     return path.read_bytes().decode("utf-8")
 
 
+def workflow_commands(workflow: str) -> tuple[str, ...]:
+    """Read every scalar and block ``run`` gate without a YAML dependency."""
+    lines = workflow.splitlines()
+    commands: list[str] = []
+    index = 0
+    while index < len(lines):
+        match = re.match(r"^\s*(?:-\s+)?run:\s*(.*?)\s*$", lines[index])
+        if match is None:
+            index += 1
+            continue
+
+        value = match.group(1)
+        block = re.fullmatch(r"(?P<style>[|>])[+-]?", value)
+        if block is None:
+            commands.append(value)
+            index += 1
+            continue
+
+        key_indent = lines[index].index("run:")
+        cursor = index + 1
+        while cursor < len(lines) and not lines[cursor].strip():
+            cursor += 1
+        if cursor == len(lines):
+            commands.append("")
+            break
+        content_indent = len(lines[cursor]) - len(lines[cursor].lstrip())
+        if content_indent <= key_indent:
+            commands.append("")
+            index = cursor
+            continue
+
+        body: list[str] = []
+        while cursor < len(lines):
+            line = lines[cursor]
+            indent = len(line) - len(line.lstrip())
+            if line.strip() and indent < content_indent:
+                break
+            if line.strip():
+                body.append(line[content_indent:].rstrip())
+            cursor += 1
+        separator = "\n" if block.group("style") == "|" else " "
+        commands.append(separator.join(body))
+        index = cursor
+    return tuple(commands)
+
+
 def physical_code_lines(paths):
     return sum(
         1
@@ -54,6 +116,67 @@ def physical_code_lines(paths):
 
 
 class RepositoryPolicyTests(unittest.TestCase):
+    def test_cross_runtime_contributor_guidance_preserves_workbook_authority(self):
+        self.assertTrue(AGENTS.is_file(), "AGENTS.md is required")
+        self.assertTrue(CLAUDE.is_file(), "CLAUDE.md is required")
+        self.assertTrue(CONTRIBUTING.is_file(), "CONTRIBUTING.md is required")
+
+        agents = read_utf8(AGENTS)
+        contributing = read_utf8(CONTRIBUTING)
+        self.assertIn("`ozzit.xlsx` is the shipped authority", agents)
+        self.assertIn("Never fabricate Excel recalculation or cached-value evidence.", agents)
+        self.assertIn("native Excel", agents)
+        self.assertIn("no macros", agents)
+        self.assertIn("RELEASING.md", agents)
+        for document in (agents, contributing):
+            normalised = re.sub(r"\s+", " ", document)
+            self.assertIn("`tools/postbuild/README.md`", normalised)
+            self.assertIn("sync the AFE store after any `src/` change", normalised)
+            self.assertIn("sanitise the workbook last", normalised)
+        commands = workflow_commands(read_utf8(VERIFY_WORKFLOW))
+        self.assertEqual(commands, EXPECTED_VERIFY_COMMANDS)
+        mutated = read_utf8(VERIFY_WORKFLOW).replace(
+            "python tools/verify_afe.py ozzit.xlsx src",
+            "python tools/verify_afe.py ozzit.xlsx changed-src",
+            1,
+        )
+        self.assertNotEqual(commands, workflow_commands(mutated))
+        for command in commands:
+            self.assertIn(command, agents)
+
+        self.assertEqual(read_utf8(CLAUDE), "@AGENTS.md\n")
+        self.assertIn("`ozzit.xlsx` is the shipped authority", contributing)
+        self.assertIn(
+            "`src/*.txt`, the AFE store and `functions.csv`",
+            contributing.replace("\n", " "),
+        )
+        self.assertIn(
+            "Cached formula results may change only with Excel-backed recalculation evidence.",
+            contributing,
+        )
+        for command in commands:
+            self.assertIn(command, contributing)
+
+    def test_workflow_command_parser_detects_non_python_and_multiline_gates(self):
+        workflow = read_utf8(VERIFY_WORKFLOW)
+        marker = "        run: python -m unittest discover -s tools/tests -v"
+        mutated = workflow.replace(
+            marker,
+            marker
+            + "\n      - name: Check PowerShell policy\n"
+            + "        run: pwsh -File tools/check_policy.ps1\n"
+            + "      - name: Check frontend assets\n"
+            + "        run: |\n"
+            + "          npm ci\n"
+            + "          npm test",
+            1,
+        )
+
+        self.assertEqual(
+            workflow_commands(mutated)[-2:],
+            ("pwsh -File tools/check_policy.ps1", "npm ci\nnpm test"),
+        )
+
     def test_security_and_releasing_docs_exist_and_name_the_reporting_path(self):
         security = read_utf8(SECURITY)
         releasing = read_utf8(RELEASING)
