@@ -128,6 +128,11 @@ class RepositoryPolicyTests(unittest.TestCase):
         self.assertIn("native Excel", agents)
         self.assertIn("no macros", agents)
         self.assertIn("RELEASING.md", agents)
+        for document in (agents, contributing):
+            normalised = re.sub(r"\s+", " ", document)
+            self.assertIn("`tools/postbuild/README.md`", normalised)
+            self.assertIn("sync the AFE store after any `src/` change", normalised)
+            self.assertIn("sanitise the workbook last", normalised)
         commands = workflow_commands(read_utf8(VERIFY_WORKFLOW))
         self.assertEqual(commands, EXPECTED_VERIFY_COMMANDS)
         mutated = read_utf8(VERIFY_WORKFLOW).replace(

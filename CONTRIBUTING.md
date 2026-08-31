@@ -3,7 +3,8 @@
 `ozzit.xlsx` is the shipped authority. `src/*.txt`, the AFE store and
 `functions.csv` are bound publication views and must agree with the same
 workbook commit. Do not hand-edit or submit one view alone; follow the
-documented source-owning process for a formula change.
+source-owning process in `tools/postbuild/README.md` for a formula change: sync
+the AFE store after any `src/` change, and sanitise the workbook last.
 
 Cached formula results may change only with Excel-backed recalculation evidence.
 Do not claim a cache refresh from XML tooling: it has no formula engine. Before

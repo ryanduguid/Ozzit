@@ -8,6 +8,9 @@ isolation. The workbook contains native Excel LAMBDA functions only; retain the
 ordinary `.xlsx` and no macros. Do not make tax classifications,
 individual-tax or Division 7A decisions.
 
+For formula changes, follow the required run order in `tools/postbuild/README.md`:
+sync the AFE store after any `src/` change, and sanitise the workbook last.
+
 Never fabricate Excel recalculation or cached-value evidence. Cached formula
 results may change only with Excel-backed recalculation evidence. XML tooling
 has no formula engine; use the documented native Excel gates when a workbook
