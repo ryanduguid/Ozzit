@@ -49,9 +49,9 @@ Tag signing, remote tag publication and release publication are separate authori
 
 The uploaded bundle contains exactly three files:
 
-1. `ozzit.xlsx` — the consumer workbook copied byte-for-byte from the tagged tree.
-2. `provenance.json` — canonical JSON binding the version and full candidate commit to the locked workbook hash, size, Git blob, last workbook change and deterministic workbook-gate results. It also states the copy-only build limit and the gates that remain outside the bundle.
-3. `SHA256SUMS` — canonical SHA-256 lines for `ozzit.xlsx` and `provenance.json`. It does not include itself, which avoids a checksum cycle.
+1. `ozzit.xlsx`: the consumer workbook copied byte-for-byte from the tagged tree.
+2. `provenance.json`: canonical JSON binding the version and full candidate commit to the locked workbook hash, size, Git blob, last workbook change and deterministic workbook-gate results. It also states the copy-only build limit and the gates that remain outside the bundle.
+3. `SHA256SUMS`: canonical SHA-256 lines for `ozzit.xlsx` and `provenance.json`. It does not include itself, which avoids a checksum cycle.
 
 The signed tag and GitHub's generated source archive remain the source distribution. Inspect that archive as the equivalent of `git archive` for the exact tag; do not upload a redundant custom source archive. The standalone workbook and tagged workbook must have the same SHA-256.
 
