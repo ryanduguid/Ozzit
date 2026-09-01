@@ -2,6 +2,136 @@
 
 ## Unreleased
 
+### Functions that returned wrong answers on ordinary inputs
+
+Every change below was made in `src/` and compiled into the workbook with the new
+`tools/compile_sources.py`. No cached value was touched: each rewritten function was
+re-implemented in Python and run over its demonstration sheet's inputs, and every
+cached cell it feeds came back unchanged (Periodsλ, both by-item schedulers,
+Movementλ, RollingSumλ, IsOccurrenceDateλ across 2,190 cells, SumPeriodsλ, and the
+depreciation aggregation over 300 randomised timelines). The native gates still have
+to be run on the candidate; Excel was not available where this change was made.
+
+- **`oz.Depreciateλ` no longer errors on a disposal before the end of life.** It
+  expanded the monthly allocation to the months until disposal, and `EXPAND` cannot
+  shrink, so an early disposal returned `#VALUE!` for every asset. The demonstration
+  sheet sidestepped it by disposing of each asset a year after its life ended. A
+  disposal before the end of life now stops the schedule there and writes the remaining
+  book value off in that month; a disposal after it pads with nought and writes the
+  salvage value off, as before.
+- **`oz.Amortiseλ` builds its default timeline from every loan.** It mapped over the
+  loan count as a scalar, so the timeline ended with the last loan and cropped any
+  earlier, longer one. A text start date is now read as a date too.
+- **`oz.IsOccurrenceDateλ` finds monthly, quarterly, semi-annual and annual items that
+  start on the 29th, 30th or 31st** in shorter months, on the month's last day. The
+  annual test compares month and day rather than a locale-dependent `TEXT` format.
+- **`oz.PeriodLabelλ`'s ISO week label carries the ISO year**, the year of the
+  week's Thursday, so labels no longer mis-sort at every year end.
+- **`oz.FinancialYearλ` reads a text date** like every other Dates function, and a
+  blank cell still returns a blank.
+- **`oz.ScheduleRatesByItemsλ` and `oz.ScheduleValuesByItemsλ` score an item with
+  no rows in the schedule as nought** rather than `#CALC!`. Neither recurses any more:
+  the rates scheduler reduces over the items and the values scheduler is one matrix
+  product. Both drop the internal `DoNotUse` counter from their parameter lists.
+- **`oz.IsInListλ` and `oz.IsInListUλ` search a row, a column or a grid,** and treat
+  `*` and `?` as ordinary characters. `MATCH` needed one dimension and honoured
+  wildcards, so a grid returned FALSE for everything. Their Name Manager comments,
+  copied from `oz.IsBetweenλ`, now describe them.
+- **The Debt module returns errors instead of the help table.** All five functions
+  swapped any error in the result for their help, so a DSCR of nought or a cash-flow
+  row one column short produced help rather than an error. They now show help only
+  when a required argument is omitted, the messages when one fails validation, and
+  the error otherwise.
+- **`oz.CashRatioλ` spills a two-column help** again: one row lacked its separator,
+  so `TEXTSPLIT` padded every other row's third column with `#N/A`.
+- **`oz.SumPeriodsλ` drops a date before the first period start** instead of erroring
+  the whole row.
+
+### Calculation that scales
+
+- **The Debt module no longer recurses.** Every schedule solved its closing balance by
+  calling itself once per model period and stacking the result at each level, so a
+  long model reached Excel's recursion limit. `SCAN` now carries the closing balance
+  and every other row is read off it; the arithmetic and the row layout are unchanged
+  and the self-test's balance identities still hold. `oz.InterestLRVλ` iterated a
+  linear fixed point to a tolerance of 0.01; it is solved in closed form, which
+  reproduces its documented 222.90 and every self-test value. With nothing recursing
+  by name, the module joins the Advanced Formula Environment store, and
+  `verify_afe.py` requires all six modules.
+- **`oz.Depreciateλ`, `oz.Amortiseλ` (on sub-monthly timelines) and `oz.SumPeriodsλ`
+  aggregate months into periods with one matrix product** rather than a full indicator
+  scan per output cell.
+- **`oz.Periodsλ` lifts over arrays** instead of counting the whole input three times
+  per cell; a single date or interval code applies to every element, and an unknown
+  code is still `#N/A`.
+- **`oz.CorkScrewReversalλ` and `oz.Movementλ`** are a `SCAN` over the closing balance
+  and one subtraction of the array from itself shifted a column. **`oz.LabelAmortiseλ`**
+  builds its labels cell by cell, and **the four rolling functions** take each window
+  directly rather than copying the whole prefix, sizing by `COLUMNS` in all four.
+  `oz.Amortiseλ` reduces over its loans instead of recursing.
+
+### A compiler from `src/` to the workbook
+
+- **`tools/compile_sources.py` added.** It renders every definition in `src/` into the
+  form `xl/workbook.xml` stores (the `_xlfn.`, `_xlws.`, `_xlop.`, `_xlpm.` markers,
+  `SINGLE()` for `@`, `oz.` on library calls, Excel's case for names it recognises),
+  proves each rendering reproduces its source through `verify_sources.py`'s own
+  comparison, refuses any identifier it cannot classify, writes only the definitions
+  that changed, sets each Name Manager comment from its source header (Excel's 255
+  character limit included) and regenerates `functions.csv`. Run before every other
+  view; on the tracked sources it reproduces all 134 stored definitions without a
+  change.
+- **`tools/postbuild/refresh_help_spills.py` added.** The help a demonstration sheet's
+  `=oz.Nameλ()` anchor spills is the one result that needs no formula engine, so a help
+  change no longer leaves a stale table in the cache: the pass models TRIM and
+  TEXTSPLIT over the stored literal and rewrites the cells the spill covers, growing or
+  shrinking the range. On the 33 helps that did not change it reproduces Excel's own
+  cache exactly, which is what proves the model; the ten that changed are refreshed.
+
+### The native self-test covers every function
+
+- **`tools/generate_selftest_examples.py` and `tools/selftest_examples.ps1` added.**
+  The self-test named 20 of the 134 functions and evaluated none of the worked
+  examples the help prints, which is how two functions shipped for several releases
+  returning the opposite of their own example. The generated fragment, dot-sourced by
+  `excel_selftest.ps1`, calls every function for its help and evaluates every worked
+  example that stands on its own: a printed number within half its last digit, a
+  boolean, a list or grid by count and total, a label exactly, a date, or a shape. The
+  baseline moves from 438 assertions to 730, and the tool tests fail when the fragment
+  is stale. The three Debt help assertions search for their row rather than index it.
+
+### Residue and determinism
+
+- **`tools/postbuild/remove_residue.py` added.** It removes the hidden FMTs sheet (a
+  134-row table for a VBA styler that does not exist here), the 38 per-sheet
+  Description custom properties readable only from VBA, and the stale declaration on
+  the Excel Labs reference that the workbook contains custom functions; prunes the 102
+  unused differential formats and 32 unused named cell styles, renumbering every
+  reference; and freezes the label columns on the six demonstration sheets that run to
+  hundreds of columns. The workbook drops from 211 parts to 169 and from 443,448 to
+  430,497 bytes.
+- **`sanitise_workbook.py` pins session state.** Every Excel save wrote the account
+  that saved, the save time, the window's size and position and the Excel build, so two
+  saves of the same content never had the same bytes. The last editor is now the
+  workbook's creator, the modified stamp the archive date, the window fixed and the
+  build and revision pointer dropped.
+
+### Documentation
+
+- **`README.md` describes `oz.Amortiseλ` as it is:** the walkthrough gave it a
+  four-argument signature and a five-column schedule it never had.
+- **The implicit-rate advice converts.** `oz.IRRλ` wraps `XIRR` and returns an annual
+  rate; the lease functions take a rate per period, and the README and the lease help
+  now say how to convert.
+- **Help copy corrected:** `oz.DebtToAssetRatioλ` described its total assets as
+  equity; `oz.RetentionRatioλ` printed a 189.9% retention; `oz.OperatingCashFlowRatioλ`
+  repeated the current ratio's description; `oz.DebtRatioλ` and `oz.DebtToAssetRatioλ`
+  now say they compute the same ratio; the timeline helps that promised a row or a
+  column say which; `oz.BVPSλ` checks its preferred stock argument like its siblings;
+  the Debt module carries the FUNCTION, WEBPAGE and `=oz.` example rows every other
+  module does; and the misspellings (Decond, minumum, preceed, Incluces, receovables)
+  are gone.
+
 ### Functions that disagreed with their own help
 
 - **`oz.IsBetweenEλ` and `oz.IsBetweenUλ` now apply the `Inclusive` default they

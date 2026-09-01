@@ -2,11 +2,10 @@
 
 Usage: python tools/sync_afe_store.py [workbook] [src dir]
 
-Only the five non-recursive modules that AFE can hold are rewritten. Debt stays
-out by design, because src/Debt.txt documents that Excel Labs cannot hold its
-recursive functions. The pass preserves the store's schema, locale, project
-name order and JSON layout, re-encodes UTF-16LE/base64, and writes through the
-canonical archive writer.
+All six modules are rewritten, Debt included now that nothing in it recurses by
+name. The pass preserves the store's schema, locale, project name order and
+JSON layout, re-encodes UTF-16LE/base64, and writes through the canonical
+archive writer.
 
 The store holds two views of the same library: the module texts, and a flat
 projectNames index. verify_afe.py gates both, so both are synchronised here.
@@ -25,10 +24,9 @@ import zipfile
 from pathlib import Path
 
 from sanitise_workbook import write_deterministic
-from verify_afe import DEBT_NAMES, find_afe_blob, workbook_names
+from verify_afe import MODULES, find_afe_blob, workbook_names
 from verify_sources import NAME, statements
 
-MODULES = ("Dates", "Essentials", "Financial", "Ratios", "Utilities")
 NAMESPACE = "oz"
 
 
@@ -75,7 +73,7 @@ def sync(workbook: Path, src: Path) -> list[str]:
             changes.append(f"synced AFE module {path}")
 
     # The flat index the task pane reads, which the gate checks against the workbook.
-    shipped = workbook_names(workbook) - DEBT_NAMES
+    shipped = workbook_names(workbook)
     current = list(store.get("projectNames", []))
     wanted = index_order(current, shipped, module_of(src))
     if wanted != current:
@@ -86,11 +84,6 @@ def sync(workbook: Path, src: Path) -> list[str]:
             f"synced AFE projectNames: {added} added, {dropped} dropped, "
             f"{len(wanted)} listed"
         )
-
-    if "/projects/Debt" in files or any(
-        name in store.get("projectNames", []) for name in DEBT_NAMES
-    ):
-        raise ValueError("recursive Debt module must not be stored in AFE")
 
     replacement = base64.b64encode(
         json.dumps(store, ensure_ascii=False, separators=(",", ":")).encode("utf-16-le")
