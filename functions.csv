@@ -5,7 +5,7 @@ oz.AboutFinancialλ,Financial,nabla.f.Aboutλ,AboutFinancialλ,Displays this mod
 oz.AboutRatiosλ,Ratios,nabla.r.Aboutλ,AboutRatiosλ,Displays this module's repository URL and function list
 oz.AboutUtilitiesλ,Utilities,nabla.u.Aboutλ,AboutUtilitiesλ,Displays this module's repository URL and function list
 oz.Allocateλ,Financial,nabla.f.Allocateλ,"Allocateλ(Amounts, [FromInterval], [ToInterval])",Divide one or more amounts equally across smaller periods
-oz.AmortiseBλ,Debt,nabla.debt.Amortiseλ,AmortiseBλ,Creates an amortisation schedule for a debt/loan
+oz.AmortiseBλ,Debt,nabla.debt.Amortiseλ,"AmortiseBλ(Principal, APR, Term, ModelPeriods, [StartPeriod], [MonthsPerPeriod])",Creates an amortisation schedule for a debt/loan across a model's periods
 oz.Amortiseλ,Financial,nabla.f.Amortiseλ,"Amortiseλ( Principals, APRs, Terms, StartDates, [Timeline])",Creates a corkscrew amortisation schedule
 oz.AmortiseλDV,Financial,nabla.f.AmortiseλDV,AmortiseλDV,Provides extended data validation of arguments for Amortiseλ()
 oz.AssetTurnoverRatioλ,Ratios,nabla.r.AssetTurnoverRatioλ,"AssetTurnoverRatioλ( NetSales, TotalAssets)",Measures the value of a company's sales or revenues relative to the value of its assets. (Net Sales/Total Assets)
@@ -39,9 +39,9 @@ oz.DPRλ,Ratios,nabla.r.DPRλ,"DPRλ( DividendsPaid, NetIncome )",Dividend Payou
 oz.DSCRλ,Ratios,nabla.r.DSCRλ,"DSCRλ( NetOperatingIncome, TotalDebtService)",Debt service coverage Ratio measures a firm’s available cash flow to pay its current debt obligations(Net Operating Income/Total Debt Service)
 oz.DSIλ,Ratios,nabla.r.DSIλ,"DSIλ( AverageInventory, CostOfGoodsSold)",Days Sales in Inventory Ratio (aka Average age of inventory indicates the average time in days that a company takes to turn its inventory (Average Inventory/ Cost of Goods Sold)
 oz.DebtRatioλ,Ratios,nabla.r.DebtRatioλ,"DebtRatioλ( TotalDebt, TotalAssets)",Measures the extent of a company’s leverage
-oz.DebtSculptFixedλ,Debt,nabla.debt.DebtSculptFixedλ,DebtSculptFixedλ,Creates a Debt Sculpting schedule where APR and DSCR is fixed for all periods
-oz.DebtSculptVariableLRVλ,Debt,nabla.debt.DebtSculptVariableLRVλ,DebtSculptVariableLRVλ,Creates a Debt Sculpting schedule where APR and DSCR is set for each period
-oz.DebtSculptVariableλ,Debt,nabla.debt.DebtSculptVariableλ,DebtSculptVariableλ,Creates a Debt Sculpting schedule where APR and DSCR is set for each period
+oz.DebtSculptFixedλ,Debt,nabla.debt.DebtSculptFixedλ,"DebtSculptFixedλ([OpeningBalance], Debt, CFADS, DSCR, APR, [MonthsPerPeriod])",Creates a debt sculpting schedule where APR and DSCR are fixed for all periods
+oz.DebtSculptVariableLRVλ,Debt,nabla.debt.DebtSculptVariableLRVλ,"DebtSculptVariableLRVλ([OpeningBalance], Debt, CFADS, DSCR, APR, [MonthsPerPeriod])","Creates a debt sculpting schedule where APR and DSCR are set for each period, with interest charged on the average balance"
+oz.DebtSculptVariableλ,Debt,nabla.debt.DebtSculptVariableλ,"DebtSculptVariableλ([OpeningBalance], Debt, CFADS, DSCR, APR, [MonthsPerPeriod])",Creates a debt sculpting schedule where APR and DSCR are set for each period
 oz.DebtToAssetRatioλ,Ratios,nabla.r.DebtToAssetRatioλ,"DebtToAssetRatioλ( TotalDebt, TotalAssets)",Analysts can compare one company's leverage with that of other companies in the same industry. (Total Debt/Total Assets)
 oz.DebtToCapitalRatioλ,Ratios,nabla.r.DebtToCapitalRatioλ,"DebtToCapitalRatioλ( Debt, ShareholdersEquity)",Gives analysts and investors a better idea of a company's financial structure and whether or not the company is a suitable investment (Debt/(Debt + Shareholders' equity)
 oz.DebtToEquityRatioλ,Ratios,nabla.r.DebtToEquityRatioλ,"DebtToEquityRatioλ( TotalLiabilities, ShareholdersEquity)",Measures the degree to which a company is financing operations with debt rather than its own resources. (Total Liabilities/Shareholders' Equity)
@@ -54,20 +54,20 @@ oz.EPSλ,Ratios,nabla.r.EPSλ,"EPSλ( NetIncome, PreferredDividends, EndOfPeriod
 oz.EquityMultiplierλ,Ratios,nabla.r.EquityMultiplierλ,"EquityMultiplierλ( TotalAssets, TotalShareholdersEquity)",Measures the portion of a company’s assets financed by shareholders' equity rather than by debt (TotalAssets/TotalShareholdersEquity)
 oz.EquityRatioλ,Ratios,nabla.r.EquityRatioλ,"EquityRatioλ( ShareholdersEquity, TotalAssets, IntangibleAssets)",Measures the long-term solvency of a company by comparing its shareholders’ equity to its total assets (Shareholder's Equity/(Total Assets - Intangible Assets)).
 oz.FilterContainsλ,Financial,nabla.f.FilterContainsλ,"FilterContainsλ( ArrayToFilter, FilterByArray, FilterByText, [IgnoreCase?] )",Filter an array by another array that contains specific text
-oz.FinancialYearλ,Dates,nabla.d.FinancialYearλ,"FinancialYearλ(Dates, [StartMonth])","Labels dates with their Australian financial year, which starts on 1 July."
+oz.FinancialYearλ,Dates,nabla.d.FinancialYearλ,"FinancialYearλ(Dates, [StartMonth])","Labels dates with their Australian financial year, which starts on 1 July"
 oz.GSTAddλ,Financial,nabla.f.GSTAddλ,"GSTAddλ(Amounts, [Rate])",Adds GST to one or more GST-exclusive amounts.
 oz.GSTExtractλ,Financial,nabla.f.GSTExtractλ,"GSTExtractλ(Amounts, [Rate])",Returns the GST contained in one or more GST-inclusive amounts.
 oz.GrossMarginλ,Ratios,nabla.r.GrossMarginλ,"GrossMarginλ( GrossProfit, NetSales)",Shows how much profit a company makes after paying off its Cost of Goods Sold
 oz.IRRλ,Financial,nabla.f.IRRλ,"IRRλ( Values, Dates)","Calculates IRR, correcting for when the first investment is not in the first period"
 oz.IntOnIntλ,Financial,nabla.f.IntOnIntλ,"IntOnIntλ( Principal, Rate)",Calculate Interest on Interest. Use to determine amount needed to cover debt plus interest on debt
 oz.InterestCoverageRatioλ,Ratios,nabla.r.InterestCoverageRatioλ,"InterestCoverageRatioλ( OperatingIncome, InterestExpenses)",Determines how easily a company can pay interest on its outstanding debt (Operating Income/Interest Expenses)
-oz.InterestLRVλ,Debt,nabla.debt.InterestLRVλ,InterestLRVλ,Calculates debt sculpting interest using method presented by Lance Rubin
+oz.InterestLRVλ,Debt,nabla.debt.InterestLRVλ,"InterestLRVλ(CFADS, DSCR, Principal, InterestRate)","Calculates debt sculpting interest on the average balance over the period, the method presented by Lance Rubin"
 oz.InventoryTurnoverRatioλ,Ratios,nabla.r.InventoryTurnoverRatioλ,"InventoryTurnoverRatioλ( CostOfGoodsSold, AverageInventory)",Shows how many times a company turned over its inventory relative to its cost of goods sold (COGS) (COGS/Average Inventory)
 oz.IsBetweenEλ,Essentials,nabla.e.IsBetweenλ,"IsBetweenEλ( Value, Low, Hi, [Inclusive])",Determine if a value is between a lower and upper limit
 oz.IsBetweenUλ,Utilities,nabla.u.IsBetweenλ,"IsBetweenUλ( Value, Low, Hi, [Inclusive])",Determine if a value is between a lower and upper limit
 oz.IsBetweenλ,Dates,nabla.d.IsBetweenλ,"IsBetweenλ(Values, Low, High, [Inclusive])",Determine if a value is between a lower and upper limit
-oz.IsInListUλ,Utilities,nabla.u.IsInListλ,"IsInListUλ( Value, List)",Determine if a value is between a lower and upper limit
-oz.IsInListλ,Essentials,nabla.e.IsInListλ,"IsInListλ( Value, List)",Determine if a value is between a lower and upper limit
+oz.IsInListUλ,Utilities,nabla.u.IsInListλ,"IsInListUλ( Value, List)",Determine whether a value is one of a list of items
+oz.IsInListλ,Essentials,nabla.e.IsInListλ,"IsInListλ( Value, List)",Determine whether a value is one of a list of items
 oz.IsOccurrenceDateλ,Dates,nabla.d.IsOccurrenceDateλ,"IsOccurrenceDateλ(Dates, FirstOccurrence, [LastOccurrence], [Repeats])","Returns TRUE if Date passed is when something happens. This was developed for budgeting where we have expenses that start, and sometimes repeat at regular intervals."
 oz.LabelAmortiseλ,Financial,nabla.f.LabelAmortiseλ,"LabelAmortiseλ(LoanNames, [LoanAmounts], [LoanAPRs], [LoanTerms])",Create labels for Amortiseλ
 oz.LabelDepreciateλ,Financial,nabla.f.LabelDepreciateλ,LabelDepreciateλ( AssetNames),Create labels for Depreciateλ
@@ -84,7 +84,7 @@ oz.MinRowsUλ,Utilities,nabla.u.MinRowsλ,MinRowsUλ( Array),Get the minimum for
 oz.MinRowsλ,Essentials,nabla.e.MinRowsλ,MinRowsλ( Array),Get the minimum for each row
 oz.Movementλ,Financial,nabla.f.Movementλ,"Movementλ( [BeginningValues], Values)",Create a row of differences from column to column
 oz.NetProfitMarginλ,Ratios,nabla.r.NetProfitMarginλ,"NetProfitMarginλ( NetIncome, Revenue)",Measures how much net income or profit a company generates as a percentage of its revenue. (Net Income/Revenue).
-oz.OperatingCashFlowRatioλ,Ratios,nabla.r.OperatingCashFlowRatioλ,"OperatingCashFlowRatioλ( OperatingCashFlow, Liabilities)",Measures a company’s ability to pay short-term obligations
+oz.OperatingCashFlowRatioλ,Ratios,nabla.r.OperatingCashFlowRatioλ,"OperatingCashFlowRatioλ( OperatingCashFlow, Liabilities)",Measures how readily current liabilities are covered by cash flows generated from operations
 oz.OperatingMarginλ,Ratios,nabla.r.OperatingMarginλ,"OperatingMarginλ( OperatingEarnings, Revenue)","Measures how much profit a company makes on a dollar of sales after paying for variable costs of production, such as wages and raw materials, but before paying interest or tax (Operating Earnings/Revenue)."
 oz.OperatingRatioλ,Ratios,nabla.r.OperatingRatioλ,"OperatingRatioλ( OperatingExpenses, CostOfGoodsSold, NetSales)",Shows how efficient management is at keeping costs low while generating revenue (Operating Expenses + Cost Of Goods Sold)/Net Sales)
 oz.OverLapDaysλ,Dates,nabla.d.OverLapDaysλ,"OverLapDaysλ(Period1Start, Period1End, Period2Start, Period2End)",Return how many days overlap two period ranges.

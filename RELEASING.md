@@ -101,7 +101,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\excel_selftest.p
 python tools/verify_cache.py ozzit.xlsx
 ```
 
-The current acceptance baseline is 1,129 formulas recalculated with zero error cells and 438 assertions run with zero failures.
+The current acceptance baseline is 1,129 formulas recalculated with zero error cells and 730 assertions run with zero failures: the 438 hand-written assertions and the 292 that `tools/generate_selftest_examples.py` derives from the help. The generated count is a static count of the fragment; record the number the script prints.
 The cached-value gate must pass and report its actual comparison count. Record
 the Excel version and build. Hash the workbook immediately before and after
 both native gates and require the bytes to be byte-identical.
