@@ -37,6 +37,7 @@ from __future__ import annotations
 import re
 import sys
 from dataclasses import dataclass, field
+from decimal import Decimal
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -184,8 +185,14 @@ def powershell(text: str) -> str:
     return text.replace("λ", "$L")
 
 
-def number(text: str) -> tuple[float, float] | None:
-    """(value, tolerance) for a printed number, or None."""
+def number(text: str) -> tuple[Decimal, Decimal] | None:
+    """(value, tolerance) for a printed number, or None.
+
+    Exact decimals rather than floats: a total is the sum of the digits the help
+    prints, and the committed fragment must not depend on how the running Python
+    adds floats (3.12 moved sum() to compensated summation, which changed three
+    totals and made the fragment irreproducible between interpreters).
+    """
     match = NUMBER.match(text.strip())
     if not match or match.group(1) in ("", "-", "%"):
         return None
@@ -193,11 +200,16 @@ def number(text: str) -> tuple[float, float] | None:
     percent = text.endswith("%")
     digits = text.rstrip("%")
     decimals = len(digits.split(".")[1]) if "." in digits else 0
-    value = float(digits)
+    value = Decimal(digits)
     if percent:
-        value /= 100
+        value = value.scaleb(-2)
         decimals += 2
-    return value, 0.5 * 10 ** -decimals
+    return value, Decimal(5).scaleb(-decimals - 1)
+
+
+def shown(value: Decimal) -> str:
+    """The shortest float literal that reads back as the value, which Excel reads too."""
+    return repr(float(value))
 
 
 def checks_for(name: str, example: Example, index: int, library: set[str], bindings: dict[str, str]) -> list[str]:
@@ -224,7 +236,7 @@ def checks_for(name: str, example: Example, index: int, library: set[str], bindi
         lines.append(f"Near {tag} \"{powershell(formula)} - {serial}\" '0' '0.5'")
     elif single is not None:
         value, tolerance = single
-        lines.append(f"Near {tag} \"{powershell(formula)}\" '{value!r}' '{tolerance!r}'")
+        lines.append(f"Near {tag} \"{powershell(formula)}\" '{shown(value)}' '{shown(tolerance)}'")
     elif printed.upper() in CONSTANTS:
         lines.append(f"Near {tag} \"N({powershell(formula)})\" '{1 if printed.upper() == 'TRUE' else 0}'")
     elif shape:
@@ -234,10 +246,10 @@ def checks_for(name: str, example: Example, index: int, library: set[str], bindi
         parsed = [number(x) for r in rows for x in r.split(",")]
         items = [p for p in parsed if p is not None]
         if len(items) == len(parsed):
-            total = sum(v for v, _t in items)
-            tolerance = sum(t for _v, t in items)
+            total = sum((v for v, _t in items), Decimal(0))
+            tolerance = sum((t for _v, t in items), Decimal(0))
             lines.append(f"Near {tag} \"COUNT({powershell(formula)})\" '{len(items)}'")
-            lines.append(f"Near {tag} \"SUM({powershell(formula)})\" '{total!r}' '{tolerance!r}'")
+            lines.append(f"Near {tag} \"SUM({powershell(formula)})\" '{shown(total)}' '{shown(tolerance)}'")
     elif len(rows) == 1 and WORD.match(printed):
         lines.append(f"Same {tag} \"{powershell(formula)}\" '{printed}'")
     if not lines:
