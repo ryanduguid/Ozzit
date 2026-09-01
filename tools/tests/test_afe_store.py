@@ -1,5 +1,6 @@
 import base64
 import json
+import re
 import os
 import shutil
 import subprocess
@@ -72,7 +73,7 @@ class AfeGateTests(unittest.TestCase):
                 if info.filename == "customXml/item1.xml":
                     data = data.replace(encoded, replacement)
                 output.writestr(info, data)
-        modules = ("Dates", "Essentials", "Financial", "Ratios", "Utilities")
+        modules = ("Dates", "Essentials", "Financial", "Ratios", "Utilities", "Debt")
         cp1252 = self._run(target, "cp1252")
         self._assert_controlled_failure(cp1252, len(modules))
         for module in modules:
@@ -99,21 +100,20 @@ class AfeGateTests(unittest.TestCase):
             self.assertIn("→", detail)
         self.assertNotIn(r"\u2192", utf8.stdout)
 
-    def test_gate_rejects_recursive_debt_if_someone_adds_it(self):
-        target = self.directory / "debt-added.xlsx"
+    def test_gate_requires_the_debt_module_now_that_nothing_recurses(self):
+        target = self.directory / "debt-dropped.xlsx"
         store, encoded = afe_parts(WORKBOOK)
-        store["files"].append(
-            {"path": "/projects/Debt", "text": (ROOT / "src" / "Debt.txt").read_text()}
-        )
-        store["projectNames"].extend(
-            [
-                "oz.AmortiseBλ",
-                "oz.DebtSculptFixedλ",
-                "oz.DebtSculptVariableλ",
-                "oz.DebtSculptVariableLRVλ",
-                "oz.InterestLRVλ",
-            ]
-        )
+        store["files"] = [
+            item for item in store["files"] if item.get("path") != "/projects/Debt"
+        ]
+        debt_names = [
+            "oz.AmortiseBλ",
+            "oz.DebtSculptFixedλ",
+            "oz.DebtSculptVariableλ",
+            "oz.DebtSculptVariableLRVλ",
+            "oz.InterestLRVλ",
+        ]
+        store["projectNames"] = [n for n in store["projectNames"] if n not in debt_names]
         replacement = base64.b64encode(
             json.dumps(store, ensure_ascii=False, separators=(",", ":")).encode("utf-16-le")
         )
@@ -125,23 +125,21 @@ class AfeGateTests(unittest.TestCase):
                 if info.filename == "customXml/item1.xml":
                     data = data.replace(encoded, replacement)
                 output.writestr(info, data)
-        debt_names = [
-            "oz.AmortiseBλ",
-            "oz.DebtSculptFixedλ",
-            "oz.DebtSculptVariableλ",
-            "oz.DebtSculptVariableLRVλ",
-            "oz.InterestLRVλ",
-        ]
-        cp1252 = self._run(target, "cp1252")
-        self._assert_controlled_failure(cp1252, len(debt_names))
-        for name in debt_names:
-            self.assertIn(name.replace("λ", r"\u03bb"), cp1252.stdout)
-
+        # one missing module and five missing names
         utf8 = self._run(target, "utf-8")
-        self._assert_controlled_failure(utf8, len(debt_names))
+        self._assert_controlled_failure(utf8, 1 + len(debt_names))
+        self.assertIn("AFE module /projects/Debt missing", utf8.stdout)
         for name in debt_names:
-            self.assertIn(name, utf8.stdout)
-        self.assertNotIn(r"\u03bb", utf8.stdout)
+            self.assertIn(f"missing shipped name {name}", utf8.stdout)
+
+    def test_tracked_debt_module_no_longer_recurses_by_name(self):
+        text = (ROOT / "src" / "Debt.txt").read_text(encoding="utf-8")
+        for name in ("AmortiseBλ", "DebtSculptFixedλ", "DebtSculptVariableλ",
+                     "DebtSculptVariableLRVλ", "InterestLRVλ"):
+            body = text.split(f"\n{name} = LAMBDA(", 1)[1].split("\n);", 1)[0]
+            # help text names the function; only code outside string literals can call it
+            code = re.sub(r'"(?:[^"]|"")*"', '""', body)
+            self.assertNotIn(f"{name}(", code, f"{name} still calls itself")
 
     def test_gate_rejects_missing_non_debt_name(self):
         target = self.directory / "missing-name-λ→.xlsx"
@@ -178,8 +176,7 @@ class AfeGateTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 0)
                 self.assertEqual(result.stderr, "")
                 self.assertIn("OK: AFE store", result.stdout)
-                self.assertIn("matches 5 non-recursive modules", result.stdout)
-                self.assertIn("excludes recursive Debt", result.stdout)
+                self.assertIn("matches all 6 modules", result.stdout)
                 expected_path = (
                     r"valid-\u03bb\u2192.xlsx"
                     if encoding == "cp1252"

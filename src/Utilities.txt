@@ -222,7 +222,7 @@ MinColsUλ = LAMBDA(
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
-                            "Array          →(Required) A two dimensional array/range containing values to find the minumum by column.¶" & 
+                            "Array          →(Required) A two dimensional array/range containing values to find the minimum by column.¶" & 
                             "EXAMPLES:      →Formula (oz is assumed to be the module's name)¶" &
                                            "→=oz.MinColsUλ( SEQUENCE(5,5))", 
                             "→", "¶" 
@@ -470,7 +470,8 @@ IsInListUλ = LAMBDA(
                             "DESCRIPTION:   →Determine if a value is one of a list of items.¶" & 
                             "PARAMETERS:    →¶" & 
                             "Value          →(Required) A value or array of values to compare.¶" & 
-                            "List           →(Required) A list of values to check¶" &
+                            "List           →(Required) A list of values to check: a row, a column or a grid.¶" &
+                            "NOTE!          →The comparison is exact and case-insensitive; * and ? are ordinary characters.¶" &
                             "→¶" &
                             "EXAMPLES:      →¶" & 
                             "Result         →Formula¶" &
@@ -484,7 +485,8 @@ IsInListUλ = LAMBDA(
                             ISOMITTED( List)
                         ),
     //  Procedure
-        Result,         NOT( ISNA( MATCH( Value, List, 0))),
+    //  Flatten the list first: MATCH needs one dimension and treats * and ? as wildcards
+        Result,         ISNUMBER( XMATCH( Value, TOCOL( List), 0)),
     //  Return Result
         CHOOSE(Help? + 1, Result, Help)
     )

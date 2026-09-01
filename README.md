@@ -83,7 +83,9 @@ The workbook tracked in this repository is the candidate the gates below run aga
    Advanced Formula Environment takes the prefix from the container, and one flat
    namespace cannot be six containers. The workbook is the authority for the `oz.`
    names. `src/` is for reading, diffing, and pasting a single definition into Name
-   Manager, where the name is yours to choose.
+   Manager, where the name is yours to choose. To change a function, edit its
+   definition in `src/` and run `tools/compile_sources.py`, which renders it into the
+   stored form and writes it over the defined name that ships.
 
 The workbook opens showing the numbers its own formulas produce, so nothing has to recalculate before it reads correctly and Excel does not ask you to save a file you never edited. That is a property the build cannot give it: the build edits the workbook as XML with no formula engine, so `tools/refresh_cache.py` recalculates it in Excel afterwards and `tools/verify_cache.py` proves every cached value matches.
 
@@ -132,7 +134,7 @@ Four functions cover lessee accounting. They compose: the liability feeds the sc
 Three things the functions take rather than decide:
 
 - **The payments.** Supply all payments in order, including the measurement-date payment first when `InAdvance` is `TRUE`. Include an amount expected to be payable under a residual value guarantee, or the exercise price of a purchase option, in the final period where [AASB 16](https://standards.aasb.gov.au/aasb-16-nov-2022) paragraph 27 brings it into the lease payments. Leave out variable payments that depend on sales or usage.
-- **The rate.** Paragraph 26 discounts at the interest rate implicit in the lease where that rate can be readily determined, and at the lessee's incremental borrowing rate where it cannot. Where you have the fair value and the residual, `oz.IRRλ` over the same cash flows gives the implicit rate.
+- **The rate.** Paragraph 26 discounts at the interest rate implicit in the lease where that rate can be readily determined, and at the lessee's incremental borrowing rate where it cannot. Where you have the fair value and the residual, `oz.IRRλ` over the same cash flows gives the implicit rate as an annual rate, because it wraps XIRR; convert it to the rate per period before passing it, for example `(1 + annual) ^ (1 / 12) - 1` for monthly payments.
 - **The asset's cost.** Paragraph 24 builds it from the initial liability, payments made at or before commencement less incentives received, initial direct costs, and an estimate of dismantling and restoration costs. Add those four up and pass the total as `Cost`.
 
 Together the liability and the asset produce the expense profile AASB 16 is known for. Interest falls as the liability unwinds while straight-line depreciation does not, so a lease costs more in its first period than its last even though the rent never moves. That is the shape the schedule is for.
@@ -147,15 +149,17 @@ Paragraph references were read against the AASB 16 compilation on 24 August 2026
 
 Ozzit functions use native Excel dynamic arrays to spill full calculation schedules from a single formula cell:
 
-### 1. Loan Amortisation (`=oz.Amortiseλ(Principal, Rate, Periods, [Type])`)
-Spills a complete 5-column schedule (`Period`, `Payment`, `Principal`, `Interest`, `Closing Balance`):
+### 1. Loan Amortisation (`=oz.Amortiseλ(Principals, APRs, Terms, StartDates, [Timeline])`)
+Spills a six-row corkscrew per loan across the model's timeline, one column per period: debt issued, opening balance, interest, payment, closing balance and the principal repaid. Payments are monthly; on a quarterly or annual timeline the months are grouped, and on a weekly or daily one each month lands in the period holding its start. `oz.LabelAmortiseλ` labels the rows and `oz.SumAmortiseλ` totals them. For a single 100,000 loan at 5% over 60 months from 1 July 2026, with the timeline omitted, the block runs:
 
-| Period | Payment | Principal | Interest | Balance |
-| :---: | :---: | :---: | :---: | :---: |
-| 1 | \$1,887.12 | \$1,470.46 | \$416.67 | \$98,529.54 |
-| 2 | \$1,887.12 | \$1,476.58 | \$410.54 | \$97,052.96 |
-| 3 | \$1,887.12 | \$1,482.73 | \$404.39 | \$95,570.22 |
-| ... | ... | ... | ... | \$0.00 |
+| Row | Jul 2026 | Aug 2026 | Sep 2026 | ... |
+| :--- | ---: | ---: | ---: | :---: |
+| Debt issued | 100,000.00 | 0.00 | 0.00 | ... |
+| Opening balance | 100,000.00 | 98,529.54 | 97,052.96 | ... |
+| Interest | 416.67 | 410.54 | 404.39 | ... |
+| Payment | -1,887.12 | -1,887.12 | -1,887.12 | ... |
+| Closing balance | 98,529.54 | 97,052.96 | 95,570.22 | ... |
+| Principal repaid | 1,470.46 | 1,476.58 | 1,482.73 | ... |
 
 ### 2. Diminishing Value Depreciation (`=oz.DiminishingValueλ(Cost, Life)`)
 Calculates diminishing balance at 200% straight-line rate with exact terminal residual write-off:
@@ -249,7 +253,7 @@ Index: re-derives every module, signature and description in `functions.csv` fro
 python tools/verify_afe.py ozzit.xlsx src
 ```
 
-Advanced Formula Environment: the AFE task pane is the documented editing surface, and it has its own copy of the library inside `customXml/item1.xml`. This gate requires the five non-recursive module texts to equal `src/*.txt` and every shipped non-Debt name to be listed. Debt must stay out: the module is recursive and `src/Debt.txt` documents the Name Manager import path. Also runs in CI.
+Advanced Formula Environment: the AFE task pane is the documented editing surface, and it has its own copy of the library inside `customXml/item1.xml`. This gate requires all six module texts to equal `src/*.txt` and every shipped name to be listed. Debt joined the store once its schedules were rewritten with `SCAN`, so nothing in the library recurses by name any more. Also runs in CI.
 
 ```bash
 python -m unittest discover -s tools/tests -v
@@ -261,15 +265,15 @@ Tooling: exercises the workbook sanitiser against clean and simulated Excel-save
 powershell -ExecutionPolicy Bypass -File tools/excel_selftest.ps1
 ```
 
-Arithmetic: opens the workbook in a real Excel, forces a full rebuild, fails on any error cell, then runs 438 assertions over the Australian functions, the AASB 16 lease and right-of-use schedules, the worksheet that demonstrates them, the timeline and allocation helpers on period lengths from a day to a year, and the balance identities of the debt sculpting schedules. Needs Excel with LAMBDA support, so it cannot run on GitHub's runners and stays a local gate. It opens Excel over COM and quits it when finished, so it refuses to start if Excel is already running rather than closing your workbooks; it never saves the file it tests.
+Arithmetic: opens the workbook in a real Excel, forces a full rebuild, fails on any error cell, then runs its assertions: the hand-written ones over the Australian functions, the AASB 16 lease and right-of-use schedules, the worksheet that demonstrates them, the timeline and allocation helpers on period lengths from a day to a year, and the balance identities of the debt sculpting schedules; and the generated ones in `tools/selftest_examples.ps1`, which call every one of the 134 functions for its help and evaluate every worked example the help prints that stands on its own, checking the printed result. `tools/generate_selftest_examples.py` regenerates that fragment from `src/`, and the tool tests fail when it is stale. Needs Excel with LAMBDA support, so it cannot run on GitHub's runners and stays a local gate. It opens Excel over COM and quits it when finished, so it refuses to start if Excel is already running rather than closing your workbooks; it never saves the file it tests.
 
 ```bash
 python tools/verify_cache.py ozzit.xlsx
 ```
 
-Cached values: an `.xlsx` stores a formula and the answer Excel last got from it, and nothing keeps them in step. The build edits values as XML with no formula engine, so every cell downstream of an edit keeps the answer it had before: shifting the sample dates forward two years left 3,193 such cells across 43 sheets, and five cells shipped a saved `#VALUE!` from v1.2.0 to v2.2.0. Excel replaces them all on open, which is exactly why it needs a gate: the file can be wrong in a way only a second tool can see, and everything that reads an `.xlsx` without a formula engine reads the cached answer. This opens the workbook, recalculates, and compares all 20,228 cached values against what the formulas produce. Needs Excel, so it is a local gate. Run `python tools/refresh_cache.py` to fix what it reports.
+Cached values: an `.xlsx` stores a formula and the answer Excel last got from it, and nothing keeps them in step. The build edits values as XML with no formula engine, so every cell downstream of an edit keeps the answer it had before: shifting the sample dates forward two years left 3,193 such cells across 43 sheets, and five cells shipped a saved `#VALUE!` from v1.2.0 to v2.2.0. Excel replaces them all on open, which is exactly why it needs a gate: the file can be wrong in a way only a second tool can see, and everything that reads an `.xlsx` without a formula engine reads the cached answer. This opens the workbook, recalculates, and compares every cached value on every sheet against what the formulas produce, and prints how many it compared. Needs Excel, so it is a local gate. Run `python tools/refresh_cache.py` to fix what it reports.
 
-Sanitising is a fixer, not a gate. Any save through Excel, not only the pipeline's, adds parts that do not belong in a distributed file: `printerSettings` binaries on machines with a printer installed, an `x15ac:absPath` recording the save directory, always-calculate flags on non-volatile cells, and empty worksheet rels. `python tools/sanitise_workbook.py ozzit.xlsx` strips all of it and rewrites the archive canonically, so two saves of the same content produce the same bytes. `refresh_cache.py` delegates its own save to the same sanitiser; run it directly after every other time Excel touched the file.
+Sanitising is a fixer, not a gate. Any save through Excel, not only the pipeline's, adds parts that do not belong in a distributed file: `printerSettings` binaries on machines with a printer installed, an `x15ac:absPath` recording the save directory, always-calculate flags on non-volatile cells, empty worksheet rels, and the session that saved: the account name, the save time, the Excel window's size and position and the build of Excel. `python tools/sanitise_workbook.py ozzit.xlsx` strips or pins all of it and rewrites the archive canonically, so two saves of the same content produce the same bytes, whoever saved and wherever. `refresh_cache.py` delegates its own save to the same sanitiser; run it directly after every other time Excel touched the file.
 
 Presentation is reproducible too: `python tools/polish_workbook.py ozzit.xlsx` applies the neutral help highlights, accessible strapline colour, locale-safe date styles and the reviewed function-sheet descriptions. The pass is idempotent and the CI presentation contract checks each of those rules.
 

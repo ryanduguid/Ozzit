@@ -26,6 +26,11 @@ function Same($id, $expr, $want) {
     Check $id "=LET(v, $expr, IF(ISERROR(v), `"ERROR`", IF(v=`"$want`", `"OK`", `"got [`"&v&`"]`")))"
 }
 
+# Every function's help, and every worked example the help prints that stands on its
+# own, generated from src/ by tools/generate_selftest_examples.py. A help change means
+# rerunning the generator; tools/tests fails when the fragment is stale.
+. (Join-Path $PSScriptRoot 'selftest_examples.ps1')
+
 $dv = "oz.DiminishingValue$L"
 $pc = "oz.PrimeCost$L"
 $ga = "oz.GSTAdd$L"
@@ -141,9 +146,10 @@ foreach ($fn in $dsf, $dsv) {
 }
 
 # The row a reader is told to label. Only the LRV function reports a principal repayment.
-Same 'Debt: LRV row 3 is principal repayment' "INDEX($lrv(), 4, 2)" 'Principal repayments'
-Same 'Debt: fixed row 3 is debt service'      "INDEX($dsf(), 4, 2)" 'Debt service (interest and principal)'
-Same 'Debt: variable row 3 is debt service'   "INDEX($dsv(), 4, 2)" 'Debt service (interest and principal)'
+# Searched rather than indexed, so a help row added above the list does not move it.
+Near 'Debt: LRV names a principal repayment row' "SUMPRODUCT(--(INDEX($lrv(),0,2)=`"Principal repayments`"))" '1'
+Near 'Debt: fixed names a debt service row'     "SUMPRODUCT(--(INDEX($dsf(),0,2)=`"Debt service (interest and principal)`"))" '1'
+Near 'Debt: variable names a debt service row'  "SUMPRODUCT(--(INDEX($dsv(),0,2)=`"Debt service (interest and principal)`"))" '1'
 
 # The debt module's one worked example.
 Near 'Debt: InterestLRV worked example' "$ilrv(6666.37, 3.50, 90000, 0.03/12)" '222.90' '0.005'
