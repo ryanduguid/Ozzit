@@ -9,6 +9,7 @@ self-test. The parser tests pin every layout the help uses for its examples.
 import re
 import sys
 import unittest
+from decimal import Decimal
 from pathlib import Path
 
 TOOLS = Path(__file__).resolve().parents[1]
@@ -118,6 +119,22 @@ class CheckTests(unittest.TestCase):
             self.checks("oz.Thisλ(1)", "1,3", "6,10"),
             ["Near 'example: This$L #1' \"COUNT(oz.This$L(1))\" '4'", "Near 'example: This$L #1' \"SUM(oz.This$L(1))\" '20.0' '2.0'"],
         )
+
+    def test_totals_are_exact_decimals_so_every_python_agrees(self):
+        # Floats drift (0.1 + 0.2 + 0.3 is 0.6000000000000001 in binary) and Python 3.12
+        # changed how sum() adds them, which made the fragment differ between interpreters.
+        # The printed digits are summed exactly and written as the shortest float literal.
+        self.assertEqual(
+            self.checks("oz.Thisλ(1)", "0.1,0.2", "0.3"),
+            ["Near 'example: This$L #1' \"COUNT(oz.This$L(1))\" '3'", "Near 'example: This$L #1' \"SUM(oz.This$L(1))\" '0.6' '0.15'"],
+        )
+        self.assertEqual(
+            self.checks("oz.Thisλ(1)", "12.6122%"),
+            ["Near 'example: This$L #1' \"oz.This$L(1)\" '0.126122' '5e-07'"],
+        )
+        self.assertEqual(generator.number("831.93"), (Decimal("831.93"), Decimal("0.005")))
+        self.assertEqual(generator.number("25%"), (Decimal("0.25"), Decimal("0.005")))
+        self.assertIsNone(generator.number("%"))
 
     def test_anything_else_is_checked_for_no_error(self):
         self.assertEqual(
