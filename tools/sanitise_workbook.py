@@ -12,11 +12,17 @@ adds parts that do not belong in a distributed file:
 - an xl/worksheets/_rels/sheetN.xml.rels left empty for any worksheet whose
   only relationship was its printer settings,
 - a [Content_Types].xml rewritten so the .bin default points at printer
-  settings and every customProperty*.bin gets its own Override.
+  settings and every customProperty*.bin gets its own Override,
+- the account name of whoever saved, the save time, the size and position of
+  the Excel window and the build of Excel that wrote the file: none of it
+  describes the workbook, and every one of them differs between two saves of
+  the same content on two machines.
 
-All of it is removed here and the archive is rewritten sorted, at a fixed
-timestamp, at deflate level 9, so two builds of the same content produce the
-same bytes. verify_workbook.py fails the file on absPath or a stray
+All of it is removed or pinned here and the archive is rewritten sorted, at a
+fixed timestamp, at deflate level 9, so two saves of the same content produce
+the same bytes. The modified stamp is pinned to the archive date rather than
+kept, because a save time that changes on every save is exactly what makes two
+saves differ; the release evidence carries the real dates. verify_workbook.py fails the file on absPath or a stray
 always-calculate flag regardless; this tool exists so a save through Excel
 does not have to be reverted.
 
@@ -41,6 +47,9 @@ CUSTOMPROP_CT = (
     "application/vnd.openxmlformats-officedocument.spreadsheetml.customProperty"
 )
 FIXED_DATE = (2026, 1, 1, 0, 0, 0)
+FIXED_STAMP = "%04d-%02d-%02dT%02d:%02d:%02dZ" % FIXED_DATE
+# The Excel window every save records: maximised at the origin, a common size.
+FIXED_WINDOW = 'xWindow="0" yWindow="0" windowWidth="28800" windowHeight="16000"'
 CELL_RE = re.compile(r"<c\b(?:(?!</c>|<c\b).)*?</c>|<c\b[^>]*/>", re.DOTALL)
 EMPTY_RELS = re.compile(rb"<Relationships[^>]*>\s*</Relationships>")
 
@@ -175,6 +184,39 @@ def sanitise(workbook: Path) -> list[str]:
             total_ca += hits
     if total_ca:
         log.append(f"cleared always-calculate flags on {total_ca} cells")
+
+    # Session state: who saved, when, from what window, with which build.
+    session = 0
+    core = parts["docProps/core.xml"].decode("utf-8")
+    creator = re.search(r"<dc:creator>([^<]*)</dc:creator>", core)
+    if creator:
+        new_core = re.sub(
+            r"<cp:lastModifiedBy>[^<]*</cp:lastModifiedBy>",
+            f"<cp:lastModifiedBy>{creator.group(1)}</cp:lastModifiedBy>",
+            core,
+        )
+        new_core = re.sub(
+            r'(<dcterms:modified xsi:type="dcterms:W3CDTF">)[^<]*(</dcterms:modified>)',
+            rf"\g<1>{FIXED_STAMP}\2",
+            new_core,
+        )
+        if new_core != core:
+            parts["docProps/core.xml"] = new_core.encode("utf-8")
+            session += 1
+    wb = parts["xl/workbook.xml"].decode("utf-8")
+    new_wb = re.sub(r"<xr:revisionPtr\b[^>]*/>", "", wb)
+    new_wb = re.sub(
+        r'(<workbookView\b)(?:\s+(?:xWindow|yWindow|windowWidth|windowHeight)="[^"]*")*',
+        lambda m: m.group(1) + " " + FIXED_WINDOW,
+        new_wb,
+        count=1,
+    )
+    new_wb = re.sub(r'(<fileVersion\b[^>]*?)\s+rupBuild="[^"]*"', r"\1", new_wb)
+    if new_wb != wb:
+        parts["xl/workbook.xml"] = new_wb.encode("utf-8")
+        session += 1
+    if session:
+        log.append(f"pinned session state in {session} part(s)")
 
     # Rels parts with nothing left in them.
     empty = [

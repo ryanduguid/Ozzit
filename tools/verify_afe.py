@@ -3,9 +3,9 @@
 Usage: python tools/verify_afe.py [workbook] [src dir]
 
 The AFE task pane is the documented editing surface, but the existing gates only
-compare src/ with defined names and never compare the AFE store. Debt is
-deliberately excluded: the module is recursive, and src/Debt.txt documents that
-Excel Labs cannot hold it, so a compliant store must omit it.
+compare src/ with defined names and never compare the AFE store. Every module is
+held, Debt included: its schedules were rewritten with SCAN so that nothing in the
+library recurses by name, which is what kept Debt out of the store before.
 """
 
 import base64
@@ -20,14 +20,7 @@ from typing import TextIO, TypedDict, cast
 WORKBOOK = sys.argv[1] if len(sys.argv) > 1 else "ozzit.xlsx"
 SRC = Path(sys.argv[2] if len(sys.argv) > 2 else "src")
 SCHEMA = "http://schemas.advancedformulaenvironment.officeapps.live.com/afeprojects/0.2"
-MODULES = ("Dates", "Essentials", "Financial", "Ratios", "Utilities")
-DEBT_NAMES = {
-    "oz.AmortiseBλ",
-    "oz.DebtSculptFixedλ",
-    "oz.DebtSculptVariableλ",
-    "oz.DebtSculptVariableLRVλ",
-    "oz.InterestLRVλ",
-}
+MODULES = ("Dates", "Essentials", "Financial", "Ratios", "Utilities", "Debt")
 AFE_BLOB_RE = rb"[A-Za-z0-9+/]{100,}={0,2}"
 
 
@@ -140,14 +133,11 @@ def check(workbook: Path, src: Path) -> list[str]:
                 f"{actual!r} != {wanted!r}",
             )
 
-    shipped = workbook_names(workbook)
-    expected_names = shipped - DEBT_NAMES
+    expected_names = workbook_names(workbook)
     actual_names = set(store["projectNames"])
-    for name in sorted(actual_names & DEBT_NAMES):
-        fail(failures, f"recursive Debt function {name} is present in the AFE store")
     for name in sorted(expected_names - actual_names):
-        fail(failures, f"AFE projectNames is missing shipped non-Debt name {name}")
-    for name in sorted(actual_names - expected_names - DEBT_NAMES):
+        fail(failures, f"AFE projectNames is missing shipped name {name}")
+    for name in sorted(actual_names - expected_names):
         fail(failures, f"AFE projectNames has unknown name {name}")
 
     return failures
@@ -171,10 +161,7 @@ def main() -> None:
         for failure in failures:
             emit_line(f"  - {failure}")
         sys.exit(1)
-    emit_line(
-        f"OK: AFE store in {WORKBOOK} matches {len(MODULES)} non-recursive modules "
-        "and excludes recursive Debt"
-    )
+    emit_line(f"OK: AFE store in {WORKBOOK} matches all {len(MODULES)} modules and every shipped name")
 
 
 if __name__ == "__main__":
