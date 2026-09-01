@@ -56,6 +56,20 @@ utilities copies. The five About tables take words instead: `oz.AboutFinancialλ
 
 ## Getting started
 
+Download the workbook from the [latest release](https://github.com/ryanduguid/Ozzit/releases/latest). Cloning the repository is not required to use the library, and the release asset is a few hundred kilobytes against the repository's tens of megabytes.
+
+The release carries `ozzit.xlsx` alongside `SHA256SUMS` and `provenance.json`. Check the workbook against the published checksum before opening it:
+
+```bash
+curl -LO https://github.com/ryanduguid/Ozzit/releases/latest/download/ozzit.xlsx
+curl -LO https://github.com/ryanduguid/Ozzit/releases/latest/download/SHA256SUMS
+sha256sum --check --ignore-missing SHA256SUMS
+```
+
+On Windows, `Get-FileHash ozzit.xlsx -Algorithm SHA256` prints the same digest to compare against the `SHA256SUMS` line by eye. `SHA256SUMS` deliberately does not cover itself, so read it from the release page rather than trusting a local copy alone. `provenance.json` binds that workbook to its version, signed tag and candidate commit; [RELEASING.md](RELEASING.md) describes what it asserts.
+
+The workbook tracked in this repository is the candidate the gates below run against. The release asset is that same file copied byte-for-byte from the tagged tree, so the two share a SHA-256 at the tag they were released from. Between releases the tracked copy can be ahead of the published one.
+
 1. Open `ozzit.xlsx`.
 2. Cell A1 of every visible worksheet links back to the table of contents; every name in the TOC links to its worksheet.
 3. For inline help, type a function name with no arguments in an empty cell, for example `=oz.Amortiseλ()`. The help block spills syntax, parameters and worked examples.
