@@ -96,9 +96,10 @@ to be run on the candidate; Excel was not available where this change was made.
   returning the opposite of their own example. The generated fragment, dot-sourced by
   `excel_selftest.ps1`, calls every function for its help and evaluates every worked
   example that stands on its own: a printed number within half its last digit, a
-  boolean, a list or grid by count and total, a label exactly, a date, or a shape. The
-  baseline moves from 438 assertions to 730, and the tool tests fail when the fragment
-  is stale. The three Debt help assertions search for their row rather than index it.
+  boolean, a list or grid by count and total, a label exactly, a date, or a shape. Totals
+  and tolerances are exact decimal sums of the printed digits, so every Python version
+  writes the same fragment. The baseline moves from 438 assertions to 730, and the tool
+  tests fail when the fragment is stale. The three Debt help assertions search for their row rather than index it.
 
 ### Residue and determinism
 
