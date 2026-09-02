@@ -133,6 +133,19 @@ class WorkbookTests(unittest.TestCase):
         # and a second run has nothing to do
         self.assertEqual(compile_sources.run(self.workbook, self.src, False, None), [])
 
+    def test_whitespace_inside_a_literal_is_a_change(self):
+        # layout whitespace and the [0]! marker are not differences; a literal's text is
+        self.assertEqual(compile_sources.tight("LAMBDA( x, [0]!oz.Fλ( x))"), compile_sources.tight("LAMBDA(x,oz.Fλ(x))"))
+        self.assertNotEqual(compile_sources.tight('LAMBDA(x, "a b")'), compile_sources.tight('LAMBDA(x, "ab")'))
+        module = self.src / "Financial.txt"
+        text = module.read_text(encoding="utf-8")
+        old = 'EXPAND({" "}, 1, COUNTA(Timeline), " ")'      # the spacer row Amortiseλ stacks
+        self.assertEqual(text.count(old), 1)
+        module.write_text(text.replace(old, 'EXPAND({"  "}, 1, COUNTA(Timeline), "  ")'), encoding="utf-8")
+        self.assertEqual(compile_sources.run(self.workbook, self.src, True, None), ["oz.Amortiseλ"])
+        self.assertEqual(compile_sources.run(self.workbook, self.src, False, None), ["oz.Amortiseλ"])
+        self.assertIn('_xlfn.EXPAND({"  "},1,COUNTA(_xlpm.Timeline),"  ")', compile_sources.tight(self._book()))
+
     def test_a_changed_header_rewrites_the_name_manager_comment(self):
         module = self.src / "Ratios.txt"
         text = module.read_text(encoding="utf-8")
