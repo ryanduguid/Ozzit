@@ -169,22 +169,18 @@ CorkScrewReversalλ=LAMBDA(
                             4, VSTACK(Flow1, Flow2, Flow3, Flow4)
                         ), 
         PeriodTotal,    BYCOL(PeriodArray, LAMBDA(Col, SUM(Col))), 
-        Result,         REDUCE( 0, SEQUENCE( COLUMNS( Flow1)),
+    //  The closing balance is the only state carried from one period to the next: a period
+    //  closes on its opening balance, less that balance where the flag reverses it, plus
+    //  its flows. Solve the closings in one pass and read every other row off them.
+        Flags,          INDEX( ReversalFlags, 1, SEQUENCE( , Cols)),
+        Closings,       SCAN( Opening, SEQUENCE( , Cols),
                             LAMBDA( Acc, Col,
-                                LET(
-                                    Opening,        IF(Col=1, Opening, TAKE( Acc, -1, -1)), 
-                                    Reversal,       -INDEX( ReversalFlags, 1, Col) * Opening, 
-                                    ArrayColumn,    CHOOSECOLS( PeriodArray, Col),
-                                    Stack,          VSTACK( 
-                                                        Opening, 
-                                                        REversal, 
-                                                        ArrayColumn, 
-                                                        SUM(Opening, Reversal, ArrayColumn)),
-                                    Result,         IF(Col = 1, Stack, HSTACK( Acc, Stack)),
-                                    Result
-                                )
+                                Acc * ( 1 - INDEX( Flags, 1, Col)) + INDEX( PeriodTotal, 1, Col)
                             )
                         ),
+        Openings,       IF( Cols = 1, Opening, HSTACK( Opening, DROP( Closings, , -1))),
+        Reversals,      -Flags * Openings,
+        Result,         VSTACK( Openings, Reversals, PeriodArray, Closings),
     //  Return Result
         CHOOSE(Help? + 1, Result, Help)
     )  
@@ -287,8 +283,8 @@ Movementλ = LAMBDA(
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
-                            "BeginningValues→(Optional) Defaults to 0¶" & 
-                            "Values         →(Required) A row of values to compare column to column¶" & 
+                            "BeginningValues→(Optional) Defaults to 0. One value, or one per row of Values¶" & 
+                            "Values         →(Required) A row (or rows) of values to compare column to column¶" & 
                             "EXAMPLES:      →¶" & 
                             "Result         →Formula (oz is assumed to be the module's name)¶" &
                             "100,10,20,-30  →=oz.Movementλ(,{100,110,130,100})",
@@ -300,23 +296,11 @@ Movementλ = LAMBDA(
         BeginningValues, IF(OR(ISOMITTED(BeginningValues), BeginningValues=""), 0, BeginningValues),
     //  Procedure
         Rows,           ROWS( Values),
-        Cols,           Columns( Values),
-        Seq,            SEQUENCE(, Cols),
-        Result,         REDUCE(0, SEQUENCE( Rows), 
-                            LAMBDA( Acc, R, 
-                                LET(
-                                    Begin,      If( ROWS(BeginningValues) = 1, BeginningValues, INDEX( BeginningValues, R)),
-                                    Row,        CHOOSEROWS( Values, R), 
-                                    NewRow,     SCAN( Begin, Seq, 
-                                                    LAMBDA( A, C,
-                                                        INDEX( Row, C ) - IF( C = 1, A, INDEX( Row, C - 1))
-                                                    )
-                                                ),
-                                    Result,     IF( R = 1, NewRow, VSTACK(Acc, NewRow)),
-                                    Result
-                                )
-                            )
-                        ),
+        Cols,           COLUMNS( Values),
+    //  Each column is compared with the one before it; the first with its row's beginning value
+        Begins,         SEQUENCE( Rows, 1, 0, 0) + BeginningValues,
+        Previous,       IF( Cols = 1, Begins, HSTACK( Begins, DROP( Values, , -1))),
+        Result,         Values - Previous,
     //  Return Result
         CHOOSE(Help? + 1, Result, Help)
     )  
@@ -406,7 +390,7 @@ RollingAvgλ = LAMBDA(
                             "PARAMETERS:    →¶" & 
                             "Values         →(Required) A row of values to be averaged.¶" & 
                             "Size           →(Required) The number of values to average that ¶" & 
-                                           "→include and preceed the current value¶" & 
+                                           "→include and precede the current value¶" & 
                             "EXAMPLES:      →¶" &
                             "Result         →Formula (oz is assumed to be the module's name)¶" &
                             "1,1.5,2,3,4    →=oz.RollingAvgλ(SEQUENCE(, 5), 3)",
@@ -416,19 +400,11 @@ RollingAvgλ = LAMBDA(
         Help?,          OR( ISOMITTED( Values),
                             ISOMITTED( Size)),
     //  Procedure
-        Counter,        SEQUENCE(,COUNTA( Values)),
-        Result,         SCAN( 
-                            0, 
-                            Counter, 
-                            LAMBDA(
-                                Acc,
-                                Val, 
-                                LET(
-                                    Start,  IF((Val - Size) < 1, 0, Val - Size),
-                                    Right,  TAKE(Values, , Val),
-                                    Block,  IF( Start > 0, DROP( Right, , Start ), Right),
-                                    AVERAGE(Block)
-                                )
+        Counter,        SEQUENCE(, COLUMNS( Values)),
+    //  Each window is the current column and up to Size - 1 columns before it
+        Result,         MAP( Counter, 
+                            LAMBDA( Val,
+                                AVERAGE( CHOOSECOLS( Values, SEQUENCE( 1, MIN( Val, Size), MAX( 1, Val - Size + 1))))
                             )
                         ),
     //  Return Result
@@ -447,14 +423,14 @@ RollingMaxλ = LAMBDA(
 //  Help
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →RollingMaxλ( Values, Size)¶" &
-                            "DESCRIPTION:   →Creates the maximum for preceding values of a set size moving from beginning to end over a row of values.¶" &
+                            "DESCRIPTION:   →Creates the maximum for preceding values of a set size moving¶" &
                                            "→from beginning to end over a row of values¶" & 
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Values         →(Required) A row of values to be maxed.¶" & 
-                            "Size           →(Required) The number of values to find maximum that ¶" & 
-                                           "→include and preceed the current value¶" & 
+                            "Size           →(Required) The number of values to find the maximum of that ¶" & 
+                                           "→include and precede the current value¶" & 
                             "EXAMPLES:      →¶" &
                             "Result         →Formula (oz is assumed to be the module's name)¶" &
                             "5,5,5,6,6,7    →=oz.RollingMaxλ({5,3,4,6,3,7}, 3)",
@@ -464,19 +440,11 @@ RollingMaxλ = LAMBDA(
         Help?,          OR( ISOMITTED( Values),
                             ISOMITTED( Size)),
     //  Procedure
-        Counter,        SEQUENCE(,COUNTA( Values)),
-        Result,         SCAN( 
-                            0, 
-                            Counter, 
-                            LAMBDA(
-                                Acc,
-                                Val, 
-                                LET(
-                                    Start,  IF((Val - Size) < 1, 0, Val - Size),
-                                    Right,  TAKE(Values, , Val),
-                                    Block,  IF( Start > 0, DROP( Right, , Start ), Right),
-                                    MAX(Block)
-                                )
+        Counter,        SEQUENCE(, COLUMNS( Values)),
+    //  Each window is the current column and up to Size - 1 columns before it
+        Result,         MAP( Counter, 
+                            LAMBDA( Val,
+                                MAX( CHOOSECOLS( Values, SEQUENCE( 1, MIN( Val, Size), MAX( 1, Val - Size + 1))))
                             )
                         ),
     //  Return Result
@@ -495,14 +463,14 @@ RollingMinλ = LAMBDA(
 //  Help
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →RollingMinλ( Values, Size)¶" &
-                            "DESCRIPTION:   →Creates the minimum for preceding values of a set size moving from beginning to end over a row of values.¶" &
+                            "DESCRIPTION:   →Creates the minimum for preceding values of a set size moving¶" &
                                            "→from beginning to end over a row of values¶" & 
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
-                            "Values         →(Required) A row of values to be minned.¶" & 
-                            "Size           →(Required) The number of values to find maximum that ¶" & 
-                                           "→include and preceed the current value¶" & 
+                            "Values         →(Required) A row of values to take the minimum of.¶" & 
+                            "Size           →(Required) The number of values to find the minimum of that ¶" & 
+                                           "→include and precede the current value¶" & 
                             "EXAMPLES:      →¶" &
                             "Result         →Formula (oz is assumed to be the module's name)¶" &
                             "5,3,3,3,2,2    →=oz.RollingMinλ({5,3,4,6,2,7}, 3)",
@@ -512,19 +480,11 @@ RollingMinλ = LAMBDA(
         Help?,          OR( ISOMITTED( Values),
                             ISOMITTED( Size)),
     //  Procedure
-        Counter,        SEQUENCE(,COUNTA( Values)),
-        Result,         SCAN( 
-                            0, 
-                            Counter, 
-                            LAMBDA(
-                                Acc,
-                                Val, 
-                                LET(
-                                    Start,  IF((Val - Size) < 1, 0, Val - Size),
-                                    Right,  TAKE(Values, , Val),
-                                    Block,  IF( Start > 0, DROP( Right, , Start ), Right),
-                                    MIN(Block)
-                                )
+        Counter,        SEQUENCE(, COLUMNS( Values)),
+    //  Each window is the current column and up to Size - 1 columns before it
+        Result,         MAP( Counter, 
+                            LAMBDA( Val,
+                                MIN( CHOOSECOLS( Values, SEQUENCE( 1, MIN( Val, Size), MAX( 1, Val - Size + 1))))
                             )
                         ),
     //  Return Result
@@ -550,7 +510,7 @@ RollingSumλ = LAMBDA(
                             "PARAMETERS:    →¶" & 
                             "Values         →(Required) A row of values to be totalled.¶" & 
                             "Size           →(Required) The number of values to total that ¶" & 
-                                           "→include and preceed the current value¶" & 
+                                           "→include and precede the current value¶" & 
                             "EXAMPLES:      →¶" &
                             "Result         →Formula (oz is assumed to be the module's name)¶" &
                             "1,3,6,9,12     →=oz.RollingSumλ(SEQUENCE(, 5), 3)",
@@ -560,19 +520,11 @@ RollingSumλ = LAMBDA(
         Help?,          OR( ISOMITTED( Values),
                             ISOMITTED( Size)),
     //  Procedure
-        Counter,        SEQUENCE(,COLUMNS( Values)),
-        Result,         SCAN( 
-                            0, 
-                            Counter, 
-                            LAMBDA(
-                                Acc,
-                                Val, 
-                                LET(
-                                    Start,  IF((Val - Size) < 1, 0, Val - Size),
-                                    Right,  TAKE(Values, , Val),
-                                    Block,  IF( Start > 0, DROP( Right, , Start ), Right),
-                                    SUM(Block)
-                                )
+        Counter,        SEQUENCE(, COLUMNS( Values)),
+    //  Each window is the current column and up to Size - 1 columns before it
+        Result,         MAP( Counter, 
+                            LAMBDA( Val,
+                                SUM( CHOOSECOLS( Values, SEQUENCE( 1, MIN( Val, Size), MAX( 1, Val - Size + 1))))
                             )
                         ),
     //  Return Result
@@ -663,17 +615,11 @@ SumPeriodsλ = LAMBDA(
         Help?,          OR( ISOMITTED( Values),
                             ISOMITTED( Dates),
                             ISOMITTED( PeriodStarts)),
-    //  Procedure
-        PrdNum,         MATCH(Dates, PeriodStarts, 1),
-        Result,         MAKEARRAY(
-                            ROWS(Values),
-                            COLUMNS(PeriodStarts),
-                            LAMBDA(
-                                Row, 
-                                Col, 
-                                SUM(INDEX(Values, Row, ) * (Col = PrdNum))
-                                )
-                        ),            
+    //  Procedure - the period each date falls in, then one matrix product. A date before the
+    //  first period start belongs to no period and is dropped rather than erroring the row.
+        PrdNum,         IFERROR( MATCH( Dates, PeriodStarts, 1), 0),
+        InPeriod,       ( TOCOL( PrdNum) = SEQUENCE( 1, COLUMNS( PeriodStarts))) * 1,
+        Result,         MMULT( Values * 1, InPeriod),
     //  Return Result
         CHOOSE(Help? + 1, Result, Help)
     )
@@ -727,16 +673,15 @@ Amortiseλ = LAMBDA(
                                 ISOMITTED( StartDates)
                             ),
     
-    //  Set defaults and apply convenience conversions
+    //  Set defaults and apply convenience conversions. A text start date is read as a date,
+    //  and the default timeline runs from the earliest start to the last month of the
+    //  longest-running loan, whichever loan that is.
+        CvtStarts,          IF( ISNUMBER( StartDates), StartDates, DATEVALUE( StartDates)),
         Timeline,           IF( ISOMITTED( Timeline), 
-                                LET(Counter,    ROWS( Principals),
-                                    MaxDate,    MAX(MAP( Counter,
-                                                        LAMBDA( n, 
-                                                            EDATE( INDEX( StartDates, n), INDEX( Terms, n) - 1)))),
-                                    MinDate,    MIN( StartDates), 
-                                    MaxTerm,    DATEDIF(MinDate, MaxDate, "M") + 1,
-                                    Result,     EDATE( MinDate, Sequence(1, MaxTerm, 0)),
-                                    Result), 
+                                LET(LastMonths, EDATE( CvtStarts, Terms - 1),
+                                    MinDate,    MIN( CvtStarts), 
+                                    MaxTerm,    DATEDIF( MinDate, MAX( LastMonths), "M") + 1,
+                                    EDATE( MinDate, SEQUENCE( 1, MaxTerm, 0))), 
                                 Timeline
                             ),
     //  Determine timeline's interval (length of periods) and orientation (horizontal or vertical)
@@ -747,15 +692,15 @@ Amortiseλ = LAMBDA(
         SubMonthly?,        DpP < 28,                                   //No month is shorter
         MpP,                MAX( @ROUND( DpP / ADpM, 0), 1),            //Months Per Period, never nought
 
-    //  Recursive function (fn) definition
-        Recursion, 
-            LAMBDA( fn, Principals, APRs, Terms, StartDates, Timeline, Asset,
+    //  One loan's schedule, laid onto the timeline
+        Schedule, 
+            LAMBDA( Asset,
                 LET(
                 //  Create individual Values from array
                     Principal,          INDEX( Principals, Asset), 
                     APR,                INDEX( APRs, Asset), 
                     Term,               INDEX( Terms, Asset),  
-                    StartDate,          INDEX( StartDates, Asset), 
+                    StartDate,          INDEX( CvtStarts, Asset), 
 
                 //  Adjust inputs to match timeline
                     Periods,            ROUNDUP(Term / MpP, 0),
@@ -820,33 +765,28 @@ Amortiseλ = LAMBDA(
                 //  the period it is dated in and nowhere else, which is the same treatment
                 //  Depreciateλ gives its own opening balance row.
                     MonthStarts,        EDATE( StartDate, SEQUENCE( , Periods, 0)),
-                    ByDate,             MAKEARRAY( ROWS( AmortisationSched), COUNTA( Timeline),
-                                            LAMBDA( R, C,
-                                                LET( PeriodOpens,   INDEX( Timeline, C),
-                                                //  A period ends where the next one opens. Only the last
-                                                //  has no successor to ask, so it runs on as far as the
-                                                //  period before it did.
-                                                     PeriodShut,    IF( C = COUNTA( Timeline),
-                                                                        PeriodOpens + LastGap,
-                                                                        INDEX( Timeline, C + 1)),
-                                                    SUM( CHOOSEROWS( AmortisationSched, R)
-                                                         * ( MonthStarts >= PeriodOpens)
-                                                         * ( MonthStarts < PeriodShut))))),
-                    NewBlock,           IF( SubMonthly?,
-                                            ByDate,
-                                            TimelinePositionλ(AmortisationSched, Timeline, Offset)),
-                    Result,             IF( Asset = ROWS( Principals), 
-                                            NewBlock,
-                                            VSTACK(
-                                                NewBlock,
-                                                EXPAND({" "}, 1, COUNTA(Timeline), " "),
-                                                fn( fn, Principals, APRs, Terms, StartDates, Timeline, Asset + 1)
-                                            )
-                                        ),
-                    Result
+                //  The period each month opens in is the last period start on or before it. A
+                //  period ends where the next one opens; only the last has no successor to ask,
+                //  so it runs on as far as the period before it did. A month before the first
+                //  period or after that end belongs to no period and lands nowhere.
+                    Buckets,            IFERROR( MATCH( MonthStarts, Timeline, 1), 0)
+                                        * ( MonthStarts < MAX( Timeline) + LastGap),
+                    ByDate,             MMULT( AmortisationSched, ( TOCOL( Buckets) = SEQUENCE( 1, COUNTA( Timeline))) * 1),
+                    IF( SubMonthly?,
+                        ByDate,
+                        TimelinePositionλ(AmortisationSched, Timeline, Offset))
                 )   
             ),    
-        Result,     Recursion( Recursion, Principals, APRs, Terms, StartDates, Timeline, 1),
+    //  Every loan in turn, a blank row between one block and the next
+        Result,     REDUCE( 0, SEQUENCE( ROWS( Principals)),
+                        LAMBDA( Acc, Asset,
+                            LET(NewBlock,   Schedule( Asset),
+                                IF( Asset = 1, 
+                                    NewBlock,
+                                    VSTACK( Acc, EXPAND({" "}, 1, COUNTA(Timeline), " "), NewBlock))
+                            )
+                        )
+                    ),
     //  Return Result
         CHOOSE(Help? + 1, Result, Help)
     ) 
@@ -887,27 +827,27 @@ LabelAmortiseλ = LAMBDA(
                             ISOMITTED( LoanAPRs), 
                             ISOMITTED( LoanTerms)
                         )),
-    //  Procedure
-        Result,         REDUCE( "", SEQUENCE(  ROWS( LoanNames) * 7 - 1), 
-                            LAMBDA(Acc, Row, 
+    //  Procedure - six labelled rows and a blank row per loan, without the trailing blank
+        Result,         MAKEARRAY( ROWS( LoanNames) * 7 - 1, IF( Optionals, 3, 1),
+                            LAMBDA(Row, Col, 
                                 LET(Idx,            QUOTIENT( Row - 1, 7) + 1,
                                     Line,           MOD( Row - 1, 7) + 1, 
                                     LoanName,       INDEX( LoanNames, Idx), 
                                     LoanAmount,     IF(ISOMITTED( LoanAmounts), 0, INDEX( LoanAmounts, Idx)),
                                     LoanAPR,        IF(ISOMITTED( LoanAPRs), 0, INDEX( LoanAPRs, Idx)),
                                     LoanTerm,       IF(ISOMITTED( LoanTerms), 0, INDEX( LoanTerms, Idx)),
-                                    Description,    SWITCH( Line,
-                                                        1,  HSTACK(LoanName & " Debt Issuance", LoanAmount, ""),
-                                                        2,  HSTACK(LoanName & " Debt Balance", "",""),
-                                                        3,  HSTACK(LoanName & " Interest", Text(LoanAPR, "0.00%"), "APR"),
-                                                        4,  HSTACK(LoanName & " Debt Services", LoanTerm, "Months"),
-                                                        5,  HSTACK(LoanName & " Closing Balance","",""),
-                                                        6,  HSTACK(LoanName & " Debt Repayment", "", ""),
-                                                        7,  HSTACK("","","")
-                                                    ),
-                                    Values,         IF( Optionals, Description, TAKE( Description, , 1)),
-                                    Result,         IF( Row = 1, Values, VSTACK(Acc, Values)),
-                                    Result
+                                    SWITCH( Col,
+                                        1,  SWITCH( Line,
+                                                1,  LoanName & " Debt Issuance",
+                                                2,  LoanName & " Debt Balance",
+                                                3,  LoanName & " Interest",
+                                                4,  LoanName & " Debt Services",
+                                                5,  LoanName & " Closing Balance",
+                                                6,  LoanName & " Debt Repayment",
+                                                ""),
+                                        2,  SWITCH( Line, 1, LoanAmount, 3, TEXT( LoanAPR, "0.00%"), 4, LoanTerm, ""),
+                                        3,  SWITCH( Line, 3, "APR", 4, "Months", "")
+                                    )
                                 )
                             )
                         ),
@@ -984,7 +924,7 @@ Depreciateλ = LAMBDA(
                             "DESCRIPTION:   →Creates an array of CAPEX, depreciation, and book values for a model's timeline¶" & 
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit ¶" & 
                             "VERSION:       →20 Aug 2026¶" &
-                            "NOTES:         →The methods used here differs from Excel's functions in several ways. Please see webpage for details.¶" &
+                            "NOTES:         →The methods used here differ from Excel's functions in several ways. Please see webpage for details.¶" &
                             "PARAMETERS:    →¶" & 
                             "InitialValues  →(Required) The purchase values of each asset to depreciate¶" & 
                             "InServiceDates →(Required) The dates from which to start depreciating each asset¶" & 
@@ -995,7 +935,8 @@ Depreciateλ = LAMBDA(
                             "               →Timeline can be any interval: days, weeks, months, quarters or years¶" & 
                             "SalvageValues  →(Optional: Default = 0) The book values of each asset after fully depreciated.¶" & 
                             "DisposalDates  →(Optional: Default = End of life) The dates on which the assets are removed from the books.¶" & 
-                            "DisposalCosts  →(Optional: Default = 0) The book values of each asset after fully depreciated.¶" & 
+                                           "→A disposal before the end of life writes the remaining book value off in that month.¶" & 
+                            "DisposalCosts  →(Optional: Default = 0) The costs of removing each asset from the books, charged in the disposal period.¶" & 
                             "Methods        →(Optional: Default = SLN) The desired depreciation method. Must be one of these method codes: ¶" & 
                                            "→SLN=Straight Line Depreciation¶" & 
                                            "→SYD=Sum of Year's Digits¶" & 
@@ -1096,22 +1037,31 @@ Depreciateλ = LAMBDA(
                                                     //  7. Straight line, whole years
                                                         PrimeCostλ( InitialValue, Years),
                                                     ),
-                                //  Place Disposal and Salvage in the asset's last month
-                                    Disposal,       HSTACK( SEQUENCE( 1, LifeInMonths - 1, 0, 0) , DisposalCost),
-                                    Salvage,        HSTACK( SEQUENCE( 1, LifeInMonths - 1, 0, 0) , SalvageValue),
-                                //  Allocating annual values to months
-                                    Allocate,       HSTACK( EXPAND( Allocateλ( Depreciate, "Y", "M"), 1, LifeInMonths - 1, 0), SalvageValue),
+                                //  Allocating annual values to months. The asset's months run to its disposal:
+                                //  a disposal after the end of life pads the tail with nought and writes the
+                                //  salvage value off in the last month; a disposal before the end of life stops
+                                //  the schedule there and writes the remaining book value off instead.
+                                    Monthly,        Allocateλ( Depreciate, "Y", "M"),
+                                    Months,         LifeInMonths - 1,
+                                    Allocate,       IF( Months < 1,
+                                                        InitialValue,
+                                                        IF( Months >= COLUMNS( Monthly),
+                                                            HSTACK( EXPAND( Monthly, 1, Months, 0), SalvageValue),
+                                                            HSTACK( TAKE( Monthly, , Months), InitialValue - SUM( TAKE( Monthly, , Months))))),
                                     Opening,        DROP( HSTACK( InitialValue, SCAN( InitialValue, Allocate, LAMBDA( Acc, Val, Acc - Val))), 0, -1),
                                 //  Create a monthly timeline for the asset
                                     AssetTimeline,  EDATE( InServiceDate, SEQUENCE( , LifeInMonths, 0)), 
-                                //  Aggregate monthly allocations by model's period intervals and position in timelne
-                                    Depreciation,   MAP( SEQUENCE( , TimelineCols), 
-                                                        LAMBDA( n, 
-                                                            SUM((Allocate) * ( AssetTimeline <= INDEX(EndDates, n)) * ( AssetTimeline >= INDEX( Timeline, n))))),
+                                //  The period each asset month falls in is the last period start on or before it;
+                                //  a month after the last period ends belongs to no period. One matrix product
+                                //  then aggregates the months into the model's periods.
+                                    Buckets,        IFERROR( MATCH( AssetTimeline, Timeline, 1), 0) * ( AssetTimeline <= LastEnd),
+                                    InPeriod,       ( TOCOL( Buckets) = SEQUENCE( 1, TimelineCols)) * 1,
+                                    Depreciation,   MMULT( Allocate, InPeriod),
                                     CAPEX,          InitialValue * (Timeline <= InServiceDate) * (EndDates >= InServiceDate), 
-                                    OpeningAmount,  MAP( SEQUENCE( , TimelineCols), 
-                                                        LAMBDA( n,
-                                                            IFERROR(INDEX( Opening, MATCH(1,(AssetTimeline >= INDEX( Timeline, n))*(AssetTimeline<=INDEX( EndDates, n)),0)),0))),
+                                //  The opening balance a period shows is the one its first asset month carries
+                                    Earlier,        IF( LifeInMonths = 1, 0, HSTACK( 0, DROP( Buckets, , -1))),
+                                    FirstInPeriod,  ( Buckets <> Earlier) * ( Buckets > 0),
+                                    OpeningAmount,  MMULT( Opening * FirstInPeriod, InPeriod),
                                     BookValue,      OpeningAmount - Depreciation,
                                     SalesRevenue,   SalvageValue * (Timeline <= DisposalDate) * (EndDates >= DisposalDate), 
                                     DisposalExp,    DisposalCost * (Timeline <= DisposalDate) * (EndDates >= DisposalDate), 
@@ -2063,7 +2013,7 @@ PeriodStartλ = LAMBDA(
 
 
 /*  FUNCTION NAME:  DiminishingValueλ
-    DESCRIPTION:*//**Diminishing-balance depreciation schedule at 200% of the straight-line rate, writing the residual off in the final period. A modelling schedule, not a tax calculation*/
+    DESCRIPTION:*//**Diminishing-balance depreciation schedule at 200% of the straight-line rate, writing the residual off in the final period. A modelling schedule, not a tax calculation.*/
 
 DiminishingValueλ = LAMBDA(
 //  Parameter Declaration
@@ -2106,7 +2056,7 @@ DiminishingValueλ = LAMBDA(
 
 
 /*  FUNCTION NAME:  PrimeCostλ
-    DESCRIPTION:*//**Straight-line depreciation schedule for one asset or asset class, in whole years. A modelling schedule, not a tax calculation*/
+    DESCRIPTION:*//**Straight-line depreciation schedule for one asset or asset class, in whole years. A modelling schedule, not a tax calculation.*/
 
 PrimeCostλ = LAMBDA(
 //  Parameter Declaration
@@ -2145,7 +2095,7 @@ PrimeCostλ = LAMBDA(
 
 
 /*  FUNCTION NAME:  GSTAddλ
-    DESCRIPTION:*//**Adds GST to one or more GST-exclusive amounts*/
+    DESCRIPTION:*//**Adds GST to one or more GST-exclusive amounts.*/
 
 GSTAddλ = LAMBDA(
 //  Parameter Declaration
@@ -2182,7 +2132,7 @@ GSTAddλ = LAMBDA(
 
 
 /*  FUNCTION NAME:  GSTExtractλ
-    DESCRIPTION:*//**Returns the GST contained in one or more GST-inclusive amounts*/
+    DESCRIPTION:*//**Returns the GST contained in one or more GST-inclusive amounts.*/
 
 GSTExtractλ = LAMBDA(
 //  Parameter Declaration
@@ -2230,7 +2180,7 @@ LeaseLiabilityλ = LAMBDA(
     //  Help
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →LeaseLiabilityλ(Payments, Rate, [InAdvance])¶" &
-                            "DESCRIPTION:   →Present value of the lease payments that are not paid at the commencement date.¶NOTES!         →AASB 16 paragraph 26 measures the lease liability at the present value¶               →of the lease payments not paid at the commencement date, discounted at¶               →the interest rate implicit in the lease where that rate can be readily¶               →determined and at the lessee's incremental borrowing rate where it¶               →cannot. When InAdvance is TRUE, the first supplied payment is paid at¶               →the measurement date and excluded from the liability. Add a payment¶               →made at or before commencement to the right-of-use asset cost instead.¶               →Rate is the rate per period, so divide an annual rate by the number of¶               →periods in a year. Include an amount expected to be payable under a¶               →residual value guarantee, or the exercise price of a purchase option,¶               →in the final period where paragraph 27 brings it into the lease¶               →payments. Derive an implicit rate with IRRλ() over the same cash flows.¶               →Arithmetic only: this does not determine the lease term, decide what is¶               →a lease payment, or decide whether the arrangement contains a lease.¶               →AASB 16 compilation checked 24 August 2026.¶" &
+                            "DESCRIPTION:   →Present value of the lease payments that are not paid at the commencement date.¶NOTES!         →AASB 16 paragraph 26 measures the lease liability at the present value¶               →of the lease payments not paid at the commencement date, discounted at¶               →the interest rate implicit in the lease where that rate can be readily¶               →determined and at the lessee's incremental borrowing rate where it¶               →cannot. When InAdvance is TRUE, the first supplied payment is paid at¶               →the measurement date and excluded from the liability. Add a payment¶               →made at or before commencement to the right-of-use asset cost instead.¶               →Rate is the rate per period, so divide an annual rate by the number of¶               →periods in a year. Include an amount expected to be payable under a¶               →residual value guarantee, or the exercise price of a purchase option,¶               →in the final period where paragraph 27 brings it into the lease¶               →payments. IRRλ() over the same cash flows gives an implicit rate per year;¶               →convert it to the rate per period, (1 + annual) ^ (1 / 12) - 1 for months,¶               →before passing it here.¶               →Arithmetic only: this does not determine the lease term, decide what is¶               →a lease payment, or decide whether the arrangement contains a lease.¶               →AASB 16 compilation checked 24 August 2026.¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
                             "VERSION:       →24 Aug 2026¶" &
                             "PARAMETERS:    →¶" &

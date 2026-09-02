@@ -1,3 +1,4 @@
+import re
 import shutil
 import subprocess
 import sys
@@ -124,6 +125,76 @@ class WorkbookToolTests(unittest.TestCase):
         first = self.workbook.read_bytes()
         self.assertEqual(sanitise_workbook.sanitise(self.workbook), ["already clean"])
         self.assertEqual(self.workbook.read_bytes(), first)
+
+    def test_session_state_is_pinned_so_two_saves_agree(self):
+        parts = self._parts()
+        core = parts["docProps/core.xml"].decode()
+        core = core.replace(
+            "<cp:lastModifiedBy>Ozzit project</cp:lastModifiedBy>",
+            "<cp:lastModifiedBy>Somebody Else</cp:lastModifiedBy>",
+        ).replace(
+            f"{sanitise_workbook.FIXED_STAMP}</dcterms:modified>",
+            "2026-09-01T10:11:12Z</dcterms:modified>",
+        )
+        self.assertIn("Somebody Else", core)
+        self.assertIn("2026-09-01T10:11:12Z", core)
+        parts["docProps/core.xml"] = core.encode()
+        book = parts["xl/workbook.xml"].decode()
+        book = book.replace(
+            f"<workbookView {sanitise_workbook.FIXED_WINDOW}",
+            '<workbookView xWindow="-120" yWindow="-120" windowWidth="51840" windowHeight="21120"',
+        ).replace(
+            '<fileVersion appName="xl" lastEdited="7" lowestEdited="7"/>',
+            '<fileVersion appName="xl" lastEdited="7" lowestEdited="7" rupBuild="30326"/>'
+            '<workbookPr codeName="ThisWorkbook"/><xr:revisionPtr revIDLastSave="0" '
+            'documentId="13_ncr:1_{9C5E2E38-D768-43F5-8346-A39F06CA7C63}" '
+            'xr6:coauthVersionLast="47" xr6:coauthVersionMax="47" '
+            'xr10:uidLastSave="{00000000-0000-0000-0000-000000000000}"/>',
+        ).replace('<workbookPr codeName="ThisWorkbook"/><bookViews>', "<bookViews>", 1)
+        self.assertIn("rupBuild", book)
+        self.assertIn("<xr:revisionPtr", book)
+        parts["xl/workbook.xml"] = book.encode()
+        self._rewrite(parts)
+
+        log = sanitise_workbook.sanitise(self.workbook)
+        self.assertIn("pinned session state in 2 part(s)", log)
+        after = self._parts()
+        core = after["docProps/core.xml"].decode()
+        self.assertIn("<cp:lastModifiedBy>Ozzit project</cp:lastModifiedBy>", core)
+        self.assertIn(f"{sanitise_workbook.FIXED_STAMP}</dcterms:modified>", core)
+        book = after["xl/workbook.xml"].decode()
+        self.assertNotIn("<xr:revisionPtr", book)
+        self.assertNotIn("rupBuild", book)
+        self.assertIn(f"<workbookView {sanitise_workbook.FIXED_WINDOW}", book)
+        self.assertEqual(after["xl/workbook.xml"], self._parts()["xl/workbook.xml"])
+        self.assertEqual(sanitise_workbook.sanitise(self.workbook), ["already clean"])
+        self.assertEqual(self.workbook.read_bytes(), WORKBOOK.read_bytes())
+
+    def test_session_state_is_pinned_without_a_creator(self):
+        # dc:creator is optional; the saver's name and save time go regardless
+        parts = self._parts()
+        core = parts["docProps/core.xml"].decode()
+        creator = re.search(r"<dc:creator>[^<]*</dc:creator>", core)
+        self.assertIsNotNone(creator)
+        core = core.replace(creator.group(0), "").replace(
+            "<cp:lastModifiedBy>Ozzit project</cp:lastModifiedBy>",
+            "<cp:lastModifiedBy>Somebody Else</cp:lastModifiedBy>",
+        ).replace(
+            f"{sanitise_workbook.FIXED_STAMP}</dcterms:modified>",
+            "2026-09-01T10:11:12Z</dcterms:modified>",
+        )
+        self.assertIn("Somebody Else", core)
+        parts["docProps/core.xml"] = core.encode()
+        self._rewrite(parts)
+
+        log = sanitise_workbook.sanitise(self.workbook)
+        self.assertIn("pinned session state in 1 part(s)", log)
+        core = self._parts()["docProps/core.xml"].decode()
+        self.assertNotIn("Somebody Else", core)
+        self.assertNotIn("<cp:lastModifiedBy>", core)
+        self.assertNotIn("2026-09-01T10:11:12Z", core)
+        self.assertIn(f"{sanitise_workbook.FIXED_STAMP}</dcterms:modified>", core)
+        self.assertEqual(sanitise_workbook.sanitise(self.workbook), ["already clean"])
 
     def test_atomic_writer_preserves_original_and_cleans_temp_if_replace_fails(self):
         original = self.workbook.read_bytes()
