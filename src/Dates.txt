@@ -4,7 +4,7 @@
     DESCRIPTION:*//**Displays this module's repository URL and function list*/
 AboutDatesλ = TRIM(
     TEXTSPLIT(
-        "About:                 →CBSE compliant LAMBDAs dealing with dates. Suggested module name: oz¶" &
+        "About:                 →Ozzit compliant LAMBDAs dealing with dates. Suggested module name: oz¶" &
         "Version:               →20 Aug 2026¶" &
         "Repository:              →https://github.com/ryanduguid/Ozzit ¶" &
         "→¶" & 
@@ -149,6 +149,8 @@ IsOccurrenceDateλ = LAMBDA(
                                         "→W=Weekly¶" &
                                         "→X=Every Workday (Monday to Friday)¶" & 
                                         "→D=Daily¶" &                      
+                        "NOTE!          →A monthly, quarterly, semi-annual or annual item that starts on the 29th, 30th or 31st¶" &
+                                        "→falls on the last day of any shorter month.¶" &
                         "EXAMPLES:      →¶" &
                         "Result         →Formula (oz is assumed to be the module's name)¶" &
                         "72             →=SUM(N(oz.IsOccurrenceDateλ(SEQUENCE(,90,""1/7/2026""), ""1/7/2026"", ""10/9/2026"", ""D"")))¶" &
@@ -183,13 +185,16 @@ IsOccurrenceDateλ = LAMBDA(
                         ),
         Repeats,        IF( OR( ISOMITTED(Repeats), TRIM( Repeats) = "" ), "O", LEFT(Repeats, 1)),
     //  Procedure
-        SameDay,        DAY( CvtDates) = DAY( CvtFirsts),
+    //  A start on the 29th, 30th or 31st falls on the last day of any shorter month
+        MonthEnds,      DAY( EOMONTH( CvtDates, 0)),
+        SameDay,        DAY( CvtDates) = IF( DAY( CvtFirsts) > MonthEnds, MonthEnds, DAY( CvtFirsts)),
+        SameMonth,      MONTH( CvtDates) = MONTH( CvtFirsts),
         Test,           ( CvtFirsts <= CvtDates) * 
                         IF(TRIM( CvtLasts) = "", 1, CvtDates <= CvtLasts) *
                         SWITCH(
                             Repeats,
                             "O",    CvtDates = CvtFirsts,
-                            "A",    TEXT(CvtDates, "MMDD") = TEXT(CvtFirsts, "MMDD"),
+                            "A",    SameDay * SameMonth,
                             "S",    SameDay * 
                                         (MOD( MONTH( CvtDates), SemiAnnually) = MOD( MONTH( CvtFirsts), SemiAnnually)),
                             "Q",    SameDay *
@@ -228,7 +233,7 @@ OverLapDaysλ = LAMBDA(
                         "Period1Start   →(Required) First period's start date.¶" & 
                         "Period1End     →(Required) First period's end date.¶" & 
                         "Period2Start   →(Required) Second period's start date.¶" & 
-                        "Period2End     →(Required) Decond period's end date.¶" & 
+                        "Period2End     →(Required) Second period's end date.¶" & 
                         "EXAMPLES:      →¶" & 
                         "Result         →Formula (oz is assumed to be the module's name)¶" &
                         "5              →=oz.OverLapDaysλ(08, 14, 10, 17)¶" & 
@@ -315,7 +320,8 @@ PeriodLabelλ = LAMBDA(
         Result,     SWITCH(Interval,
                         "D", TEXT(CvtDate, "yyyy-mmm-dd"),
                         "W", YEAR(CvtDate) & ":W" & TEXT(QUOTIENT(CvtDate - DATE(YEAR(CvtDate), 1, 0) - 1, 7) + 1, "00"),
-                        "I", YEAR(CvtDate) & ":W" & TEXT(ISOWEEKNUM(CvtDate), "00"),
+                    //  The ISO year is the year of the week's Thursday, not the calendar year
+                        "I", YEAR(CvtDate + 4 - WEEKDAY(CvtDate, 2)) & ":W" & TEXT(ISOWEEKNUM(CvtDate), "00"),
                         "M", TEXT(CvtDate, "YYYY-MMM"),
                         "Q", YEAR(CvtDate) & ":Q" & QUOTIENT(MONTH(CvtDate) - 1, 3) + 1,
                         "S", YEAR(CvtDate) & ":S" & QUOTIENT(MONTH(CvtDate) - 1, 6) + 1,
@@ -341,16 +347,18 @@ Periodsλ = LAMBDA(
 //  Help
         Help,       TRIM(TEXTSPLIT( 
                         "FUNCTION:      →Periodsλ(Starts, Ends, [Intervals])¶" &
-                        "DESCRIPTION:   →Determine the number of periods from date1 to date 2 inclusive.¶" &
-                                       "→Differences to Excel4.0's DateDif are:¶" & 
+                        "DESCRIPTION:   →Determine the number of periods from Starts to Ends inclusive.¶" &
+                                       "→Differences to Excel's DATEDIF are:¶" & 
                                        "→* Interval includes Weeks & Quarters¶" & 
                                        "→* Counts the period starts crossed, so a part period at the end counts¶" & 
-                                       "→* Returns negative values if Date1 is after Date2¶" & 
+                                       "→* Returns negative values if Starts is after Ends¶" & 
                         "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
                         "PARAMETERS:    →¶" &
-                        "Starts         →(Required) First date (normally older). This can be a single number or array.¶" &
-                        "Ends           →(Required) Second date (normally newer). This must be the same shape (# of rows & columns) as Date1.¶" &
-                        "Intervals      →(Optional) Days, Weeks, Months (default), Quarters, or Years (D, W, M, Q, Y)¶" &
+                        "Starts         →(Required) First date (normally older). A single date or an array of dates.¶" &
+                        "Ends           →(Required) Second date (normally newer). A single date or an array the same shape as Starts.¶" &
+                                       "→A single Starts or Ends is applied to every date in the other.¶" &
+                        "Intervals      →(Optional) Days, Weeks, Months (default), Quarters, or Years (D, W, M, Q, Y).¶" &
+                                       "→One code, or an array of codes the same shape as the dates.¶" &
                         "EXAMPLES:      →¶" & 
                         "Result         →Formula (oz is assumed to be the module's name)¶" &
                         "2              →=oz.Periodsλ(""31/7/2026"", ""15/9/2026"")¶" &
@@ -380,33 +388,23 @@ Periodsλ = LAMBDA(
         DPW, 7,     //Days Per Week
         WPY, 53,    //Week labels Per Year: the last one runs 1 or 2 days
         QPY, 4,     //Quarters Per Year
-    //  Procedure
-        Rows,       MAX( ROWS( CvtStarts), ROWS( CvtEnds)), 
-        Cols,       MAX( COLUMNS( CvtStarts), COLUMNS( CvtEnds)), 
-        Result,     MAKEARRAY(Rows, Cols, 
-                        LAMBDA(R, C, 
-                            LET(DateOne,    IF( COUNTA( CvtStarts) = 1, CvtStarts, INDEX( CvtStarts, R, C)), 
-                                DateTwo,    IF( COUNTA( CvtEnds) = 1, CvtEnds, INDEX( CvtEnds, R, C)),
-                                Interval,   IF( COUNTA( Intervals) = 1, Intervals, INDEX( Intervals, R, C)),
-                                Earliest,   MIN(DateOne, DateTwo),
-                                Latest,     MAX(DateOne, DateTwo),
-                                Sign,       SIGN(DateTwo - DateOne),
-                                Periods,    Switch(Interval,   
-                                                "D", Latest - Earliest,
-                                                "W", WPY * (YEAR(Latest) - YEAR(Earliest))
-                                                     + QUOTIENT(Latest   - DATE(YEAR(Latest),   1, 0) - 1, DPW)
-                                                     - QUOTIENT(Earliest - DATE(YEAR(Earliest), 1, 0) - 1, DPW),
-                                                "M", MPY * (YEAR(Latest) - YEAR(Earliest))
-                                                     + MONTH(Latest) - MONTH(Earliest),
-                                                "Q", QPY * (YEAR(Latest) - YEAR(Earliest))
-                                                     + QUOTIENT(MONTH(Latest)   - 1, MPQ)
-                                                     - QUOTIENT(MONTH(Earliest) - 1, MPQ),
-                                                "Y", YEAR(Latest) - YEAR(Earliest)
-                                            ),
-                                Sign * Periods
-                            )
-                        )
-                    ),        
+    //  Procedure - every step lifts over arrays, so a single date or code applies to all
+        Earliest,   IF( CvtStarts <= CvtEnds, CvtStarts, CvtEnds),
+        Latest,     IF( CvtStarts <= CvtEnds, CvtEnds, CvtStarts),
+        Sign,       SIGN( CvtEnds - CvtStarts),
+        Years,      YEAR( Latest) - YEAR( Earliest),
+        Periods,    ( Intervals = "D") * ( Latest - Earliest)
+                  + ( Intervals = "W") * ( WPY * Years
+                                           + QUOTIENT( Latest   - DATE( YEAR( Latest),   1, 0) - 1, DPW)
+                                           - QUOTIENT( Earliest - DATE( YEAR( Earliest), 1, 0) - 1, DPW))
+                  + ( Intervals = "M") * ( MPY * Years + MONTH( Latest) - MONTH( Earliest))
+                  + ( Intervals = "Q") * ( QPY * Years
+                                           + QUOTIENT( MONTH( Latest)   - 1, MPQ)
+                                           - QUOTIENT( MONTH( Earliest) - 1, MPQ))
+                  + ( Intervals = "Y") * Years,
+    //  An unknown interval code is an error, not a nought
+        Known,      IF( ISNUMBER( XMATCH( Intervals, {"D","W","M","Q","Y"}, 0)), 1, #N/A),
+        Result,     Sign * Periods * Known,
     //  Return Result
         CHOOSE( Help? + 1, Result, Help)
     )
@@ -471,7 +469,6 @@ ScheduleRatesByItemsλ = LAMBDA(
     [ItemList],
     [EffectiveList],
     [RateList],
-    [DoNotUse], 
 //  Help
     LET(
         Help,       TRIM(TEXTSPLIT(
@@ -481,17 +478,17 @@ ScheduleRatesByItemsλ = LAMBDA(
                                        "→only the last rate will be selected.¶" & 
                         "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
                         "PARAMETERS:    →¶" & 
-                        "PeriodEnds     →(Required) A row or column of period end dates (timeline).¶" & 
-                        "ItemFilter     →(Required) 1 or more items to filter a rate schedule by. ¶" &
+                        "PeriodEnds     →(Required) A row of period end dates (timeline).¶" & 
+                        "ItemFilter     →(Required) A column of 1 or more items to filter a rate schedule by. ¶" &
                         "               →A 'rate schedule' is a table/list where each row contains a unique item/effective date pair with a rate.¶" &
+                                       "→An item with no rate in the schedule scores nought in every period.¶" &
                         "ItemList       →(Required) Items in a rate schedule.¶" & 
                         "EffectiveList  →(Required) Effective dates in the rate schedule.¶" & 
                         "RateList       →(Required) Rates in a rate schedule for each item/effective date pair.¶" & 
-                        "DoNotUse       →This is a counter used internally. Do not make any entry.¶" & 
                         "EXAMPLES:      →¶" & 
                         "Result         →Formula (oz is assumed to be the module's name)¶" &
-                                       "→oz.ScheduleRatesByItemsλ( Timelineλ( ""1/7/2026""), UNIQUE( tblRates(Unit)),¶" &
-                                       "→tblRates[Unit], tblRates[Rent], tblRates[Effective])", 
+                                       "→=oz.ScheduleRatesByItemsλ( oz.Timelineλ( ""1/7/2026""), UNIQUE( tblRates[Unit]),¶" &
+                                       "→tblRates[Unit], tblRates[Effective], tblRates[Rent])", 
                         "→", "¶"
                             )
                         ),
@@ -504,7 +501,6 @@ ScheduleRatesByItemsλ = LAMBDA(
                             ISOMITTED( RateList)
                         ),
     //  Check inputs - Set optional arguments' defaults and apply convenience conversions
-        DoNotUse,       IF( ISOMITTED( DoNotUse), 1, DoNotUse),
         CvtPrdEnds,     IF( ISOMITTED( PeriodEnds), 
                             FALSE,
                             IF( ISNUMBER( PeriodEnds), PeriodEnds, DATEVALUE( PeriodEnds))
@@ -513,18 +509,21 @@ ScheduleRatesByItemsλ = LAMBDA(
                             FALSE,
                             IF( ISNUMBER( EffectiveList), EffectiveList, DATEVALUE( EffectiveList))
                         ),
-    //  Procedure
-        Counts,         COUNTA( ItemFilter),
-        Item,           INDEX( ItemFilter, DoNotUse),
-        ItemDates,      FILTER( CvtEffDates, ItemList = Item), 
-        ItemRates,      FILTER( RateList, ItemList = Item), 
-        NewRow,         XLOOKUP( CvtPrdEnds, ItemDates, ItemRates, 0, -1),
-        Result,         IF( DoNotUse >= Counts, 
-                            NewRow, 
-                            VSTACK( 
-                                NewRow, 
-                                ScheduleRatesByItemsλ( CvtPrdEnds, ItemFilter, ItemList, CvtEffDates, RateList, DoNotUse + 1 )
-                            )
+    //  Procedure - one row per item, each the latest rate in force at every period end.
+    //  An item with no rows in the schedule keeps a placeholder date no period can reach,
+    //  so it scores nought rather than #CALC!.
+        Items,          TOCOL( ItemFilter),
+        Result,         DROP( 
+                            REDUCE( 0, SEQUENCE( ROWS( Items)),
+                                LAMBDA( Acc, Row,
+                                    LET(Item,       INDEX( Items, Row),
+                                        ItemDates,  FILTER( CvtEffDates, ItemList = Item, -1), 
+                                        ItemRates,  FILTER( RateList, ItemList = Item, 0), 
+                                        VSTACK( Acc, XLOOKUP( CvtPrdEnds, ItemDates, ItemRates, 0, -1))
+                                    )
+                                )
+                            ),
+                            1
                         ),
     //  Return Result
         CHOOSE( Help? + 1, Result, Help)
@@ -548,10 +547,10 @@ ScheduleValuesλ = LAMBDA(
                         "DESCRIPTION:   →Place values from a table into a timeline's appropriate period.¶" & 
                         "WEBSITE:       →https://github.com/ryanduguid/Ozzit ¶" &
                         "PARAMETERS:    →¶" & 
-                        "PeriodStarts   →(Required) A column or row of period start dates (timeline).¶" & 
-                        "PeriodEnds     →(Required) A column or row of period ends dates (timeline).¶" & 
+                        "PeriodStarts   →(Required) A row of period start dates (timeline).¶" & 
+                        "PeriodEnds     →(Required) A row of period end dates (timeline).¶" & 
                         "Values         →(Required) A column or row of values to be scheduled.¶" & 
-                        "EffectiveDates →(Required) A column or row of when a value is scheduled.¶" &                   
+                        "EffectiveDates →(Required) When each value is scheduled, in the same orientation as Values.¶" &                   
                         "EXAMPLES:→¶" &
                         "Result         →Formula (oz is assumed to be the module's name)¶" &
                                        "→=oz.ScheduleValuesλ(Timelineλ(""1/7/2026""), Timelineλ(""1/7/2026"",,,FALSE), {1;3}, {""1/7/2026""; ""15/8/2026""})", 
@@ -604,7 +603,6 @@ ScheduleValuesByItemsλ = LAMBDA(
     [ItemList],
     [EffectiveList],
     [ValueList],
-    [DoNotUse],
     LET(
 //  Help
         Help,       TRIM(TEXTSPLIT( 
@@ -619,11 +617,11 @@ ScheduleValuesByItemsλ = LAMBDA(
                         "ItemList       →(Required) Items in a value schedule.¶" & 
                         "EffectiveList  →(Required) Effective dates in the value schedule.¶" & 
                         "ValueList      →(Required) Values in a value schedule for each item/effective date pair.¶" & 
-                        "DoNotUse       →This is a counter used internally. Do not make any entry.¶" & 
+                                       "→An item with no rows in the schedule totals nought in every period.¶" & 
                         "EXAMPLES:      →¶" & 
                         "Result         →Formula (oz is assumed to be the module's name)¶" &
-                                       "→oz.ScheduleValuesByItemsλ( Timelineλ( ""1/7/2026""),  Timelineλ( ""1/7/2026"",,,FALSE), ¶" & 
-                                       "→UNIQUE( tblExp(Items)), tblExp[Items], tblExp[Dates], tblExp[Amount])", 
+                                       "→=oz.ScheduleValuesByItemsλ( oz.Timelineλ( ""1/7/2026""),  oz.Timelineλ( ""1/7/2026"",,,FALSE), ¶" & 
+                                       "→UNIQUE( tblExp[Items]), tblExp[Items], tblExp[Dates], tblExp[Amount])", 
                         "→", "¶"
                         )
                     ),
@@ -636,7 +634,6 @@ ScheduleValuesByItemsλ = LAMBDA(
                             ISOMITTED( ValueList)
                         ),
     //  Check inputs - Set optional arguments' defaults and apply convenience conversions
-        Counter,        IF( ISOMITTED( DoNotUse), 1, DoNotUse),
         CvtPrdStarts,   IF( ISOMITTED( PeriodStarts), 
                             FALSE,
                             IF( ISNUMBER( PeriodStarts), PeriodStarts, DATEVALUE( PeriodStarts))
@@ -649,21 +646,12 @@ ScheduleValuesByItemsλ = LAMBDA(
                             FALSE,
                             IF( ISNUMBER( EffectiveList), EffectiveList, DATEVALUE( EffectiveList))
                         ),   
-    //  Procedure
-        Counts,         COUNTA( ItemFilter),
-        Item,           INDEX( ItemFilter, Counter),
-        ItemDates,      FILTER( CvtEffDates, ItemList = Item), 
-        ItemValues,     FILTER( ValueList, ItemList = Item), 
-        Array,          (ItemDates >= CvtPrdStarts) * (ItemDates <= CvtPrdEnds) * ItemValues,
-        NewRow,         BYCOL( Array, LAMBDA( Column, SUM( Column))),
-        Result,         IF( Counter >= Counts, 
-                            NewRow, 
-                            VSTACK( 
-                                NewRow, 
-                                ScheduleValuesByItemsλ( CvtPrdStarts, CvtPrdEnds, 
-                                    ItemFilter, ItemList, CvtEffDates, ValueList, Counter + 1 )
-                            )
-                        ),
+    //  Procedure - one matrix product: which schedule rows belong to each item, times
+    //  which period each schedule row falls in, carrying its value
+        Items,          TOCOL( ItemFilter),
+        Belongs,        ( Items = TOROW( ItemList)) * ( Items <> ""),
+        Falls,          ( TOCOL( CvtEffDates) >= CvtPrdStarts) * ( TOCOL( CvtEffDates) <= CvtPrdEnds) * TOCOL( ValueList),
+        Result,         MMULT( Belongs, Falls),
     //  Return Result
         CHOOSE( Help? + 1, Result, Help)
     )
@@ -744,7 +732,7 @@ FinancialYearλ = LAMBDA(
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" &
-                            "Dates          →(Required) One or more dates.¶" &
+                            "Dates          →(Required) One or more dates, numeric or text. A blank cell returns a blank.¶" &
                             "StartMonth     →(Optional: Default = 7) Month the financial year starts.¶" &
                             "EXAMPLES:      →¶" &
                             "→Formula (oz is assumed to be the module's name)¶" &
@@ -757,8 +745,13 @@ FinancialYearλ = LAMBDA(
         Help?,          ISOMITTED(Dates),
     //  Set defaults
         FYStart,        IF(ISOMITTED(StartMonth), 7, StartMonth),
+    //  Check inputs - apply convenience conversions. A blank cell stays blank, a text date is read
+        CvtDates,       IF( ISOMITTED( Dates),
+                            FALSE,
+                            IF( ISNUMBER( Dates), Dates, IF( Dates = "", 0, DATEVALUE( Dates)))
+                        ),
     //  Multiply rather than AND, which would collapse a range of dates to one answer
-        Result,         IF(N(Dates)=0, "", "FY" & TEXT(YEAR(Dates) + (FYStart>1) * (MONTH(Dates) >= FYStart), "0000")),
+        Result,         IF(CvtDates = 0, "", "FY" & TEXT(YEAR(CvtDates) + (FYStart>1) * (MONTH(CvtDates) >= FYStart), "0000")),
     //  Return Result or Help
         CHOOSE( Help? + 1, Result, Help)
     )
