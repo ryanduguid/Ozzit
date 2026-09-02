@@ -34,11 +34,14 @@ definitions that changed over the defined names that ship, sets each Name Manage
 comment from the source header, and with `--index` regenerates `functions.csv`. The
 compiler never touches a cached value: a change that alters what a demonstration cell
 computes still needs `tools/refresh_cache.py`, and `tools/verify_cache.py` is the gate
-that proves it. `--check` reports what would change without writing. The one result
-that needs no formula engine is the help itself: `refresh_help_spills.py` recomputes
-the table each demonstration sheet's `=oz.Nameλ()` anchor spills, the way TRIM and
-TEXTSPLIT would, and rewrites the cells caching it, so a help change reads correctly
-on open and the cached-value gate has nothing to report.
+that proves it. `--check` reports what would change without writing. The help is the one
+result no formula engine is needed to compute: `refresh_help_spills.py` recomputes the
+table each demonstration sheet's `=oz.Nameλ()` anchor spills, the way TRIM and TEXTSPLIT
+would, and rewrites the cells caching it, the same narrow exception the help-corrections
+pass makes for its two spilled example rows. That is a text pass, not recalculation
+evidence: AGENTS.md reserves cached values for Excel-backed evidence, so a workbook this
+pass has touched is not a release candidate until `tools/verify_cache.py` has confirmed,
+in Excel, every cell it wrote.
 
 `remove_residue.py` drops what nothing in the workbook reads (the hidden FMTs sheet, the
 per-sheet custom properties, the stale custom-function declaration on the Excel Labs
