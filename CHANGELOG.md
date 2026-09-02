@@ -81,15 +81,16 @@ to be run on the candidate; Excel was not available where this change was made.
   character limit included) and regenerates `functions.csv`. Run before every other
   view; on the tracked sources it reproduces all 134 stored definitions without a
   change.
-- **`tools/postbuild/refresh_help_spills.py` added.** The help a demonstration sheet's
-  `=oz.Nameλ()` anchor spills is the one result that needs no formula engine, so a help
-  change no longer leaves a stale table in the cache: the pass models TRIM and
-  TEXTSPLIT over the stored literal and rewrites the cells the spill covers, growing or
-  shrinking the range. On the 33 helps that did not change it reproduces Excel's own
-  cache exactly, which is what proves the model; the ten that changed are refreshed. It
-  follows the narrow exception the help-corrections pass already made for its two spilled
-  example rows, and it is text, not recalculation evidence: `tools/verify_cache.py` still
-  has to confirm those cells in Excel before the workbook is a release candidate.
+- **`tools/verify_help_spills.py` added.** The help a demonstration sheet's `=oz.Nameλ()`
+  anchor spills is the one result that can be predicted without a formula engine, and
+  nothing in the CI sequence looked at its cache: a help change compiled into the workbook
+  left the old table on the sheet until Excel recalculated, and only `verify_cache.py`,
+  which needs Excel, could say so. The tool models TRIM and TEXTSPLIT over the stored
+  literal and reports every cached help that no longer matches its definition. It only
+  reads: a stale help is refreshed by `tools/refresh_cache.py` in Excel, as the
+  cached-value rule requires, and the ten helps this release changed are stale until that
+  runs. On every other anchor the model reproduces Excel's own cache exactly, which is
+  what proves it.
 
 ### The native self-test covers every function
 

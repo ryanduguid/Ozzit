@@ -14,7 +14,6 @@ python tools/postbuild/gst_help_text.py ozzit.xlsx src
 python tools/postbuild/strip_revision_history.py ozzit.xlsx src
 python tools/postbuild/help_corrections.py ozzit.xlsx src
 python tools/compile_sources.py ozzit.xlsx src --index=functions.csv
-python tools/postbuild/refresh_help_spills.py ozzit.xlsx
 python tools/postbuild/remove_residue.py ozzit.xlsx
 python tools/sync_afe_store.py ozzit.xlsx src
 python tools/generate_selftest_examples.py src
@@ -34,14 +33,12 @@ definitions that changed over the defined names that ship, sets each Name Manage
 comment from the source header, and with `--index` regenerates `functions.csv`. The
 compiler never touches a cached value: a change that alters what a demonstration cell
 computes still needs `tools/refresh_cache.py`, and `tools/verify_cache.py` is the gate
-that proves it. `--check` reports what would change without writing. The help is the one
-result no formula engine is needed to compute: `refresh_help_spills.py` recomputes the
-table each demonstration sheet's `=oz.Nameλ()` anchor spills, the way TRIM and TEXTSPLIT
-would, and rewrites the cells caching it, the same narrow exception the help-corrections
-pass makes for its two spilled example rows. That is a text pass, not recalculation
-evidence: AGENTS.md reserves cached values for Excel-backed evidence, so a workbook this
-pass has touched is not a release candidate until `tools/verify_cache.py` has confirmed,
-in Excel, every cell it wrote.
+that proves it. `--check` reports what would change without writing. A help change is a
+cached-value change too: the table each demonstration sheet's `=oz.Nameλ()` anchor spills
+is cached on the sheet, and the compiler leaves that cache as Excel last wrote it.
+`tools/verify_help_spills.py` reports, without Excel, which cached helps no longer match
+their definitions; `tools/refresh_cache.py` in Excel is what refreshes them, and
+`tools/verify_cache.py` proves the result.
 
 `remove_residue.py` drops what nothing in the workbook reads (the hidden FMTs sheet, the
 per-sheet custom properties, the stale custom-function declaration on the Excel Labs

@@ -26,7 +26,6 @@ XML_PASSES = [
     (TOOLS / "postbuild" / "aasb16_leases.py", True),
     (TOOLS / "postbuild" / "help_corrections.py", True),
     (TOOLS / "postbuild" / "remove_residue.py", False),
-    (TOOLS / "postbuild" / "refresh_help_spills.py", False),
 ]
 
 
