@@ -146,7 +146,12 @@ def unwrap_single(s: str) -> str:
 
 
 def canonical(formula: str) -> str:
-    """Whitespace-free, upper-cased outside strings, in the typed form."""
+    """Upper-cased and whitespace-free outside strings, in the typed form.
+
+    A string literal is kept exactly: its whitespace is its own text, so "a b" and
+    "ab" are different definitions and a source that differs from the workbook only
+    inside a literal is still a mismatch.
+    """
     formula = OPTIONAL.sub(r"[\1]", formula)          # BEFORE the generic prefix strip
     formula = PREFIX.sub("", formula).replace("[0]!", "")
     parts, i, n = [], 0, len(formula)
@@ -154,7 +159,7 @@ def canonical(formula: str) -> str:
         c = formula[i]
         if c == '"':
             lit, i = read_string(formula, i)
-            parts.append(re.sub(r"\s+", "", lit))
+            parts.append(lit)
             continue
         if not c.isspace():
             parts.append(c.upper())

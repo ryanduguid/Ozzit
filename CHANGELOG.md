@@ -86,7 +86,10 @@ to be run on the candidate; Excel was not available where this change was made.
   change no longer leaves a stale table in the cache: the pass models TRIM and
   TEXTSPLIT over the stored literal and rewrites the cells the spill covers, growing or
   shrinking the range. On the 33 helps that did not change it reproduces Excel's own
-  cache exactly, which is what proves the model; the ten that changed are refreshed.
+  cache exactly, which is what proves the model; the ten that changed are refreshed. It
+  follows the narrow exception the help-corrections pass already made for its two spilled
+  example rows, and it is text, not recalculation evidence: `tools/verify_cache.py` still
+  has to confirm those cells in Excel before the workbook is a release candidate.
 
 ### The native self-test covers every function
 

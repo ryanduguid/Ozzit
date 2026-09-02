@@ -188,21 +188,19 @@ def sanitise(workbook: Path) -> list[str]:
     # Session state: who saved, when, from what window, with which build.
     session = 0
     core = parts["docProps/core.xml"].decode("utf-8")
+    # The last editor becomes the creator when the file names one and is dropped
+    # when it does not; the save time is pinned either way.
     creator = re.search(r"<dc:creator>([^<]*)</dc:creator>", core)
-    if creator:
-        new_core = re.sub(
-            r"<cp:lastModifiedBy>[^<]*</cp:lastModifiedBy>",
-            f"<cp:lastModifiedBy>{creator.group(1)}</cp:lastModifiedBy>",
-            core,
-        )
-        new_core = re.sub(
-            r'(<dcterms:modified xsi:type="dcterms:W3CDTF">)[^<]*(</dcterms:modified>)',
-            rf"\g<1>{FIXED_STAMP}\2",
-            new_core,
-        )
-        if new_core != core:
-            parts["docProps/core.xml"] = new_core.encode("utf-8")
-            session += 1
+    editor = f"<cp:lastModifiedBy>{creator.group(1)}</cp:lastModifiedBy>" if creator else ""
+    new_core = re.sub(r"<cp:lastModifiedBy>[^<]*</cp:lastModifiedBy>", lambda _m: editor, core)
+    new_core = re.sub(
+        r'(<dcterms:modified xsi:type="dcterms:W3CDTF">)[^<]*(</dcterms:modified>)',
+        rf"\g<1>{FIXED_STAMP}\2",
+        new_core,
+    )
+    if new_core != core:
+        parts["docProps/core.xml"] = new_core.encode("utf-8")
+        session += 1
     wb = parts["xl/workbook.xml"].decode("utf-8")
     new_wb = re.sub(r"<xr:revisionPtr\b[^>]*/>", "", wb)
     new_wb = re.sub(

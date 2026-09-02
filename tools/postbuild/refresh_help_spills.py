@@ -23,6 +23,12 @@ Every anchor whose cache already matches is left alone, so a second run reports
 pass recomputes for an unchanged function reproduces Excel's own cache, which is
 what proves the model of TRIM and TEXTSPLIT here. Pure text surgery: no COM, no
 recalculation, and no other cell is read or written.
+
+This is a text pass, not recalculation evidence. AGENTS.md reserves cached-value
+changes for Excel-backed evidence; this pass follows only the narrow precedent
+help_corrections.py set for the deterministic text under a help anchor, and a
+workbook it has touched is not a release candidate until tools/verify_cache.py
+has confirmed, in Excel, every cell it wrote.
 """
 
 from __future__ import annotations

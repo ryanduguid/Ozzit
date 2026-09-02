@@ -386,13 +386,28 @@ def xml_escape(text: str) -> str:
 
 
 def tight(formula: str) -> str:
-    """The stored form with no whitespace and no workbook-scope markers.
+    """The stored form with no whitespace between tokens and no workbook-scope markers.
 
-    Runs of whitespace inside help literals are what TRIM() removes when the help is
-    read, and [0]! is how Excel marks a name it resolved in this workbook; neither
-    is a difference worth rewriting a definition for.
+    Whitespace between tokens is layout, and [0]! is how Excel marks a name it
+    resolved in this workbook; neither is a difference worth rewriting a definition
+    for. Whitespace inside a string literal is the literal's own text and counts:
+    "a b" and "ab" are different definitions.
     """
-    return re.sub(r"\s+", "", formula).replace("[0]!", "")
+    out: list[str] = []
+    code: list[str] = []
+    i, n = 0, len(formula)
+    while i < n:
+        if formula[i] == '"':
+            out.append("".join(code).replace("[0]!", ""))
+            code = []
+            lit, i = read_string(formula, i)
+            out.append(lit)
+            continue
+        if not formula[i].isspace():
+            code.append(formula[i])
+        i += 1
+    out.append("".join(code).replace("[0]!", ""))
+    return "".join(out)
 
 
 # --------------------------------------------------------------------------- #
