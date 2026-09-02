@@ -1,20 +1,408 @@
-//  Debt module - debt sculpting and amortisation functions
-//  Exported from the workbook's defined names. These are recursive and are not part
-//  of the Advanced Formula Environment project store, so import them by pasting each
-//  definition into Name Manager rather than through the AFE module importer.
+/*  Module Contains Ozzit Compliant LAMBDAs for debt sculpting and amortisation.
+    Every schedule solves its closing balances with SCAN, one period after another, so
+    nothing here recurses and the module is held in the Advanced Formula Environment
+    store with the other five. */
 
-AmortiseBλ =
-LAMBDA([Principal],[APR],[Term],[ModelPeriods],[StartPeriod],[MonthsPerPeriod],[DoNotUse], LET(Help, TRIM(TEXTSPLIT("DESCRIPTION:   →Creates an amortisation schedule for a debt/loan¶" & "ROW CONTENTS:  →Opening Balance¶" & "               →Interest Portion¶" & "               →Repayment¶" & "               →Closing Balance¶" & "               →Principal Portion¶" & "VERSION:       →20 Aug 2026¶" & "PARAMETERS:→¶" & "Principal      →(Required) Principal opening balance.¶" & "APR            →(Required) APR¶" & "Term           →(Required) Number of periods to pay off debt¶" & "ModelPeriods   →(Required) Number of model periods¶" & "StartPeriod    →(Optional) Period when debt is issued. Defaults to 1.¶" & "MonthsPerPeriod→(Optional) Number of months in each period. Defaults to 1.¶" & "DoNotUse       →DO NOT USE - Internal use only (Period Counter)¶" & "→¶" & "EXAMPLES:      →AmortiseBλ(10000, 3%, 48, 60)", "→", "¶")), ErrMsgs, {"Principal must be a single number providing the opening debt amount.";"APR must be a single number providing annual percentage rate for interest.";"Term must be a single number providing the number of periods to pay off the debt";"Model Periods must be a single number providing the number of periods in this model."}, Principal, IF(ISNUMBER(Principal), Principal, #VALUE!), APR, IF(ISNUMBER(APR), APR, #VALUE!), Term, IF(ISNUMBER(Term), Term, #VALUE!), ModelPeriods, IF(ISNUMBER(ModelPeriods), ModelPeriods, #VALUE!), StartPeriod, IF(ISNUMBER(StartPeriod), StartPeriod, 1), MonthsPerPeriod, IF(ISNUMBER(MonthsPerPeriod), MonthsPerPeriod, 1), Errors, VSTACK(ISERROR(Principal), ISERROR(APR), ISERROR(Term), ISERROR(ModelPeriods)), Messages, FILTER(ErrMsgs, Errors, ""), Period, IF(DoNotUse = 0, 1, DoNotUse), Rate, APR / 12 * MonthsPerPeriod, RemainingTerm, IF(Period < StartPeriod, 0, MAX(Term - Period + StartPeriod, 0)), Payment, IF(RemainingTerm = 0, 0, -PMT(Rate, RemainingTerm, Principal)), OpeningBalance, IF(RemainingTerm = 0, 0, Principal), InterestPortion, OpeningBalance * Rate, NewPayment, IF(Period < StartPeriod, 0, MIN(Payment, OpeningBalance + InterestPortion)), PrincipalPortion, NewPayment - InterestPortion, ClosingBalance, OpeningBalance + InterestPortion - NewPayment, NewColumn, VSTACK(OpeningBalance, InterestPortion, NewPayment, ClosingBalance, PrincipalPortion), Result, IF(Period = ModelPeriods, NewColumn, HSTACK(NewColumn, oz.AmortiseBλ(IF(Period < StartPeriod, Principal, ClosingBalance), APR, Term, ModelPeriods, StartPeriod, MonthsPerPeriod, Period + 1))), Error, IF(AND(Errors), 2, IF(OR(Errors), 3, IF(OR(ISERROR(Result)), 2, 1))), CHOOSE(Error, Result, Help, Messages)));
+/*  FUNCTION NAME:  AmortiseBλ
+    DESCRIPTION:*//**Creates an amortisation schedule for a debt/loan across a model's periods*/
+AmortiseBλ = LAMBDA(
+//  Parameter Declarations
+    [Principal],
+    [APR],
+    [Term],
+    [ModelPeriods],
+    [StartPeriod],
+    [MonthsPerPeriod],
+//  Help
+    LET(Help,       TRIM(TEXTSPLIT(
+                        "FUNCTION:      →AmortiseBλ(Principal, APR, Term, ModelPeriods, [StartPeriod], [MonthsPerPeriod])¶" &
+                        "DESCRIPTION:   →Creates an amortisation schedule for a debt/loan across a model's periods.¶" &
+                        "ROW CONTENTS:  →Opening Balance¶" &
+                        "               →Interest Portion¶" &
+                        "               →Repayment¶" &
+                        "               →Closing Balance¶" &
+                        "               →Principal Portion¶" &
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                        "VERSION:       →20 Aug 2026¶" &
+                        "PARAMETERS:    →¶" &
+                        "Principal      →(Required) Principal opening balance.¶" &
+                        "APR            →(Required) Annual percentage rate.¶" &
+                        "Term           →(Required) Number of periods to pay off the debt.¶" &
+                        "ModelPeriods   →(Required) Number of model periods.¶" &
+                        "StartPeriod    →(Optional) Period when the debt is issued. Defaults to 1.¶" &
+                        "MonthsPerPeriod→(Optional) Number of months in each period. Defaults to 1.¶" &
+                        "EXAMPLES:      →¶" &
+                        "Result         →Formula (oz is assumed to be the module's name)¶" &
+                        "5 rows, 60 cols→=oz.AmortiseBλ(10000, 3%, 48, 60)",
+                        "→", "¶"
+                        )
+                    ),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR( ISOMITTED( Principal),
+                            ISOMITTED( APR),
+                            ISOMITTED( Term),
+                            ISOMITTED( ModelPeriods)
+                        ),
+    //  Check inputs - Errors in argument values
+        ErrMsgs,        {"Principal must be a single number providing the opening debt amount.";
+                         "APR must be a single number providing annual percentage rate for interest.";
+                         "Term must be a single number providing the number of periods to pay off the debt";
+                         "Model Periods must be a single number providing the number of periods in this model."},
+        Errors,         VSTACK( NOT( ISNUMBER( Principal)),
+                                NOT( ISNUMBER( APR)),
+                                NOT( ISNUMBER( Term)),
+                                NOT( ISNUMBER( ModelPeriods))
+                        ),
+        Messages,       FILTER( ErrMsgs, Errors, ""),
+    //  Check inputs - Set optional arguments' defaults
+        StartPeriod,    IF( ISNUMBER( StartPeriod), StartPeriod, 1),
+        MonthsPerPeriod, IF( ISNUMBER( MonthsPerPeriod), MonthsPerPeriod, 1),
+    //  Procedure - solve the closing balance period by period, then read the rows off it.
+    //  Before the start period the balance is carried untouched; from it, each period pays
+    //  the level payment for the term that remains, capped at the balance plus interest.
+        Rate,           APR / 12 * MonthsPerPeriod,
+        Periods,        SEQUENCE( 1, ModelPeriods),
+        Closings,       SCAN( Principal, Periods,
+                            LAMBDA( Carried, Period,
+                                LET(Remaining,  IF( Period < StartPeriod, 0, MAX( Term - Period + StartPeriod, 0)),
+                                    Opening,    IF( Remaining = 0, 0, Carried),
+                                    Interest,   Opening * Rate,
+                                    Payment,    IF( Remaining = 0, 0, MIN( -PMT( Rate, Remaining, Opening), Opening + Interest)),
+                                    IF( Period < StartPeriod, Carried, Opening + Interest - Payment)
+                                )
+                            )
+                        ),
+        Carried,        IF( ModelPeriods = 1, Principal, HSTACK( Principal, DROP( Closings, , -1))),
+        Remaining,      IF( Periods < StartPeriod, 0, IF( Term - Periods + StartPeriod > 0, Term - Periods + StartPeriod, 0)),
+        Opening,        IF( Remaining = 0, 0, Carried),
+        Interest,       Opening * Rate,
+        Level,          IF( Remaining = 0, 0, -PMT( Rate, Remaining, Opening)),
+        Payment,        IF( Level < Opening + Interest, Level, Opening + Interest),
+        Closing,        Opening + Interest - Payment,
+        Portion,        Payment - Interest,
+        Result,         VSTACK( Opening, Interest, Payment, Closing, Portion),
+    //  Return Result, Help or the messages
+        Return,         IF( Help?, 2, IF( OR( Errors), 3, 1)),
+        CHOOSE( Return, Result, Help, Messages)
+    )
+);
 
-DebtSculptFixedλ =
-LAMBDA([OpeningBalance],[Debt],[CFADS],[DSCR],[APR],[MonthsPerPeriod],[DoNotUse], LET(Help, TRIM(TEXTSPLIT("DESCRIPTION:       →Creates a Debt Sculpting schedule where APR and DSCR are fixed for all periods¶" & "SUGGESTED ROW IDS: →Debt opening balance¶" & "                   →Interest on Principal Balance¶" & "                   →Debt service (interest and principal)¶" & "                   →Debt closing balance¶" & "VERSION:           →20 Aug 2026¶" & "PARAMETERS:→¶" & "OpeningBalance     →(Optional) Model's debt on opening. Defaults to 0¶" & "Debt               →(Required) New debt taken on for the period¶" & "CFADS              →(Required) Cash Flow Available for Debt Services¶" & "DSCR               →(Required) Debt Service Coverage Ratio¶" & "APR                →(Required) Interest's Annual Percentage Rate¶" & "MonthsPerPeriod    →(Optional) Defaults to one month per period.¶" & "DoNotUse           →This is required internally for counting period columns¶" & "→¶" & "EXAMPLES:          →=DebtSculptFixedλ(, Debt, CFADS, DSCR, APR)", "→", "¶")), ErrMsgs, {"Debt must be a dynamic array holding new debt (if any) in each period";"CFADS must be a dynamic array holding cash available for debt service in each period";"DSCR must be a single number holding debt service coverage ratio for all periods";"APR must be a single number holding interest's annual percentage rate for all periods"}, OpeningBalance, IF(ISNUMBER(OpeningBalance), OpeningBalance, 0), Debt, IF(COLUMNS(Debt) <= 1, #VALUE!, Debt), CFADS, IF(COLUMNS(CFADS) <= 1, #VALUE!, CFADS), DSCR, IF(AND(ISNUMBER(DSCR), COLUMNS(DSCR) = 1), DSCR, #VALUE!), APR, IF(AND(ISNUMBER(APR), COLUMNS(APR) = 1), APR, #VALUE!), MonthsPerPeriod, IF(ISNUMBER(MonthsPerPeriod), MonthsPerPeriod, 1), Period, IF(VALUE(DoNotUse) = 0, 1, DoNotUse), Errors, VSTACK(OR(ISERROR(Debt)), OR(ISERROR(CFADS)), OR(ISERROR(DSCR)), OR(ISERROR(APR))), Messages, FILTER(ErrMsgs, Errors, ""), ModelPeriods, COLUMNS(Debt), Rate, APR / 12 * MonthsPerPeriod, PeriodDebt, INDEX(Debt, 1, Period), PeriodCFADS, INDEX(CFADS, 1, Period), Principal, OpeningBalance + PeriodDebt, Interest, Principal * Rate, Payment, MIN(PeriodCFADS / DSCR, Principal + Interest), ClosingDebt, Principal + Interest - Payment, NewColumn, VSTACK(Principal, Interest, -Payment, ClosingDebt), Result, IF(Period = ModelPeriods, NewColumn, HSTACK(NewColumn, oz.DebtSculptFixedλ(ClosingDebt, Debt, CFADS, DSCR, APR, MonthsPerPeriod, Period + 1))), Return, IF(AND(Errors), 2, IF(OR(Errors), 3, IF(OR(ISERROR(Result)), 2, 1))), CHOOSE(Return, Result, Help, Messages)));
 
-DebtSculptVariableLRVλ =
-LAMBDA([OpeningBalance],[Debt],[CFADS],[DSCR],[APR],[MonthsPerPeriod],[DoNotUse], LET(Help, TRIM(TEXTSPLIT("DESCRIPTION:       →Creates a Debt Sculpting schedule where APR and DSCR is set for each period¶" & "SUGGESTED ROW IDS: →Debt opening balance¶" & "                   →Interest on Principal Balance¶" & "                   →Principal repayments¶" & "                   →Debt closing balance¶" & "VERSION:           →20 Aug 2026¶" & "PARAMETERS:→¶" & "OpeningBalance     →(Optional) Model's debt on opening. Defaults to 0¶" & "Debt               →(Required) New debt taken on for the period¶" & "CFADS              →(Required) Cash Flow Available for Debt Services¶" & "DSCR               →(Required) Debt Service Coverage Ratio¶" & "APR                →(Required) Interest's Annual Percentage Rate¶" & "MonthsPerPeriod    →(Optional) Defaults to one month per period.¶" & "DoNotUse           →This is required internally for counting period columns¶" & "→¶" & "EXAMPLE:           →=DebtSculptVariableLRVλ(, Debt, CFADS, DSCR, APR)", "→", "¶")), ErrMsgs, {"Debt must be a dynamic array holding new debt (if any) in each period";"CFADS must be a dynamic array holding cash available for debt service in each period";"DSCR must be a dynamic array holding debt service coverage ratio for each period";"APR must be a dynamic array holding interest's annual percentage rate for each period"}, OpeningBalance, IF(ISNUMBER(OpeningBalance), OpeningBalance, 0), Debt, IF(COLUMNS(Debt) <= 1, #VALUE!, Debt), CFADS, IF(COLUMNS(CFADS) <= 1, #VALUE!, CFADS), DSCR, IF(COLUMNS(DSCR) <= 1, #VALUE!, DSCR), APR, IF(COLUMNS(APR) <= 1, #VALUE!, APR), MonthsPerPeriod, IF(ISNUMBER(MonthsPerPeriod), MonthsPerPeriod, 1), Period, IF(DoNotUse = 0, 1, DoNotUse), Errors, VSTACK(OR(ISERROR(Debt)), OR(ISERROR(CFADS)), OR(ISERROR(DSCR)), OR(ISERROR(APR))), Messages, FILTER(ErrMsgs, Errors, ""), ModelPeriods, COLUMNS(Debt), Rate, APR / 12 * MonthsPerPeriod, PeriodRate, INDEX(Rate, 1, Period), PeriodDebt, INDEX(Debt, 1, Period), PeriodCFADS, INDEX(CFADS, 1, Period), PeriodDSCR, INDEX(DSCR, 1, Period), Principal, OpeningBalance + PeriodDebt, Interest, oz.InterestLRVλ(PeriodCFADS, PeriodDSCR, Principal, PeriodRate), Payment, MIN(PeriodCFADS / PeriodDSCR - Interest, Principal), ClosingDebt, Principal - Payment, NewColumn, VSTACK(Principal, Interest, -Payment, ClosingDebt), Result, IF(Period = ModelPeriods, NewColumn, HSTACK(NewColumn, oz.DebtSculptVariableLRVλ(ClosingDebt, Debt, CFADS, DSCR, APR, MonthsPerPeriod, Period + 1))), Return, IF(AND(Errors), 2, IF(OR(Errors), 3, IF(OR(ISERROR(Result)), 2, 1))), CHOOSE(Return, Result, Help, Messages)));
 
-DebtSculptVariableλ =
-LAMBDA([OpeningBalance],[Debt],[CFADS],[DSCR],[APR],[MonthsPerPeriod],[DoNotUse], LET(Help, TRIM(TEXTSPLIT("DESCRIPTION:       →Creates a Debt Sculpting schedule where APR and DSCR is set for each period¶" & "SUGGESTED ROW IDS: →Debt opening balance¶" & "                   →Interest on Principal Balance¶" & "                   →Debt service (interest and principal)¶" & "                   →Debt closing balance¶" & "VERSION:           →20 Aug 2026¶" & "PARAMETERS:→¶" & "OpeningBalance     →(Optional) Model's debt on opening. Defaults to 0¶" & "Debt               →(Required) New debt taken on for the period¶" & "CFADS              →(Required) Cash Flow Available for Debt Services¶" & "DSCR               →(Required) Debt Service Coverage Ratio¶" & "APR                →(Required) Interest's Annual Percentage Rate¶" & "MonthsPerPeriod    →(Optional) Defaults to one month per period.¶" & "DoNotUse           →This is required internally for counting period columns¶" & "→¶" & "EXAMPLE:           →=DebtSculptVariableλ(, Debt, CFADS, DSCR, APR)", "→", "¶")), ErrMsgs, {"Debt must be a dynamic array holding new debt (if any) in each period";"CFADS must be a dynamic array holding cash available for debt service in each period";"DSCR must be a dynamic array holding debt service coverage ratio for each period";"APR must be a dynamic array holding interest's annual percentage rate for each period"}, OpeningBalance, IF(ISNUMBER(OpeningBalance), OpeningBalance, 0), Debt, IF(COLUMNS(Debt) <= 1, #VALUE!, Debt), CFADS, IF(COLUMNS(CFADS) <= 1, #VALUE!, CFADS), DSCR, IF(COLUMNS(DSCR) <= 1, #VALUE!, DSCR), APR, IF(COLUMNS(APR) <= 1, #VALUE!, APR), MonthsPerPeriod, IF(ISNUMBER(MonthsPerPeriod), MonthsPerPeriod, 1), Period, IF(DoNotUse = 0, 1, DoNotUse), Errors, VSTACK(OR(ISERROR(Debt)), OR(ISERROR(CFADS)), OR(ISERROR(DSCR)), OR(ISERROR(APR))), Messages, FILTER(ErrMsgs, Errors, ""), ModelPeriods, COLUMNS(Debt), Rate, APR / 12 * MonthsPerPeriod, PeriodRate, INDEX(Rate, 1, Period), PeriodDebt, INDEX(Debt, 1, Period), PeriodCFADS, INDEX(CFADS, 1, Period), PeriodDSCR, INDEX(DSCR, 1, Period), Principal, OpeningBalance + PeriodDebt, Interest, Principal * PeriodRate, Payment, MIN(PeriodCFADS / PeriodDSCR, Principal + Interest), ClosingDebt, Principal + Interest - Payment, NewColumn, VSTACK(Principal, Interest, -Payment, ClosingDebt), Result, IF(Period = ModelPeriods, NewColumn, HSTACK(NewColumn, oz.DebtSculptVariableλ(ClosingDebt, Debt, CFADS, DSCR, APR, MonthsPerPeriod, Period + 1))), Return, IF(AND(Errors), 2, IF(OR(Errors), 3, IF(OR(ISERROR(Result)), 2, 1))), CHOOSE(Return, Result, Help, Messages)));
+/*  FUNCTION NAME:  DebtSculptFixedλ
+    DESCRIPTION:*//**Creates a debt sculpting schedule where APR and DSCR are fixed for all periods*/
+DebtSculptFixedλ = LAMBDA(
+//  Parameter Declarations
+    [OpeningBalance],
+    [Debt],
+    [CFADS],
+    [DSCR],
+    [APR],
+    [MonthsPerPeriod],
+//  Help
+    LET(Help,       TRIM(TEXTSPLIT(
+                        "FUNCTION:          →DebtSculptFixedλ([OpeningBalance], Debt, CFADS, DSCR, APR, [MonthsPerPeriod])¶" &
+                        "DESCRIPTION:       →Creates a Debt Sculpting schedule where APR and DSCR are fixed for all periods¶" &
+                        "SUGGESTED ROW IDS: →Debt opening balance¶" &
+                        "                   →Interest on Principal Balance¶" &
+                        "                   →Debt service (interest and principal)¶" &
+                        "                   →Debt closing balance¶" &
+                        "WEBPAGE:           →https://github.com/ryanduguid/Ozzit¶" &
+                        "VERSION:           →20 Aug 2026¶" &
+                        "PARAMETERS:        →¶" &
+                        "OpeningBalance     →(Optional) Model's debt on opening. Defaults to 0¶" &
+                        "Debt               →(Required) A row of new debt taken on in each period¶" &
+                        "CFADS              →(Required) A row of Cash Flow Available for Debt Service in each period¶" &
+                        "DSCR               →(Required) Debt Service Coverage Ratio, one number for all periods¶" &
+                        "APR                →(Required) Interest's Annual Percentage Rate, one number for all periods¶" &
+                        "MonthsPerPeriod    →(Optional) Defaults to one month per period.¶" &
+                        "EXAMPLES:          →¶" &
+                        "Result             →Formula (oz is assumed to be the module's name)¶" &
+                        "4 rows, 3 cols     →=oz.DebtSculptFixedλ(, {1000,0,0}, {300,300,300}, 1.2, 6%, 12)",
+                        "→", "¶"
+                        )
+                    ),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR( ISOMITTED( Debt),
+                            ISOMITTED( CFADS),
+                            ISOMITTED( DSCR),
+                            ISOMITTED( APR)
+                        ),
+    //  Check inputs - Errors in argument values
+        ErrMsgs,        {"Debt must be a dynamic array holding new debt (if any) in each period";
+                         "CFADS must be a dynamic array holding cash available for debt service in each period";
+                         "DSCR must be a single number holding debt service coverage ratio for all periods";
+                         "APR must be a single number holding interest's annual percentage rate for all periods"},
+        Errors,         VSTACK( COLUMNS( Debt) <= 1,
+                                COLUMNS( CFADS) <= 1,
+                                NOT( AND( ISNUMBER( DSCR), COLUMNS( DSCR) = 1)),
+                                NOT( AND( ISNUMBER( APR), COLUMNS( APR) = 1))
+                        ),
+        Messages,       FILTER( ErrMsgs, Errors, ""),
+    //  Check inputs - Set optional arguments' defaults
+        OpeningBalance, IF( ISNUMBER( OpeningBalance), OpeningBalance, 0),
+        MonthsPerPeriod, IF( ISNUMBER( MonthsPerPeriod), MonthsPerPeriod, 1),
+    //  Procedure - solve the closing balance period by period, then read the rows off it
+        Rate,           APR / 12 * MonthsPerPeriod,
+        Periods,        SEQUENCE( 1, COLUMNS( Debt)),
+        NewDebt,        INDEX( Debt, 1, Periods),
+        Cash,           INDEX( CFADS, 1, Periods),
+        Closings,       SCAN( OpeningBalance, Periods,
+                            LAMBDA( Carried, Period,
+                                LET(Opening,    Carried + INDEX( NewDebt, 1, Period),
+                                    Interest,   Opening * Rate,
+                                    Payment,    MIN( INDEX( Cash, 1, Period) / DSCR, Opening + Interest),
+                                    Opening + Interest - Payment
+                                )
+                            )
+                        ),
+        Carried,        IF( COLUMNS( Debt) = 1, OpeningBalance, HSTACK( OpeningBalance, DROP( Closings, , -1))),
+        Opening,        Carried + NewDebt,
+        Interest,       Opening * Rate,
+        Service,        Cash / DSCR,
+        Payment,        IF( Service < Opening + Interest, Service, Opening + Interest),
+        Closing,        Opening + Interest - Payment,
+        Result,         VSTACK( Opening, Interest, -Payment, Closing),
+    //  Return Result, Help or the messages
+        Return,         IF( Help?, 2, IF( OR( Errors), 3, 1)),
+        CHOOSE( Return, Result, Help, Messages)
+    )
+);
 
-InterestLRVλ =
-LAMBDA([CFADS],[DSCR],[Principal],[InterestRate],[DoNotUse], LET(Help, TRIM(TEXTSPLIT("DESCRIPTION:   →Calculates debt sculpting interest using method presented by Lance Rubin.¶→Charged on the average balance over the period, with the principal repaid¶→capped at the principal outstanding.¶" & "VERSION:       →20 Aug 2026¶" & "PARAMETERS:→¶" & "CFADS          →(Required) Cash Flow Available for Debt Services for this period¶" & "DSCR           →(Required) Debt Service Coverage Ratio for this period¶" & "Principal      →(Required) Principal balance for this period¶" & "InterestRate   →(Optional) Interest's Percentage Rate for this period (eg. APR/Days in this year * Days in this period)¶" & "DoNotUse       →This is required internally for calculating rates¶" & "→¶" & "EXAMPLES:→¶" & "Result         →Formula¶" & "222.90         →=InterestLRVλ( 6666.37, 3.50, 90000, 3%/12)", "→", "¶")), ErrMsgs, {"CFADS must be a single number holding cash available for debt service for this period";"DSCR must be a single number holding debt service coverage ratio for this periods";"Principal must be a single number holding this period's opening debt balance";"InterestRate must be a single number holding this period's interest rate (APR/Days in this year * Days in this period)"}, CFADS, IF(AND(ISNUMBER(CFADS), COLUMNS(CFADS) = 1), CFADS, #VALUE!), DSCR, IF(AND(ISNUMBER(DSCR), COLUMNS(DSCR) = 1), DSCR, #VALUE!), Principal, IF(AND(ISNUMBER(Principal), COLUMNS(Principal) = 1), Principal, #VALUE!), InterestRate, IF(AND(ISNUMBER(InterestRate), COLUMNS(InterestRate) = 1), InterestRate, #VALUE!), DoNotUse, IF(ISOMITTED(DoNotUse), 0, DoNotUse), Errors, VSTACK(OR(ISERROR(CFADS)), OR(ISERROR(DSCR)), OR(ISERROR(Principal)), OR(ISERROR(InterestRate))), Messages, FILTER(ErrMsgs, Errors, ""), Payment, MIN(IF(DoNotUse = 0, CFADS / DSCR, DoNotUse), Principal), Interest, (Principal - Payment / 2) * InterestRate, Repayment, -MIN(CFADS / DSCR - Interest, Principal), Balance, Principal + Interest + Repayment, Result, IF(ABS(Payment + Repayment) < 0.01, MAX(Interest, 0), oz.InterestLRVλ(CFADS, DSCR, Principal, InterestRate, -Repayment)), Return, IF(AND(Errors), 2, IF(OR(Errors), 3, IF(OR(ISERROR(Result)), 2, 1))), CHOOSE(Return, Result, Help, Messages)));
 
+
+/*  FUNCTION NAME:  DebtSculptVariableLRVλ
+    DESCRIPTION:*//**Creates a debt sculpting schedule where APR and DSCR are set for each period, with interest charged on the average balance*/
+DebtSculptVariableLRVλ = LAMBDA(
+//  Parameter Declarations
+    [OpeningBalance],
+    [Debt],
+    [CFADS],
+    [DSCR],
+    [APR],
+    [MonthsPerPeriod],
+//  Help
+    LET(Help,       TRIM(TEXTSPLIT(
+                        "FUNCTION:          →DebtSculptVariableLRVλ([OpeningBalance], Debt, CFADS, DSCR, APR, [MonthsPerPeriod])¶" &
+                        "DESCRIPTION:       →Creates a Debt Sculpting schedule where APR and DSCR are set for each period.¶" &
+                        "                   →Interest is charged on the average balance over the period, the method¶" &
+                        "                   →presented by Lance Rubin, and the principal repaid is what the cash¶" &
+                        "                   →available for debt service leaves after that interest.¶" &
+                        "SUGGESTED ROW IDS: →Debt opening balance¶" &
+                        "                   →Interest on Principal Balance¶" &
+                        "                   →Principal repayments¶" &
+                        "                   →Debt closing balance¶" &
+                        "WEBPAGE:           →https://github.com/ryanduguid/Ozzit¶" &
+                        "VERSION:           →20 Aug 2026¶" &
+                        "PARAMETERS:        →¶" &
+                        "OpeningBalance     →(Optional) Model's debt on opening. Defaults to 0¶" &
+                        "Debt               →(Required) A row of new debt taken on in each period¶" &
+                        "CFADS              →(Required) A row of Cash Flow Available for Debt Service in each period¶" &
+                        "DSCR               →(Required) A row of Debt Service Coverage Ratios, one per period¶" &
+                        "APR                →(Required) A row of Interest's Annual Percentage Rates, one per period¶" &
+                        "MonthsPerPeriod    →(Optional) Defaults to one month per period.¶" &
+                        "EXAMPLES:          →¶" &
+                        "Result             →Formula (oz is assumed to be the module's name)¶" &
+                        "4 rows, 3 cols     →=oz.DebtSculptVariableLRVλ(, {1000,0,0}, {300,300,300}, {1.2,1.2,1.2}, {6%,6%,6%}, 12)",
+                        "→", "¶"
+                        )
+                    ),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR( ISOMITTED( Debt),
+                            ISOMITTED( CFADS),
+                            ISOMITTED( DSCR),
+                            ISOMITTED( APR)
+                        ),
+    //  Check inputs - Errors in argument values
+        ErrMsgs,        {"Debt must be a dynamic array holding new debt (if any) in each period";
+                         "CFADS must be a dynamic array holding cash available for debt service in each period";
+                         "DSCR must be a dynamic array holding debt service coverage ratio for each period";
+                         "APR must be a dynamic array holding interest's annual percentage rate for each period"},
+        Errors,         VSTACK( COLUMNS( Debt) <= 1,
+                                COLUMNS( CFADS) <= 1,
+                                COLUMNS( DSCR) <= 1,
+                                COLUMNS( APR) <= 1
+                        ),
+        Messages,       FILTER( ErrMsgs, Errors, ""),
+    //  Check inputs - Set optional arguments' defaults
+        OpeningBalance, IF( ISNUMBER( OpeningBalance), OpeningBalance, 0),
+        MonthsPerPeriod, IF( ISNUMBER( MonthsPerPeriod), MonthsPerPeriod, 1),
+    //  Procedure - solve the closing balance period by period, then read the rows off it
+        Periods,        SEQUENCE( 1, COLUMNS( Debt)),
+        Rates,          INDEX( APR, 1, Periods) / 12 * MonthsPerPeriod,
+        NewDebt,        INDEX( Debt, 1, Periods),
+        Cash,           INDEX( CFADS, 1, Periods),
+        Cover,          INDEX( DSCR, 1, Periods),
+        Closings,       SCAN( OpeningBalance, Periods,
+                            LAMBDA( Carried, Period,
+                                LET(Opening,    Carried + INDEX( NewDebt, 1, Period),
+                                    Interest,   InterestLRVλ( INDEX( Cash, 1, Period), INDEX( Cover, 1, Period), Opening, INDEX( Rates, 1, Period)),
+                                    Payment,    MIN( INDEX( Cash, 1, Period) / INDEX( Cover, 1, Period) - Interest, Opening),
+                                    Opening - Payment
+                                )
+                            )
+                        ),
+        Carried,        IF( COLUMNS( Debt) = 1, OpeningBalance, HSTACK( OpeningBalance, DROP( Closings, , -1))),
+        Opening,        Carried + NewDebt,
+        Interest,       MAP( Periods,
+                            LAMBDA( Period,
+                                InterestLRVλ( INDEX( Cash, 1, Period), INDEX( Cover, 1, Period), INDEX( Opening, 1, Period), INDEX( Rates, 1, Period))
+                            )
+                        ),
+        Available,      Cash / Cover - Interest,
+        Payment,        IF( Available < Opening, Available, Opening),
+        Closing,        Opening - Payment,
+        Result,         VSTACK( Opening, Interest, -Payment, Closing),
+    //  Return Result, Help or the messages
+        Return,         IF( Help?, 2, IF( OR( Errors), 3, 1)),
+        CHOOSE( Return, Result, Help, Messages)
+    )
+);
+
+
+
+/*  FUNCTION NAME:  DebtSculptVariableλ
+    DESCRIPTION:*//**Creates a debt sculpting schedule where APR and DSCR are set for each period*/
+DebtSculptVariableλ = LAMBDA(
+//  Parameter Declarations
+    [OpeningBalance],
+    [Debt],
+    [CFADS],
+    [DSCR],
+    [APR],
+    [MonthsPerPeriod],
+//  Help
+    LET(Help,       TRIM(TEXTSPLIT(
+                        "FUNCTION:          →DebtSculptVariableλ([OpeningBalance], Debt, CFADS, DSCR, APR, [MonthsPerPeriod])¶" &
+                        "DESCRIPTION:       →Creates a Debt Sculpting schedule where APR and DSCR are set for each period¶" &
+                        "SUGGESTED ROW IDS: →Debt opening balance¶" &
+                        "                   →Interest on Principal Balance¶" &
+                        "                   →Debt service (interest and principal)¶" &
+                        "                   →Debt closing balance¶" &
+                        "WEBPAGE:           →https://github.com/ryanduguid/Ozzit¶" &
+                        "VERSION:           →20 Aug 2026¶" &
+                        "PARAMETERS:        →¶" &
+                        "OpeningBalance     →(Optional) Model's debt on opening. Defaults to 0¶" &
+                        "Debt               →(Required) A row of new debt taken on in each period¶" &
+                        "CFADS              →(Required) A row of Cash Flow Available for Debt Service in each period¶" &
+                        "DSCR               →(Required) A row of Debt Service Coverage Ratios, one per period¶" &
+                        "APR                →(Required) A row of Interest's Annual Percentage Rates, one per period¶" &
+                        "MonthsPerPeriod    →(Optional) Defaults to one month per period.¶" &
+                        "EXAMPLES:          →¶" &
+                        "Result             →Formula (oz is assumed to be the module's name)¶" &
+                        "4 rows, 3 cols     →=oz.DebtSculptVariableλ(, {1000,0,0}, {300,300,300}, {1.2,1.2,1.2}, {6%,6%,6%}, 12)",
+                        "→", "¶"
+                        )
+                    ),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR( ISOMITTED( Debt),
+                            ISOMITTED( CFADS),
+                            ISOMITTED( DSCR),
+                            ISOMITTED( APR)
+                        ),
+    //  Check inputs - Errors in argument values
+        ErrMsgs,        {"Debt must be a dynamic array holding new debt (if any) in each period";
+                         "CFADS must be a dynamic array holding cash available for debt service in each period";
+                         "DSCR must be a dynamic array holding debt service coverage ratio for each period";
+                         "APR must be a dynamic array holding interest's annual percentage rate for each period"},
+        Errors,         VSTACK( COLUMNS( Debt) <= 1,
+                                COLUMNS( CFADS) <= 1,
+                                COLUMNS( DSCR) <= 1,
+                                COLUMNS( APR) <= 1
+                        ),
+        Messages,       FILTER( ErrMsgs, Errors, ""),
+    //  Check inputs - Set optional arguments' defaults
+        OpeningBalance, IF( ISNUMBER( OpeningBalance), OpeningBalance, 0),
+        MonthsPerPeriod, IF( ISNUMBER( MonthsPerPeriod), MonthsPerPeriod, 1),
+    //  Procedure - solve the closing balance period by period, then read the rows off it
+        Periods,        SEQUENCE( 1, COLUMNS( Debt)),
+        Rates,          INDEX( APR, 1, Periods) / 12 * MonthsPerPeriod,
+        NewDebt,        INDEX( Debt, 1, Periods),
+        Cash,           INDEX( CFADS, 1, Periods),
+        Cover,          INDEX( DSCR, 1, Periods),
+        Closings,       SCAN( OpeningBalance, Periods,
+                            LAMBDA( Carried, Period,
+                                LET(Opening,    Carried + INDEX( NewDebt, 1, Period),
+                                    Interest,   Opening * INDEX( Rates, 1, Period),
+                                    Payment,    MIN( INDEX( Cash, 1, Period) / INDEX( Cover, 1, Period), Opening + Interest),
+                                    Opening + Interest - Payment
+                                )
+                            )
+                        ),
+        Carried,        IF( COLUMNS( Debt) = 1, OpeningBalance, HSTACK( OpeningBalance, DROP( Closings, , -1))),
+        Opening,        Carried + NewDebt,
+        Interest,       Opening * Rates,
+        Service,        Cash / Cover,
+        Payment,        IF( Service < Opening + Interest, Service, Opening + Interest),
+        Closing,        Opening + Interest - Payment,
+        Result,         VSTACK( Opening, Interest, -Payment, Closing),
+    //  Return Result, Help or the messages
+        Return,         IF( Help?, 2, IF( OR( Errors), 3, 1)),
+        CHOOSE( Return, Result, Help, Messages)
+    )
+);
+
+
+
+/*  FUNCTION NAME:  InterestLRVλ
+    DESCRIPTION:*//**Calculates debt sculpting interest on the average balance over the period, the method presented by Lance Rubin*/
+InterestLRVλ = LAMBDA(
+//  Parameter Declarations
+    [CFADS],
+    [DSCR],
+    [Principal],
+    [InterestRate],
+//  Help
+    LET(Help,       TRIM(TEXTSPLIT(
+                        "FUNCTION:      →InterestLRVλ(CFADS, DSCR, Principal, InterestRate)¶" &
+                        "DESCRIPTION:   →Calculates debt sculpting interest using the method presented by Lance Rubin.¶" &
+                                       "→Interest is charged on the average balance over the period, with the¶" &
+                                       "→principal repaid capped at the principal outstanding. The average balance¶" &
+                                       "→depends on the interest and the interest on the average balance, which¶" &
+                                       "→is solved in closed form rather than by iteration.¶" &
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                        "VERSION:       →20 Aug 2026¶" &
+                        "PARAMETERS:    →¶" &
+                        "CFADS          →(Required) Cash Flow Available for Debt Service for this period¶" &
+                        "DSCR           →(Required) Debt Service Coverage Ratio for this period¶" &
+                        "Principal      →(Required) Principal balance for this period¶" &
+                        "InterestRate   →(Required) Interest rate for this period (eg. APR/Days in this year * Days in this period)¶" &
+                        "EXAMPLES:      →¶" &
+                        "Result         →Formula (oz is assumed to be the module's name)¶" &
+                        "222.90         →=oz.InterestLRVλ( 6666.37, 3.50, 90000, 3%/12)",
+                        "→", "¶"
+                        )
+                    ),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR( ISOMITTED( CFADS),
+                            ISOMITTED( DSCR),
+                            ISOMITTED( Principal),
+                            ISOMITTED( InterestRate)
+                        ),
+    //  Check inputs - Errors in argument values
+        ErrMsgs,        {"CFADS must be a single number holding cash available for debt service for this period";
+                         "DSCR must be a single number holding debt service coverage ratio for this period";
+                         "Principal must be a single number holding this period's opening debt balance";
+                         "InterestRate must be a single number holding this period's interest rate (APR/Days in this year * Days in this period)"},
+        Errors,         VSTACK( NOT( AND( ISNUMBER( CFADS), COLUMNS( CFADS) = 1)),
+                                NOT( AND( ISNUMBER( DSCR), COLUMNS( DSCR) = 1)),
+                                NOT( AND( ISNUMBER( Principal), COLUMNS( Principal) = 1)),
+                                NOT( AND( ISNUMBER( InterestRate), COLUMNS( InterestRate) = 1))
+                        ),
+        Messages,       FILTER( ErrMsgs, Errors, ""),
+    //  Procedure - the fixed point of Interest = (Principal - Payment / 2) * Rate with
+    //  Payment = MIN( DebtService - Interest, Principal), solved in closed form. Where the
+    //  cash would repay more than the principal, the payment is the principal and half a
+    //  period's interest is charged on it.
+        DebtService,    CFADS / DSCR,
+        Capped?,        DebtService >= Principal * ( 1 + InterestRate / 2),
+        Interest,       IF( Capped?,
+                            Principal * InterestRate / 2,
+                            InterestRate * ( 2 * Principal - DebtService) / ( 2 - InterestRate)
+                        ),
+        Result,         MAX( Interest, 0),
+    //  Return Result, Help or the messages
+        Return,         IF( Help?, 2, IF( OR( Errors), 3, 1)),
+        CHOOSE( Return, Result, Help, Messages)
+    )
+);
