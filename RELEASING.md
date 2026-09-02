@@ -93,6 +93,12 @@ All eight gate commands must exit zero. Record their substantive type-check, fun
 signature, table, example, index, module and test counts rather than only their
 exit status.
 
+Before opening Excel, `python tools/verify_help_spills.py ozzit.xlsx` lists, without
+Excel, the cached helps that a source change has left stale. It only reads. A stale
+help means the cached-value gate will fail until `tools/refresh_cache.py` has run in
+Excel and `tools/sanitise_workbook.py` after it; a clean report does not replace the
+gate.
+
 Before either native gate, prove that no user Excel process is running. Do not
 close or attach to a user's Excel session. Then run:
 
