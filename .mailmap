@@ -2,3 +2,7 @@
 Ryan Duguid <ryan@duguid.com.au> <152749594+ryanduguid@users.noreply.github.com>
 Ryan Duguid <ryan@duguid.com.au> <ryanduguid@users.noreply.github.com>
 Ryan Duguid <ryan@duguid.com.au> <noreply@duguid.com.au>
+# Commits recorded under the Claude assistant address were made from Ryan Duguid's
+# sessions. This maps their author display in git; GitHub's contributor graph keys
+# on the raw commit email and is not affected.
+Ryan Duguid <ryan@duguid.com.au> <noreply@anthropic.com>
