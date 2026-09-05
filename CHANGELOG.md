@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### 13-week cash-flow forecast template
+
+`templates/13-week-cash-flow-forecast.xlsx` is documented as its own deliverable: a README section near the top and the guide in `templates/README.md`. It is a standalone native-formula workbook for weekly liquidity planning, separate from `ozzit.xlsx` and its `oz.` functions. It ships in the tagged source archive at that path. The uploaded release bundle stays the three files `RELEASING.md` defines (`ozzit.xlsx`, `provenance.json` and `SHA256SUMS`), so the template is not a fourth release asset. Its arithmetic has not been through the workbook gates, which cover `ozzit.xlsx` only.
+
 ### Functions that returned wrong answers on ordinary inputs
 
 Every change below was made in `src/` and compiled into the workbook with the new
