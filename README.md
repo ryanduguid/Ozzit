@@ -42,7 +42,7 @@ The screenshot uses a disposable copy with a synthetic label, an explicit argume
 
 ## Verification and attribution
 
-The tagged repository release is [v3.4.0](https://github.com/ryanduguid/Ozzit/releases/tag/v3.4.0), dated 7 September 2026; citation metadata is in [CITATION.cff](CITATION.cff).
+The tagged repository release is [v3.4.0](https://github.com/ryanduguid/Ozzit/releases/tag/v3.4.0), dated 6 September 2026; citation metadata is in [CITATION.cff](CITATION.cff).
 
 v3.4.0 `ozzit.xlsx` SHA-256: `8ea782fe7ee63605394acace586df76332fafedfea5d8bc43fb672e8424115a6` (438,726 bytes). Excel 16.0 build 20326 on 6 September 2026: 1,129 formulas recalculated with 0 in error, 818 self-test assertions with 0 failures, 19,444 cached values equal to what their formulas produce.
 

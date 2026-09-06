@@ -1,6 +1,6 @@
 # Changelog
 
-## v3.4.0, 7 September 2026, rates, day counts and a DATEDIF replacement
+## v3.4.0, 6 September 2026, rates, day counts and a DATEDIF replacement
 
 ### Four functions added and three changed; the workbook is otherwise v3.3.0
 
