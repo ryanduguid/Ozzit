@@ -61,6 +61,29 @@ class WorkbookToolTests(unittest.TestCase):
                 )
             )
 
+    def test_long_literal_split_by_an_excel_save_is_folded_back(self):
+        # Excel stores a string literal over 255 characters as
+        # _xlfn._LONGTEXT("...","...") when it saves; the 6 September 2026 cache
+        # refresh rewrote six defined names that way and verify_sources.py then
+        # rejected the workbook. The sanitiser puts the plain literal back.
+        parts = self._parts()
+        book = parts["xl/workbook.xml"].decode("utf-8")
+        literal = max(sanitise_workbook.LITERAL.findall(book), key=len)
+        self.assertGreater(len(literal), 255, "precondition: a literal Excel would split")
+        cut = len(literal) // 2
+        split = '_xlfn._LONGTEXT("%s","%s")' % (literal[:cut], literal[cut:])
+        self.assertEqual(book.count('"' + literal + '"'), 1)
+        parts["xl/workbook.xml"] = book.replace('"' + literal + '"', split, 1).encode("utf-8")
+        sanitise_workbook.write_deterministic(self.workbook, parts)
+        self.assertNotEqual(self.workbook.read_bytes(), WORKBOOK.read_bytes())
+
+        log = sanitise_workbook.sanitise(self.workbook)
+
+        self.assertIn("folded 1 _LONGTEXT literal(s) in defined names", log)
+        self.assertEqual(self.workbook.read_bytes(), WORKBOOK.read_bytes())
+        self.assertEqual(sanitise_workbook.fold_longtext('_xlfn._LONGTEXT("a""b","c")'), ('"a""bc"', 1))
+        self.assertEqual(sanitise_workbook.fold_longtext('"plain"'), ('"plain"', 0))
+
     def test_privacy_gate_matches_real_windows_user_path(self):
         self.assertIsNotNone(
             verify_workbook.BANNED.search(r"C:\Users\Example\Documents\Ozzit")

@@ -74,7 +74,7 @@ class HelpCorrectionsTests(unittest.TestCase):
         for path in src.glob("*.txt"):
             text = path.read_text(encoding="utf-8")
             reverted += text.count(new)
-            path.write_text(text.replace(new, old), encoding="utf-8")
+            path.write_text(text.replace(new, old), encoding="utf-8", newline="\n")
         self.assertEqual(reverted, swap.hits, "precondition: corrected src/")
 
     def test_every_anchor_can_tell_the_two_states_apart(self):
@@ -198,7 +198,7 @@ class HelpCorrectionsTests(unittest.TestCase):
         text = target.read_text(encoding="utf-8")
         example = '"0,-100,-110    →=oz.Reversalλ( , {100,110,130})"'
         self.assertIn(example, text, "precondition: the corrected example is in src/")
-        target.write_text(text.replace(example, example + " & " + example), encoding="utf-8")
+        target.write_text(text.replace(example, example + " & " + example), encoding="utf-8", newline="\n")
 
         result = self._run(workbook, src)
         self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
@@ -211,7 +211,7 @@ class HelpCorrectionsTests(unittest.TestCase):
         text = target.read_text(encoding="utf-8")
         row = '"DSIλ                       →Days Sales in Inventory Ratio'
         self.assertIn(row, text, "precondition: the corrected row is in src/")
-        target.write_text(text.replace(row, '"Removedλ                   →Days'), encoding="utf-8")
+        target.write_text(text.replace(row, '"Removedλ                   →Days'), encoding="utf-8", newline="\n")
 
         result = self._run(workbook, src)
         self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
@@ -231,7 +231,7 @@ class HelpCorrectionsTests(unittest.TestCase):
 
         def out_of_space(path, text):
             # A full disk keeps the bytes it managed before the write raises.
-            path.write_text(text[: len(text) // 2], encoding="utf-8")
+            path.write_text(text[: len(text) // 2], encoding="utf-8", newline="\n")
             raise OSError("no space left on device")
 
         with (
