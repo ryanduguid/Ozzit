@@ -50,42 +50,53 @@ def fail(msg: str) -> None:
     failures.append(msg)
 
 
-def check_xml_part(name: str, data: bytes) -> None:
-    """Reject declarations with entity expansion before parsing workbook XML."""
+def check_xml_part(name: str, data: bytes) -> str | None:
+    """Reject declarations with entity expansion before parsing workbook XML.
+
+    Returns the decoded text when the part is safe to scan further, else None.
+    """
     if b"<!DOCTYPE" in data.upper():
         fail(f"DOCTYPE declaration in {name}")
-        return
+        return None
     try:
-        ET.fromstring(data.decode("utf-8"))
-    except (UnicodeDecodeError, ET.ParseError) as exc:
+        text = data.decode("utf-8")
+        ET.fromstring(text)
+    except UnicodeDecodeError as exc:
         fail(f"malformed XML in {name}: {exc}")
+        return None
+    except ET.ParseError as exc:
+        fail(f"malformed XML in {name}: {exc}")
+    return text
+
+
+def load_xml_parts(z: zipfile.ZipFile) -> dict[str, str]:
+    """Check and decode each XML part once. Parts that fail the check are left out."""
+    decoded: dict[str, str] = {}
+    for name in z.namelist():
+        if name.endswith((".xml", ".rels")):
+            text = check_xml_part(name, z.read(name))
+            if text is not None:
+                decoded[name] = text
+    return decoded
 
 
 def main() -> None:
     z = zipfile.ZipFile(WORKBOOK)
     parts = z.namelist()
-    raw_parts = {name: z.read(name) for name in parts}
-    xml_parts = {
-        name: raw_parts[name].decode("utf-8")
-        for name in parts
-        if name.endswith((".xml", ".rels"))
-    }
 
     for name in parts:
         if name == "xl/vbaProject.bin" or name.startswith(FORBIDDEN_PARTS):
             fail(f"forbidden workbook part {name}")
 
-    for name, raw in raw_parts.items():
-        if name.endswith((".xml", ".rels")):
-            check_xml_part(name, raw)
+    xml_parts = load_xml_parts(z)
 
     for name in parts:
         if name.endswith((".xml", ".rels")) and name != "customXml/item1.xml":
-            text = xml_parts[name]
+            text = xml_parts.get(name, "")
             for hit in BANNED.finditer(text):
                 fail(f"banned token {hit.group(0)!r} in {name}")
         elif name.endswith(".bin"):
-            text = raw_parts[name].decode("utf-16-le", errors="ignore")
+            text = z.read(name).decode("utf-16-le", errors="ignore")
             for hit in BANNED.finditer(text):
                 fail(f"banned token {hit.group(0)!r} in {name}")
 
@@ -127,7 +138,7 @@ def main() -> None:
     for name in parts:
         if not SHEET_RE.match(name):
             continue
-        text = xml_parts[name]
+        text = xml_parts.get(name, "")
         if "#REF!" in text:
             fail(f"#REF! present in {name}")
         for formula in re.findall(r"<f[^>]*>([^<]*)</f>", text):

@@ -21,7 +21,7 @@ The same scope note is embedded as NOTES! rows in the `oz.GSTAddλ` and `oz.GSTE
 
 `oz.Depreciateλ` accepts the method codes `SLN`, `SYD`, `DB`, `DDB`, `VDB`, `DV` (diminishing value) and `PC` (prime cost).
 
-**Modelling parameters.** The depreciation helpers compute multi-period asset amortisation from cost and effective life inputs. `oz.DiminishingValueλ` amortises the remaining undeducted balance in the final period so the multi-year schedule reconciles exactly to initial cost (for example, a cost of 1,000 over five years produces 400, 240, 144, 86.40 and 129.60). Part-year apportionments and balancing adjustments are applied in the financial model's period timeline.
+**Modelling parameters, not tax calculations.** The depreciation helpers compute multi-period asset amortisation from cost and effective life inputs and nothing else. `oz.DiminishingValueλ` amortises the remaining balance in the final period so the multi-year schedule reconciles exactly to initial cost (for example, a cost of 1,000 over five years produces 400, 240, 144, 86.40 and 129.60). `oz.Depreciateλ` allocates those annual values across a monthly timeline from each in-service date and writes the remaining book value off at disposal. None of that is a tax balancing adjustment or a deduction the ATO would accept, so apportion and adjust for tax in your own model.
 
 ## AASB 16 leases
 
