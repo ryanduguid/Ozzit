@@ -306,8 +306,8 @@ added, and all 20,228 cached values are the ones v3.1.0 shipped.
 held the credit has been cleared and the removal is now enforced by a gate.
 
 - **Per-function revision histories removed from `src/`.** 125 `REVISIONS` comment
-  blocks across Dates, Essentials, Financial, Ratios and Utilities, 417 lines, all
-  naming the same earlier revision notes. A comment that also carried a `NOTE` keeps the
+  blocks across Dates, Essentials, Financial, Ratios and Utilities, 417 lines of
+  revision notes that git history now supersedes. A comment that also carried a `NOTE` keeps the
   NOTE, which is what preserves the Diarmuid Early maths citation on `oz.IntOnIntλ`.
   No formula body was read or rewritten, and all 130 functions still reproduce.
 - **The Advanced Formula Environment store and the workbook creator metadata cleared.**
@@ -320,7 +320,7 @@ held the credit has been cleared and the removal is now enforced by a gate.
   what removes them.
 - **MIT now covers the whole repository.** `ozzit.xlsx`, `src/` and `functions.csv`
   are no longer carved out. `ATTRIBUTION.md`, `README.md`, `RELEASING.md` and
-  `llms.txt` were rewritten to match, and no longer carry the earlier product name.
+  `llms.txt` were rewritten to match and no longer carry the earlier product name.
 - **The removal is enforced, not just done.** `verify_workbook.py` bans the earlier product
   branding in the workbook, and `test_repository_policy.py` fails if any tracked file reintroduces it.
 
@@ -335,7 +335,7 @@ baseline that grew around them.
   one-eleventh extraction, GST Act 1999 ss 9-70 and 9-75, and that the helpers
   apply arithmetic only. The About table and Name Manager comments stay the
   one-line descriptions. `tools/postbuild/gst_help_text.py` applies the insert
-  to the committed workbook and `src/`; it does not run through the earlier
+  to the committed workbook and `src/`; it does not run through the v3.0.0
   transform.
 
 - **`oz.CorkscrewλDV` described `oz.Depreciateλ`.** Its Name Manager comment, source
@@ -394,7 +394,7 @@ baseline that grew around them.
 
 - **The workbook is styled to a dark purple palette**, applied as one deliberate system: purple `#5C2D91` as the single accent, near-black
   `#04001F` and a warm grey for everything else. The legacy accents inherited from
-  earlier are gone: two greens, two blues and a maroon in the help blocks fold into the
+  the earlier workbook are gone: two greens, two blues and a maroon in the help blocks fold into the
   brand purple, and the mint, yellow and pink cell fills fold into the neutral greys.
   Thirteen font colours become eight. `assets/ozzit.svg` moves off its teal to match.
 
@@ -614,7 +614,7 @@ baseline that grew around them.
 
 - **A licence, for the parts of this repository that can carry one.** [LICENCE](LICENCE) is
   MIT and covers `tools/`, `.github/`, the Markdown files and `assets/`. It does not extend
-  to `nabla.xlsx`, `src/` or `functions.csv`: which were carved out at the time. v3.0.0
+  to `nabla.xlsx`, `src/` or `functions.csv`, which were carved out at the time. v3.0.0
   removed the carve-out; MIT now covers the whole repository.
 
   `ATTRIBUTION.md` now also records the build input. The earlier workbook is not in this
@@ -1124,7 +1124,7 @@ Each correction is applied in three places: the module source `src/` is exported
 
 ### Added
 
-- `tools/verify_signatures.py` reads every function's help signature and compares it against the LAMBDA's own declaration, character for character, since case is exactly the kind of difference that goes unnoticed. It accounts for every declaration in every module and prints the tally, and fails if it parsed too few, because a checker that reads nothing passes everything. Square brackets are ignored: earlier declares every parameter optional so a function called with no arguments can return its own help, so the declaration says nothing about which arguments a caller may omit. Run against the previous release it reports all 15 divergences. Now runs in CI.
+- `tools/verify_signatures.py` reads every function's help signature and compares it against the LAMBDA's own declaration, character for character, since case is exactly the kind of difference that goes unnoticed. It accounts for every declaration in every module and prints the tally, and fails if it parsed too few, because a checker that reads nothing passes everything. Square brackets are ignored: the earlier workbook declares every parameter optional so a function called with no arguments can return its own help, so the declaration says nothing about which arguments a caller may omit. Run against the previous release it reports all 15 divergences. Now runs in CI.
 
 - **`FLow1` in the corkscrew signatures.** `nb.Corkscrewλ` and `nb.CorkScrewReversalλ` both spelled their second argument `FLow1` on the FUNCTION line of their help, with a capital L. The parameter table three rows below spelled it `Flow1`, and so did the LAMBDA, so anyone copying the signature was copying a name the function does not have. Corrected in the module source, in the defined name, in `functions.csv`, and in the help output already cached on the demonstration sheet, which would otherwise have kept showing the typo until something forced a recalculation. Read back out of Excel afterwards, both functions now report `( Opening, Flow1, ...)`.
 
@@ -1241,7 +1241,7 @@ Every prior release was reasoned about statically. Opening `nabla.xlsx` in Excel
 - The GST helpers are listed under their own AUSTRALIAN TAX heading in the module index rather than inside the depreciation suite.
 - Only the cover opens selected, and the table-of-contents columns were widened for the longer `nabla.*` names.
 
-First nabla release, rebuilt from the earlier 6 July 2024 workbook.
+First nabla release, rebuilt from Ryan Duguid's earlier workbook of 6 July 2024.
 
 ### Renaming
 - Renamed every function namespace, worksheet, AFE module and help reference from the earlier namespaces to the `nabla.*` scheme.
