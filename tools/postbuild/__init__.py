@@ -1,4 +1,4 @@
-"""Postbuild passes applied after the v3.0.0 earlier transform.
+"""Postbuild passes applied after the v3.0.0 transform from the earlier workbook.
 
 FY27 help text and the workbook palette are the tracked successors of the one-off
 session scripts that produced v3.1.0. Later passes, including GST help text,

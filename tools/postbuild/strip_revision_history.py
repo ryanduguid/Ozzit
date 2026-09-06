@@ -37,7 +37,6 @@ MODULES = ("Dates", "Essentials", "Financial", "Ratios", "Utilities", "Debt")
 # The heading is indented inside the comment and the block runs to the delimiter.
 REVISIONS = re.compile(r"^[ \t]*REVISIONS:.*", re.M)
 
-# Assembled so this file does not spell the legacy marker either.
 OLD_CREATOR = (
     "<dc:creator>Ryan Duguid; Ozzit project</dc:creator>"
 ).encode()
