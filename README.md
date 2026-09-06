@@ -1,20 +1,27 @@
-# Ozzit
+# Ozzit: see the GST arithmetic in Excel
 
-```
-+----------------------------------------------------------------------+
-|                                Ozzit                                 |
-+----------------------------------------------------------------------+
-|          134 native Excel LAMBDA functions for AU modelling          |
-+----------------------------------+-----------------------------------+
-| DR  what it gives you            | CR  what it needs                 |
-+----------------------------------+-----------------------------------+
-| 134 Excel LAMBDA functions       | Excel 365 or 2024 or newer        |
-| inline help per function         | -                                 |
-| AU GST and depreciation rules    | -                                 |
-+----------------------------------+-----------------------------------+
+Synthetic example. Review aid, not professional advice; the reviewer decides the GST treatment.
+
+**Input:** $1,100, assumed wholly taxable and GST-inclusive at 10%.
+Open [ozzit.xlsx](https://github.com/ryanduguid/Ozzit/releases/latest/download/ozzit.xlsx) in Microsoft 365 or Excel 2024 or later. No add-ins or macros.
+
+```excel
+=oz.GSTExtractλ(1100)
 ```
 
-![Ozzit](assets/ozzit.svg)
+**Expected arithmetic:** $100.00 GST, calculated as $1,100 / 11. This does not establish whether the supply is taxable.
+
+| Input | Formula to try | Expected GST (input / 11) |
+| ---: | --- | ---: |
+| $1,100.00 | `=oz.GSTExtractλ(1100)` | $100.00 |
+| $2,200.00 | `=oz.GSTExtractλ(2200)` | $200.00 |
+
+These are hand-calculated expectations. Native Excel verification and a screenshot of this example are pending.
+
+The Australian tax worksheet contains editable demonstrations. Start there, then use the function catalogue when you need another calculation.
+
+<details>
+<summary>Setup, all 134 functions, workbook examples and reference</summary>
 
 A LAMBDA function library for building dynamic-array financial models in Excel.
 
@@ -38,7 +45,6 @@ This is the workbook's version stamp. The later tagged repository release is [v3
 
 The workbook opens with illustrative sample data so the views are visible at once; replace it before any business decision. The [template guide](templates/README.md) covers the weekly workflow, scenario behaviour and limits. It is a planning model, not tax, BAS, payroll, superannuation, financial or legal advice, and the workbook gates in this repository cover `ozzit.xlsx` only.
 
-No screenshot is included yet. Nothing in the repository renders Excel's dynamic-array display faithfully, so a maintainer captures one from native Excel.
 
 ## Requirements
 
@@ -361,3 +367,5 @@ The other 90 functions, including all of Ratios, Utilities, Debt and the AASB 16
 Ozzit and its earlier workbook iterations were built from scratch by Ryan Duguid. See [ATTRIBUTION.md](ATTRIBUTION.md) for provenance and the full list of changes. This repository adds Australian GST, financial-year, modelling-depreciation and AASB 16 lease helpers; it is not an individual-tax or Division 7A engine.
 
 [LICENCE](LICENCE) is MIT and covers the whole repository, `ozzit.xlsx`, `src/` and `functions.csv` included. Releases up to v3.1.0 limited that grant to what was written for this repository; [ATTRIBUTION.md](ATTRIBUTION.md) records why the limitation no longer applies.
+
+</details>
