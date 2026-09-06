@@ -15,11 +15,11 @@ Four things must hold:
 
   * every name the baseline records is claimed by exactly one function, since an
     unclaimed one is a function that disappeared without a forwarding address
-  * no `previous_name` names something the baseline does not, since a earlier that
-    never shipped is worse than no earlier at all
+  * no `previous_name` names something the baseline does not, since a previous name that
+    never shipped is worse than no previous name at all
   * a function added since the baseline records nothing, which is honest, rather than a
     plausible-looking name derived from the build's own intermediate naming
-  * each function's claimed earlier is recognisably its own, not merely some unused
+  * each function's claimed previous name is recognisably its own, not merely some unused
     baseline name. The first three checks together prove the map is a bijection, which is
     not the same as proving it is the right one: swapping two unrelated functions'
     previous names satisfies all three and still sends a reader to the wrong function. The

@@ -169,7 +169,7 @@ TYPOS = [("equally equally", "equally"),
          ("2023-Feb-26", "2025-Feb-26"), ("2023-Feb¶", "2025-Feb¶"),
          ("2023:Q01", "2025:Q1"), ("→2023¶", "→2025¶"), ("specifice text", "specific text"),
          ("dynamice", "dynamic"), ("a lable for", "a label for"),
-         # double substitution artefact: earlier read "every BXL 5g Library"
+         # double substitution artefact: the earlier workbook read "every BXL 5g Library"
          ("ozzit ozzit Library", "ozzit library"),
          ("Every Workday (USA normal)", "Every Workday (Monday to Friday)"),
          ("randomly generated", "sample"), ("Randomly generated", "Sample"),
@@ -178,7 +178,7 @@ TYPOS = [("equally equally", "equally"),
          ("\"FUNCTION:      RollingMin", "\"FUNCTION:      →RollingMin"),
          ("Liabilites", "Liabilities"),
          ('lang="en-US"', 'lang="en-AU"'),
-         # unfulfilled earlier placeholder in 46 help blocks
+         # unfulfilled placeholder in 46 help blocks of the earlier workbook
          ("&lt;coming soon&gt;", REPO_URL), ("<coming soon>", REPO_URL),
          ("&lt;Coming soon&gt;", REPO_URL), ("<Coming soon>", REPO_URL),
          ("→Coming soon¶", "→" + REPO_URL + "¶"),
@@ -240,7 +240,7 @@ def _shift_serial(v: float) -> float:
 
 def _mdy_to_au(mo: re.Match[str]) -> str:
     m_, d_, y_ = int(mo.group(1)), int(mo.group(2)), int(mo.group(3))
-    if y_ < 100:  # earlier also wrote two-digit years, e.g. 02/26/23
+    if y_ < 100:  # the earlier workbook also wrote two-digit years, e.g. 02/26/23
         y_ += 2000
     y2, mm, dd = _shift_ymd(y_, m_, d_)
     return "%d/%d/%d" % (dd, mm, y2)
@@ -1471,7 +1471,7 @@ DEBT_FIXES: list[tuple[str, ...]] = [
      "→capped at the principal outstanding.¶"),
 ]
 
-# fix earlier copy-paste bug: the u module's About suggested "ozzit.e" (was BXE) as its own name
+# fix an earlier copy-paste bug: the u module's About suggested "ozzit.e" (was BXE) as its own name
 assert "Suggested module name: ozzit.e" in mods["ozzit.u"]["text"]
 mods["ozzit.u"]["text"] = mods["ozzit.u"]["text"].replace(
     "Suggested module name: ozzit.e", "Suggested module name: ozzit.u")
@@ -1503,7 +1503,7 @@ obj_afe["locale"]["dateOrder"] = "DMY"
 names = obj_afe["projectNames"]
 assert "ozzit.f.MACRSλ" in names
 names.remove("ozzit.f.MACRSλ")
-if "ozzit.f.SumDepreciateλ" not in names:  # earlier omitted it from the index
+if "ozzit.f.SumDepreciateλ" not in names:  # the earlier workbook omitted it from the index
     names.append("ozzit.f.SumDepreciateλ")
 for spec in FUNCS:
     full = spec["module"] + "." + spec["name"]
@@ -2039,7 +2039,7 @@ put("xl/tables/table2.xml", t2.replace('ref="A6:B12"', 'ref="A6:B13"'))
 print("Data Validation sheet: PC row added, tblMethods extended")
 
 # ---------- 9e1. Current-Excel guidance: point at the natives that now overlap ----------
-# Excel 365 has gained functions since the earlier release that do natively what a few of
+# Excel 365 has gained functions since the earlier workbook was written that do natively what a few of
 # these helpers were written to work around. Checked against Microsoft's documentation on
 # 18 August 2026.
 wb = get("xl/workbook.xml")
@@ -2630,8 +2630,8 @@ FLAT_MODULE_OF: dict[str, str] = {}
 # The names in the loop below are the build's own intermediate ones, not the names any
 # release carried, and today those happen to coincide. They stop coinciding the moment a
 # function is added: a new ozzit.f.PayrollTaxλ would flatten to oz.PayrollTaxλ and publish
-# a earlier no release ever shipped, which is worse than publishing nothing. So the
-# earlier is only recorded when the released baseline confirms it existed.
+# a previous name no release ever shipped, which is worse than publishing nothing. So the
+# previous name is only recorded when the released baseline confirms it existed.
 RELEASED = "released-names-v1.2.6.txt"
 with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), RELEASED),
           encoding="utf-8") as _fh:
