@@ -534,6 +534,11 @@ Near 'DayCount: text dates'                   "INDEX($dc({`"2026-07-01`",`"2026-
 Near 'DayCount: one APR per period'           "INDEX($dc($jul, {0.05,0.06,0.07}),1,3) - 0.07*30/365" '0' '0.0000000001'
 Near 'DayCount: Actual/Actual, leap February' "INDEX($dc(EDATE(DATE(2028,1,1), {0,1,2}), 0.073, 4),1,2) - 0.073*29/366" '0' '0.0000000001'
 Near 'DayCount: weekly timeline'              "INDEX($dc(DATE(2026,7,1) + {0,7,14}, 0.073),1,3) - 0.073*7/365" '0' '0.0000000001'
+# Actual/Actual on a week that straddles 31 December: four days in one year, three in the
+# next, each over its own year's length. Common to leap, then leap to common.
+Near 'DayCount: Actual/Actual, common into leap' "INDEX($dc(DATE(2023,12,28) + {0,7,14}, 0.073, 4),1,1) - 0.073*(4/365 + 3/366)" '0' '0.0000000001'
+Near 'DayCount: Actual/Actual, leap into common' "INDEX($dc(DATE(2024,12,28) + {0,7,14}, 0.073, 4),1,1) - 0.073*(4/366 + 3/365)" '0' '0.0000000001'
+Near 'DayCount: Actual/Actual, financial year'  "INDEX($dc(EDATE(DATE(2023,7,1), {0,12,24}), 0.073, 4),1,1) - 0.073*(184/365 + 182/366)" '0' '0.0000000001'
 Near 'DayCount: one date is an error'         "--ISERROR($dc(DATE(2026,7,1), 0.073))" '1'
 Near 'DayCount: unknown convention is an error' "--ISERROR($dc($jul, 0.073, 5))" '1'
 Near 'DayCount: EndDates given as 1'          "SUMPRODUCT(ABS($dc(EOMONTH(DATE(2026,7,1), {0,1,2}), 0.073, 3, 1) - $dc($jul, 0.073)))" '0' '0.0000000001'
