@@ -1002,8 +1002,9 @@ class CashFlowTemplateContractTests(unittest.TestCase):
         workflow = markdown_section(template_readme, "Weekly workflow", "Scenario behaviour")
         scenario = markdown_section(template_readme, "Scenario behaviour", "Checks and limitations")
         limitations = markdown_section(template_readme, "Checks and limitations")
-        getting_started = markdown_section(main_readme, "Getting started", "Australian conventions")
-        repository_layout = markdown_section(main_readme, "Repository layout", "Checks")
+        workbook_use = (ROOT / "docs" / "workbook-use.md").read_text(encoding="utf-8")
+        getting_started = markdown_section(workbook_use, "Getting started", "Modern Excel")
+        template_summary = (ROOT / "docs" / "cash-flow-template.md").read_text(encoding="utf-8")
 
         self.assertIn("13-week-cash-flow-forecast.xlsx", template_readme)
         self.assertIn("Excel 2024 and later", template_readme)
@@ -1061,8 +1062,9 @@ class CashFlowTemplateContractTests(unittest.TestCase):
         self.assertIn("statutory", limitations.lower())
         self.assertIn("exactly 13 weeks", limitations.lower())
         self.assertIn("formula errors", limitations.lower())
-        self.assertIn("[Ozzit 13-week cash-flow forecast template](templates/README.md)", getting_started)
-        self.assertIn("| `templates/` | `13-week-cash-flow-forecast.xlsx` and its user guide |", repository_layout)
+        self.assertIn("[Ozzit 13-week cash-flow forecast template](../templates/README.md)", getting_started)
+        self.assertIn("templates/13-week-cash-flow-forecast.xlsx", template_summary)
+        self.assertIn("docs/cash-flow-template.md", main_readme)
 
 
 if __name__ == "__main__":
