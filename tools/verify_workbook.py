@@ -50,15 +50,34 @@ def fail(msg: str) -> None:
     failures.append(msg)
 
 
-def check_xml_part(name: str, data: bytes) -> None:
-    """Reject declarations with entity expansion before parsing workbook XML."""
+def check_xml_part(name: str, data: bytes) -> str | None:
+    """Reject declarations with entity expansion before parsing workbook XML.
+
+    Returns the decoded text when the part is safe to scan further, else None.
+    """
     if b"<!DOCTYPE" in data.upper():
         fail(f"DOCTYPE declaration in {name}")
-        return
+        return None
     try:
-        ET.fromstring(data.decode("utf-8"))
-    except (UnicodeDecodeError, ET.ParseError) as exc:
+        text = data.decode("utf-8")
+        ET.fromstring(text)
+    except UnicodeDecodeError as exc:
         fail(f"malformed XML in {name}: {exc}")
+        return None
+    except ET.ParseError as exc:
+        fail(f"malformed XML in {name}: {exc}")
+    return text
+
+
+def load_xml_parts(z: zipfile.ZipFile) -> dict[str, str]:
+    """Check and decode each XML part once. Parts that fail the check are left out."""
+    decoded: dict[str, str] = {}
+    for name in z.namelist():
+        if name.endswith((".xml", ".rels")):
+            text = check_xml_part(name, z.read(name))
+            if text is not None:
+                decoded[name] = text
+    return decoded
 
 
 def main() -> None:
@@ -69,13 +88,11 @@ def main() -> None:
         if name == "xl/vbaProject.bin" or name.startswith(FORBIDDEN_PARTS):
             fail(f"forbidden workbook part {name}")
 
-    for name in parts:
-        if name.endswith((".xml", ".rels")):
-            check_xml_part(name, z.read(name))
+    xml_parts = load_xml_parts(z)
 
     for name in parts:
         if name.endswith((".xml", ".rels")) and name != "customXml/item1.xml":
-            text = z.read(name).decode("utf-8")
+            text = xml_parts.get(name, "")
             for hit in BANNED.finditer(text):
                 fail(f"banned token {hit.group(0)!r} in {name}")
         elif name.endswith(".bin"):
@@ -84,7 +101,7 @@ def main() -> None:
                 fail(f"banned token {hit.group(0)!r} in {name}")
 
     # The Advanced Formula Environment store holds the module sources as base64 UTF-16 JSON.
-    afe = z.read("customXml/item1.xml").decode("utf-8")
+    afe = xml_parts.get("customXml/item1.xml", "")
     blob = re.search(r">([A-Za-z0-9+/=]{100,})<", afe)
     if not blob:
         fail("AFE project store missing")
@@ -95,7 +112,7 @@ def main() -> None:
     for hit in BANNED.finditer(store_text):
         fail(f"banned token {hit.group(0)!r} in the AFE project store")
 
-    workbook = z.read("xl/workbook.xml").decode("utf-8")
+    workbook = xml_parts.get("xl/workbook.xml", "")
     defined = dict(re.findall(r'<definedName name="([^"]+)"[^>]*>([^<]*)</definedName>', workbook))
     sheets = set(re.findall(r'<sheet name="([^"]+)"', workbook))
     if not defined:
@@ -121,7 +138,7 @@ def main() -> None:
     for name in parts:
         if not SHEET_RE.match(name):
             continue
-        text = z.read(name).decode("utf-8")
+        text = xml_parts.get(name, "")
         if "#REF!" in text:
             fail(f"#REF! present in {name}")
         for formula in re.findall(r"<f[^>]*>([^<]*)</f>", text):
@@ -137,7 +154,7 @@ def main() -> None:
     for part in parts:
         if not (SHEET_RE.match(part) or part.startswith("xl/tables/")):
             continue
-        text = z.read(part).decode("utf-8")
+        text = xml_parts.get(part, "")
         formulas = re.findall(r"<f[^>]*>(.*?)</f>", text, re.S)
         formulas += re.findall(r"<calculatedColumnFormula[^>]*>(.*?)</calculatedColumnFormula>", text, re.S)
         for formula in formulas:
@@ -149,7 +166,7 @@ def main() -> None:
                 fail(f"always-calculate flag on a non-volatile cell in {part}")
                 break
 
-    shared = ET.fromstring(z.read("xl/sharedStrings.xml").decode("utf-8"))
+    shared = ET.fromstring(xml_parts.get("xl/sharedStrings.xml", "<sst/>"))
     unique_count = shared.get("uniqueCount")
     if unique_count is None:
         fail("sharedStrings uniqueCount is missing")
