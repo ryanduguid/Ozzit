@@ -127,7 +127,7 @@ DayCountRateλ = LAMBDA(
     //  Help
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →DayCountRateλ(Timeline, APR, [Convention], [EndDates])¶" &
-                            "DESCRIPTION:   →Interest rate for each period of a timeline under a day count convention.¶NOTES!         →Returns a row with one rate per timeline period, whichever way the¶               →timeline runs: APR multiplied by the days in the period and divided by¶               →the days in the year, as the convention counts them. Pass the result to¶               →DebtSculptVariableλ() or DebtSculptVariableLRVλ() as PeriodRates in place¶               →of a flat twelfth of the APR. With start dates each period runs from its¶               →date to the day before the next, and the last period takes its length¶               →from the one before it; with end dates each runs from the day after the¶               →previous date to its own, and the first period is the one inferred. A¶               →gap of 28 days or more is read as whole calendar months, a shorter one¶               →as days. 30/360 counts every month as 30 days on the European rule.¶               →Under Actual/Actual a period that straddles 31 December takes the year¶               →length of the year it starts in.¶" &
+                            "DESCRIPTION:   →Interest rate for each period of a timeline under a day count convention.¶NOTES!         →Returns a row with one rate per timeline period, whichever way the¶               →timeline runs: APR multiplied by the days in the period and divided by¶               →the days in the year, as the convention counts them. Pass the result to¶               →DebtSculptVariableλ() or DebtSculptVariableLRVλ() as PeriodRates in place¶               →of a flat twelfth of the APR. With start dates each period runs from its¶               →date to the day before the next, and the last period takes its length¶               →from the one before it; with end dates each runs from the day after the¶               →previous date to its own, and the first period is the one inferred. A¶               →gap of 28 days or more is read as whole calendar months, a shorter one¶               →as days. 30/360 counts every month as 30 days on the European rule.¶               →Under Actual/Actual a period that straddles 31 December splits its days¶               →between the two years, each over that year's own length (the ISDA rule).¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
                             "VERSION:       →6 Sep 2026¶" &
                             "PARAMETERS:    →¶" &
@@ -180,12 +180,19 @@ DayCountRateλ = LAMBDA(
                             360 * (YEAR(Next) - YEAR(Starts)) + 30 * (MONTH(Next) - MONTH(Starts))
                                 + IF(DAY(Next) > 30, 30, DAY(Next)) - IF(DAY(Starts) > 30, 30, DAY(Starts)),
                             Next - Starts),
-        YearDays,       SWITCH(Method,
-                            1, 360,
-                            2, 360,
-                            4, IF(DAY(DATE(YEAR(Starts), 2, 29)) = 29, 366, 365),
-                            365),
-        Rates,          Rate * Days / YearDays,
+    //  Actual/Actual splits a period at 1 January, each part over its own year's length.
+    //  IF rather than MIN, because MIN would collapse the row to one value.
+        YearOne,        YEAR(Starts),
+        Boundary,       DATE(YearOne + 1, 1, 1),
+        Split,          IF(Next < Boundary, Next, Boundary),
+        DaysOne,        IF(DAY(DATE(YearOne, 2, 29)) = 29, 366, 365),
+        DaysTwo,        IF(DAY(DATE(YearOne + 1, 2, 29)) = 29, 366, 365),
+        Fraction,       SWITCH(Method,
+                            1, Days / 360,
+                            2, Days / 360,
+                            4, (Split - Starts) / DaysOne + (Next - Split) / DaysTwo,
+                            Days / 365),
+        Rates,          Rate * Fraction,
         Result,         IF(OR(Count < 2, NOT(OR(Method = {1,2,3,4}))), #VALUE!, Rates),
     //  Return Result or Help
         CHOOSE( Help? + 1, Result, Help)
@@ -415,25 +422,31 @@ def run(workbook: Path, src: Path, index: Path | None) -> list[str]:
 
     # Rendered from the published source and proven against it, the way every
     # compiled definition is; then the About tables catch up through the same tool.
-    # The compiler reads src/ from disk, so src/ is written first; if anything after
-    # that fails, src/ goes back to what it was rather than staying half-applied.
+    # The compiler reads src/ from disk, so src/ is written first and the index next;
+    # the workbook, which is what marks the pass applied, is written last. If anything
+    # before that fails, src/ and the index go back to what they were rather than
+    # staying half-applied.
+    index_before = index.read_bytes() if index is not None and index.is_file() else None
+    indexed = False
     try:
         compiled = compile_sources(src)
         book = insert_names(book, [c for c in compiled if c.name in QUALIFIED])
         book, _recompiled = apply(book, compiled)
+        if index_before is not None and index is not None:
+            indexed = update_index(index, book, {c.name: c.module for c in compiled})
+        elif index is not None:
+            print(f"note: {index} not found, index not updated")
         parts["xl/workbook.xml"] = book.encode("utf-8")
         write_deterministic(workbook, parts)
     except Exception:
         for module in MODULES:
             write_text(src / f"{module}.txt", texts[module])
+        if index_before is not None and index is not None:
+            index.write_bytes(index_before)
         raise
     changed.append("workbook")
-
-    if index is not None and index.is_file():
-        if update_index(index, book, {c.name: c.module for c in compiled}):
-            changed.append(index.name)
-    elif index is not None:
-        print(f"note: {index} not found, index not updated")
+    if indexed and index is not None:
+        changed.append(index.name)
     return changed
 
 

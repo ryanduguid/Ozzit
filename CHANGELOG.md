@@ -22,7 +22,9 @@ No worksheet was added or changed, so all cached values are the ones v3.3.0 ship
   `(1 + annual) ^ (1 / periods) - 1`, and the self-test proves them against
   Excel's own NOMINAL() and against each other on random rates.
 - **`oz.DayCountRateλ(Timeline, APR, [Convention], [EndDates])`.** One interest
-  rate per timeline period under 30/360, Actual/360, Actual/365 or Actual/Actual.
+  rate per timeline period under 30/360, Actual/360, Actual/365 or Actual/Actual,
+  with Actual/Actual splitting a period at 1 January so each part is counted over
+  its own year's length, the ISDA rule.
   Every debt path in the library charged a flat twelfth of the APR; Australian
   facilities are mostly quoted Actual/365. The two variable debt sculpting
   functions, `oz.DebtSculptVariableλ` and `oz.DebtSculptVariableLRVλ`, take the
