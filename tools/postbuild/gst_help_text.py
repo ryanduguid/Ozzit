@@ -3,8 +3,8 @@
 Usage: python tools/postbuild/gst_help_text.py [workbook] [src dir]
 
 This pass starts from the committed ozzit.xlsx and src/ (the post-v3.0.0 input
-recorded in ATTRIBUTION.md). It does not read the predecessor workbook and does not
-go through transform_from_predecessor.py.
+recorded in ATTRIBUTION.md). It does not read the earlier workbook and does not
+go through transform_from_earlier.py.
 
 It inserts a NOTES! block after DESCRIPTION and before WEBPAGE in the two GST
 helpers' inline help, PeriodDiffλ style, inside the existing quoted DESCRIPTION

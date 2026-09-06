@@ -22,7 +22,7 @@ Four conventions are honoured rather than reported:
   * help is a two-column table, so a long row wraps onto one with an empty label, and
     the rows must be rejoined before either can be read
   * a table row whose label ends in ! is an aside, not a parameter: NOTE!, NOTES!
-  * square brackets are ignored. Predecessor declares every parameter optional so that a
+  * square brackets are ignored. The earlier workbook declares every parameter optional so that a
     function called with no arguments can return its own help and police the omissions
     itself, so the declaration's brackets say nothing about which arguments a caller may
     leave out. Only the help distinguishes them, and there is nothing to check that

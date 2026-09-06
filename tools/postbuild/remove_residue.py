@@ -2,7 +2,7 @@
 
 Usage: python tools/postbuild/remove_residue.py [workbook]
 
-Five kinds of residue, all inherited from Ryan Duguid's predecessor workbook or from the
+Five kinds of residue, all inherited from Ryan Duguid's earlier workbook or from the
 add-ins that once edited it, and one presentation rule:
 
     FMTs           a hidden worksheet holding a 134-row table named Skin. Its

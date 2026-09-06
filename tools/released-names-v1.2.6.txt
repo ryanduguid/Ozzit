@@ -1,6 +1,6 @@
 # The 130 function names release v1.2.6 shipped, taken from its own functions.csv.
 # The build reads this to fill the previous_name column: a shipped function whose
-# predecessor is listed here records it, and anything added since v1.2.6 records
+# previous name is listed here records it, and anything added since v1.2.6 records
 # nothing rather than a name that never existed. Historical fact, so it does not
 # change; adopting a newer baseline means adding a file, not editing this one.
 nabla.d.Aboutλ

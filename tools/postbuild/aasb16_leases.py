@@ -3,8 +3,8 @@
 Usage: python tools/postbuild/aasb16_leases.py [workbook] [src dir] [functions.csv]
 
 This pass starts from the committed ozzit.xlsx and src/ (the post-v3.0.0 input
-recorded in ATTRIBUTION.md). It does not read the predecessor workbook and does not
-go through transform_from_predecessor.py.
+recorded in ATTRIBUTION.md). It does not read the earlier workbook and does not
+go through transform_from_earlier.py.
 
 It adds oz.LeaseLiabilityλ, oz.LeaseScheduleλ, oz.ROUScheduleλ and
 oz.LeaseRemeasureλ to four stores at once: src/Financial.txt, the defined names

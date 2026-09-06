@@ -1,10 +1,10 @@
-"""Regression fixtures for the pure paths in transform_from_predecessor.py.
+"""Regression fixtures for the pure paths in transform_from_earlier.py.
 
-The builder is an intentionally one-shot migration over an predecessor workbook
+The builder is an intentionally one-shot migration over an earlier workbook
 that is not redistributed. Importing it would execute that migration. These
 tests compile only named function definitions and their literal dependencies
 from the tracked source, so the assertions exercise the exact implementation
-without inventing or redistributing the predecessor input.
+without inventing or redistributing the earlier input.
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[2]
-TRANSFORM = ROOT / "tools" / "transform_from_predecessor.py"
+TRANSFORM = ROOT / "tools" / "transform_from_earlier.py"
 
 
 def load_transform_symbols(*function_names: str) -> SimpleNamespace:

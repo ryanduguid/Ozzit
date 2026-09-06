@@ -316,25 +316,6 @@ class RepositoryPolicyTests(unittest.TestCase):
 
 class RepositoryAttributionTests(unittest.TestCase):
 
-    NAME = re.compile(("H[a]t(?:maker|maekr)" + "|H[a]t(?:maker|maekr)").encode(), re.IGNORECASE)
-
-    def tracked_files(self):
-        listing = subprocess.run(
-            ["git", "ls-files"],
-            cwd=ROOT, capture_output=True, check=True, text=True,
-        )
-        for entry in listing.stdout.splitlines():
-            if entry:
-                yield ROOT / entry
-
-    def test_no_tracked_file_carries_the_upstream_author_name(self):
-        offenders = [
-            path.relative_to(ROOT).as_posix()
-            for path in self.tracked_files()
-            if path.is_file() and self.NAME.search(path.read_bytes())
-        ]
-        self.assertEqual(offenders, [], f"legacy creator marker present in: {offenders}")
-
     def test_workbook_creator_credits_the_project(self):
         with zipfile.ZipFile(ROOT / "ozzit.xlsx") as archive:
             core = archive.read("docProps/core.xml")

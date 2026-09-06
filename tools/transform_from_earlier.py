@@ -1,4 +1,4 @@
-# Build ozzit.xlsx from Ryan Duguid's predecessor workbook.
+# Build ozzit.xlsx from Ryan Duguid's earlier workbook.
 # Pure zip/XML surgery. Never resaves via openpyxl (preserves cached values, extensions, rich parts).
 import zipfile, re, os, sys, datetime
 import base64, json
@@ -119,7 +119,7 @@ rewrites = [
      "This workbook contains the Ozzit function library, covering dates, array essentials, "
      "financial functions, financial ratios, utilities and debt. Every function shares the oz. prefix. "),
     ("click and worksheet name", "click any worksheet name"),
-    # matched before the brand sweep runs, so this is the predecessor wording
+    # matched before the brand sweep runs, so this is the earlier wording
     ("This is a library of 5g functions for simplifying financial model development, "
      "especially models using dynamic arrays, and especially for Excel novices.",
      "This is a library of ozzit functions for simplifying financial model development, "
@@ -169,7 +169,7 @@ TYPOS = [("equally equally", "equally"),
          ("2023-Feb-26", "2025-Feb-26"), ("2023-Feb¶", "2025-Feb¶"),
          ("2023:Q01", "2025:Q1"), ("→2023¶", "→2025¶"), ("specifice text", "specific text"),
          ("dynamice", "dynamic"), ("a lable for", "a label for"),
-         # double substitution artefact: predecessor read "every BXL 5g Library"
+         # double substitution artefact: the earlier workbook read "every BXL 5g Library"
          ("ozzit ozzit Library", "ozzit library"),
          ("Every Workday (USA normal)", "Every Workday (Monday to Friday)"),
          ("randomly generated", "sample"), ("Randomly generated", "Sample"),
@@ -178,7 +178,7 @@ TYPOS = [("equally equally", "equally"),
          ("\"FUNCTION:      RollingMin", "\"FUNCTION:      →RollingMin"),
          ("Liabilites", "Liabilities"),
          ('lang="en-US"', 'lang="en-AU"'),
-         # unfulfilled predecessor placeholder in 46 help blocks
+         # unfulfilled placeholder in 46 help blocks of the earlier workbook
          ("&lt;coming soon&gt;", REPO_URL), ("<coming soon>", REPO_URL),
          ("&lt;Coming soon&gt;", REPO_URL), ("<Coming soon>", REPO_URL),
          ("→Coming soon¶", "→" + REPO_URL + "¶"),
@@ -240,7 +240,7 @@ def _shift_serial(v: float) -> float:
 
 def _mdy_to_au(mo: re.Match[str]) -> str:
     m_, d_, y_ = int(mo.group(1)), int(mo.group(2)), int(mo.group(3))
-    if y_ < 100:  # predecessor also wrote two-digit years, e.g. 02/26/23
+    if y_ < 100:  # the earlier workbook also wrote two-digit years, e.g. 02/26/23
         y_ += 2000
     y2, mm, dd = _shift_ymd(y_, m_, d_)
     return "%d/%d/%d" % (dd, mm, y2)
@@ -528,7 +528,7 @@ for full, note in SEE_ALSO.items():
 assert see_afe == len(SEE_ALSO), see_afe
 print("SEE ALSO added to", see_afe, "module sources")
 
-# Predecessor's installed SumDepreciateλ is a later revision than its own module source:
+# The earlier workbook's installed SumDepreciateλ is a later revision than its own module source:
 # the name carries a blank help row and a different (behaviour-identical) way of
 # testing for the omitted argument. Bring the source up to the version that ships, so
 # what is published is what people actually get.
@@ -735,7 +735,7 @@ HELP_SIGNATURES: list[tuple[str, ...]] = [
     # TimelineOffsetλ's worked example is the one line in the library a reader cannot copy:
     # the call is missing the two closing brackets that finish EDATE and the function call
     # itself, so pasting it gets a syntax error rather than an answer, and the Result column
-    # beside it is empty where every other example prints what it returns. Predecessor wrote it
+    # beside it is empty where every other example prints what it returns. The earlier workbook wrote it
     # against 2/15/2022 and a timeline starting 1/1/2023; the date sweep moved both forward
     # two years with everything else, which still left it two years behind the 1 Jan 2026
     # timeline the demonstration sheet builds. Rewritten as two rows against that same
@@ -1403,7 +1403,7 @@ print("fixed %d defects in the module sources across %d functions"
 # The five debt functions are recursive: each calls itself by name. The Advanced Formula
 # Environment takes a function's prefix from the container it is imported into, so a
 # recursive definition held in an AFE module would call a name that does not exist there.
-# Predecessor leaves all five out of its project store for that reason and ships them as
+# The earlier workbook leaves all five out of its project store for that reason and ships them as
 # defined names only, and so does this build. They therefore get the defined-name pass
 # alone: there is no module source to correct first, and no demonstration sheet has ever
 # called one, so nothing is cached either.
@@ -1471,7 +1471,7 @@ DEBT_FIXES: list[tuple[str, ...]] = [
      "→capped at the principal outstanding.¶"),
 ]
 
-# fix predecessor copy-paste bug: the u module's About suggested "ozzit.e" (was BXE) as its own name
+# fix an earlier copy-paste bug: the u module's About suggested "ozzit.e" (was BXE) as its own name
 assert "Suggested module name: ozzit.e" in mods["ozzit.u"]["text"]
 mods["ozzit.u"]["text"] = mods["ozzit.u"]["text"].replace(
     "Suggested module name: ozzit.e", "Suggested module name: ozzit.u")
@@ -1503,7 +1503,7 @@ obj_afe["locale"]["dateOrder"] = "DMY"
 names = obj_afe["projectNames"]
 assert "ozzit.f.MACRSλ" in names
 names.remove("ozzit.f.MACRSλ")
-if "ozzit.f.SumDepreciateλ" not in names:  # predecessor omitted it from the index
+if "ozzit.f.SumDepreciateλ" not in names:  # the earlier workbook omitted it from the index
     names.append("ozzit.f.SumDepreciateλ")
 for spec in FUNCS:
     full = spec["module"] + "." + spec["name"]
@@ -1525,8 +1525,8 @@ for n in list(parts):
 
 # ---------- help signatures, second store ----------
 # The module sources were corrected before the AFE store was written. The defined names
-# could not be, because until the sweep just above they still carried the predecessor brand
-# and the predecessor spelling: QuickRatioλ's help said Liabilites, and LabelAmortiseλ was
+# could not be, because until the sweep just above they still carried the earlier brand
+# and the earlier spelling: QuickRatioλ's help said Liabilites, and LabelAmortiseλ was
 # still LabelAmortizeλ. Now that both stores read the same, apply the same table.
 _wbx = get("xl/workbook.xml")
 for _entry in HELP_SIGNATURES + LOGIC_FIXES + DEBT_FIXES:
@@ -1807,7 +1807,7 @@ for part, cell, old in ANCHOR_CHECKS:
 print("anchor checks pass:", len(ANCHOR_CHECKS))
 
 # ---------- 8a4. Amortiseλ demo: start the first loan inside the timeline ----------
-# Predecessor started it 12 months before the model timeline with a 10-month term, so the loan
+# The earlier workbook started it 12 months before the model timeline with a 10-month term, so the loan
 # was fully repaid before the first period and its six rows rendered as zeros. Starting it
 # 1 March 2026 puts a partial schedule on screen. The caption is restated to match.
 OLD_START, NEW_START = "45658", "46082"      # 1 Jan 2025 -> 1 Mar 2026
@@ -1937,7 +1937,7 @@ for mod in ("e", "d"):  # both modules ship an Aboutλ source that was never ins
                     '<definedName name="%s" comment="Displays this module\'s repository URL and function list">%s</definedName></definedNames>'
                     % (full, xesc(body)))
     print("%s defined, %d chars" % (full, len(body)))
-# same predecessor copy-paste bug in the installed u-module About
+# same earlier copy-paste bug in the installed u-module About
 wb = re.sub(r'(<definedName name="ozzit\.u\.Aboutλ"[^>]*>[^<]*?)Suggested module name: ozzit\.e',
             r'\g<1>Suggested module name: ozzit.u', wb)
 put("xl/workbook.xml", wb)
@@ -2039,7 +2039,7 @@ put("xl/tables/table2.xml", t2.replace('ref="A6:B12"', 'ref="A6:B13"'))
 print("Data Validation sheet: PC row added, tblMethods extended")
 
 # ---------- 9e1. Current-Excel guidance: point at the natives that now overlap ----------
-# Excel 365 has gained functions since the predecessor release that do natively what a few of
+# Excel 365 has gained functions since the earlier release that do natively what a few of
 # these helpers were written to work around. Checked against Microsoft's documentation on
 # 18 August 2026.
 wb = get("xl/workbook.xml")
@@ -2081,7 +2081,7 @@ ct2 = re.sub(r'<Override PartName="/xl/calcChain\.xml"[^>]*/>', "", ct)
 assert ct2 != ct
 put("[Content_Types].xml", ct2)
 
-# ---------- 9f. Drop the predecessor printer configuration; print on A4 ----------
+# ---------- 9f. Drop the earlier printer configuration; print on A4 ----------
 # The printerSettings parts embed the original author's printer name and US Letter paper.
 for i in (1, 2, 3):
     p = "xl/printerSettings/printerSettings%d.bin" % i
@@ -2224,7 +2224,7 @@ t1 = get("xl/tables/table1.xml")
 assert 'ref="A4:D69"' in t1
 t1 = t1.replace('ref="A4:D69"', 'ref="A4:D70"')
 
-# Predecessor ships the contents filtered to Type = Worksheet, so the workbook opens with
+# The earlier workbook ships the contents filtered to Type = Worksheet, so the workbook opens with
 # every tblBudget row hidden: 16 of 66 entries invisible until someone notices the slicer.
 # Drop the criteria and unhide the rows. The <autoFilter> element itself stays, because
 # the Type slicer binds to it; with no filterColumn it simply has nothing applied.
@@ -2630,8 +2630,8 @@ FLAT_MODULE_OF: dict[str, str] = {}
 # The names in the loop below are the build's own intermediate ones, not the names any
 # release carried, and today those happen to coincide. They stop coinciding the moment a
 # function is added: a new ozzit.f.PayrollTaxλ would flatten to oz.PayrollTaxλ and publish
-# a predecessor no release ever shipped, which is worse than publishing nothing. So the
-# predecessor is only recorded when the released baseline confirms it existed.
+# a previous name no release ever shipped, which is worse than publishing nothing. So the
+# previous name is only recorded when the released baseline confirms it existed.
 RELEASED = "released-names-v1.2.6.txt"
 with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), RELEASED),
           encoding="utf-8") as _fh:
@@ -2768,7 +2768,7 @@ with open(os.path.join(src_dir, "Debt.txt"), "w", encoding="utf-8", newline="\n"
 exported.append("Debt")
 print("exported", len(exported), "module sources to", src_dir)
 
-SIG_RE = re.compile(r"FUNCTION:\s*→?\s*(.*?)¶")   # arrow optional: some predecessor help omits it
+SIG_RE = re.compile(r"FUNCTION:\s*→?\s*(.*?)¶")   # arrow optional: some earlier help omits it
 DESC_RE = re.compile(r"DESCRIPTION:\s*→(.*?)¶")
 ROW_RE = re.compile(r"→(.*?)¶")           # the next help row, label or not
 # every shipped name came from somewhere, so a missing entry is a build error rather

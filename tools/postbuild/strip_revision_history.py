@@ -3,8 +3,8 @@
 Usage: python tools/postbuild/strip_revision_history.py [workbook] [src dir]
 
 This pass starts from the committed ozzit.xlsx and src/ (the post-v3.0.0 input
-recorded in ATTRIBUTION.md). It does not read the predecessor workbook and does not
-go through transform_from_predecessor.py.
+recorded in ATTRIBUTION.md). It does not read the earlier workbook and does not
+go through transform_from_earlier.py.
 
 Three stores hold the same revision text and all three are rewritten together:
 src/*.txt, the Advanced Formula Environment store in customXml/item1.xml, and
@@ -37,7 +37,6 @@ MODULES = ("Dates", "Essentials", "Financial", "Ratios", "Utilities", "Debt")
 # The heading is indented inside the comment and the block runs to the delimiter.
 REVISIONS = re.compile(r"^[ \t]*REVISIONS:.*", re.M)
 
-# Assembled so this file does not spell the legacy creator marker either.
 OLD_CREATOR = (
     "<dc:creator>Ryan Duguid; Ozzit project</dc:creator>"
 ).encode()

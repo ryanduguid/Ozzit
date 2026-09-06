@@ -1,6 +1,6 @@
 ## Australian conventions
 
-The library is Australian-only: the foreign tax regimes and references the predecessor library carried have been removed rather than relabelled, and the conventions below are Australian throughout.
+The library is Australian-only: the foreign tax regimes and references the earlier library carried have been removed rather than relabelled, and the conventions below are Australian throughout.
 
 - Australian English throughout (amortise, modelling, and so on), including function names.
 - Dates are day-first, in text examples and in cell formats. Worksheets print on A4.
@@ -17,7 +17,7 @@ The library is Australian-only: the foreign tax regimes and references the prede
 
 The 10% default and one-eleventh extraction reflect the basic rule for a taxable supply in [*A New Tax System (Goods and Services Tax) Act 1999*](https://www.legislation.gov.au/C2004A00446/latest/text) ss 9-70 and 9-75 (source checked 20 August 2026). Recheck the current Act and any applicable special rule at the time of use. These helpers apply arithmetic only: they do not decide whether a supply is taxable, GST-free, input taxed, outside the GST system or subject to a special rule.
 
-The same scope note is embedded as NOTES! rows in the `oz.GSTAddλ` and `oz.GSTExtractλ` inline help. The About table and Name Manager comments keep the one-line descriptions. `tools/postbuild/gst_help_text.py` applies it to the committed `ozzit.xlsx` and `src/`; `tools/transform_from_predecessor.py` still needs the uncommitted predecessor workbook and still stops at v3.0.0.
+The same scope note is embedded as NOTES! rows in the `oz.GSTAddλ` and `oz.GSTExtractλ` inline help. The About table and Name Manager comments keep the one-line descriptions. `tools/postbuild/gst_help_text.py` applies it to the committed `ozzit.xlsx` and `src/`; `tools/transform_from_earlier.py` still needs the uncommitted earlier workbook and still stops at v3.0.0.
 
 `oz.Depreciateλ` accepts the method codes `SLN`, `SYD`, `DB`, `DDB`, `VDB`, `DV` (diminishing value) and `PC` (prime cost).
 

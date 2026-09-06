@@ -1,6 +1,6 @@
 """Every XML-only postbuild pass must be a byte no-op on the committed workbook.
 
-This is the reproducibility property testable without the predecessor workbook: a
+This is the reproducibility property testable without the earlier workbook: a
 second run either reports "already applied" and changes nothing, or fails on an
 assertion. A silent mutation means the pass is not idempotent and must not ship.
 """

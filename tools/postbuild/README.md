@@ -1,7 +1,7 @@
 # Postbuild passes
 
-The v3.0.0 baseline comes from `tools/transform_from_predecessor.py`, which still needs
-the uncommitted predecessor workbook and stops at v3.0.0. Later passes start from the
+The v3.0.0 baseline comes from `tools/transform_from_earlier.py`, which still needs
+the uncommitted earlier workbook and stops at v3.0.0. Later passes start from the
 committed `ozzit.xlsx` and `src/` recorded in ATTRIBUTION.md. This directory holds
 the ones that are deterministic and safe to re-run.
 
@@ -60,7 +60,7 @@ record the v3.0.0 → v3.1.0 swaps. The GST help pass records a later insert aga
 committed v3.1.0 workbook and `src/`. The revision-history pass removes the
 per-function REVISIONS blocks, the Advanced Formula Environment copies of them and
 the workbook's creator credit; it resynchronises the AFE store itself, so it must
-run after any text pass that touches `src/`. A build that starts from the predecessor
+run after any text pass that touches `src/`. A build that starts from the earlier workbook
 workbook still emits those blocks at v3.0.0, so this pass is what removes them. The
 help-corrections pass is the last text pass: it repairs the functions that shipped
 disagreeing with their own inline help. Two of the corrected examples are spilled onto
@@ -79,4 +79,4 @@ states that byte-for-byte reproduction of the current workbook is not claimed.
 
 The one-off scripts that produced v3.1.0 remain in the session record; the FY27 and
 palette passes here are the parts of that work that are deterministic. The GST help pass
-is a later committed-input insert, not a regeneration from the predecessor workbook.
+is a later committed-input insert, not a regeneration from the earlier workbook.
