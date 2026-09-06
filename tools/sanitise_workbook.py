@@ -161,9 +161,8 @@ def sanitise(workbook: Path) -> list[str]:
 
     # The save path.
     wb = parts["xl/workbook.xml"].decode("utf-8")
-    n_abs = len(re.findall(r"<x15ac:absPath[^>]*/>", wb))
+    wb, n_abs = re.subn(r"<x15ac:absPath[^>]*/>", "", wb)
     if n_abs:
-        wb = re.sub(r"<x15ac:absPath[^>]*/>", "", wb)
         wb = re.sub(
             r"<mc:AlternateContent[^>]*>\s*<mc:Choice[^>]*>\s*</mc:Choice>"
             r"\s*</mc:AlternateContent>",
