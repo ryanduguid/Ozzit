@@ -3,7 +3,7 @@
 
 AboutFinancialλ = TRIM(TEXTSPLIT(
     "ABOUT:             →Ozzit's Financial Models module. Suggested module name: oz¶" &
-    "VERSION:           →20 Aug 2026¶" &
+    "VERSION:           →6 Sep 2026¶" &
     "REPOSITORY:          →https://github.com/ryanduguid/Ozzit ¶" &
     "WEBSITE:           →https://github.com/ryanduguid/Ozzit ¶" &
     "→¶" &
@@ -48,7 +48,12 @@ AboutFinancialλ = TRIM(TEXTSPLIT(
                                            "LeaseLiabilityλ    →Present value of the lease payments that are not paid at the commencement date¶" &
                                            "LeaseScheduleλ     →Unwinds a lease liability into opening, payment, interest and closing rows¶" &
                                            "LeaseRemeasureλ    →Remeasures a lease liability for revised payments and adjusts the right-of-use asset¶" &
-                                           "ROUScheduleλ       →Depreciates a right-of-use asset in a straight line over the lease term¶" & 
+                                           "ROUScheduleλ       →Depreciates a right-of-use asset in a straight line over the lease term¶" &
+                                           "→¶" &
+                                           "RATES              →¶" &
+                                           "PeriodRateλ        →Converts an effective annual rate to the equivalent rate per period¶" &
+                                           "AnnualRateλ        →Converts a rate per period to the effective annual rate¶" &
+                                           "DayCountRateλ      →Interest rate for each timeline period under a day count convention¶" & 
                                            
     "→¶" &
     "SUBROUTINES        →Functions used by other functions or general purpose functions.¶" & 
@@ -2355,6 +2360,156 @@ ROUScheduleλ = LAMBDA(
                                 SEQUENCE(1, Count, Charge, 0),
                                 Cost - Charge * Index),
                             "ROUScheduleλ needs a numeric Cost and Periods of at least 1"),
+    //  Return Result or Help
+        CHOOSE( Help? + 1, Result, Help)
+    )
+);
+
+
+
+/*  FUNCTION NAME:  PeriodRateλ
+    DESCRIPTION:*//**Converts an effective annual rate to the equivalent rate per period, the rate the lease functions take*/
+
+PeriodRateλ = LAMBDA(
+//  Parameter Declaration
+    [AnnualRate],
+    [PeriodsPerYear],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →PeriodRateλ(AnnualRate, [PeriodsPerYear])¶" &
+                            "DESCRIPTION:   →Converts an effective annual rate to the equivalent rate per period.¶NOTES!         →(1 + AnnualRate) ^ (1 / PeriodsPerYear) - 1, so compounding the result¶               →PeriodsPerYear times gives the annual rate back. This is the rate per¶               →period that LeaseLiabilityλ(), LeaseScheduleλ() and LeaseRemeasureλ()¶               →take. It is for an effective annual rate. A nominal annual percentage¶               →rate that compounds monthly is already APR / 12 per month, so do not¶               →pass it here; EFFECT() turns one into the effective rate this takes.¶               →AnnualRateλ() is the inverse.¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "VERSION:       →6 Sep 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "AnnualRate     →(Required) Effective annual rate, or a row or column of them.¶" &
+                            "PeriodsPerYear →(Optional: Default = 12) Periods in a year: 12 for months, 4 for quarters, 1 for years.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.PeriodRateλ(0.05)¶" &
+                            "→Result¶" &
+                            "→0.004074",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          ISOMITTED(AnnualRate),
+    //  A blank PeriodsPerYear cell is not an omitted argument, so test for both
+        Periods,        IF(OR(ISOMITTED(PeriodsPerYear), NOT(ISNUMBER(PeriodsPerYear))), 12, PeriodsPerYear),
+        Result,         (1 + AnnualRate) ^ (1 / Periods) - 1,
+    //  Return Result or Help
+        CHOOSE( Help? + 1, Result, Help)
+    )
+);
+
+
+/*  FUNCTION NAME:  AnnualRateλ
+    DESCRIPTION:*//**Converts a rate per period to the effective annual rate, the inverse of PeriodRateλ*/
+
+AnnualRateλ = LAMBDA(
+//  Parameter Declaration
+    [PeriodRate],
+    [PeriodsPerYear],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →AnnualRateλ(PeriodRate, [PeriodsPerYear])¶" &
+                            "DESCRIPTION:   →Converts a rate per period to the effective annual rate.¶NOTES!         →(1 + PeriodRate) ^ PeriodsPerYear - 1, the inverse of PeriodRateλ().¶               →Use it to state a rate per period, such as a lease rate solved per¶               →month, as the annual figure a reader expects.¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "VERSION:       →6 Sep 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "PeriodRate     →(Required) Rate per period, or a row or column of them.¶" &
+                            "PeriodsPerYear →(Optional: Default = 12) Periods in a year: 12 for months, 4 for quarters, 1 for years.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.AnnualRateλ(0.01)¶" &
+                            "→Result¶" &
+                            "→0.126825",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          ISOMITTED(PeriodRate),
+    //  A blank PeriodsPerYear cell is not an omitted argument, so test for both
+        Periods,        IF(OR(ISOMITTED(PeriodsPerYear), NOT(ISNUMBER(PeriodsPerYear))), 12, PeriodsPerYear),
+        Result,         (1 + PeriodRate) ^ Periods - 1,
+    //  Return Result or Help
+        CHOOSE( Help? + 1, Result, Help)
+    )
+);
+
+
+/*  FUNCTION NAME:  DayCountRateλ
+    DESCRIPTION:*//**Interest rate for each period of a timeline under a day count convention: 30/360, Actual/360, Actual/365 or Actual/Actual*/
+
+DayCountRateλ = LAMBDA(
+//  Parameter Declaration
+    [Timeline],
+    [APR],
+    [Convention],
+    [EndDates],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →DayCountRateλ(Timeline, APR, [Convention], [EndDates])¶" &
+                            "DESCRIPTION:   →Interest rate for each period of a timeline under a day count convention.¶NOTES!         →Returns a row with one rate per timeline period, whichever way the¶               →timeline runs: APR multiplied by the days in the period and divided by¶               →the days in the year, as the convention counts them. Pass the result to¶               →DebtSculptVariableλ() or DebtSculptVariableLRVλ() as PeriodRates in place¶               →of a flat twelfth of the APR. With start dates each period runs from its¶               →date to the day before the next, and the last period takes its length¶               →from the one before it; with end dates each runs from the day after the¶               →previous date to its own, and the first period is the one inferred. A¶               →gap of 28 days or more is read as whole calendar months, a shorter one¶               →as days. 30/360 counts every month as 30 days on the European rule.¶               →Under Actual/Actual a period that straddles 31 December takes the year¶               →length of the year it starts in.¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "VERSION:       →6 Sep 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "Timeline       →(Required) A row or column of period dates, at least two, evenly spaced.¶" &
+                            "APR            →(Required) Annual percentage rate, one value or one per period.¶" &
+                            "Convention     →(Optional: Default = 3) 1 = 30/360, 2 = Actual/360, 3 = Actual/365, 4 = Actual/Actual. Any other number is #VALUE!.¶" &
+                            "EndDates       →(Optional: Default = FALSE) TRUE, or a number other than 0, when the timeline shows period end dates rather than start dates.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.DayCountRateλ(EDATE(DATE(2026,7,1), {0,1,2}), 0.073)¶" &
+                            "→Result¶" &
+                            "→0.0062, 0.0062, 0.0060",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR(ISOMITTED(Timeline), ISOMITTED(APR)),
+    //  A blank cell is not an omitted argument, so test for both
+        Method,         IF(OR(ISOMITTED(Convention), NOT(ISNUMBER(Convention))), 3, Convention),
+        EndFlag,        IF(ISLOGICAL(EndDates), EndDates, IF(ISNUMBER(EndDates), EndDates <> 0, FALSE)),
+    //  One timeline laid along a row, text dates read, and a column of rates laid the same way
+        Row,            IF(ROWS(Timeline) = 1, Timeline, TRANSPOSE(Timeline)),
+        Dates,          IF(ISNUMBER(Row), Row, DATEVALUE(Row)),
+        Rate,           IF(ROWS(APR) = 1, APR, TRANSPOSE(APR)),
+        Count,          COLUMNS(Dates),
+    //  The period length is read off the first gap for the first period and the last gap
+    //  for the last, in whole months from 28 days up and in days below that. A month-end
+    //  date steps back through EOMONTH, because EDATE(28 Feb, -1) is 28 Jan, not 31 Jan.
+        FirstGap,       INDEX(Dates, 1, 2) - INDEX(Dates, 1, 1),
+        LastGap,        INDEX(Dates, 1, Count) - INDEX(Dates, 1, Count - 1),
+        FirstDate,      INDEX(Dates, 1, 1),
+        FirstMonths,    ROUND(FirstGap / 30.5, 0),
+        FirstStart,     IF(FirstGap < 28,
+                            FirstDate - FirstGap,
+                            IF(DAY(FirstDate + 1) = 1,
+                                EOMONTH(FirstDate, -FirstMonths),
+                                EDATE(FirstDate, -FirstMonths))) + 1,
+        LastDate,       INDEX(Dates, 1, Count),
+        LastMonths,     ROUND(LastGap / 30.5, 0),
+        LastEnd,        IF(LastGap < 28,
+                            LastDate + LastGap,
+                            IF(DAY(LastDate + 1) = 1,
+                                EOMONTH(LastDate, LastMonths),
+                                EDATE(LastDate, LastMonths))) - 1,
+    //  Every period runs from its start to the day before the next start
+        Starts,         IF(EndFlag, HSTACK(FirstStart, DROP(Dates, , -1) + 1), Dates),
+        Ends,           IF(EndFlag, Dates, HSTACK(DROP(Dates, , 1) - 1, LastEnd)),
+        Next,           Ends + 1,
+    //  30/360 on the European rule: a 31st counts as the 30th at either end
+        Days,           IF(Method = 1,
+                            360 * (YEAR(Next) - YEAR(Starts)) + 30 * (MONTH(Next) - MONTH(Starts))
+                                + IF(DAY(Next) > 30, 30, DAY(Next)) - IF(DAY(Starts) > 30, 30, DAY(Starts)),
+                            Next - Starts),
+        YearDays,       SWITCH(Method,
+                            1, 360,
+                            2, 360,
+                            4, IF(DAY(DATE(YEAR(Starts), 2, 29)) = 29, 366, 365),
+                            365),
+        Rates,          Rate * Days / YearDays,
+        Result,         IF(OR(Count < 2, NOT(OR(Method = {1,2,3,4}))), #VALUE!, Rates),
     //  Return Result or Help
         CHOOSE( Help? + 1, Result, Help)
     )

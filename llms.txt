@@ -3,8 +3,8 @@
 
 ## Package Overview
 - **Repository**: https://github.com/ryanduguid/Ozzit
-- **Domain**: Library of 134 native Excel `LAMBDA` functions for dynamic-array financial modelling. Australian additions are GST add/extract, a 1 July financial-year label, two modelling depreciation schedules, and four AASB 16 lessee schedules.
-- **Provenance**: Built from scratch by Ryan Duguid. See ATTRIBUTION.md. The 134-function count is real; this file must not invent tax engines the workbook does not ship.
+- **Domain**: Library of 138 native Excel `LAMBDA` functions for dynamic-array financial modelling. Australian additions are GST add/extract, a 1 July financial-year label, two modelling depreciation schedules and four AASB 16 lessee schedules. General additions since v3.3.0 are two effective-rate converters, a day count convention rate row (30/360, Actual/360, Actual/365, Actual/Actual) and a DATEDIF replacement.
+- **Provenance**: Built from scratch by Ryan Duguid. See ATTRIBUTION.md. The 138-function count is real; this file must not invent tax engines the workbook does not ship.
 - **Source Context**: Native Excel financial-modelling conventions (amortisation, corkscrews, ratios, debt sculpting) plus the five Australian helpers listed below.
 
 ## Functional Categories

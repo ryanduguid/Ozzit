@@ -498,6 +498,194 @@ Near 'Remeasure honours payments in advance' `
      "INDEX($lrem({110,110},0.05,185.94,181.55,TRUE),1,1)-NPV(0.05,110)" '0'
 Same 'Remeasure: help with no args' "INDEX($lrem(),1,1)" 'FUNCTION:'
 
+# --- Return on equity. Net income over AVERAGE shareholders' equity, which is what the
+# help and the page it links have always said; until 6 Sep 2026 the function divided by
+# whatever it was handed. The two-argument call must return exactly what it did, because
+# the ratios worksheet caches it.
+$roe = "oz.ROE$L"
+Near 'ROE: two arguments, as cached'   "$roe(59.972, AVERAGE(251.635, 256.144))" '0.236213' '0.0000005'
+Near 'ROE: opening equity averages in' "$roe(59.972, 256.144, 251.635)"          '0.236213' '0.0000005'
+Near 'ROE: blank opening cell = closing' "$roe(59.972, 253.8895, Z1)"            '0.236213' '0.0000005'
+Near 'ROE: rows of periods'            "SUM($roe({10,20}, {100,200}, {100,200}))" '0.2' '0.0000001'
+Near 'Sheet: ratios ROE unchanged'     "'oz.FinancialRatios'!A47"                 '0.236213' '0.0000005'
+
+# --- Effective rate conversion, the rate per period the lease functions take.
+$pr = "oz.PeriodRate$L"
+$ar = "oz.AnnualRate$L"
+Near 'PeriodRate: 5% a year is 0.4074% a month' "$pr(0.05)"       '0.00407412' '0.000000005'
+Near 'PeriodRate: one period a year is itself'  "$pr(0.05, 1)"    '0.05'       '0.0000000001'
+Near 'PeriodRate: quarterly'                    "$pr(0.05, 4)"    '0.01227223' '0.000000005'
+Near 'PeriodRate: blank periods cell = 12'      "$pr(0.05, Z1)"   '0.00407412' '0.000000005'
+Near 'PeriodRate: a row of rates'               "SUM($pr({0.05,0.05}))" '0.00814825' '0.00000001'
+Near 'AnnualRate: 1% a month is 12.68% a year'  "$ar(0.01)"       '0.12682503' '0.000000005'
+Near 'AnnualRate: quarterly'                    "$ar(0.01, 4)"    '0.04060401' '0.000000005'
+Near 'AnnualRate: agrees with EFFECT()'         "$ar(0.06/12) - EFFECT(0.06, 12)" '0' '0.0000000001'
+
+# --- Day count conventions. July 2026 has 31 days, September 30, and the year 365.
+$dc = "oz.DayCountRate$L"
+$jul = "EDATE(DATE(2026,7,1), {0,1,2})"
+Same 'DayCount: Actual/365 over Jul to Sep'   "TEXTJOIN(`",`",FALSE,TEXT($dc($jul, 0.073),`"0.0000`"))"    '0.0062,0.0062,0.0060'
+Same 'DayCount: default convention is 3'      "TEXTJOIN(`",`",FALSE,TEXT($dc($jul, 0.073, Z1),`"0.0000`"))" '0.0062,0.0062,0.0060'
+Near 'DayCount: 30/360 is a flat twelfth'     "SUMPRODUCT(ABS($dc($jul, 0.073, 1) - 0.073/12))" '0' '0.0000000001'
+Near 'DayCount: Actual/360, first period'     "INDEX($dc($jul, 0.073, 2),1,1) - 0.073*31/360"  '0' '0.0000000001'
+Near 'DayCount: end dates give the same months' "SUMPRODUCT(ABS($dc(EOMONTH(DATE(2026,7,1), {0,1,2}), 0.073, 3, TRUE) - $dc($jul, 0.073)))" '0' '0.0000000001'
+Near 'DayCount: a column timeline'            "SUMPRODUCT(ABS($dc(TRANSPOSE($jul), 0.073) - $dc($jul, 0.073)))" '0' '0.0000000001'
+Near 'DayCount: text dates'                   "INDEX($dc({`"2026-07-01`",`"2026-08-01`"}, 0.073),1,1) - 0.073*31/365" '0' '0.0000000001'
+Near 'DayCount: one APR per period'           "INDEX($dc($jul, {0.05,0.06,0.07}),1,3) - 0.07*30/365" '0' '0.0000000001'
+Near 'DayCount: Actual/Actual, leap February' "INDEX($dc(EDATE(DATE(2028,1,1), {0,1,2}), 0.073, 4),1,2) - 0.073*29/366" '0' '0.0000000001'
+Near 'DayCount: weekly timeline'              "INDEX($dc(DATE(2026,7,1) + {0,7,14}, 0.073),1,3) - 0.073*7/365" '0' '0.0000000001'
+Near 'DayCount: one date is an error'         "--ISERROR($dc(DATE(2026,7,1), 0.073))" '1'
+Near 'DayCount: unknown convention is an error' "--ISERROR($dc($jul, 0.073, 5))" '1'
+Near 'DayCount: EndDates given as 1'          "SUMPRODUCT(ABS($dc(EOMONTH(DATE(2026,7,1), {0,1,2}), 0.073, 3, 1) - $dc($jul, 0.073)))" '0' '0.0000000001'
+Near 'DayCount: a column of APRs gives a row' "COLUMNS($dc(TRANSPOSE($jul), {0.05;0.06;0.07}))*10 + ROWS($dc(TRANSPOSE($jul), {0.05;0.06;0.07}))" '31'
+Near 'DayCount: month-end starts, last period' "INDEX($dc(EDATE(DATE(2025,12,31), {0,1,2}), 0.073),1,3) - 0.073*31/365" '0' '0.0000000001'
+Near 'DayCount: month-end ends, February first' "INDEX($dc(EOMONTH(DATE(2025,2,1), {0,1,2}), 0.073, 3, TRUE),1,1) - 0.073*28/365" '0' '0.0000000001'
+Same 'DayCount: help with no args'            "INDEX($dc(),1,1)" 'FUNCTION:'
+
+# --- DateDif. A month after 31 January is the last day of February, and every remainder
+# is counted from that anniversary. Excel's own DATEDIF gets the MD case wrong.
+$dd = "oz.DateDif$L"
+Near 'DateDif: MD, 31 Jan to 1 Mar'    "$dd(DATE(2026,1,31), DATE(2026,3,1), `"MD`")" '1'
+Near 'DateDif: M, 31 Jan to 1 Mar'     "$dd(DATE(2026,1,31), DATE(2026,3,1), `"M`")"  '1'
+Near 'DateDif: M, 31 Jan to 29 Feb'    "$dd(DATE(2024,1,31), DATE(2024,2,29), `"M`")" '1'
+Near 'DateDif: YD across a leap day'   "$dd(DATE(2024,3,15), DATE(2025,3,10), `"YD`")" '360'
+Near 'DateDif: Y'                      "$dd(DATE(2024,3,15), DATE(2025,3,10), `"Y`")"  '0'
+Near 'DateDif: YM'                     "$dd(DATE(2020,5,10), DATE(2026,3,10), `"YM`")" '10'
+Near 'DateDif: default unit is days'   "$dd(DATE(2026,1,1), DATE(2026,1,31))"        '30'
+Near 'DateDif: lower-case unit'        "$dd(DATE(2020,5,10), DATE(2026,3,10), `"y`")"  '5'
+Near 'DateDif: text dates'             "$dd(`"2026-01-01`", `"2026-12-31`", `"M`")"    '11'
+Near 'DateDif: same day is nought'     "$dd(DATE(2026,1,1), DATE(2026,1,1), `"M`")"   '0'
+Near 'DateDif: reversed range errors'  "--ISERROR($dd(DATE(2026,3,1), DATE(2026,1,1)))" '1'
+Near 'DateDif: unknown unit errors'    "--ISERROR($dd(DATE(2026,1,1), DATE(2026,3,1), `"X`"))" '1'
+Same 'DateDif: help with no args'      "INDEX($dd(),1,1)" 'FUNCTION:'
+
+# --- Debt sculpting on period rates. A row of rates from a day count convention replaces
+# the flat twelfth of APR, and APR may then be left out altogether.
+$rates = "$dc(EDATE(DATE(2026,7,1), {0,1,2}), 0.073)"
+$onrates = "$dsv(, {1000,0,0}, {300,300,300}, {1.2,1.2,1.2}, , , $rates)"
+Near 'Debt: PeriodRates charge the day count rate' "INDEX($onrates,2,1) - 1000*0.073*31/365" '0' '0.0000001'
+Near 'Debt: PeriodRates ignore APR and months'    "SUMPRODUCT(ABS($dsv(, {1000,0,0}, {300,300,300}, {1.2,1.2,1.2}, {0.9,0.9,0.9}, 12, $rates) - $onrates))" '0' '0.0000001'
+Near 'Debt: PeriodRates keep the roll-forward'    "SUMPRODUCT(ABS(INDEX($onrates,4,0) - INDEX($onrates,1,0) - INDEX($onrates,2,0) - INDEX($onrates,3,0)))" '0' '0.0000001'
+Near 'Debt: without either rate row it is help'  "--ISTEXT(INDEX($dsv(, {1000,0,0}, {300,300,300}, {1.2,1.2,1.2}),1,1))" '1'
+# Interest on the average balance solves I = r * (P - (C - I) / 2) with C = 300 / 1.2 the cash
+# for debt service, so I = r * (P - C / 2) / (1 - r / 2) while the cash clears less than the
+# principal. InterestLRV iterates to within a cent of that.
+Near 'Debt: LRV on PeriodRates, first interest'   "LET(r, 0.073*31/365, INDEX($lrv(, {1000,0,0}, {300,300,300}, {1.2,1.2,1.2}, , , $rates),2,1) - r*(1000-125)/(1-r/2))" '0' '0.001'
+Near 'Debt: blank PeriodRates cell is not given'  "SUMPRODUCT(ABS($dsv(, {1000,0,0}, {300,300,300}, {1.2,1.2,1.2}, {0.06,0.06,0.06}, 12, Z1) - $dsv(, {1000,0,0}, {300,300,300}, {1.2,1.2,1.2}, {0.06,0.06,0.06}, 12)))" '0' '0.0000001'
+Near 'Debt: blank PeriodRates range is not given' "SUMPRODUCT(ABS($dsv(, {1000,0,0}, {300,300,300}, {1.2,1.2,1.2}, {0.06,0.06,0.06}, 12, Z1:Z3) - $dsv(, {1000,0,0}, {300,300,300}, {1.2,1.2,1.2}, {0.06,0.06,0.06}, 12)))" '0' '0.0000001'
+Near 'Debt: LRV on PeriodRates ends at zero'      "INDEX($lrv(, {1000,0,0}, {1800,1800,1800}, {1.2,1.2,1.2}, , , $rates),4,1)" '0' '0.0000001'
+
+# --- Randomised checks. Each trial draws fresh inputs, compares the function with an
+# independent Excel formula and, on a miss, reports the inputs that produced it so the
+# case can be reproduced by hand. A run with no failing trial reads OK. Excel has no
+# seeded generator, so a failure here names its own inputs rather than a seed.
+function Fuzz($id, $draw, $show, $expr, $want, $tol = '0.005', $trials = 25) {
+    $trial = "LET($draw, got, $expr, want, $want, IF(ABS(got-(want))<$tol, `"`", `"got `"&TEXT(got,`"0.000000`")&`" want `"&TEXT(want,`"0.000000`")&`" for `"&$show))"
+    Check $id "=LET(r, MAP(SEQUENCE($trials), LAMBDA(i, $trial)), bad, FILTER(r, r<>`"`", `"`"), IF(INDEX(bad,1,1)=`"`", `"OK`", INDEX(bad,1,1)))"
+}
+$amb = "oz.AmortiseB$L"
+$am  = "oz.Amortise$L"
+$ll  = "oz.LeaseLiability$L"
+
+# A level loan's balance after k payments is what FV() says it is.
+Fuzz 'fuzz: AmortiseB closing balance = -FV()' `
+     'p, RANDBETWEEN(1000,500000), a, RANDBETWEEN(1,15)/100, n, RANDBETWEEN(6,48), k, RANDBETWEEN(1,n)' `
+     '"p="&p&" a="&a&" n="&n&" k="&k' `
+     "INDEX($amb(p, a, n, n), 4, k)" '-FV(a/12, k, PMT(a/12, n, p), p)'
+# Total interest over the term is total payments less principal.
+Fuzz 'fuzz: Amortise total interest = PMT()*n - p' `
+     'p, RANDBETWEEN(1000,500000), a, RANDBETWEEN(1,15)/100, n, RANDBETWEEN(6,120)' `
+     '"p="&p&" a="&a&" n="&n' `
+     "SUM(INDEX($am(p, a, n, DATE(2026,7,1)), 3, 0))" '-PMT(a/12, n, p)*n - p'
+# Level lease payments are an annuity: PV() in arrears, and PV() over one fewer in advance.
+Fuzz 'fuzz: LeaseLiability in arrears = -PV()' `
+     'm, RANDBETWEEN(100,5000), r, RANDBETWEEN(1,12)/1200, n, RANDBETWEEN(1,60)' `
+     '"m="&m&" r="&r&" n="&n' `
+     "$ll(EXPAND(m, 1, n, m), r)" '-PV(r, n, m)'
+Fuzz 'fuzz: LeaseLiability in advance = -PV() over n-1' `
+     'm, RANDBETWEEN(100,5000), r, RANDBETWEEN(1,12)/1200, n, RANDBETWEEN(2,60)' `
+     '"m="&m&" r="&r&" n="&n' `
+     "$ll(EXPAND(m, 1, n, m), r, TRUE)" '-PV(r, n-1, m)'
+# Straight line is SLN(); diminishing value opens at twice the straight-line rate, capped.
+Fuzz 'fuzz: PrimeCost first period = SLN()' `
+     'c, RANDBETWEEN(1000,900000), n, RANDBETWEEN(1,40)' '"c="&c&" n="&n' `
+     "INDEX($pc(c, n),1,1)" 'SLN(c, 0, n)'
+Fuzz 'fuzz: DiminishingValue first period = 200% rate' `
+     'c, RANDBETWEEN(1000,900000), n, RANDBETWEEN(1,40)' '"c="&c&" n="&n' `
+     "INDEX($dv(c, n),1,1)" 'c*MIN(1, 2/n)'
+Fuzz 'fuzz: DiminishingValue sums to cost' `
+     'c, RANDBETWEEN(1000,900000), n, RANDBETWEEN(1,40)' '"c="&c&" n="&n' `
+     "SUM($dv(c, n))" 'c'
+# Return on equity is net income over the average of opening and closing equity.
+Fuzz 'fuzz: ROE = income / AVERAGE(open, close)' `
+     'ni, RANDBETWEEN(-500,5000), ce, RANDBETWEEN(1000,90000), oe, RANDBETWEEN(1000,90000)' `
+     '"ni="&ni&" ce="&ce&" oe="&oe' `
+     "$roe(ni, ce, oe)" 'ni/AVERAGE(oe, ce)' '0.0000001'
+# The two rate converters invert each other, and the monthly one agrees with NOMINAL().
+Fuzz 'fuzz: AnnualRate(PeriodRate(a)) = a' `
+     'a, RANDBETWEEN(1,2000)/10000, n, CHOOSE(RANDBETWEEN(1,4),1,4,12,52)' '"a="&a&" n="&n' `
+     "$ar($pr(a, n), n)" 'a' '0.000000001'
+Fuzz 'fuzz: PeriodRate = NOMINAL()/12' `
+     'a, RANDBETWEEN(1,2000)/10000' '"a="&a' `
+     "$pr(a)" 'NOMINAL(a, 12)/12' '0.000000001'
+# A whole calendar year of monthly rates sums to the APR under the convention that
+# matches the year: Actual/365 in a common year, Actual/Actual in a leap year, and
+# 30/360 gives a flat twelfth in any year. End-date timelines give the same rates.
+Fuzz 'fuzz: DayCount Actual/365 sums to APR in a common year' `
+     'a, RANDBETWEEN(1,1500)/10000, y, CHOOSE(RANDBETWEEN(1,3), 2025, 2026, 2027)' '"a="&a&" y="&y' `
+     "SUM($dc(EDATE(DATE(y,1,1), SEQUENCE(1,12,0)), a))" 'a' '0.000000001'
+Fuzz 'fuzz: DayCount Actual/Actual sums to APR in a leap year' `
+     'a, RANDBETWEEN(1,1500)/10000, y, CHOOSE(RANDBETWEEN(1,2), 2024, 2028)' '"a="&a&" y="&y' `
+     "SUM($dc(EDATE(DATE(y,1,1), SEQUENCE(1,12,0)), a, 4))" 'a' '0.000000001'
+Fuzz 'fuzz: DayCount 30/360 is APR/12 every month' `
+     'a, RANDBETWEEN(1,1500)/10000, y, RANDBETWEEN(2020,2030), s, RANDBETWEEN(1,12)' '"a="&a&" y="&y&" s="&s' `
+     "SUMPRODUCT(ABS($dc(EDATE(DATE(y,s,1), SEQUENCE(1,12,0)), a, 1) - a/12))" '0' '0.000000001'
+Fuzz 'fuzz: DayCount end dates match start dates' `
+     'a, RANDBETWEEN(1,1500)/10000, y, RANDBETWEEN(2020,2030), s, RANDBETWEEN(1,12)' '"a="&a&" y="&y&" s="&s' `
+     "SUMPRODUCT(ABS($dc(EOMONTH(DATE(y,s,1), SEQUENCE(1,12,0)), a, 3, TRUE) - $dc(EDATE(DATE(y,s,1), SEQUENCE(1,12,0)), a)))" '0' '0.000000001'
+Fuzz 'fuzz: DayCount Actual/360 = days/360' `
+     'a, RANDBETWEEN(1,1500)/10000, y, RANDBETWEEN(2020,2030), s, RANDBETWEEN(1,12)' '"a="&a&" y="&y&" s="&s' `
+     "INDEX($dc(EDATE(DATE(y,s,1), {0,1}), a, 2),1,1)" 'a*(EDATE(DATE(y,s,1),1)-DATE(y,s,1))/360' '0.000000001'
+# Where DATEDIF is right, on start days up to the 28th, the two agree.
+Fuzz 'fuzz: DateDif M = DATEDIF M' `
+     's, DATE(RANDBETWEEN(2000,2030), RANDBETWEEN(1,12), RANDBETWEEN(1,28)), e, s + RANDBETWEEN(0,4000)' `
+     '"s="&TEXT(s,"yyyy-mm-dd")&" e="&TEXT(e,"yyyy-mm-dd")' `
+     "$dd(s, e, `"M`")" 'DATEDIF(s, e, "M")' '0.5'
+Fuzz 'fuzz: DateDif Y = DATEDIF Y' `
+     's, DATE(RANDBETWEEN(2000,2030), RANDBETWEEN(1,12), RANDBETWEEN(1,28)), e, s + RANDBETWEEN(0,4000)' `
+     '"s="&TEXT(s,"yyyy-mm-dd")&" e="&TEXT(e,"yyyy-mm-dd")' `
+     "$dd(s, e, `"Y`")" 'DATEDIF(s, e, "Y")' '0.5'
+Fuzz 'fuzz: DateDif YM = DATEDIF YM' `
+     's, DATE(RANDBETWEEN(2000,2030), RANDBETWEEN(1,12), RANDBETWEEN(1,28)), e, s + RANDBETWEEN(0,4000)' `
+     '"s="&TEXT(s,"yyyy-mm-dd")&" e="&TEXT(e,"yyyy-mm-dd")' `
+     "$dd(s, e, `"YM`")" 'DATEDIF(s, e, "YM")' '0.5'
+Fuzz 'fuzz: DateDif D = days' `
+     's, DATE(RANDBETWEEN(2000,2030), RANDBETWEEN(1,12), RANDBETWEEN(1,28)), e, s + RANDBETWEEN(0,4000)' `
+     '"s="&TEXT(s,"yyyy-mm-dd")&" e="&TEXT(e,"yyyy-mm-dd")' `
+     "$dd(s, e)" 'e - s' '0.5'
+# On month-end start days, where DATEDIF is not a reference, a complete month is an
+# EDATE() anniversary that has arrived: count them independently and take the days
+# past the last one.
+Fuzz 'fuzz: DateDif M on days 29 to 31 = anniversaries reached' `
+     's, DATE(RANDBETWEEN(2000,2030), RANDBETWEEN(1,12), 28) + RANDBETWEEN(1,3), e, s + RANDBETWEEN(0,4000)' `
+     '"s="&TEXT(s,"yyyy-mm-dd")&" e="&TEXT(e,"yyyy-mm-dd")' `
+     "$dd(s, e, `"M`")" 'SUMPRODUCT(--(EDATE(s, SEQUENCE(1,200)) <= e))' '0.5'
+Fuzz 'fuzz: DateDif MD on days 29 to 31 = days past the last anniversary' `
+     's, DATE(RANDBETWEEN(2000,2030), RANDBETWEEN(1,12), 28) + RANDBETWEEN(1,3), e, s + RANDBETWEEN(0,4000)' `
+     '"s="&TEXT(s,"yyyy-mm-dd")&" e="&TEXT(e,"yyyy-mm-dd")' `
+     "$dd(s, e, `"MD`")" 'e - EDATE(s, SUMPRODUCT(--(EDATE(s, SEQUENCE(1,200)) <= e)))' '0.5'
+# Debt sculpting on period rates charges opening balance times the period's rate, and
+# the LRV variant charges interest on the average balance: I = r * (P - C / 2) / (1 - r / 2)
+# with C = 300 / 1.2 the cash for debt service, solved to within a cent by InterestLRV.
+Fuzz 'fuzz: DebtSculptVariable interest = opening * period rate' `
+     'd, RANDBETWEEN(1000,100000), r, RANDBETWEEN(1,20)/1000' '"d="&d&" r="&r' `
+     "INDEX($dsv(, HSTACK(d,0,0), {300,300,300}, {1.2,1.2,1.2}, , , HSTACK(r,r,r)), 2, 1)" 'd*r' '0.0000001'
+Fuzz 'fuzz: DebtSculptVariableLRV interest on the average balance' `
+     'd, RANDBETWEEN(1000,100000), r, RANDBETWEEN(1,20)/1000' '"d="&d&" r="&r' `
+     "INDEX($lrv(, HSTACK(d,0,0), {300,300,300}, {1.2,1.2,1.2}, , , HSTACK(r,r,r)), 2, 1)" 'r*(d-125)/(1-r/2)' '0.001'
+# The randomised checks rest on MAP() drawing fresh values for every trial. Prove it.
+Near 'fuzz: MAP draws fresh values per trial' "--(ROWS(UNIQUE(MAP(SEQUENCE(25), LAMBDA(i, RANDBETWEEN(1,1000000))))) > 1)" '1'
+
 $xl = $null; $wb = $null; $tmp = $null; $exit = 0
 
 # Excel rejects incoming COM calls while it is mid-calculation (RPC_E_CALL_REJECTED),

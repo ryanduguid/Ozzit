@@ -181,9 +181,10 @@ DebtSculptVariableLRVλ = LAMBDA(
     [DSCR],
     [APR],
     [MonthsPerPeriod],
+    [PeriodRates],
 //  Help
     LET(Help,       TRIM(TEXTSPLIT(
-                        "FUNCTION:          →DebtSculptVariableLRVλ([OpeningBalance], Debt, CFADS, DSCR, APR, [MonthsPerPeriod])¶" &
+                        "FUNCTION:          →DebtSculptVariableLRVλ([OpeningBalance], Debt, CFADS, DSCR, APR, [MonthsPerPeriod], [PeriodRates])¶" &
                         "DESCRIPTION:       →Creates a Debt Sculpting schedule where APR and DSCR are set for each period.¶" &
                         "                   →Interest is charged on the average balance over the period, the method¶" &
                         "                   →presented by Lance Rubin, and the principal repaid is what the cash¶" &
@@ -193,35 +194,38 @@ DebtSculptVariableLRVλ = LAMBDA(
                         "                   →Principal repayments¶" &
                         "                   →Debt closing balance¶" &
                         "WEBPAGE:           →https://github.com/ryanduguid/Ozzit¶" &
-                        "VERSION:           →20 Aug 2026¶" &
+                        "VERSION:           →6 Sep 2026¶" &
                         "PARAMETERS:        →¶" &
                         "OpeningBalance     →(Optional) Model's debt on opening. Defaults to 0¶" &
                         "Debt               →(Required) A row of new debt taken on in each period¶" &
                         "CFADS              →(Required) A row of Cash Flow Available for Debt Service in each period¶" &
                         "DSCR               →(Required) A row of Debt Service Coverage Ratios, one per period¶" &
-                        "APR                →(Required) A row of Interest's Annual Percentage Rates, one per period¶" &
-                        "MonthsPerPeriod    →(Optional) Defaults to one month per period.¶" &
+                        "APR                →(Required unless PeriodRates is given) A row of Interest's Annual Percentage Rates, one per period. Each period charges APR / 12 * MonthsPerPeriod¶" &
+                        "MonthsPerPeriod    →(Optional) Defaults to one month per period. Ignored when PeriodRates is given¶" &
+                        "PeriodRates        →(Optional) A row of interest rates per period, one per period, such as DayCountRateλ() returns for a day count convention. When given, interest uses these rates and APR and MonthsPerPeriod are ignored. A blank cell or range counts as not given¶" &
                         "EXAMPLES:          →¶" &
                         "Result             →Formula (oz is assumed to be the module's name)¶" &
                         "4 rows, 3 cols     →=oz.DebtSculptVariableLRVλ(, {1000,0,0}, {300,300,300}, {1.2,1.2,1.2}, {0.06,0.06,0.06}, 12)",
                         "→", "¶"
                         )
                     ),
+    //  A blank PeriodRates cell or range is not a row of rates, so test for both
+        UseRates,       AND( NOT( ISOMITTED( PeriodRates)), COUNT( PeriodRates) > 0),
     //  Check inputs - Omitted required arguments
         Help?,          OR( ISOMITTED( Debt),
                             ISOMITTED( CFADS),
                             ISOMITTED( DSCR),
-                            ISOMITTED( APR)
+                            AND( ISOMITTED( APR), NOT( UseRates))
                         ),
     //  Check inputs - Errors in argument values
         ErrMsgs,        {"Debt must be a dynamic array holding new debt (if any) in each period";
                          "CFADS must be a dynamic array holding cash available for debt service in each period";
                          "DSCR must be a dynamic array holding debt service coverage ratio for each period";
-                         "APR must be a dynamic array holding interest's annual percentage rate for each period"},
+                         "APR or PeriodRates must be a dynamic array holding an interest rate for each period"},
         Errors,         VSTACK( COLUMNS( Debt) <= 1,
                                 COLUMNS( CFADS) <= 1,
                                 COLUMNS( DSCR) <= 1,
-                                COLUMNS( APR) <= 1
+                                IF( UseRates, COLUMNS( PeriodRates) <= 1, COLUMNS( APR) <= 1)
                         ),
         Messages,       FILTER( ErrMsgs, Errors, ""),
     //  Check inputs - Set optional arguments' defaults
@@ -229,7 +233,11 @@ DebtSculptVariableLRVλ = LAMBDA(
         MonthsPerPeriod, IF( ISNUMBER( MonthsPerPeriod), MonthsPerPeriod, 1),
     //  Procedure - solve the closing balance period by period, then read the rows off it
         Periods,        SEQUENCE( 1, COLUMNS( Debt)),
-        Rates,          INDEX( APR, 1, Periods) / 12 * MonthsPerPeriod,
+    //  A row of rates per period, from a day count convention, replaces the flat twelfth of APR
+        Rates,          IF( UseRates,
+                            INDEX( PeriodRates, 1, Periods),
+                            INDEX( APR, 1, Periods) / 12 * MonthsPerPeriod
+                        ),
         NewDebt,        INDEX( Debt, 1, Periods),
         Cash,           INDEX( CFADS, 1, Periods),
         Cover,          INDEX( DSCR, 1, Periods),
@@ -271,44 +279,48 @@ DebtSculptVariableλ = LAMBDA(
     [DSCR],
     [APR],
     [MonthsPerPeriod],
+    [PeriodRates],
 //  Help
     LET(Help,       TRIM(TEXTSPLIT(
-                        "FUNCTION:          →DebtSculptVariableλ([OpeningBalance], Debt, CFADS, DSCR, APR, [MonthsPerPeriod])¶" &
+                        "FUNCTION:          →DebtSculptVariableλ([OpeningBalance], Debt, CFADS, DSCR, APR, [MonthsPerPeriod], [PeriodRates])¶" &
                         "DESCRIPTION:       →Creates a Debt Sculpting schedule where APR and DSCR are set for each period¶" &
                         "SUGGESTED ROW IDS: →Debt opening balance¶" &
                         "                   →Interest on Principal Balance¶" &
                         "                   →Debt service (interest and principal)¶" &
                         "                   →Debt closing balance¶" &
                         "WEBPAGE:           →https://github.com/ryanduguid/Ozzit¶" &
-                        "VERSION:           →20 Aug 2026¶" &
+                        "VERSION:           →6 Sep 2026¶" &
                         "PARAMETERS:        →¶" &
                         "OpeningBalance     →(Optional) Model's debt on opening. Defaults to 0¶" &
                         "Debt               →(Required) A row of new debt taken on in each period¶" &
                         "CFADS              →(Required) A row of Cash Flow Available for Debt Service in each period¶" &
                         "DSCR               →(Required) A row of Debt Service Coverage Ratios, one per period¶" &
-                        "APR                →(Required) A row of Interest's Annual Percentage Rates, one per period¶" &
-                        "MonthsPerPeriod    →(Optional) Defaults to one month per period.¶" &
+                        "APR                →(Required unless PeriodRates is given) A row of Interest's Annual Percentage Rates, one per period. Each period charges APR / 12 * MonthsPerPeriod¶" &
+                        "MonthsPerPeriod    →(Optional) Defaults to one month per period. Ignored when PeriodRates is given¶" &
+                        "PeriodRates        →(Optional) A row of interest rates per period, one per period, such as DayCountRateλ() returns for a day count convention. When given, interest uses these rates and APR and MonthsPerPeriod are ignored. A blank cell or range counts as not given¶" &
                         "EXAMPLES:          →¶" &
                         "Result             →Formula (oz is assumed to be the module's name)¶" &
                         "4 rows, 3 cols     →=oz.DebtSculptVariableλ(, {1000,0,0}, {300,300,300}, {1.2,1.2,1.2}, {0.06,0.06,0.06}, 12)",
                         "→", "¶"
                         )
                     ),
+    //  A blank PeriodRates cell or range is not a row of rates, so test for both
+        UseRates,       AND( NOT( ISOMITTED( PeriodRates)), COUNT( PeriodRates) > 0),
     //  Check inputs - Omitted required arguments
         Help?,          OR( ISOMITTED( Debt),
                             ISOMITTED( CFADS),
                             ISOMITTED( DSCR),
-                            ISOMITTED( APR)
+                            AND( ISOMITTED( APR), NOT( UseRates))
                         ),
     //  Check inputs - Errors in argument values
         ErrMsgs,        {"Debt must be a dynamic array holding new debt (if any) in each period";
                          "CFADS must be a dynamic array holding cash available for debt service in each period";
                          "DSCR must be a dynamic array holding debt service coverage ratio for each period";
-                         "APR must be a dynamic array holding interest's annual percentage rate for each period"},
+                         "APR or PeriodRates must be a dynamic array holding an interest rate for each period"},
         Errors,         VSTACK( COLUMNS( Debt) <= 1,
                                 COLUMNS( CFADS) <= 1,
                                 COLUMNS( DSCR) <= 1,
-                                COLUMNS( APR) <= 1
+                                IF( UseRates, COLUMNS( PeriodRates) <= 1, COLUMNS( APR) <= 1)
                         ),
         Messages,       FILTER( ErrMsgs, Errors, ""),
     //  Check inputs - Set optional arguments' defaults
@@ -316,7 +328,11 @@ DebtSculptVariableλ = LAMBDA(
         MonthsPerPeriod, IF( ISNUMBER( MonthsPerPeriod), MonthsPerPeriod, 1),
     //  Procedure - solve the closing balance period by period, then read the rows off it
         Periods,        SEQUENCE( 1, COLUMNS( Debt)),
-        Rates,          INDEX( APR, 1, Periods) / 12 * MonthsPerPeriod,
+    //  A row of rates per period, from a day count convention, replaces the flat twelfth of APR
+        Rates,          IF( UseRates,
+                            INDEX( PeriodRates, 1, Periods),
+                            INDEX( APR, 1, Periods) / 12 * MonthsPerPeriod
+                        ),
         NewDebt,        INDEX( Debt, 1, Periods),
         Cash,           INDEX( CFADS, 1, Periods),
         Cover,          INDEX( DSCR, 1, Periods),
