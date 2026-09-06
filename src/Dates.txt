@@ -5,7 +5,7 @@
 AboutDatesλ = TRIM(
     TEXTSPLIT(
         "About:                 →Ozzit compliant LAMBDAs dealing with dates. Suggested module name: oz¶" &
-        "Version:               →20 Aug 2026¶" &
+        "Version:               →6 Sep 2026¶" &
         "Repository:              →https://github.com/ryanduguid/Ozzit ¶" &
         "→¶" & 
         "Function               →Description¶" & 
@@ -20,7 +20,8 @@ AboutDatesλ = TRIM(
         "ScheduleRatesByItemsλ  →Schedule rates that persist until replaced in a timeline for each item in a list.¶" &
         "ScheduleValuesλ        →Schedules values in a timeline. ¶" &
         "ScheduleValuesByItemsλ →Schedules values in a timeline for each item in a list.¶" &
-        "Timelineλ              →Creates a horizontal list of start or end dates for a timeline¶" & 
+        "Timelineλ              →Creates a horizontal list of start or end dates for a timeline¶" &
+        "DateDifλ               →Whole years, months or days between two dates, and the remainders¶" & 
         "FinancialYearλ         →Labels dates with their Australian financial year, starting 1 July¶" &
         "→",  
         "→", "¶"
@@ -752,6 +753,59 @@ FinancialYearλ = LAMBDA(
                         ),
     //  Multiply rather than AND, which would collapse a range of dates to one answer
         Result,         IF(CvtDates = 0, "", "FY" & TEXT(YEAR(CvtDates) + (FYStart>1) * (MONTH(CvtDates) >= FYStart), "0000")),
+    //  Return Result or Help
+        CHOOSE( Help? + 1, Result, Help)
+    )
+);
+
+
+
+/*  FUNCTION NAME:  DateDifλ
+    DESCRIPTION:*//**Whole years, months or days between two dates, and the remainders DATEDIF gets wrong*/
+
+DateDifλ = LAMBDA(
+//  Parameter Declaration
+    [StartDate],
+    [EndDate],
+    [Unit],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →DateDifλ(StartDate, EndDate, [Unit])¶" &
+                            "DESCRIPTION:   →Whole years, months or days between two dates, and the remainders.¶NOTES!         →Excel's DATEDIF is undocumented and its MD unit can return a negative¶               →or wrong day count around month ends. This counts a month as complete¶               →when EDATE() of the start date has arrived, so a month after 31 January¶               →is the last day of February, and takes every remainder from that same¶               →anniversary. A reversed range or an unknown unit returns #NUM!.¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "VERSION:       →6 Sep 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "StartDate      →(Required) The earlier date, numeric or text.¶" &
+                            "EndDate        →(Required) The later date, numeric or text.¶" &
+                            "Unit           →(Optional: Default = D) Y whole years, M whole months, D days, YM months left after the whole years, YD days left after the whole years, MD days left after the whole months.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.DateDifλ(DATE(2026,1,31), DATE(2026,3,1), ""MD"")¶" &
+                            "→Result¶" &
+                            "→1",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR(ISOMITTED(StartDate), ISOMITTED(EndDate)),
+    //  Text dates are read; a blank Unit cell is not an omitted argument, so test for both
+        Start,          IF(ISNUMBER(StartDate), StartDate, DATEVALUE(StartDate)),
+        Finish,         IF(ISNUMBER(EndDate), EndDate, DATEVALUE(EndDate)),
+        Code,           IF(OR(ISOMITTED(Unit), Unit = ""), "D", UPPER(Unit)),
+    //  Calendar months crossed, less one when the last has not yet completed
+        RawMonths,      12 * (YEAR(Finish) - YEAR(Start)) + MONTH(Finish) - MONTH(Start),
+        Months,         RawMonths - (EDATE(Start, RawMonths) > Finish),
+        Years,          INT(Months / 12),
+        Result,         IF(Finish < Start,
+                            #NUM!,
+                            SWITCH(Code,
+                                "Y", Years,
+                                "M", Months,
+                                "D", Finish - Start,
+                                "YM", Months - 12 * Years,
+                                "YD", Finish - EDATE(Start, 12 * Years),
+                                "MD", Finish - EDATE(Start, Months),
+                                #NUM!)),
     //  Return Result or Help
         CHOOSE( Help? + 1, Result, Help)
     )

@@ -1,5 +1,53 @@
 # Changelog
 
+## Unreleased
+
+### Rates, day counts and a DATEDIF replacement
+
+Four functions added, taking the library from 134 to 138, and three changed. Each
+came out of comparing the library against the public 5g function gists on 6
+September 2026; the ideas were taken and every definition written and tested here.
+No worksheet was added or changed, so all cached values are the ones v3.3.0 shipped.
+
+- **`oz.ROEλ` divided by closing equity.** Return on equity is net income over
+  average shareholders' equity, which is what its own help and the Investopedia page
+  it links describe. It now takes an optional third argument, OpeningEquity, and
+  divides by the average of opening and closing when it is given. Called with two
+  arguments, or with a blank opening cell, it returns exactly what it did before,
+  so the ratios worksheet's cached value stands.
+- **`oz.PeriodRateλ(AnnualRate, [PeriodsPerYear])` and
+  `oz.AnnualRateλ(PeriodRate, [PeriodsPerYear])`.** The four AASB 16 functions take
+  a rate per period, and anyone holding an annual incremental borrowing rate had to
+  convert it by hand. These are the two directions of
+  `(1 + annual) ^ (1 / periods) - 1`, and the self-test proves them against
+  Excel's own NOMINAL() and against each other on random rates.
+- **`oz.DayCountRateλ(Timeline, APR, [Convention], [EndDates])`.** One interest
+  rate per timeline period under 30/360, Actual/360, Actual/365 or Actual/Actual,
+  with Actual/Actual splitting a period at 1 January so each part is counted over
+  its own year's length, the ISDA rule.
+  Every debt path in the library charged a flat twelfth of the APR; Australian
+  facilities are mostly quoted Actual/365. The two variable debt sculpting
+  functions, `oz.DebtSculptVariableλ` and `oz.DebtSculptVariableLRVλ`, take the
+  result through a new optional PeriodRates argument, and when it is given APR and
+  MonthsPerPeriod are ignored.
+- **`oz.DateDifλ(StartDate, EndDate, [Unit])`.** Excel's DATEDIF is undocumented
+  and its MD unit can return a negative or wrong count around month ends. This one
+  counts a month as complete when EDATE() of the start date has arrived and takes
+  every remainder from that same anniversary. Where DATEDIF is right, on start
+  days up to the 28th, the self-test proves the two agree on random dates.
+- **Randomised self-test checks.** `tools/excel_selftest.ps1` grew a `Fuzz` helper
+  that draws fresh inputs for every trial, compares a function with an independent
+  Excel formula and prints the inputs that produced any miss. Twenty-three of them
+  cover the amortisation, lease, depreciation, ratio, rate, day count, date and debt
+  sculpting functions: the class of arithmetic defect that reading a definition
+  does not find. The first run caught one in `oz.DayCountRateλ` before it shipped:
+  on an end-date timeline the first period's start was stepped back with EDATE(),
+  which from 28 February lands on 28 January rather than 31 January.
+- **`tools/postbuild/rate_date_helpers.py` added.** It adds the four functions to
+  the src modules, their About tables, the defined names and functions.csv on the
+  AASB 16 pass's pattern, rendering the stored forms through `compile_sources.py`
+  rather than carrying a renderer of its own.
+
 ## v3.3.0, 6 September 2026, ten function repairs and a workbook Excel will open
 
 ### The workbook on main between 2 and 6 September could not be opened by Excel

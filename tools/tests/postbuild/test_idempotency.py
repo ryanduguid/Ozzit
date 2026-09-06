@@ -24,6 +24,7 @@ XML_PASSES = [
     (TOOLS / "postbuild" / "sheet_names.py", False),
     (TOOLS / "postbuild" / "strip_revision_history.py", True),
     (TOOLS / "postbuild" / "aasb16_leases.py", True),
+    (TOOLS / "postbuild" / "rate_date_helpers.py", True),
     (TOOLS / "postbuild" / "help_corrections.py", True),
     (TOOLS / "postbuild" / "remove_residue.py", False),
 ]
