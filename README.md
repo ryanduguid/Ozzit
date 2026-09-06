@@ -28,6 +28,8 @@ The 6 September 2026 capture used Excel 16.0 build 20326. The released workbook 
 
 Release asset SHA-256: `13df5eb0e2e7a3d1b17a743a990c30adfd187d409be133996ec154543e78ff28`.
 
+The [capture record and PowerShell reproduction](docs/native-gst-capture.md) preserve the Excel command, returned value, crop and image fingerprint.
+
 The screenshot uses a disposable copy with a synthetic label, an explicit argument in B19 and currency formatting. It certifies this example in v3.2.0 only; it does not establish native verification of the different workbook on main. The shipped workbook was not edited.
 
 ## Guides
