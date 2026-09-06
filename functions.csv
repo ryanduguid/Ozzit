@@ -8,6 +8,7 @@ oz.Allocateλ,Financial,nabla.f.Allocateλ,"Allocateλ(Amounts, [FromInterval], 
 oz.AmortiseBλ,Debt,nabla.debt.Amortiseλ,"AmortiseBλ(Principal, APR, Term, ModelPeriods, [StartPeriod], [MonthsPerPeriod])",Creates an amortisation schedule for a debt/loan across a model's periods
 oz.Amortiseλ,Financial,nabla.f.Amortiseλ,"Amortiseλ( Principals, APRs, Terms, StartDates, [Timeline])",Creates a corkscrew amortisation schedule
 oz.AmortiseλDV,Financial,nabla.f.AmortiseλDV,AmortiseλDV,Provides extended data validation of arguments for Amortiseλ()
+oz.AnnualRateλ,Financial,,"AnnualRateλ(PeriodRate, [PeriodsPerYear])","Converts a rate per period to the effective annual rate, the inverse of PeriodRateλ"
 oz.AssetTurnoverRatioλ,Ratios,nabla.r.AssetTurnoverRatioλ,"AssetTurnoverRatioλ( NetSales, TotalAssets)",Measures the value of a company's sales or revenues relative to the value of its assets. (Net Sales/Total Assets)
 oz.AvgColsUλ,Utilities,nabla.u.AvgColsλ,AvgColsUλ( Array),Get the average for each Column
 oz.AvgColsλ,Essentials,nabla.e.AvgColsλ,AvgColsλ( Array),Get the average for each Column
@@ -38,10 +39,12 @@ oz.DDBλ,Financial,nabla.f.DDBλ,"DDBλ(Cost, Salvage, Life, [Factor])",Double-d
 oz.DPRλ,Ratios,nabla.r.DPRλ,"DPRλ( DividendsPaid, NetIncome )",Dividend Payout Ratio is the percentage of earnings paid to shareholders via dividends (DividendsPaid/NetIncome)
 oz.DSCRλ,Ratios,nabla.r.DSCRλ,"DSCRλ( NetOperatingIncome, TotalDebtService)",Debt service coverage Ratio measures a firm’s available cash flow to pay its current debt obligations(Net Operating Income/Total Debt Service)
 oz.DSIλ,Ratios,nabla.r.DSIλ,"DSIλ( AverageInventory, CostOfGoodsSold)",Days Sales in Inventory Ratio (aka Average age of inventory indicates the average time in days that a company takes to turn its inventory (Average Inventory/ Cost of Goods Sold)
+oz.DateDifλ,Dates,,"DateDifλ(StartDate, EndDate, [Unit])","Whole years, months or days between two dates, and the remainders DATEDIF gets wrong"
+oz.DayCountRateλ,Financial,,"DayCountRateλ(Timeline, APR, [Convention], [EndDates])","Interest rate for each period of a timeline under a day count convention: 30/360, Actual/360, Actual/365 or Actual/Actual"
 oz.DebtRatioλ,Ratios,nabla.r.DebtRatioλ,"DebtRatioλ( TotalDebt, TotalAssets)",Measures the extent of a company’s leverage
 oz.DebtSculptFixedλ,Debt,nabla.debt.DebtSculptFixedλ,"DebtSculptFixedλ([OpeningBalance], Debt, CFADS, DSCR, APR, [MonthsPerPeriod])",Creates a debt sculpting schedule where APR and DSCR are fixed for all periods
-oz.DebtSculptVariableLRVλ,Debt,nabla.debt.DebtSculptVariableLRVλ,"DebtSculptVariableLRVλ([OpeningBalance], Debt, CFADS, DSCR, APR, [MonthsPerPeriod])","Creates a debt sculpting schedule where APR and DSCR are set for each period, with interest charged on the average balance"
-oz.DebtSculptVariableλ,Debt,nabla.debt.DebtSculptVariableλ,"DebtSculptVariableλ([OpeningBalance], Debt, CFADS, DSCR, APR, [MonthsPerPeriod])",Creates a debt sculpting schedule where APR and DSCR are set for each period
+oz.DebtSculptVariableLRVλ,Debt,nabla.debt.DebtSculptVariableLRVλ,"DebtSculptVariableLRVλ([OpeningBalance], Debt, CFADS, DSCR, APR, [MonthsPerPeriod], [PeriodRates])","Creates a debt sculpting schedule where APR and DSCR are set for each period, with interest charged on the average balance"
+oz.DebtSculptVariableλ,Debt,nabla.debt.DebtSculptVariableλ,"DebtSculptVariableλ([OpeningBalance], Debt, CFADS, DSCR, APR, [MonthsPerPeriod], [PeriodRates])",Creates a debt sculpting schedule where APR and DSCR are set for each period
 oz.DebtToAssetRatioλ,Ratios,nabla.r.DebtToAssetRatioλ,"DebtToAssetRatioλ( TotalDebt, TotalAssets)",Analysts can compare one company's leverage with that of other companies in the same industry. (Total Debt/Total Assets)
 oz.DebtToCapitalRatioλ,Ratios,nabla.r.DebtToCapitalRatioλ,"DebtToCapitalRatioλ( Debt, ShareholdersEquity)",Gives analysts and investors a better idea of a company's financial structure and whether or not the company is a suitable investment (Debt/(Debt + Shareholders' equity)
 oz.DebtToEquityRatioλ,Ratios,nabla.r.DebtToEquityRatioλ,"DebtToEquityRatioλ( TotalLiabilities, ShareholdersEquity)",Measures the degree to which a company is financing operations with debt rather than its own resources. (Total Liabilities/Shareholders' Equity)
@@ -90,6 +93,7 @@ oz.OperatingRatioλ,Ratios,nabla.r.OperatingRatioλ,"OperatingRatioλ( Operating
 oz.OverLapDaysλ,Dates,nabla.d.OverLapDaysλ,"OverLapDaysλ(Period1Start, Period1End, Period2Start, Period2End)",Return how many days overlap two period ranges.
 oz.PeriodDiffλ,Financial,nabla.f.PeriodDiffλ,"PeriodDiffλ(StartDate, EndDate, Interval)",Determine the number of periods between two dates.
 oz.PeriodLabelλ,Dates,nabla.d.PeriodLabelλ,"PeriodLabelλ(Date, [Interval])",Creates a label for a date based on period interval
+oz.PeriodRateλ,Financial,,"PeriodRateλ(AnnualRate, [PeriodsPerYear])","Converts an effective annual rate to the equivalent rate per period, the rate the lease functions take"
 oz.PeriodStartλ,Financial,nabla.f.PeriodStartλ,"PeriodStartλ(AnyPeriodStart, MonthsPerPeriod, DateOfInterest)",Determine when the period containing a date of interest starts
 oz.Periodsλ,Dates,nabla.d.Periodsλ,"Periodsλ(Starts, Ends, [Intervals])","Determine the number of periods from Starts to Date2 in Days, Weeks, Months, Quarters, or Years."
 oz.PretaxMarginλ,Ratios,nabla.r.PretaxMarginλ,"PretaxMarginλ( PretaxEarnings, Revenue)",Measures the operating efficiency of a company (Pretax Earnings/Revenue).
@@ -100,7 +104,7 @@ oz.PriceToSalesRatioλ,Ratios,nabla.r.PriceToSalesRatioλ,"PriceToSalesRatioλ( 
 oz.PrimeCostλ,Financial,nabla.f.PrimeCostλ,"PrimeCostλ(Cost, Life)","Straight-line depreciation schedule for one asset or asset class, in whole years. A modelling schedule, not a tax calculation."
 oz.QuickRatioλ,Ratios,nabla.r.QuickRatioλ,"QuickRatioλ( QuickAssets, Liabilities)",Measures ability to meet short-term obligations (Quick Assets/Current Liabilities)
 oz.ROAλ,Ratios,nabla.r.ROAλ,"ROAλ( NetIncome, TotalAssets)",Return on assets (ROA) ratio indicates how profitable a company is in relation to its total assets ( Net Income / Total Assets)
-oz.ROEλ,Ratios,nabla.r.ROEλ,"ROEλ( NetIncome, ShareholdersEquity)",Return on equity (ROE) ratio is a measure of financial performance (Net Income/Shareholders Equity)
+oz.ROEλ,Ratios,nabla.r.ROEλ,"ROEλ( NetIncome, ShareholdersEquity, [OpeningEquity])",Return on equity (ROE) ratio is a measure of financial performance (Net Income/Average Shareholders' Equity)
 oz.ROICλ,Ratios,nabla.r.ROICλ,"ROICλ( NetOperatingProfitAfterTax, InvestedCapital)",Return on Invested capital assesses a company’s efficiency in allocating capital to profitable investments (Net Operating Profit After Tax/Invested Capital)
 oz.ROIλ,Ratios,nabla.r.ROIλ,"ROIλ( NetReturnonInvestment, CostofInvestment)",Return on Investment (ROI) ratio measures the profitability of an investment by comparing the gain or loss to its cost (Net Return on Investment/Cost of Investment).
 oz.ROUScheduleλ,Financial,,"ROUScheduleλ(Cost, Periods)","Straight-line right-of-use asset schedule: opening, depreciation and closing for each period"

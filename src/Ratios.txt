@@ -1029,32 +1029,41 @@ ROAλ = LAMBDA(
 
  
 /*  FUNCTION NAME:  ROEλ
-    DESCRIPTION:*//**Return on equity (ROE) ratio is a measure of financial performance (Net Income/Shareholders Equity)*/
+    DESCRIPTION:*//**Return on equity (ROE) ratio is a measure of financial performance (Net Income/Average Shareholders' Equity)*/
 ROEλ = LAMBDA(
 //  Parameter Declarations
-        [NetIncome],  
-        [ShareholdersEquity],    
+        [NetIncome],
+        [ShareholdersEquity],
+        [OpeningEquity],
 //  Help
-    LET(Help,   TRIM(TEXTSPLIT( 
-                        "FUNCTION:          →ROEλ( NetIncome, ShareholdersEquity)¶" & 
-                        "DESCRIPTION:       →Return on equity ratio is considered a gauge of a corporation's ¶" & 
-                                           "→profitability and how efficient it is in generating profits¶" & 
+    LET(Help,   TRIM(TEXTSPLIT(
+                        "FUNCTION:          →ROEλ( NetIncome, ShareholdersEquity, [OpeningEquity])¶" &
+                        "DESCRIPTION:       →Return on equity ratio is considered a gauge of a corporation's ¶" &
+                                           "→profitability and how efficient it is in generating profits¶" &
                                            "→(Net Income/ Average Shareholders' Equity)¶" &
                         "WEBPAGE:           →https://www.investopedia.com/terms/r/returnonequity.asp ¶" &
-                        "VERSION:           →20 Aug 2026¶" &
-                        "PARAMETERS:→¶" & 
-                        "NetIncome          →(Required) Net Income¶" & 
-                        "ShareholdersEquity →(Required) Average Shareholders' Equity from period open and close ¶" & 
+                        "VERSION:           →6 Sep 2026¶" &
+                        "PARAMETERS:→¶" &
+                        "NetIncome          →(Required) Net Income¶" &
+                        "ShareholdersEquity →(Required) Shareholders' Equity at the period close. Give the average of open and close here when OpeningEquity is left out ¶" &
+                        "OpeningEquity      →(Optional) Shareholders' Equity at the period open. When given, the ratio divides by the average of OpeningEquity and ShareholdersEquity ¶" &
                         "EXAMPLES:          →Formula (oz is assumed to be the module's name)¶" &
-                        "23.6213%           →=oz.ROEλ( 59.972, AVERAGE(251.635, 256.144) )", 
+                        "23.6213%           →=oz.ROEλ( 59.972, 256.144, 251.635 )¶" &
+                        "23.6213%           →=oz.ROEλ( 59.972, AVERAGE(251.635, 256.144) )",
                     "→", "¶" )
                 ),
     //  Check inputs - Omitted required arguments (do not include optional arguments)
         Help?,          OR( ISOMITTED( NetIncome),
                             ISOMITTED( ShareholdersEquity)
                         ),
+    //  A blank OpeningEquity cell is not an omitted argument, so test for both: either
+    //  way the closing equity stands in for it and the ratio is what it was before
+        Opening,        IF( ISOMITTED( OpeningEquity),
+                            ShareholdersEquity,
+                            IF( ISNUMBER( OpeningEquity), OpeningEquity, ShareholdersEquity)
+                        ),
     //  Procedure
-        Result,         NetIncome/ShareholdersEquity,
+        Result,         NetIncome / ((ShareholdersEquity + Opening) / 2),
     //  Return Result
         CHOOSE(Help? + 1, Result, Help)        
     )

@@ -39,7 +39,7 @@ class FragmentTests(unittest.TestCase):
     def test_every_function_gets_a_help_assertion(self):
         text = FRAGMENT.read_text(encoding="ascii")
         helps = re.findall(r"^(?:Same|Near) 'help: ([A-Za-z0-9_]+)\$\{L\}(DV)?'", text, re.M)
-        self.assertEqual(len(helps), 134)
+        self.assertEqual(len(helps), 138)
         self.assertIn("Same 'help: CountDOW${L}' \"INDEX(oz.CountDOW${L}(),1,1)\" 'FUNCTION:'", text)
         self.assertIn("Same 'help: AboutDates${L}' \"INDEX(oz.AboutDates${L},1,1)\" 'About:'", text)
         self.assertIn("Near 'help: Amortise${L}DV' \"--OR(INDEX(oz.Amortise${L}DV(),1,1)=TRUE,ISTEXT(INDEX(oz.Amortise${L}DV(),1,1)))\" '1'", text)
