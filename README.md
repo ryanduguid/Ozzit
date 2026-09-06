@@ -4,7 +4,7 @@ Synthetic example. Review aid, not professional advice; the reviewer decides the
 
 **Input:** $1,100, assumed wholly taxable and GST-inclusive at 10%.
 
-Open [Ozzit v3.2.0](https://github.com/ryanduguid/Ozzit/releases/download/v3.2.0/ozzit.xlsx) in Microsoft 365 or Excel 2024 or later. No add-ins or macros.
+Open [Ozzit v3.3.0](https://github.com/ryanduguid/Ozzit/releases/download/v3.3.0/ozzit.xlsx) in Microsoft 365 or Excel 2024 or later. No add-ins or macros.
 
 ```excel
 =oz.GSTExtractλ(1100)
@@ -26,11 +26,11 @@ A native Excel LAMBDA library for dynamic-array financial models, with inline he
 
 The 6 September 2026 capture used Excel 16.0 build 20326. The released workbook opened without a repair prompt and a full calculation rebuild returned numeric 100 for the displayed formula.
 
-Release asset SHA-256: `13df5eb0e2e7a3d1b17a743a990c30adfd187d409be133996ec154543e78ff28`.
+v3.2.0 release asset SHA-256: `13df5eb0e2e7a3d1b17a743a990c30adfd187d409be133996ec154543e78ff28`.
 
 The [capture record and PowerShell reproduction](docs/native-gst-capture.md) preserve the Excel command, returned value, crop and image fingerprint.
 
-The screenshot uses a disposable copy with a synthetic label, an explicit argument in B19 and currency formatting. It certifies this example in v3.2.0 only; it does not establish native verification of the different workbook on main. The shipped workbook was not edited.
+The screenshot uses a disposable copy with a synthetic label, an explicit argument in B19 and currency formatting. It certifies this example in v3.2.0. The v3.3.0 workbook is a different file; its full native gate results are recorded in its release notes and in [CHANGELOG.md](CHANGELOG.md). The shipped workbook was not edited.
 
 ## Guides
 
@@ -42,7 +42,9 @@ The screenshot uses a disposable copy with a synthetic label, an explicit argume
 
 ## Verification and attribution
 
-The tagged repository release is [v3.2.0](https://github.com/ryanduguid/Ozzit/releases/tag/v3.2.0), dated 30 August 2026; citation metadata is in [CITATION.cff](CITATION.cff).
+The tagged repository release is [v3.3.0](https://github.com/ryanduguid/Ozzit/releases/tag/v3.3.0), dated 6 September 2026; citation metadata is in [CITATION.cff](CITATION.cff).
+
+v3.3.0 `ozzit.xlsx` SHA-256: `96e9ee60cc4bc72c3ed02f5db3a658627d1832d9ca609688d57bdf7d5669f18f` (428,861 bytes). Excel 16.0 build 20326 on 6 September 2026: 1,129 formulas recalculated with 0 in error, 730 self-test assertions with 0 failures, 19,444 cached values equal to what their formulas produce.
 
 - [Repository checks](AGENTS.md) and [release and native verification](RELEASING.md)
 - [Changes](CHANGELOG.md) and [citation](CITATION.cff)

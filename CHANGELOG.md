@@ -1,6 +1,61 @@
 # Changelog
 
-## Unreleased
+## v3.3.0, 6 September 2026, ten function repairs and a workbook Excel will open
+
+### The workbook on main between 2 and 6 September could not be opened by Excel
+
+Every static gate passed the workbook that PR 64 merged on 2 September, and Excel
+refused it with "Unable to get the Open property of the Workbooks class". Two
+independent causes, found by transplanting parts between the v3.2.0 asset and main
+and opening each variant in Excel:
+
+- **`oz.Depreciateλ` was 8,384 characters.** Excel refuses any workbook whose
+  defined name runs past 8,192 characters and says nothing about why. The compiler
+  rendered the rewritten definition with a space after every comma and bracket;
+  the v3.2.0 form of the same function, stored by Excel, carried none. The
+  compiler now drops layout whitespace from a definition that would otherwise
+  cross the limit (7,814 characters for this one), refuses to write one that still
+  does, and `verify_workbook.py` fails the workbook on the same condition, with a
+  test that proves it.
+- **`remove_residue.py` deleted the differential formats the tables use.** The
+  pass collected `dxfId` references from the worksheets and the table styles and
+  never looked in `xl/tables/`, whose `dataDxfId`, `headerRowDxfId`,
+  `totalsRowDxfId` and border attributes index the same collection. It dropped 102
+  of 168 formats and renumbered the rest, so every table pointed past the end of
+  the collection. The pass now reads every `DxfId` attribute in the tables as
+  well, and its put-back test shifts and restores the table references too.
+
+Three more defects surfaced once Excel could open the file, none visible to a
+static gate:
+
+- **Two Debt help examples were not valid Excel.** `oz.DebtSculptVariableλ` and
+  `oz.DebtSculptVariableLRVλ` printed `{6%,6%,6%}` as their APR argument, and an
+  array constant cannot carry the percent operator, so the native self-test's
+  generated assertions for those examples could not even be entered. The
+  examples now read `{0.06,0.06,0.06}`.
+- **The generated help assertions for the three `…λDV` validators called a
+  function that does not exist.** The generator wrote the λ as `$L` inside a
+  double-quoted PowerShell string, and PowerShell reads `$LDV` as one variable,
+  so `oz.Amortise$LDV()` reached Excel as `oz.Amortise()`. The generator now
+  writes `${L}`, and the assertion accepts what a validator actually answers
+  with no arguments: TRUE (Amortise, Corkscrew) or a column of messages
+  (Depreciate), never an error.
+- **Excel's save disturbs three things the postbuild passes assumed fixed.** It
+  stores a string literal over 255 characters as `_xlfn._LONGTEXT("…","…")`
+  (six defined names; `verify_sources.py` then rejected the workbook), it
+  renumbers the worksheet parts when a sheet has been removed (so
+  `sheet_names.py`'s fixed `sheet25.xml` pointed at another sheet), and it leaves
+  eleven named cell styles unused. `sanitise_workbook.py` now folds the long
+  literals back, with a test; `sheet_names.py` resolves both worksheet parts by
+  sheet name; and `remove_residue.py` runs again after any Excel save, which
+  `tools/postbuild/README.md` now says.
+
+The workbook was regenerated from the v3.2.0 asset through the documented
+postbuild chain with the corrected passes (the same chain reproduces the 2
+September file byte for byte when run with the old passes), the stale help caches
+were refreshed in Excel, and the full native gates were run on the result; the
+counts are in the release notes. `tools/tests/postbuild/test_help_corrections.py`
+now writes its rewritten sources with LF so the suite passes on a Windows clone.
 
 ### 13-week cash-flow forecast template
 
@@ -13,8 +68,8 @@ Every change below was made in `src/` and compiled into the workbook with the ne
 re-implemented in Python and run over its demonstration sheet's inputs, and every
 cached cell it feeds came back unchanged (Periodsλ, both by-item schedulers,
 Movementλ, RollingSumλ, IsOccurrenceDateλ across 2,190 cells, SumPeriodsλ, and the
-depreciation aggregation over 300 randomised timelines). The native gates still have
-to be run on the candidate; Excel was not available where this change was made.
+depreciation aggregation over 300 randomised timelines). The native gates were
+run on the v3.3.0 candidate after the two defects above were repaired.
 
 - **`oz.Depreciateλ` no longer errors on a disposal before the end of life.** It
   expanded the monthly allocation to the months until disposal, and `EXPAND` cannot

@@ -12,6 +12,8 @@ sys.path.insert(0, str(TOOLS))
 
 import verify_signatures
 import verify_sources
+import verify_workbook
+import zipfile
 
 ROOT = TOOLS.parent
 
@@ -69,6 +71,38 @@ class VerifyGateTests(unittest.TestCase):
         for source in (ROOT / "src").glob("*.txt"):
             shutil.copy2(source, directory / source.name)
         return directory
+
+    def test_verify_workbook_rejects_a_defined_name_excel_cannot_open(self):
+        # Excel refuses the whole workbook, silently, when one defined name runs past
+        # 8,192 characters. Every other gate passed such a file on 2 September 2026.
+        directory = Path(tempfile.mkdtemp(prefix="ozzit-name-"))
+        try:
+            target = directory / "ozzit.xlsx"
+            with zipfile.ZipFile(ROOT / "ozzit.xlsx") as archive:
+                parts = {name: archive.read(name) for name in archive.namelist()}
+            book = parts["xl/workbook.xml"].decode("utf-8")
+            element = '<definedName name="oz.GSTExtractλ"'
+            start = book.index(element)
+            open_end = book.index(">", start) + 1
+            close = book.index("</definedName>", open_end)
+            padded = '"' + "1" * (verify_workbook.NAME_LIMIT + 1) + '"'
+            parts["xl/workbook.xml"] = (book[:open_end] + padded + book[close:]).encode("utf-8")
+            with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as archive:
+                for name, data in parts.items():
+                    archive.writestr(name, data)
+
+            verify_workbook.failures.clear()
+            output = io.StringIO()
+            with (
+                mock.patch.object(verify_workbook, "WORKBOOK", str(target)),
+                redirect_stdout(output),
+                self.assertRaises(SystemExit),
+            ):
+                verify_workbook.main()
+            self.assertIn("oz.GSTExtractλ is 8195 characters", output.getvalue())
+        finally:
+            verify_workbook.failures.clear()
+            shutil.rmtree(directory, ignore_errors=True)
 
     def test_verify_signatures_rejects_coming_soon_webpage(self):
         directory = self._copy_src()
