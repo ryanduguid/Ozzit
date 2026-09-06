@@ -1,8 +1,8 @@
 # Changelog
 
-## Unreleased
+## v3.4.0, 7 September 2026, rates, day counts and a DATEDIF replacement
 
-### Rates, day counts and a DATEDIF replacement
+### Four functions added and three changed; the workbook is otherwise v3.3.0
 
 Four functions added, taking the library from 134 to 138, and three changed. Each
 came out of comparing the library against the public 5g function gists on 6

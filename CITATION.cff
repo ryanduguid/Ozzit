@@ -8,8 +8,8 @@ authors:
   - family-names: Duguid
     given-names: Ryan
 type: software
-version: 3.3.0
-date-released: 2026-09-06
+version: 3.4.0
+date-released: 2026-09-07
 repository-code: "https://github.com/ryanduguid/Ozzit"
 license: MIT
 keywords:
