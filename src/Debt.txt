@@ -203,7 +203,7 @@ DebtSculptVariableLRVλ = LAMBDA(
                         "MonthsPerPeriod    →(Optional) Defaults to one month per period.¶" &
                         "EXAMPLES:          →¶" &
                         "Result             →Formula (oz is assumed to be the module's name)¶" &
-                        "4 rows, 3 cols     →=oz.DebtSculptVariableLRVλ(, {1000,0,0}, {300,300,300}, {1.2,1.2,1.2}, {6%,6%,6%}, 12)",
+                        "4 rows, 3 cols     →=oz.DebtSculptVariableLRVλ(, {1000,0,0}, {300,300,300}, {1.2,1.2,1.2}, {0.06,0.06,0.06}, 12)",
                         "→", "¶"
                         )
                     ),
@@ -290,7 +290,7 @@ DebtSculptVariableλ = LAMBDA(
                         "MonthsPerPeriod    →(Optional) Defaults to one month per period.¶" &
                         "EXAMPLES:          →¶" &
                         "Result             →Formula (oz is assumed to be the module's name)¶" &
-                        "4 rows, 3 cols     →=oz.DebtSculptVariableλ(, {1000,0,0}, {300,300,300}, {1.2,1.2,1.2}, {6%,6%,6%}, 12)",
+                        "4 rows, 3 cols     →=oz.DebtSculptVariableλ(, {1000,0,0}, {300,300,300}, {1.2,1.2,1.2}, {0.06,0.06,0.06}, 12)",
                         "→", "¶"
                         )
                     ),

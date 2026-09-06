@@ -17,8 +17,16 @@ python tools/compile_sources.py ozzit.xlsx src --index=functions.csv
 python tools/postbuild/remove_residue.py ozzit.xlsx
 python tools/sync_afe_store.py ozzit.xlsx src
 python tools/generate_selftest_examples.py src
+python tools/postbuild/help_links.py ozzit.xlsx src
+python tools/postbuild/sheet_names.py ozzit.xlsx
 python tools/sanitise_workbook.py ozzit.xlsx   # always last, after any Excel save
 ```
+
+After `tools/refresh_cache.py` has saved the workbook through Excel, run
+`tools/postbuild/remove_residue.py` again and then `tools/sanitise_workbook.py`:
+an Excel save leaves named cell styles unused, renumbers the worksheet parts and
+splits long string literals, and those two passes put the file back into the
+state every gate expects.
 
 All postbuild passes are idempotent: on a current workbook each reports "already
 applied" and writes nothing. A workbook whose anchors do not match the recorded counts

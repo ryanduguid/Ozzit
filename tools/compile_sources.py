@@ -98,6 +98,10 @@ PLAIN = frozenset(
 )
 CONSTANTS = frozenset({"TRUE", "FALSE"})
 ERRORS = ("#DIV/0!", "#N/A", "#NAME?", "#NULL!", "#NUM!", "#REF!", "#VALUE!", "#CALC!", "#SPILL!")
+# Excel refuses to open a workbook whose defined name is longer than this, and says
+# nothing about why. The 2 September 2026 compile rendered oz.Depreciateλ at 8,384
+# characters and the workbook would not open until the definition was compacted.
+NAME_LIMIT = 8192
 
 IDENT = re.compile(r"(?<![A-Za-z0-9_.λ\0])([A-Za-z_][A-Za-z0-9_.λ]*\??)")
 NAME_RE = re.compile(
@@ -377,8 +381,14 @@ def render(body: str, library: set[str]) -> str:
         .replace("\0WS\0", "_xlws.")
         .replace("\0PM\0", "_xlpm.")
         .replace("\0LIB\0", f"{NAMESPACE}.")
-    )
-    return stored.strip()
+    ).strip()
+    if len(stored) > NAME_LIMIT:
+        # Whitespace between tokens is layout, and every character counts against
+        # NAME_LIMIT. Drop it, the way Excel itself stores a definition, only when
+        # the readable form would make Excel refuse the workbook. The intersection
+        # operator is a space, and nothing in this library uses it.
+        stored = tight(stored)
+    return stored
 
 
 def xml_escape(text: str) -> str:
@@ -444,6 +454,11 @@ def compile_sources(src: Path) -> list[Compiled]:
             stored = render(body, library) if "LAMBDA(" in body else render_plain(body, library)
         except ValueError as exc:
             raise ValueError(f"{bare}: {exc}") from exc
+        if len(stored) > NAME_LIMIT:
+            raise ValueError(
+                f"{bare}: the stored definition is {len(stored)} characters and Excel "
+                f"refuses to open a workbook with a defined name over {NAME_LIMIT}"
+            )
         want = canonical(qualify(body, NAMESPACE, library))
         got = canonical(stored)
         if want != got:
