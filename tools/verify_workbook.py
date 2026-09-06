@@ -64,27 +64,33 @@ def check_xml_part(name: str, data: bytes) -> None:
 def main() -> None:
     z = zipfile.ZipFile(WORKBOOK)
     parts = z.namelist()
+    raw_parts = {name: z.read(name) for name in parts}
+    xml_parts = {
+        name: raw_parts[name].decode("utf-8")
+        for name in parts
+        if name.endswith((".xml", ".rels"))
+    }
 
     for name in parts:
         if name == "xl/vbaProject.bin" or name.startswith(FORBIDDEN_PARTS):
             fail(f"forbidden workbook part {name}")
 
-    for name in parts:
+    for name, raw in raw_parts.items():
         if name.endswith((".xml", ".rels")):
-            check_xml_part(name, z.read(name))
+            check_xml_part(name, raw)
 
     for name in parts:
         if name.endswith((".xml", ".rels")) and name != "customXml/item1.xml":
-            text = z.read(name).decode("utf-8")
+            text = xml_parts[name]
             for hit in BANNED.finditer(text):
                 fail(f"banned token {hit.group(0)!r} in {name}")
         elif name.endswith(".bin"):
-            text = z.read(name).decode("utf-16-le", errors="ignore")
+            text = raw_parts[name].decode("utf-16-le", errors="ignore")
             for hit in BANNED.finditer(text):
                 fail(f"banned token {hit.group(0)!r} in {name}")
 
     # The Advanced Formula Environment store holds the module sources as base64 UTF-16 JSON.
-    afe = z.read("customXml/item1.xml").decode("utf-8")
+    afe = xml_parts.get("customXml/item1.xml", "")
     blob = re.search(r">([A-Za-z0-9+/=]{100,})<", afe)
     if not blob:
         fail("AFE project store missing")
@@ -95,7 +101,7 @@ def main() -> None:
     for hit in BANNED.finditer(store_text):
         fail(f"banned token {hit.group(0)!r} in the AFE project store")
 
-    workbook = z.read("xl/workbook.xml").decode("utf-8")
+    workbook = xml_parts.get("xl/workbook.xml", "")
     defined = dict(re.findall(r'<definedName name="([^"]+)"[^>]*>([^<]*)</definedName>', workbook))
     sheets = set(re.findall(r'<sheet name="([^"]+)"', workbook))
     if not defined:
@@ -121,7 +127,7 @@ def main() -> None:
     for name in parts:
         if not SHEET_RE.match(name):
             continue
-        text = z.read(name).decode("utf-8")
+        text = xml_parts[name]
         if "#REF!" in text:
             fail(f"#REF! present in {name}")
         for formula in re.findall(r"<f[^>]*>([^<]*)</f>", text):
@@ -137,7 +143,7 @@ def main() -> None:
     for part in parts:
         if not (SHEET_RE.match(part) or part.startswith("xl/tables/")):
             continue
-        text = z.read(part).decode("utf-8")
+        text = xml_parts.get(part, "")
         formulas = re.findall(r"<f[^>]*>(.*?)</f>", text, re.S)
         formulas += re.findall(r"<calculatedColumnFormula[^>]*>(.*?)</calculatedColumnFormula>", text, re.S)
         for formula in formulas:
@@ -149,7 +155,7 @@ def main() -> None:
                 fail(f"always-calculate flag on a non-volatile cell in {part}")
                 break
 
-    shared = ET.fromstring(z.read("xl/sharedStrings.xml").decode("utf-8"))
+    shared = ET.fromstring(xml_parts.get("xl/sharedStrings.xml", "<sst/>"))
     unique_count = shared.get("uniqueCount")
     if unique_count is None:
         fail("sharedStrings uniqueCount is missing")
