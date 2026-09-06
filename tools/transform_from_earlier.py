@@ -1496,7 +1496,7 @@ mods["ozzit.d"]["text"] = mods["ozzit.d"]["text"].replace(
     d_anchor,
     d_anchor + '\n        "%-23s→%s¶" &' % ("FinancialYearλ", "Labels dates with their Australian financial year, starting 1 July"))
 
-# the store still declared Ryan Duguiding locale
+# the store still declared the earlier workbook's locale
 obj_afe["locale"]["localeName"] = "en-au"
 obj_afe["locale"]["dateOrder"] = "DMY"
 
