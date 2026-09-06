@@ -18,6 +18,7 @@ no recalculation.
 
 from __future__ import annotations
 
+import re
 import sys
 import zipfile
 from pathlib import Path
@@ -28,24 +29,37 @@ from sanitise_workbook import write_deterministic
 OLD = "oz.SumContains"
 NEW = "oz.SumContainsλ"
 
-# part -> list of (old anchor, new anchor, expected count)
-EDITS = {
-    "xl/workbook.xml": [
-        (f'<sheet name="{OLD}"', f'<sheet name="{NEW}"', 1),
-    ],
-    "xl/worksheets/sheet2.xml": [
-        (f"'{OLD}'!", f"'{NEW}'!", 4),
-    ],
-    "xl/worksheets/sheet25.xml": [
-        (f"<v>{OLD}</v>", f"<v>{NEW}</v>", 1),
-    ],
-    "docProps/app.xml": [
-        (f"<vt:lpstr>{OLD}</vt:lpstr>", f"<vt:lpstr>{NEW}</vt:lpstr>", 1),
-    ],
-    "xl/sharedStrings.xml": [
-        (f"<t>{OLD}</t>", f"<t>{NEW}</t>", 1),
-    ],
-}
+# part -> list of (old anchor, new anchor, expected count). The two worksheet parts
+# are resolved by sheet name at run time: Excel renumbers worksheet parts when it
+# saves a workbook that has lost a sheet, so a fixed sheetN.xml is not an anchor.
+def edits(parts: dict[str, bytes]) -> dict[str, list[tuple[str, str, int]]]:
+    book = parts["xl/workbook.xml"].decode("utf-8")
+    rels = parts["xl/_rels/workbook.xml.rels"].decode("utf-8")
+    targets = dict(re.findall(r'<Relationship Id="([^"]+)"[^>]*Target="([^"]+)"', rels))
+    by_name = {
+        name: "xl/" + targets[rid].lstrip("/")
+        for name, rid in re.findall(r'<sheet name="([^"]+)"[^>]*r:id="([^"]+)"', book)
+    }
+    demo = by_name.get(NEW) or by_name.get(OLD)
+    if demo is None or "TOC" not in by_name:
+        raise ValueError("the workbook lacks the TOC sheet or the oz.SumContains sheet")
+    return {
+        "xl/workbook.xml": [
+            (f'<sheet name="{OLD}"', f'<sheet name="{NEW}"', 1),
+        ],
+        by_name["TOC"]: [
+            (f"'{OLD}'!", f"'{NEW}'!", 4),
+        ],
+        demo: [
+            (f"<v>{OLD}</v>", f"<v>{NEW}</v>", 1),
+        ],
+        "docProps/app.xml": [
+            (f"<vt:lpstr>{OLD}</vt:lpstr>", f"<vt:lpstr>{NEW}</vt:lpstr>", 1),
+        ],
+        "xl/sharedStrings.xml": [
+            (f"<t>{OLD}</t>", f"<t>{NEW}</t>", 1),
+        ],
+    }
 
 
 def run(workbook: Path) -> list[str]:
@@ -54,13 +68,14 @@ def run(workbook: Path) -> list[str]:
 
     failures: list[str] = []
     texts: dict[str, str] = {}
-    for part, edits in EDITS.items():
+    planned = edits(parts)
+    for part, part_edits in planned.items():
         if part not in parts:
             failures.append(f"missing part {part}")
             continue
         text = parts[part].decode("utf-8")
         texts[part] = text
-        for old, new, expected in edits:
+        for old, new, expected in part_edits:
             counts = {"pre-rename": text.count(old), "renamed": text.count(new)}
             if sum(counts.values()) != expected:
                 failures.append(
@@ -71,9 +86,9 @@ def run(workbook: Path) -> list[str]:
         raise ValueError("; ".join(failures))
 
     changed = False
-    for part, edits in EDITS.items():
+    for part, part_edits in planned.items():
         text = texts[part]
-        for old, new, _expected in edits:
+        for old, new, _expected in part_edits:
             text = text.replace(old, new)
         if text != texts[part]:
             parts[part] = text.encode("utf-8")
