@@ -104,6 +104,23 @@ class VerifyGateTests(unittest.TestCase):
             verify_workbook.failures.clear()
             shutil.rmtree(directory, ignore_errors=True)
 
+    def test_verify_workbook_records_an_invalid_utf8_part_instead_of_crashing(self):
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("xl/worksheets/sheet1.xml", b"<x>\xff</x>")
+            zf.writestr("docProps/app.xml", "<Properties/>")
+        verify_workbook.failures.clear()
+        try:
+            parts = verify_workbook.load_xml_parts(zipfile.ZipFile(io.BytesIO(buf.getvalue())))
+            failures = list(verify_workbook.failures)
+        finally:
+            verify_workbook.failures.clear()
+        self.assertEqual(list(parts), ["docProps/app.xml"])
+        self.assertTrue(
+            any(f.startswith("malformed XML in xl/worksheets/sheet1.xml") for f in failures),
+            failures,
+        )
+
     def test_verify_signatures_rejects_coming_soon_webpage(self):
         directory = self._copy_src()
         try:

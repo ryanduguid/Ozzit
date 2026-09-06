@@ -39,6 +39,9 @@ ERRORS = {-2146826288: "#NULL!", -2146826281: "#DIV/0!", -2146826273: "#VALUE!",
 
 CELL = re.compile(r'<c r="([A-Z]+)(\d+)"([^>]*)>((?:(?!<c[ /]).)*?)</c>', re.S)
 CellKey = tuple[int, int, int]
+KIND_RE = re.compile(r't="([^"]+)"')
+INLINE_T_RE = re.compile(r"<t[^>]*>(.*?)</t>", re.S)
+V_RE = re.compile(r"<v>(.*?)</v>", re.S)
 
 
 def column(letters: str) -> int:
@@ -83,13 +86,13 @@ def cached_values(
         text = z.read("xl/" + target.lstrip("/")).decode("utf-8")
         for m in CELL.finditer(text):
             attrs, inner = m.group(3), m.group(4)
-            kind_match = re.search(r't="([^"]+)"', attrs)
+            kind_match = KIND_RE.search(attrs)
             kind = kind_match.group(1) if kind_match else "n"
             if kind == "inlineStr":
-                got = re.search(r"<t[^>]*>(.*?)</t>", inner, re.S)
+                got = INLINE_T_RE.search(inner)
                 value = html.unescape(got.group(1)) if got else None
             else:
-                got = re.search(r"<v>(.*?)</v>", inner, re.S)
+                got = V_RE.search(inner)
                 if not got:
                     continue
                 raw = html.unescape(got.group(1))
