@@ -49,6 +49,6 @@ v3.3.0 `ozzit.xlsx` SHA-256: `96e9ee60cc4bc72c3ed02f5db3a658627d1832d9ca609688d5
 - [Repository checks](AGENTS.md) and [release and native verification](RELEASING.md)
 - [Changes](CHANGELOG.md) and [citation](CITATION.cff)
 
-MIT licensed. See [LICENCE](LICENCE) and [ATTRIBUTION.md](ATTRIBUTION.md) for predecessor and transformation provenance.
+MIT licensed. See [LICENCE](LICENCE) and [ATTRIBUTION.md](ATTRIBUTION.md) for provenance and licence.
 
 </details>

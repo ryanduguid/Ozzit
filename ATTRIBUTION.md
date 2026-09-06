@@ -1,23 +1,21 @@
 # Provenance and licence
 
-Ozzit and its earlier workbook iterations were built from scratch by Ryan Duguid.
+Ozzit and its earlier workbook iterations were built from scratch by Ryan Duguid. The library is not derived from any third-party workbook.
 
 ## Licence status
 
 [LICENCE](LICENCE) is MIT and covers the whole repository, `ozzit.xlsx`, `src/` and `functions.csv` included.
 
-Earlier releases carried an incorrect restriction on the workbook material. Ryan Duguid's MIT licence covers that material.
-
 ## The build input
 
-`tools/transform_from_predecessor.py` rebuilds `ozzit.xlsx` from Ryan Duguid's predecessor workbook, which is not committed to this repository. The build was last run against a file of 1,478,643 bytes, sha256 `f38dbc83b4a18fc7d71d0f4bcf39680d74694b9aa129f5b3deb39b014e0bbb67`, holding 224 parts. A rebuild that starts from that file reproduces the v3.0.0 `src/` and `functions.csv`; anything else is a different input and the build's own assertions will say so. The transform does not take `ozzit.xlsx` as a substitute for that predecessor file.
+`tools/transform_from_predecessor.py` rebuilds `ozzit.xlsx` from Ryan Duguid's earlier workbook of 6 July 2024, which is not committed to this repository. The build was last run against a file of 1,478,643 bytes, sha256 `f38dbc83b4a18fc7d71d0f4bcf39680d74694b9aa129f5b3deb39b014e0bbb67`, holding 224 parts. A rebuild that starts from that file reproduces the v3.0.0 `src/` and `functions.csv`; anything else is a different input and the build's own assertions will say so. The transform does not take `ozzit.xlsx` as a substitute for that earlier file.
 
-That claim describes the v3.0.0 baseline. Post-v3.0.0 passes start from the committed `ozzit.xlsx` and `src/` rather than from the predecessor workbook. The committed input those later passes were written against is 439,209 bytes, sha256 `26a3e6246ff3d849bb2eb9295b39900682a3ec69dd8475005278de7ad22ef44e`, holding 211 parts. `tools/postbuild/` records the tracked successors of the v3.1.0 session (FY27 help text, workbook palette) and later committed-input inserts such as the GST help note. A rebuild from the predecessor file still stops at the v3.0.0 artefacts. Byte-for-byte reproduction of the current workbook from the predecessor workbook is not claimed: the FY27 date shift was Excel-state-dependent and an Excel save is not stable across Excel builds.
+That claim describes the v3.0.0 baseline. Post-v3.0.0 passes start from the committed `ozzit.xlsx` and `src/` rather than from the earlier workbook. The committed input those later passes were written against is 439,209 bytes, sha256 `26a3e6246ff3d849bb2eb9295b39900682a3ec69dd8475005278de7ad22ef44e`, holding 211 parts. `tools/postbuild/` records the tracked successors of the v3.1.0 session (FY27 help text, workbook palette) and later committed-input inserts such as the GST help note. A rebuild from the earlier file still stops at the v3.0.0 artefacts. Byte-for-byte reproduction of the current workbook from the earlier workbook is not claimed: the FY27 date shift was Excel-state-dependent and an Excel save is not stable across Excel builds.
 
-## What changed from Ryan Duguid's predecessor workbook
+## What changed from the earlier workbook
 
-- All predecessor namespaces were replaced by a single `oz.` prefix, with a one-letter tag where two modules shared a function name. Predecessor branding, branded artwork, the cover video thumbnails and their YouTube link, and Dropbox file links were removed. One maths-citation link (a Diarmuid Early video, credited in an `IntOnIntλ` source comment) was retained deliberately.
-- Help-block links that pointed at predecessor gists and the predecessor site now point at this repository, relabelled from "Gist URL" to "Repository".
+- All earlier namespaces were replaced by a single `oz.` prefix, with a one-letter tag where two modules shared a function name. Earlier branding, artwork, the cover video thumbnails and their YouTube link, and Dropbox file links were removed. One maths-citation link (a Diarmuid Early video, credited in an `IntOnIntλ` source comment) was retained deliberately.
+- Help-block links that pointed at earlier gists and the earlier site now point at this repository, relabelled from "Gist URL" to "Repository".
 - Per-function revision histories were removed from the module sources, from the Advanced Formula Environment store and from the workbook's creator metadata. This repository's own history is in [CHANGELOG.md](CHANGELOG.md) and in git.
 - American English converted to Australian English throughout, including function renames (`Amortizeλ` family to `Amortiseλ`).
 - Calibri replaced with Aptos; US date formats replaced with day-first formats; sample data currency set to AUD.

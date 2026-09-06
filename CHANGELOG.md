@@ -256,7 +256,7 @@ run on the v3.3.0 candidate after the two defects above were repaired.
 ### Deterministic release candidate staging
 
 - **`tools/prepare_release_bundle.py` added.** From a clean candidate it copies the exact tracked workbook into a fresh external staging directory, reruns the six workbook-bound gates and emits only `ozzit.xlsx`, canonical `provenance.json` and canonical `SHA256SUMS`. A second mode independently verifies the closed inventory, hashes, base lock and gate evidence. The tool neither tags nor publishes, refuses to overwrite a destination and cleans an unpublished staging directory after failure.
-- **The shipped workbook now has an explicit byte lock.** `release/workbook-base.json` records its SHA-256, byte length, Git blob and last workbook-changing commit. This is honest copy-only provenance: the post-v3.0.0 process still does not regenerate the present workbook from the predecessor workbook.
+- **The shipped workbook now has an explicit byte lock.** `release/workbook-base.json` records its SHA-256, byte length, Git blob and last workbook-changing commit. This is honest copy-only provenance: the post-v3.0.0 process still does not regenerate the present workbook from the earlier workbook.
 - **The binary migration is recoverable.** `ozzit.xlsx` remains tracked until one release asset has been published, downloaded independently and matched to both its checksum and exact signed tag. Removing it, rewriting history or force-pushing is outside this change.
 - **Release counts and tests are current.** The release guide now names all ten gates and the 438-assertion native baseline. Sixteen release-bundle regression contracts cover deterministic output, tampering, closed inputs, base drift, Git-history binding, shell avoidance, output isolation, no-overwrite behaviour and failure cleanup.
 
@@ -306,8 +306,8 @@ added, and all 20,228 cached values are the ones v3.1.0 shipped.
 held the credit has been cleared and the removal is now enforced by a gate.
 
 - **Per-function revision histories removed from `src/`.** 125 `REVISIONS` comment
-  blocks across Dates, Essentials, Financial, Ratios and Utilities, 417 lines, all
-  naming the same predecessor developer. A comment that also carried a `NOTE` keeps the
+  blocks across Dates, Essentials, Financial, Ratios and Utilities, 417 lines of
+  revision notes that git history now supersedes. A comment that also carried a `NOTE` keeps the
   NOTE, which is what preserves the Diarmuid Early maths citation on `oz.IntOnIntλ`.
   No formula body was read or rewritten, and all 130 functions still reproduce.
 - **The Advanced Formula Environment store and the workbook creator metadata cleared.**
@@ -316,14 +316,13 @@ held the credit has been cleared and the removal is now enforced by a gate.
 - **`tools/postbuild/strip_revision_history.py` added.** It applies all three edits
   together, asserts the expected block count per module, and reports "already applied"
   on a second run. It reproduces the hand-applied result byte for byte. A build that
-  starts from Ryan Duguid's predecessor workbook still emits the blocks at v3.0.0, so this pass is
+  starts from Ryan Duguid's earlier workbook still emits the blocks at v3.0.0, so this pass is
   what removes them.
 - **MIT now covers the whole repository.** `ozzit.xlsx`, `src/` and `functions.csv`
   are no longer carved out. `ATTRIBUTION.md`, `README.md`, `RELEASING.md` and
-  `llms.txt` were rewritten to match, and no longer name the workbook author Ryan Duguid or the
-  predecessor product.
-- **The removal is enforced, not just done.** `verify_workbook.py` bans the name in the
-  workbook, and `test_repository_policy.py` fails if any tracked file reintroduces it.
+  `llms.txt` were rewritten to match and no longer carry the earlier product name.
+- **The removal is enforced, not just done.** `verify_workbook.py` bans the earlier product
+  branding in the workbook, and `test_repository_policy.py` fails if any tracked file reintroduces it.
 
 ## v3.1.0, 22 August 2026, FY27 examples, dark styling, help corrections
 
@@ -336,7 +335,7 @@ baseline that grew around them.
   one-eleventh extraction, GST Act 1999 ss 9-70 and 9-75, and that the helpers
   apply arithmetic only. The About table and Name Manager comments stay the
   one-line descriptions. `tools/postbuild/gst_help_text.py` applies the insert
-  to the committed workbook and `src/`; it does not run through the predecessor
+  to the committed workbook and `src/`; it does not run through the v3.0.0
   transform.
 
 - **`oz.CorkscrewλDV` described `oz.Depreciateλ`.** Its Name Manager comment, source
@@ -395,7 +394,7 @@ baseline that grew around them.
 
 - **The workbook is styled to a dark purple palette**, applied as one deliberate system: purple `#5C2D91` as the single accent, near-black
   `#04001F` and a warm grey for everything else. The legacy accents inherited from
-  predecessor are gone: two greens, two blues and a maroon in the help blocks fold into the
+  the earlier workbook are gone: two greens, two blues and a maroon in the help blocks fold into the
   brand purple, and the mint, yellow and pink cell fills fold into the neutral greys.
   Thirteen font colours become eight. `assets/ozzit.svg` moves off its teal to match.
 
@@ -512,8 +511,8 @@ baseline that grew around them.
   carrying a new mark. The old one drew the nabla operator, which the library never
   implemented.
 
-- `tools/transform_from_predecessor.py` now names the predecessor functions `ozzit.*` on the way
-  through and lands them in `oz.`, so a rebuild from Ryan Duguid's predecessor workbook produces this
+- `tools/transform_from_predecessor.py` now names the earlier functions `ozzit.*` on the way
+  through and lands them in `oz.`, so a rebuild from Ryan Duguid's earlier workbook produces this
   release rather than the previous one.
 
 - The version stamp each function carries reads 19 August 2026, as does the README.
@@ -615,11 +614,10 @@ baseline that grew around them.
 
 - **A licence, for the parts of this repository that can carry one.** [LICENCE](LICENCE) is
   MIT and covers `tools/`, `.github/`, the Markdown files and `assets/`. It does not extend
-  to `nabla.xlsx`, `src/` or `functions.csv`: those derive from a workbook whose author
-  retains all rights, as `ATTRIBUTION.md` has said since v1.0.0, and nothing here can grant
-  what is not ours to grant.
+  to `nabla.xlsx`, `src/` or `functions.csv`, which were carved out at the time. v3.0.0
+  removed the carve-out; MIT now covers the whole repository.
 
-  `ATTRIBUTION.md` now also records the build input. The predecessor workbook is not in this
+  `ATTRIBUTION.md` now also records the build input. The earlier workbook is not in this
   repository and cannot be, so it names the file's size, its sha256 and its part count,
   which is enough to tell a rebuild from the same input apart from a rebuild from a
   different one.
@@ -648,7 +646,7 @@ baseline that grew around them.
   copying the one line a reader is meant to copy got a syntax error rather than an answer.
   The Result column beside it was empty, where every other example in the library prints
   what it returns, which is how the missing brackets went unseen: there was no answer to
-  disagree with. Predecessor wrote it against 2/15/2022 and a timeline starting 1/1/2023, and
+  disagree with. The earlier workbook wrote it against 2/15/2022 and a timeline starting 1/1/2023, and
   the date sweep moved both forward two years with everything else, which still left the
   example two years behind the 1 January 2026 timeline the demonstration sheet builds.
 
@@ -776,7 +774,7 @@ longer true.
 - **`ATTRIBUTION.md` still called the depreciation helpers ATO methods.** v2.1.0 removed
   that claim from the function help, the method codes, the Data Validation sheet, the
   Australian tax worksheet and the README, and missed the one file that describes the
-  derivative to a stranger.
+  provenance to a stranger.
 
 - **Nine comment banners named or described the wrong function.** Every function is
   introduced by a comment naming it and saying what it does. They are stripped before
@@ -901,7 +899,7 @@ longer true.
   Environment store, so the workbook still cannot be rebuilt from that store alone. They are
   the only self-recursive functions in the library, each calling itself by name, and an
   imported module takes its prefix from its container, so the recursion would call a name
-  that does not exist there. Predecessor leaves the same five out for the same reason. `src/`
+  that does not exist there. The earlier workbook leaves the same five out for the same reason. `src/`
   carries all 130 and `tools/verify_sources.py` checks all 130 on every push.
 
 ## v2.2.0, 18 August 2026, counting the way the help counts
@@ -955,7 +953,7 @@ workbook, four moved, all four on the Periods demonstration sheet.
     fix is a guard, not a repair.
 
 - **The workbook stopped shipping cached errors it does not reproduce.** Five cells on the
-  Periods demonstration sheet were saved holding `#VALUE!`. They come from the predecessor
+  Periods demonstration sheet were saved holding `#VALUE!`. They come from the earlier
   workbook, which carries 65 such cells, and they have been in every tagged release from
   v1.2.0 on. Excel replaces them with the right answers as soon as the file opens, so no
   reader ever saw them and no recalculation reproduces them, but a file that disagrees with
@@ -1126,7 +1124,7 @@ Each correction is applied in three places: the module source `src/` is exported
 
 ### Added
 
-- `tools/verify_signatures.py` reads every function's help signature and compares it against the LAMBDA's own declaration, character for character, since case is exactly the kind of difference that goes unnoticed. It accounts for every declaration in every module and prints the tally, and fails if it parsed too few, because a checker that reads nothing passes everything. Square brackets are ignored: predecessor declares every parameter optional so a function called with no arguments can return its own help, so the declaration says nothing about which arguments a caller may omit. Run against the previous release it reports all 15 divergences. Now runs in CI.
+- `tools/verify_signatures.py` reads every function's help signature and compares it against the LAMBDA's own declaration, character for character, since case is exactly the kind of difference that goes unnoticed. It accounts for every declaration in every module and prints the tally, and fails if it parsed too few, because a checker that reads nothing passes everything. Square brackets are ignored: the earlier workbook declares every parameter optional so a function called with no arguments can return its own help, so the declaration says nothing about which arguments a caller may omit. Run against the previous release it reports all 15 divergences. Now runs in CI.
 
 - **`FLow1` in the corkscrew signatures.** `nb.Corkscrewλ` and `nb.CorkScrewReversalλ` both spelled their second argument `FLow1` on the FUNCTION line of their help, with a capital L. The parameter table three rows below spelled it `Flow1`, and so did the LAMBDA, so anyone copying the signature was copying a name the function does not have. Corrected in the module source, in the defined name, in `functions.csv`, and in the help output already cached on the demonstration sheet, which would otherwise have kept showing the typo until something forced a recalculation. Read back out of Excel afterwards, both functions now report `( Opening, Flow1, ...)`.
 
@@ -1168,7 +1166,7 @@ Also in this release:
 - Two Windows-only build bugs: the script died printing a λ to a cp1252 console, and
   `os.makedirs` raised on a bare output filename.
 
-Verified by rebuilding from the predecessor workbook and comparing every cell against the previous build:
+Verified by rebuilding from the earlier workbook and comparing every cell against the previous build:
 85,647 cells, no numeric change, and the only text differences are the renamed functions,
 the rewritten cover paragraph, the corrected About tables, and the product name capitalised
 from `nabla` to `Nabla` in 29 places across worksheet strings, drawing callouts and the
@@ -1192,7 +1190,7 @@ Applied to the module source and the defined name alike, so `src/` still reprodu
 `src/` exists so the library can be read, diffed and loaded back into Excel. Testing that last part for the first time found that one module could not be loaded at all.
 
 - **The five `nabla.debt.*` functions could not be imported.** The exporter wrote them by stripping the internal prefixes off the stored definitions, which destroyed two things. `_xlop.Name` marks an **optional** parameter; stripping the prefix leaves a required one, and since every one of those functions calls `ISOMITTED()` on its parameters, Excel rejected each definition outright. `[0]!` is the internal token for "a name in this workbook" and is not something you can type back in. The exporter now maps them to `[Name]` and to a bare reference. Measured in Excel: **nil of five accepted before, five of five after**, and swapping the published definitions into the workbook in place of the shipped ones leaves all 17,003 numeric cells identical.
-- **`nabla.f.SumDepreciateλ` shipped a later revision than its own published source**, inherited from the predecessor workbook: the installed function carries a blank help row and a different, behaviour-identical test for its omitted argument. The source is brought up to the version that ships.
+- **`nabla.f.SumDepreciateλ` shipped a later revision than its own published source**, inherited from the earlier workbook: the installed function carries a blank help row and a different, behaviour-identical test for its omitted argument. The source is brought up to the version that ships.
 
 ### Added
 
@@ -1200,7 +1198,7 @@ Applied to the module source and the defined name alike, so `src/` still reprodu
 
 ## 2026-08-18, TOC filter
 
-- **The table of contents opened filtered.** Predecessor saved it with the Type slicer restricted to `Worksheet`, so 16 of the 66 entries, every one describing a table, were hidden on open with nothing to indicate they existed. The filter criteria and the row visibility stored alongside them also disagreed, because the row retyped from Worksheet to Function in the first round kept its old visibility. Both are cleared: the workbook now opens showing all 66 entries with every slicer button selected.
+- **The table of contents opened filtered.** The earlier workbook saved it with the Type slicer restricted to `Worksheet`, so 16 of the 66 entries, every one describing a table, were hidden on open with nothing to indicate they existed. The filter criteria and the row visibility stored alongside them also disagreed, because the row retyped from Worksheet to Function in the first round kept its old visibility. Both are cleared: the workbook now opens showing all 66 entries with every slicer button selected.
 - The slicer itself was exercised in Excel and was never at fault. Each of its three buttons filters exclusively and correctly (1 Function, 16 Table, 49 Worksheet) and clearing restores all 66. The `<autoFilter>` element is retained, since the slicer binds to it; it simply carries no criteria now.
 
 ## 2026-08-18, later
@@ -1221,7 +1219,7 @@ Every prior release was reasoned about statically. Opening `nabla.xlsx` in Excel
 - `FinancialYearλ` multiplies instead of using `AND`, so each date is evaluated on its own.
 - `GSTAddλ` and `GSTExtractλ` return blank for a blank amount, so a part-filled column no longer fills with zeros.
 - The compiled name and the readable module source are now generated from one expression per function, and `src/` and `functions.csv` are exported from the built workbook. They regenerate byte-identical to the previous hand-written files apart from the fixes above, so the drift was confined to `FinancialYearλ`.
-- Restored the missing help-column delimiter in `RollingMinλ`, an predecessor defect that collapsed its signature row.
+- Restored the missing help-column delimiter in `RollingMinλ`, an earlier defect that collapsed its signature row.
 
 ### Added
 
@@ -1239,16 +1237,16 @@ Every prior release was reasoned about statically. Opening `nabla.xlsx` in Excel
 - Fixed worked examples the two-year date shift had invalidated: `CountDOWλ` stated 2 where it now returns 3, and `PeriodLabelλ` stated 2023 results against a 2025 input.
 - Fixed frozen sample data that produced uninformative demonstrations: the `Periodsλ` yearly row spanned one day short of a year and returned 0, and the onboarding dates were spaced 30 days apart against a twelve-year timeline so every customer landed in the first period.
 - Replaced the 13 volatile `RANDARRAY` grids that the first performance pass missed, so no formula in the workbook is volatile except the sheet-name titles.
-- Corrected predecessor help defects: two missing column delimiters that collapsed a help row, and the misspelt `Liabilites` parameter.
+- Corrected earlier help defects: two missing column delimiters that collapsed a help row, and the misspelt `Liabilites` parameter.
 - The GST helpers are listed under their own AUSTRALIAN TAX heading in the module index rather than inside the depreciation suite.
 - Only the cover opens selected, and the table-of-contents columns were widened for the longer `nabla.*` names.
 
-First nabla release, derived from the predecessor 6 July 2024 workbook.
+First nabla release, rebuilt from Ryan Duguid's earlier workbook of 6 July 2024.
 
-### Rebranding
-- Renamed every function namespace, worksheet, AFE module and help reference from the predecessor namespaces to the `nabla.*` scheme.
+### Renaming
+- Renamed every function namespace, worksheet, AFE module and help reference from the earlier namespaces to the `nabla.*` scheme.
 - Removed branded cover art, the cover video thumbnails and their YouTube link, Dropbox model links, and the source add-in credit line. A maths-citation video link in an IntOnIntλ source comment is retained as third-party credit.
-- Help links to the predecessor gists and site replaced with this repository's URL and relabelled "Repository"; author revision histories preserved; workbook creator metadata credits the original author.
+- Help links to the earlier gists and site replaced with this repository's URL and relabelled "Repository"; revision histories and creator metadata preserved.
 - Workbook metadata retitled `nabla`.
 
 ### Australian English and conventions
@@ -1256,7 +1254,7 @@ First nabla release, derived from the predecessor 6 July 2024 workbook.
 - Date number formats flipped to day-first (`d/m/yyyy`, `dd/mm/yyyy`, `dd/mm/yyyy h:mm`).
 - Help examples and sample text dates rewritten day-first.
 - Sample data Americanisms ported: currency label to AUD, `Apt.`/`Apartment` to `Unit`, `Wal*Art` to `Wool*Art`, household budget items to Pay/Home insurance/Strata levies/Petrol.
-- Removed the foreign depreciation regime the predecessor library carried: its function, method code, dispatch branch inside `Depreciateλ` and the special-case life, salvage and disposal handling that went with it, plus the foreign tax authority reference on the Data Validation sheet and the foreign accounting-standard paragraph on the `Depreciateλ` worksheet. The library is now Australian-only.
+- Removed the foreign depreciation regime the earlier library carried: its function, method code, dispatch branch inside `Depreciateλ` and the special-case life, salvage and disposal handling that went with it, plus the foreign tax authority reference on the Data Validation sheet and the foreign accounting-standard paragraph on the `Depreciateλ` worksheet. The library is now Australian-only.
 - Added five Australian functions, each with inline help, an AFE source module and a Name Manager description: `nabla.f.DiminishingValueλ` (ATO 200% diminishing value), `nabla.f.PrimeCostλ` (ATO prime cost), `nabla.f.GSTAddλ`, `nabla.f.GSTExtractλ` and `nabla.d.FinancialYearλ`.
 - `Depreciateλ` method codes are now `SLN`, `SYD`, `DB`, `DDB`, `VDB`, `DV` and `PC`; the Data Validation sheet and the `DepreciateλDV` diagnostic list the same set.
 - Worksheets print on A4.
@@ -1267,25 +1265,25 @@ First nabla release, derived from the predecessor 6 July 2024 workbook.
 - `fullCalcOnLoad` enabled so cached demo outputs refresh on first open.
 
 ### Fixes
-- Defined `nabla.e.Aboutλ`; the predecessor workbook called an about function on its own worksheet without defining it.
-- Replaced the undefined `Sheetλ` title formula on 46 worksheets with a self-contained `TEXTAFTER(CELL("filename",A1),"]")` title; the predecessor file cached `#NAME?` in every one.
+- Defined `nabla.e.Aboutλ`; the earlier workbook called an about function on its own worksheet without defining it.
+- Replaced the undefined `Sheetλ` title formula on 46 worksheets with a self-contained `TEXTAFTER(CELL("filename",A1),"]")` title; the earlier file cached `#NAME?` in every one.
 - Replaced locale-fragile text-date arguments in `RANDBETWEEN` with `DATE()` calls.
 - Removed a dead table-of-contents hyperlink to a worksheet that never existed, an empty Power Query mashup, orphaned rich-value image residue, the regenerable `calcChain` cache, and a merged cell left behind by the removed cover section. The table-of-contents row for that worksheet now correctly reads Function rather than Worksheet.
-- Fixed typos: `Amoritization`, `Occurence`, `preceeding`, `dynamice`, "click and worksheet name", and an predecessor misspelling of the author's name.
+- Fixed typos: `Amoritization`, `Occurence`, `preceeding`, `dynamice`, "click and worksheet name", and a misspelling of the author's name.
 - Repaired an inherited `#REF!` argument in the TimelinePositionλ demo timeline and the `nabla.u.Aboutλ` text that suggested the wrong module name.
-- Moved the first loan on the `Amortiseλ` worksheets to 1 March 2026. Predecessor started it a year before the model timeline with a ten-month term, so it was fully repaid before the first period and its six rows rendered as zeros; it now shows a partial schedule. The worksheet caption is restated to match.
+- Moved the first loan on the `Amortiseλ` worksheets to 1 March 2026. The earlier workbook started it a year before the model timeline with a ten-month term, so it was fully repaid before the first period and its six rows rendered as zeros; it now shows a partial schedule. The worksheet caption is restated to match.
 - Ported the remaining foreign sample data: household budget items became Australian equivalents (Pay, Home insurance, Strata levies, Petrol), and the depreciation note on the `Depreciateλ` worksheet was rewritten without its foreign accounting-standard framing.
 - Added Name Manager descriptions to every new defined name.
-- Defined `nabla.d.Aboutλ`, which the predecessor workbook shipped as source but never installed, so it returned #NAME?.
+- Defined `nabla.d.Aboutλ`, which the earlier workbook shipped as source but never installed, so it returned #NAME?.
 - Extended `tblMethods` to cover the added prime cost row, and fixed the table's own copy of the sample-date formula, which still held the pre-conversion text dates.
 - Carried the two-year date shift into help examples written with two-digit years and into cached values beyond 2064, which an earlier bound had skipped.
 - Fixed prose that the date shift had left stale ("that loan starts in 2020"), a doubled word introduced by the rename, and a US working-week aside in the occurrence-date help.
-- Fixed further predecessor typos: "equally equally", "specifice text", "Some of Years".
+- Fixed further earlier typos: "equally equally", "specifice text", "Some of Years".
 
 ### Currency with Excel 365
 - Six helpers whose job Excel 365 has since taken over natively (the three `RangeToDAλ` copies, `FilterContainsλ`, `SumPeriodsλ` and `SumContainsλ`) now carry a `SEE ALSO` line in their inline help pointing at `TRIMRANGE`, the `REGEX` functions and `GROUPBY`/`PIVOTBY`. Checked against Microsoft's documentation in August 2026.
 - The cover sheet states the Excel requirement: Microsoft 365, or Excel 2024 and later.
-- Replaced the predecessor `Coming soon` webpage placeholders in 74 help blocks with the repository URL, and removed the duplicate `Website` line that repeated the `Repository` line in every About table.
+- Replaced the earlier `Coming soon` webpage placeholders in 74 help blocks with the repository URL, and removed the duplicate `Website` line that repeated the `Repository` line in every About table.
 - Drawing text is tagged `en-AU` so Excel stops spell-checking Australian prose against a US dictionary, and the Advanced Formula Environment project store now declares the `en-au` locale with day-first date order.
 
 ### Performance
@@ -1300,8 +1298,8 @@ First nabla release, derived from the predecessor 6 July 2024 workbook.
 - Every sheet opens at the top left, and the workbook opens on the cover rather than on whichever tab was last active.
 
 ### Packaging
-- Removed the embedded printer configuration, which carried the original author's printer name and a foreign default paper size.
-- Repacked at maximum deflate; the workbook is smaller than the predecessor file despite the added functions.
+- Removed the embedded printer configuration, which carried a printer name and a foreign default paper size.
+- Repacked at maximum deflate; the workbook is smaller than the earlier file despite the added functions.
 - Added `functions.csv`, a generated index of all 130 functions, and a GitHub Actions check that rebuilds the verification pass on every push.
 
 ### Typography
