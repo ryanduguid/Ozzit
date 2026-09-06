@@ -13,6 +13,7 @@ python tools/postbuild/workbook_palette.py ozzit.xlsx
 python tools/postbuild/gst_help_text.py ozzit.xlsx src
 python tools/postbuild/strip_revision_history.py ozzit.xlsx src
 python tools/postbuild/help_corrections.py ozzit.xlsx src
+python tools/postbuild/rate_date_helpers.py ozzit.xlsx src functions.csv
 python tools/compile_sources.py ozzit.xlsx src --index=functions.csv
 python tools/postbuild/remove_residue.py ozzit.xlsx
 python tools/sync_afe_store.py ozzit.xlsx src
@@ -62,11 +63,15 @@ per-function REVISIONS blocks, the Advanced Formula Environment copies of them a
 the workbook's creator credit; it resynchronises the AFE store itself, so it must
 run after any text pass that touches `src/`. A build that starts from the earlier
 workbook still emits those blocks at v3.0.0, so this pass is what removes them. The
-help-corrections pass is the last text pass: it repairs the functions that shipped
+help-corrections pass is the last of the repair passes: it repairs the functions that shipped
 disagreeing with their own inline help. Two of the corrected examples are spilled onto
 demonstration worksheets, so it rewrites the cells caching that spill, and five of the
 corrected statements are also typed into label and description cells that no formula
-feeds, so it rewrites those shared strings too.
+feeds, so it rewrites those shared strings too. The rate and date helpers pass runs
+after it and is the last text pass: it adds four functions (`oz.PeriodRateλ`,
+`oz.AnnualRateλ`, `oz.DayCountRateλ` and `oz.DateDifλ`) on the same pattern as the
+AASB 16 pass, except that it renders the stored forms through `compile_sources.py`
+rather than carrying a renderer of its own.
 
 ## What is intentionally not here
 
