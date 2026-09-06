@@ -60,7 +60,7 @@ record the v3.0.0 → v3.1.0 swaps. The GST help pass records a later insert aga
 committed v3.1.0 workbook and `src/`. The revision-history pass removes the
 per-function REVISIONS blocks, the Advanced Formula Environment copies of them and
 the workbook's creator credit; it resynchronises the AFE store itself, so it must
-run after any text pass that touches `src/`. A build that starts from the earlier workbook
+run after any text pass that touches `src/`. A build that starts from the earlier
 workbook still emits those blocks at v3.0.0, so this pass is what removes them. The
 help-corrections pass is the last text pass: it repairs the functions that shipped
 disagreeing with their own inline help. Two of the corrected examples are spilled onto

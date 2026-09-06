@@ -2039,7 +2039,7 @@ put("xl/tables/table2.xml", t2.replace('ref="A6:B12"', 'ref="A6:B13"'))
 print("Data Validation sheet: PC row added, tblMethods extended")
 
 # ---------- 9e1. Current-Excel guidance: point at the natives that now overlap ----------
-# Excel 365 has gained functions since the earlier release that do natively what a few of
+# Excel 365 has gained functions since the earlier workbook was written that do natively what a few of
 # these helpers were written to work around. Checked against Microsoft's documentation on
 # 18 August 2026.
 wb = get("xl/workbook.xml")

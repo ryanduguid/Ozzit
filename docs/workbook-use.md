@@ -37,7 +37,7 @@ Functions with a data-validation companion (named with a `DV` suffix, such as `o
 
 ## Modern Excel
 
-Excel 365 has gained functions since this library's earlier release in July 2024, and a few of them do natively what some helpers here were written to work around. Where that is the case the function's own inline help carries a `SEE ALSO` line, so you find out while you are using it rather than after:
+Excel 365 has gained functions since the earlier workbook of July 2024, and a few of them do natively what some helpers here were written to work around. Where that is the case the function's own inline help carries a `SEE ALSO` line, so you find out while you are using it rather than after:
 
 | Helper | Native equivalent in Excel 365 |
 |---|---|
