@@ -9,12 +9,14 @@ Open [ozzit.xlsx](https://github.com/ryanduguid/Ozzit/releases/latest/download/o
 =oz.GSTExtractλ(1100)
 ```
 
-**Output:** $100.00 GST. The arithmetic does not establish whether the supply is taxable.
+**Expected arithmetic:** $100.00 GST, calculated as $1,100 / 11. This does not establish whether the supply is taxable.
 
-| Input | Formula | GST component |
+| Input | Formula to try | Expected GST (input / 11) |
 | ---: | --- | ---: |
 | $1,100.00 | `=oz.GSTExtractλ(1100)` | $100.00 |
 | $2,200.00 | `=oz.GSTExtractλ(2200)` | $200.00 |
+
+These are hand-calculated expectations. Native Excel verification and a screenshot of this example are pending.
 
 The Australian tax worksheet contains editable demonstrations. Start there, then use the function catalogue when you need another calculation.
 
