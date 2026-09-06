@@ -26,10 +26,10 @@ What is asserted depends on what the help prints as the result:
 Named inputs (the IRRλ example binds Dates and Values first) are wrapped in
 LET(). Every function also gets one help assertion: called with no arguments,
 a LAMBDA spills a table whose first cell reads FUNCTION:, an About table's
-reads About:, and a data-validation companion returns TRUE.
+reads About:, and a data-validation companion answers TRUE or lists what is wrong.
 
 The output stays pure ASCII, the way the self-test does, so λ is written as
-$L. tools/tests checks the committed fragment against a fresh generation.
+${L}. tools/tests checks the committed fragment against a fresh generation.
 """
 
 from __future__ import annotations
@@ -180,9 +180,14 @@ def stands_alone(formula: str, library: set[str], bound: set[str]) -> bool:
 
 
 def powershell(text: str) -> str:
-    """A formula inside a double-quoted PowerShell string, λ written as $L."""
+    """A formula inside a double-quoted PowerShell string, λ written as ${L}.
+
+    The braces matter: PowerShell reads $LDV as one variable, so a bare $L in
+    front of the DV suffix of the three validators silently emptied the name
+    and the assertion called a function that does not exist.
+    """
     text = text.replace("`", "``").replace('"', '`"').replace("$", "`$")
-    return text.replace("λ", "$L")
+    return text.replace("λ", "${L}")
 
 
 def number(text: str) -> tuple[Decimal, Decimal] | None:
@@ -263,7 +268,11 @@ def help_check(name: str, body: str) -> str:
     if not body.startswith("LAMBDA("):
         return f"Same {tag} \"INDEX({call},1,1)\" 'About:'"
     if name.endswith("DV"):
-        return f"Near {tag} \"N({call}())\" '1'"
+        # A validator answers TRUE when nothing it was given is wrong, or a column of
+        # text messages when something is; with no arguments Amortise and Corkscrew
+        # answer TRUE and Depreciate lists messages. Either is a pass; an error is not.
+        first = f"INDEX({call}(),1,1)"
+        return f"Near {tag} \"--OR({first}=TRUE,ISTEXT({first}))\" '1'"
     return f"Same {tag} \"INDEX({call}(),1,1)\" 'FUNCTION:'"
 
 

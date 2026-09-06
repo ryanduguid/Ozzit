@@ -50,9 +50,12 @@ class ResidueTests(unittest.TestCase):
         xf_count = int(re.search(r'<cellStyleXfs count="(\d+)"', styles).group(1))
         referenced = set()
         for name, data in parts.items():
-            if name.startswith("xl/worksheets/sheet"):
-                referenced |= {int(x) for x in re.findall(r'dxfId="(\d+)"', data.decode("utf-8"))}
+            if name.startswith("xl/worksheets/sheet") or name.startswith("xl/tables/table"):
+                referenced |= {int(x) for x in remove_residue.DXF_REF.findall(data.decode("utf-8"))}
         referenced |= {int(x) for x in re.findall(r'dxfId="(\d+)"', re.search(r"<tableStyles.*?</tableStyles>", styles, re.S).group(0))}
+        self.assertTrue(
+            any(n.startswith("xl/tables/table") for n in parts), "the tracked workbook still ships tables"
+        )
         self.assertEqual(referenced, set(range(dxf_count)), "every differential format is used")
         used_xf = {0} | {int(x) for x in re.findall(r'xfId="(\d+)"', re.search(r"<cellXfs.*?</cellXfs>", styles, re.S).group(0))}
         self.assertEqual(used_xf, set(range(xf_count)), "every named cell style is used")
@@ -119,11 +122,14 @@ class ResidueTests(unittest.TestCase):
         styles = parts["xl/styles.xml"].decode("utf-8")
         dxf_count = int(re.search(r'<dxfs count="(\d+)"', styles).group(1))
         styles = re.sub(r'<dxfs count="(\d+)">', lambda m: f'<dxfs count="{dxf_count + 1}"><dxf><font><b/></font></dxf>', styles, count=1)
-        # every existing reference now points one entry later
+        # every existing reference now points one entry later, in the sheets and in the
+        # tables (dataDxfId, headerRowDxfId and the rest index the same collection)
         for name in list(parts):
-            if name.startswith("xl/worksheets/sheet"):
+            if name.startswith("xl/worksheets/sheet") or name.startswith("xl/tables/table"):
                 text = parts[name].decode("utf-8")
-                parts[name] = re.sub(r'dxfId="(\d+)"', lambda m: 'dxfId="%d"' % (int(m.group(1)) + 1), text).encode("utf-8")
+                parts[name] = remove_residue.DXF_ATTR.sub(
+                    lambda m: '%s="%d"' % (m.group(1), int(m.group(2)) + 1), text
+                ).encode("utf-8")
         table_styles = re.search(r"<tableStyles.*?</tableStyles>", styles, re.S).group(0)
         styles = styles.replace(table_styles, re.sub(r'dxfId="(\d+)"', lambda m: 'dxfId="%d"' % (int(m.group(1)) + 1), table_styles))
         xf_count = int(re.search(r'<cellStyleXfs count="(\d+)"', styles).group(1))
@@ -163,8 +169,9 @@ class ResidueTests(unittest.TestCase):
         styles = after["xl/styles.xml"].decode("utf-8")
         self.assertEqual(int(re.search(r'<dxfs count="(\d+)"', styles).group(1)), dxf_count)
         self.assertNotIn('name="Unused"', styles)
-        # the renumbered references are the original ones again
+        # the renumbered references are the original ones again, tables included
         self.assertEqual(after["xl/worksheets/sheet2.xml"], parts_of(WORKBOOK)["xl/worksheets/sheet2.xml"])
+        self.assertEqual(after["xl/tables/table1.xml"], parts_of(WORKBOOK)["xl/tables/table1.xml"])
         self.assertEqual(self.workbook.read_bytes(), WORKBOOK.read_bytes(), "the pass restores the tracked bytes exactly")
 
     def test_pass_fails_when_the_properties_list_disagrees(self):

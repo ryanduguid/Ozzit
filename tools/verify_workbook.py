@@ -20,6 +20,7 @@ if hasattr(sys.stdout, "reconfigure"):
 
 
 WORKBOOK = sys.argv[1] if len(sys.argv) > 1 else "ozzit.xlsx"
+NAME_LIMIT = 8192
 
 # The legacy creator marker, in the shipped spelling and the predecessor misspelling.
 # Assembled rather than written out, so no file in this repository spells it.
@@ -107,6 +108,11 @@ def main() -> None:
 
     for name, body in defined.items():
         source = html.unescape(body)
+        # Excel refuses to open the workbook, without saying why, when a defined
+        # name runs past 8,192 characters. Every other gate passed the file that
+        # shipped oz.Depreciateλ at 8,384 on 2 September 2026.
+        if len(source) > NAME_LIMIT:
+            fail(f"{name} is {len(source)} characters; Excel refuses a defined name over {NAME_LIMIT}")
         if source.count('"') % 2:
             fail(f"unbalanced quotes in {name}")
         # Help text is full of literal brackets, so only count parentheses outside string literals.

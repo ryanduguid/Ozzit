@@ -16,7 +16,11 @@ adds parts that do not belong in a distributed file:
 - the account name of whoever saved, the save time, the size and position of
   the Excel window and the build of Excel that wrote the file: none of it
   describes the workbook, and every one of them differs between two saves of
-  the same content on two machines.
+  the same content on two machines,
+- _xlfn._LONGTEXT("...","...") in a defined name, which is how Excel stores a
+  string literal longer than 255 characters when it saves. It reads the plain
+  literal back without complaint, and src/, the AFE store and every gate hold
+  the plain literal, so the split is folded back into one string.
 
 All of it is removed or pinned here and the archive is rewritten sorted, at a
 fixed timestamp, at deflate level 9, so two saves of the same content produce
@@ -52,6 +56,15 @@ FIXED_STAMP = "%04d-%02d-%02dT%02d:%02d:%02dZ" % FIXED_DATE
 FIXED_WINDOW = 'xWindow="0" yWindow="0" windowWidth="28800" windowHeight="16000"'
 CELL_RE = re.compile(r"<c\b(?:(?!</c>|<c\b).)*?</c>|<c\b[^>]*/>", re.DOTALL)
 EMPTY_RELS = re.compile(rb"<Relationships[^>]*>\s*</Relationships>")
+# Excel's own split of a string literal over 255 characters: two or more literals
+# inside _xlfn._LONGTEXT(...). Quotes are unescaped in xl/workbook.xml element text.
+LONGTEXT = re.compile(r'_xlfn\._LONGTEXT\(("(?:[^"]|"")*"(?:,"(?:[^"]|"")*")+)\)')
+LITERAL = re.compile(r'"((?:[^"]|"")*)"')
+
+
+def fold_longtext(text: str) -> tuple[str, int]:
+    """Join each _xlfn._LONGTEXT("a","b") back into "ab"; return the text and the count."""
+    return LONGTEXT.subn(lambda m: '"' + "".join(LITERAL.findall(m.group(1))) + '"', text)
 
 
 def deterministic_bytes(parts: dict[str, bytes]) -> bytes:
@@ -159,6 +172,13 @@ def sanitise(workbook: Path) -> list[str]:
         )
         parts["xl/workbook.xml"] = wb.encode("utf-8")
         log.append(f"removed {n_abs} x15ac:absPath")
+
+    # Long string literals Excel split on save.
+    wb = parts["xl/workbook.xml"].decode("utf-8")
+    wb, folded = fold_longtext(wb)
+    if folded:
+        parts["xl/workbook.xml"] = wb.encode("utf-8")
+        log.append(f"folded {folded} _LONGTEXT literal(s) in defined names")
 
     # Always-calculate flags belong on CELL() formulas and nowhere else.
     total_ca = 0

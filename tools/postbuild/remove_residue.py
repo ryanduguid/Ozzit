@@ -44,6 +44,11 @@ from sanitise_workbook import write_deterministic  # noqa: E402
 
 RESIDUE_SHEET = "FMTs"
 CUSTOM_FUNCTIONS = re.compile(r"<we:extLst>.*?</we:extLst>", re.DOTALL)
+# dxfId on conditional formats and table styles; dataDxfId, headerRowDxfId,
+# totalsRowDxfId, headerRowBorderDxfId, totalsRowBorderDxfId and tableBorderDxfId
+# on tables and their columns. All of them index the one dxfs collection.
+DXF_ATTR = re.compile(r'\b([A-Za-z]*[dD]xfId)="(\d+)"')
+DXF_REF = re.compile(r'\b[A-Za-z]*[dD]xfId="(\d+)"')
 # sheet name -> first data column, one past the frozen block
 FREEZE = {
     "oz.IsOccurrenceDateλ": "H",
@@ -184,8 +189,13 @@ def drop_custom_function_declaration(parts: dict[str, bytes], log: list[str]) ->
 def prune_styles(parts: dict[str, bytes], log: list[str]) -> None:
     styles = parts["xl/styles.xml"].decode("utf-8")
     sheets = {n: parts[n].decode("utf-8") for n in parts if re.fullmatch(r"xl/worksheets/sheet\d+\.xml", n)}
+    tables = {n: parts[n].decode("utf-8") for n in parts if re.fullmatch(r"xl/tables/table\d+\.xml", n)}
 
-    # Differential formats: referenced by conditional formats and table styles.
+    # Differential formats: referenced by conditional formats (dxfId), by table styles
+    # (dxfId) and by the tables themselves, whose attributes end in DxfId
+    # (dataDxfId, headerRowDxfId, totalsRowDxfId and the border variants). The pass
+    # once read only the first two; the 2 September 2026 workbook dropped every
+    # format the tables used and Excel refused to open it.
     dxfs_match = re.search(r'<dxfs count="(\d+)">(.*?)</dxfs>', styles, re.DOTALL)
     if dxfs_match is None:
         raise ValueError("styles.xml has no dxfs collection")
@@ -194,8 +204,8 @@ def prune_styles(parts: dict[str, bytes], log: list[str]) -> None:
         raise ValueError("styles.xml dxfs count disagrees with its entries")
     table_styles = re.search(r"<tableStyles\b.*?</tableStyles>", styles, re.DOTALL)
     used = set()
-    for text in list(sheets.values()) + ([table_styles.group(0)] if table_styles else []):
-        used |= {int(x) for x in re.findall(r'dxfId="(\d+)"', text)}
+    for text in list(sheets.values()) + list(tables.values()) + ([table_styles.group(0)] if table_styles else []):
+        used |= {int(x) for x in DXF_REF.findall(text)}
     if used and max(used) >= len(entries):
         raise ValueError("a dxfId points past the dxfs collection")
     keep = sorted(used)
@@ -203,13 +213,14 @@ def prune_styles(parts: dict[str, bytes], log: list[str]) -> None:
         renumber = {old: new for new, old in enumerate(keep)}
 
         def rewrite(text: str) -> str:
-            return re.sub(r'dxfId="(\d+)"', lambda m: 'dxfId="%d"' % renumber[int(m.group(1))], text)
+            return DXF_ATTR.sub(lambda m: '%s="%d"' % (m.group(1), renumber[int(m.group(2))]), text)
 
-        for name, text in sheets.items():
-            new = rewrite(text)
-            if new != text:
-                parts[name] = new.encode("utf-8")
-                sheets[name] = new
+        for store in (sheets, tables):
+            for name, text in store.items():
+                new = rewrite(text)
+                if new != text:
+                    parts[name] = new.encode("utf-8")
+                    store[name] = new
         if table_styles:
             styles = styles.replace(table_styles.group(0), rewrite(table_styles.group(0)), 1)
         styles = styles.replace(
