@@ -1,5 +1,5 @@
 # Ozzit - Australian Native Excel LAMBDA Function Library
-> High-density context for LLM agents, financial modellers, and spreadsheet engineers.
+> 138 native Excel LAMBDA functions for dynamic-array financial modelling, with Australian GST, financial-year, depreciation and AASB 16 lessee helpers. No VBA, add-ins or external dependencies.
 
 ## Package Overview
 - **Repository**: https://github.com/ryanduguid/Ozzit

@@ -33,9 +33,10 @@ import re
 import sys
 import zipfile
 from pathlib import Path
+from xml.sax.saxutils import escape as xml_escape
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from sanitise_workbook import write_deterministic  # noqa: E402
+from sanitise_workbook import read_text, write_deterministic, write_text  # noqa: E402
 from verify_sources import canonical, qualify, statements, NAME  # noqa: E402
 
 MODULE = "Financial"
@@ -510,10 +511,6 @@ def to_stored(body: str, params: list[str], locals_: list[str], library: set[str
     return stored.strip()
 
 
-def xml_escape(text: str) -> str:
-    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-
-
 def build_definitions(library: set[str]) -> dict[str, tuple[str, str, str]]:
     """Qualified name -> (comment, stored body, published body), self-checked."""
     out = {}
@@ -557,16 +554,6 @@ def about_block(indent: str) -> str:
     for name, _comment, _block, about in FUNCTIONS:
         rows.append(f'{indent}"{name:<19}→{about}¶" &')
     return "\n".join(rows)
-
-
-def read_text(path: Path) -> str:
-    with open(path, encoding="utf-8", newline="") as handle:
-        return handle.read()
-
-
-def write_text(path: Path, text: str) -> None:
-    with open(path, "w", encoding="utf-8", newline="") as handle:
-        handle.write(text)
 
 
 def src_state(text: str) -> str:

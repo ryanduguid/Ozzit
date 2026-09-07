@@ -26,7 +26,7 @@ import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from sanitise_workbook import write_deterministic
+from sanitise_workbook import read_text, write_deterministic, write_text
 
 MODULES = ("Dates", "Essentials", "Financial", "Ratios", "Utilities", "Debt")
 
@@ -115,16 +115,6 @@ def apply_swaps(text: str) -> str:
     return text
 
 
-def _read_text(path: Path) -> str:
-    with open(path, encoding="utf-8", newline="") as handle:
-        return handle.read()
-
-
-def _write_text(path: Path, text: str) -> None:
-    with open(path, "w", encoding="utf-8", newline="") as handle:
-        handle.write(text)
-
-
 def run(workbook: Path, src_dir: Path) -> list[str]:
     failures: list[str] = []
 
@@ -134,7 +124,7 @@ def run(workbook: Path, src_dir: Path) -> list[str]:
         if not path.is_file():
             failures.append(f"src: missing {path}")
             continue
-        original = _read_text(path)
+        original = read_text(path)
         src_originals[module] = original
 
     with zipfile.ZipFile(workbook) as archive:
@@ -159,8 +149,8 @@ def run(workbook: Path, src_dir: Path) -> list[str]:
         changed.append("workbook")
     for module, text in src_texts.items():
         path = src_dir / f"{module}.txt"
-        if _read_text(path) != text:
-            _write_text(path, text)
+        if read_text(path) != text:
+            write_text(path, text)
             changed.append(f"src/{module}.txt")
 
     return changed

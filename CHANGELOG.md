@@ -369,8 +369,8 @@ held the credit has been cleared and the removal is now enforced by a gate.
 - **MIT now covers the whole repository.** `ozzit.xlsx`, `src/` and `functions.csv`
   are no longer carved out. `ATTRIBUTION.md`, `README.md`, `RELEASING.md` and
   `llms.txt` were rewritten to match and no longer carry the earlier product name.
-- **The removal is enforced, not just done.** `verify_workbook.py` bans the earlier product
-  branding in the workbook, and `test_repository_policy.py` fails if any tracked file reintroduces it.
+- `verify_workbook.py` bans the earlier product branding in the workbook, and
+  `test_repository_policy.py` fails if any tracked file reintroduces it.
 
 ## v3.1.0, 22 August 2026, FY27 examples, dark styling, help corrections
 
@@ -472,12 +472,12 @@ baseline that grew around them.
   formulas takes 0.21s, and a volatile-only recalculation takes under 2ms. There was no
   performance problem to fix.
 
-- **The clean-up is now a tool, not a session.** `tools/sanitise_workbook.py` removes what
-  any Excel save adds — printer settings, the recorded save path, stray always-calculate
-  flags, empty worksheet rels — and rewrites the archive deterministically. The pipeline's
-  own `refresh_cache.py` already stripped its share after every refresh; the sanitiser
-  covers every save that is not the pipeline's, so a workbook touched by hand no longer
-  fails `verify_workbook.py` on `x15ac:absPath` the next time it is committed.
+- `tools/sanitise_workbook.py` removes what any Excel save adds (printer settings, the
+  recorded save path, stray always-calculate flags, empty worksheet rels) and rewrites the
+  archive deterministically. The pipeline's own `refresh_cache.py` already stripped its
+  share after every refresh; the sanitiser covers every save that is not the pipeline's,
+  so a workbook touched by hand no longer fails `verify_workbook.py` on `x15ac:absPath`
+  the next time it is committed.
 
 - **The clean-up has one implementation and a regression suite.** `refresh_cache.py` now
   calls the same sanitiser as a manual save instead of carrying a smaller, second copy of

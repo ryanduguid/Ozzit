@@ -48,9 +48,10 @@ import sys
 import zipfile
 from pathlib import Path
 from typing import NamedTuple
+from xml.sax.saxutils import escape as xml_escape
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from sanitise_workbook import write_deterministic  # noqa: E402
+from sanitise_workbook import read_text, write_deterministic  # noqa: E402
 from verify_index import index_fields  # noqa: E402
 from verify_sources import NAME, canonical, qualify, statements  # noqa: E402
 
@@ -391,10 +392,6 @@ def render(body: str, library: set[str]) -> str:
     return stored
 
 
-def xml_escape(text: str) -> str:
-    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-
-
 def tight(formula: str) -> str:
     """The stored form with no whitespace between tokens and no workbook-scope markers.
 
@@ -423,11 +420,6 @@ def tight(formula: str) -> str:
 # --------------------------------------------------------------------------- #
 # Compiling a module set
 # --------------------------------------------------------------------------- #
-
-
-def read_text(path: Path) -> str:
-    with open(path, encoding="utf-8", newline="") as handle:
-        return handle.read()
 
 
 def compile_sources(src: Path) -> list[Compiled]:

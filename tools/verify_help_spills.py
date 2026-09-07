@@ -35,6 +35,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from compile_sources import arguments, read_string  # noqa: E402
+from sanitise_workbook import column_number  # noqa: E402
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -45,13 +46,6 @@ ANCHOR = re.compile(
 )
 CELL = re.compile(r'<c r="([A-Z]+)(\d+)"([^>]*?)(?:/>|>(.*?)</c>)', re.DOTALL)
 SHEET = re.compile(r"xl/worksheets/sheet\d+\.xml")
-
-
-def column_number(letters: str) -> int:
-    n = 0
-    for ch in letters:
-        n = n * 26 + ord(ch) - 64
-    return n
 
 
 def literal_text(code: str) -> str:
