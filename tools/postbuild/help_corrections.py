@@ -67,7 +67,7 @@ from pathlib import Path
 from typing import NamedTuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from sanitise_workbook import deterministic_bytes
+from sanitise_workbook import deterministic_bytes, read_text, write_text
 
 MODULES = ("Dates", "Essentials", "Financial", "Ratios", "Utilities", "Debt")
 
@@ -377,16 +377,6 @@ def apply_string_swaps(text: str) -> str:
     return text
 
 
-def _read_text(path: Path) -> str:
-    with open(path, encoding="utf-8", newline="") as handle:
-        return handle.read()
-
-
-def _write_text(path: Path, text: str) -> None:
-    with open(path, "w", encoding="utf-8", newline="") as handle:
-        handle.write(text)
-
-
 def _staged(path: Path) -> Path:
     """Return the temporary name staging writes before it replaces this path."""
     return path.with_name(path.name + ".tmp")
@@ -401,7 +391,7 @@ def run(workbook: Path, src_dir: Path) -> list[str]:
         if not path.is_file():
             failures.append(f"src: missing {path}")
             continue
-        src_originals[module] = _read_text(path)
+        src_originals[module] = read_text(path)
 
     with zipfile.ZipFile(workbook) as archive:
         parts = {name: archive.read(name) for name in archive.namelist()}
@@ -461,7 +451,7 @@ def run(workbook: Path, src_dir: Path) -> list[str]:
             destination = src_dir / f"{module}.txt"
             temporary = _staged(destination)
             staged.append((temporary, destination))
-            _write_text(temporary, text)
+            write_text(temporary, text)
             changed.append(f"src/{module}.txt")
 
         for temporary, destination in staged:

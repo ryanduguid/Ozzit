@@ -21,7 +21,7 @@ import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from sanitise_workbook import write_deterministic
+from sanitise_workbook import read_text, write_deterministic
 
 # (context prefix, old URL, new URL). The prefix is the row before WEBPAGE plus
 # the label, which is unique to the owning function; the neighbour keeping the
@@ -69,17 +69,12 @@ def apply_swaps(text: str, store: str) -> str:
     return text
 
 
-def _read_text(path: Path) -> str:
-    with open(path, encoding="utf-8", newline="") as handle:
-        return handle.read()
-
-
 def run(workbook: Path, src_dir: Path) -> list[str]:
     failures: list[str] = []
     ratios_path = src_dir / "Ratios.txt"
     if not ratios_path.is_file():
         raise ValueError(f"src: missing {ratios_path}")
-    ratios = _read_text(ratios_path)
+    ratios = read_text(ratios_path)
 
     with zipfile.ZipFile(workbook) as archive:
         parts = {n: archive.read(n) for n in archive.namelist()}

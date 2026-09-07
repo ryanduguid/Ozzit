@@ -19,7 +19,6 @@ def load_parser_helpers():
         "declaration_params",
         "local_names",
         "_arguments",
-        "xml_escape",
     }
     tree = ast.parse(SCRIPT.read_text(encoding="utf-8"), filename=str(SCRIPT))
     selected = [
@@ -123,12 +122,6 @@ class Aasb16ParserTests(unittest.TestCase):
         self.assertEqual(
             self.parser.local_names(body, ["LeasePayments"]),
             ["LeasePayments"],
-        )
-
-    def test_xml_escape_escapes_markup_without_touching_quotes(self):
-        self.assertEqual(
-            self.parser.xml_escape('A&B<C>D "quoted"'),
-            'A&amp;B&lt;C&gt;D "quoted"',
         )
 
 
