@@ -1,0 +1,12 @@
+# Tool configuration only. Ozzit ships a workbook, not a Python distribution:
+# nothing here is installed or built. The type-check configuration stays in
+# mypy.ini, which the documented gate names explicitly.
+
+[tool.ruff]
+line-length = 100
+src = ["tools"]
+
+[tool.ruff.lint]
+# First-enablement set: syntax and undefined-name errors only (E9, F82).
+# Existing import layout and string literals stay as they are.
+select = ["E9", "F82"]
