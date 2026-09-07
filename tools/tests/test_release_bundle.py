@@ -4,6 +4,7 @@ import ast
 import hashlib
 import json
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -32,6 +33,20 @@ def sha256(data):
 def git_blob_sha1(data):
     header = f"blob {len(data)}\0".encode("ascii")
     return hashlib.sha1(header + data, usedforsecurity=False).hexdigest()
+
+
+def repository_is_shallow(root):
+    """Return True when the checkout at root is a shallow Git clone."""
+    completed = subprocess.run(
+        ["git", "rev-parse", "--is-shallow-repository"],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        check=True,
+        timeout=30,
+    )
+    return completed.stdout.strip() == "true"
 
 
 class ReleaseBundleTests(unittest.TestCase):
@@ -76,6 +91,15 @@ class ReleaseBundleTests(unittest.TestCase):
             )
 
     def test_tracked_base_manifest_matches_the_current_workbook(self):
+        # verify_repository_base asks Git for the last commit that changed
+        # ozzit.xlsx. A shallow clone may have cut that commit away, so the
+        # answer is only meaningful with full history. CI checks out with
+        # fetch-depth 0 and is never shallow, so it always runs this test.
+        if repository_is_shallow(ROOT):
+            self.skipTest(
+                "shallow Git clone: the manifest's last_workbook_commit cannot be "
+                "checked against truncated history (run git fetch --unshallow)"
+            )
         base = release_bundle.verify_base_workbook(
             ROOT / "ozzit.xlsx",
             ROOT / "release" / "workbook-base.json",
