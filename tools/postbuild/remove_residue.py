@@ -40,7 +40,7 @@ import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from sanitise_workbook import write_deterministic  # noqa: E402
+from sanitise_workbook import column_number, write_deterministic  # noqa: E402
 
 RESIDUE_SHEET = "FMTs"
 CUSTOM_FUNCTIONS = re.compile(r"<we:extLst>.*?</we:extLst>", re.DOTALL)
@@ -58,13 +58,6 @@ FREEZE = {
     "oz.SumPeriodsλ": "I",
     "oz.TimelineOffsetλ": "C",
 }
-
-
-def column_number(letters: str) -> int:
-    n = 0
-    for ch in letters:
-        n = n * 26 + ord(ch) - 64
-    return n
 
 
 def sheet_targets(parts: dict[str, bytes]) -> dict[str, str]:

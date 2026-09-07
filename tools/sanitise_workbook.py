@@ -62,6 +62,26 @@ LONGTEXT = re.compile(r'_xlfn\._LONGTEXT\(("(?:[^"]|"")*"(?:,"(?:[^"]|"")*")+)\)
 LITERAL = re.compile(r'"((?:[^"]|"")*)"')
 
 
+def column_number(letters: str) -> int:
+    """A cell reference's column letters as a 1-based number: A is 1, AA is 27."""
+    n = 0
+    for ch in letters:
+        n = n * 26 + ord(ch) - 64
+    return n
+
+
+def read_text(path: Path) -> str:
+    """Read UTF-8 text with the stored line endings left exactly as they are."""
+    with open(path, encoding="utf-8", newline="") as handle:
+        return handle.read()
+
+
+def write_text(path: Path, text: str) -> None:
+    """Write UTF-8 text with the given line endings left exactly as they are."""
+    with open(path, "w", encoding="utf-8", newline="") as handle:
+        handle.write(text)
+
+
 def fold_longtext(text: str) -> tuple[str, int]:
     """Join each _xlfn._LONGTEXT("a","b") back into "ab"; return the text and the count."""
     return LONGTEXT.subn(lambda m: '"' + "".join(LITERAL.findall(m.group(1))) + '"', text)

@@ -235,7 +235,7 @@ class HelpCorrectionsTests(unittest.TestCase):
             raise OSError("no space left on device")
 
         with (
-            mock.patch.object(_mod, "_write_text", side_effect=out_of_space),
+            mock.patch.object(_mod, "write_text", side_effect=out_of_space),
             self.assertRaisesRegex(OSError, "no space left on device"),
         ):
             _mod.run(workbook, src)

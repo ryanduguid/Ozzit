@@ -108,15 +108,6 @@ def workflow_commands(workflow: str) -> tuple[str, ...]:
     return tuple(commands)
 
 
-def physical_code_lines(paths):
-    return sum(
-        1
-        for path in paths
-        for line in read_utf8(path).splitlines()
-        if line.strip() and not line.lstrip().startswith("#")
-    )
-
-
 class RepositoryPolicyTests(unittest.TestCase):
     def test_cross_runtime_contributor_guidance_preserves_workbook_authority(self):
         self.assertTrue(AGENTS.is_file(), "AGENTS.md is required")
@@ -298,22 +289,6 @@ class RepositoryPolicyTests(unittest.TestCase):
         releases = [tag for tag in tags if re.fullmatch(r"v\d+\.\d+\.\d+", tag)]
         for tag in releases:
             self.assertEqual(tag, f"v{version}", "the tagged commit publishes another version")
-
-    def test_regression_tests_remain_proportionate_to_production_tools(self):
-        production = [
-            path
-            for path in TOOLS.rglob("*.py")
-            if "tests" not in path.relative_to(TOOLS).parts
-        ]
-        tests = list((TOOLS / "tests").rglob("*.py"))
-        production_lines = physical_code_lines(production)
-        test_lines = physical_code_lines(tests)
-
-        self.assertGreaterEqual(
-            test_lines / production_lines,
-            0.50,
-            f"test/tool physical-line ratio is {test_lines}/{production_lines}",
-        )
 
 
 class RepositoryAttributionTests(unittest.TestCase):

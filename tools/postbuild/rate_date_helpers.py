@@ -29,17 +29,16 @@ import re
 import sys
 import zipfile
 from pathlib import Path
+from xml.sax.saxutils import escape as xml_escape
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from compile_sources import (  # noqa: E402
     Compiled,
     apply,
     compile_sources,
-    read_text,
     update_index,
-    xml_escape,
 )
-from sanitise_workbook import write_deterministic  # noqa: E402
+from sanitise_workbook import read_text, write_deterministic, write_text  # noqa: E402
 
 NAMESPACE = "oz"
 
@@ -386,11 +385,6 @@ def insert_names(book: str, compiled: list[Compiled]) -> str:
         book = book[:end] + element + book[end:]
         existing = sorted(existing + [item.name], key=str.lower)
     return book
-
-
-def write_text(path: Path, text: str) -> None:
-    with open(path, "w", encoding="utf-8", newline="") as handle:
-        handle.write(text)
 
 
 def run(workbook: Path, src: Path, index: Path | None) -> list[str]:

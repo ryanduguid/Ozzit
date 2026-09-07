@@ -15,7 +15,7 @@ or attach to one. Follow the evidence, hash and Excel-version requirements in
 Run the CI sequence exactly before submitting a change. The first two commands
 are the `lint` job; the rest run on Python 3.10, 3.12 and 3.13. Install the git
 hooks once with `python -m pip install pre-commit && pre-commit install`; they
-run the pinned ruff check and ruff format on staged files.
+run the pinned ruff check on staged files.
 
 ```powershell
 python -m pip install "ruff==0.16.6"
