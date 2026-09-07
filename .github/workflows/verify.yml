@@ -30,6 +30,10 @@ jobs:
         run: python -m pip install "ruff==0.16.6"
       - name: Lint the workbook tools and their tests
         run: python -m ruff check .
+      - name: Install the pinned type checker
+        run: python -m pip install "mypy==2.3.1"
+      - name: Type-check production workbook tools
+        run: python -m mypy --config-file mypy.ini
 
   verify:
     needs: lint
@@ -49,10 +53,6 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: ${{ matrix.python }}
-      - name: Install the pinned type checker
-        run: python -m pip install "mypy==2.3.1"
-      - name: Type-check production workbook tools
-        run: python -m mypy --config-file mypy.ini
       - name: Check workbook integrity
         run: python tools/verify_workbook.py ozzit.xlsx
       - name: Check src/ reproduces the shipped functions
