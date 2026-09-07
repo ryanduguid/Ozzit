@@ -25,6 +25,8 @@ TOOLS = ROOT / "tools"
 
 
 EXPECTED_VERIFY_COMMANDS = (
+    'python -m pip install "ruff==0.16.6"',
+    "python -m ruff check .",
     'python -m pip install "mypy==2.3.1"',
     "python -m mypy --config-file mypy.ini",
     "python tools/verify_workbook.py ozzit.xlsx",

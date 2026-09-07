@@ -18,9 +18,12 @@ change requires recalculation or cache validation.
 
 ## Verification
 
-Run the CI sequence exactly:
+Run the CI sequence exactly. The first two commands are the `lint` job; the rest
+run on Python 3.10, 3.12 and 3.13:
 
 ```powershell
+python -m pip install "ruff==0.16.6"
+python -m ruff check .
 python -m pip install "mypy==2.3.1"
 python -m mypy --config-file mypy.ini
 python tools/verify_workbook.py ozzit.xlsx

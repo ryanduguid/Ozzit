@@ -12,9 +12,14 @@ the native Excel gates, ensure no user Excel process is running and do not close
 or attach to one. Follow the evidence, hash and Excel-version requirements in
 `RELEASING.md`.
 
-Run the CI sequence exactly before submitting a change:
+Run the CI sequence exactly before submitting a change. The first two commands
+are the `lint` job; the rest run on Python 3.10, 3.12 and 3.13. Install the git
+hooks once with `python -m pip install pre-commit && pre-commit install`; they
+run the pinned ruff check and ruff format on staged files.
 
 ```powershell
+python -m pip install "ruff==0.16.6"
+python -m ruff check .
 python -m pip install "mypy==2.3.1"
 python -m mypy --config-file mypy.ini
 python tools/verify_workbook.py ozzit.xlsx
