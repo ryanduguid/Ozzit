@@ -163,13 +163,14 @@ def main() -> int:
     both = sorted(set(cached) & set(live))
     stale = [(k, cached[k], live[k]) for k in both if not agree(cached[k], live[k])]
 
-    # A floor on the total is not enough on its own: one sheet dropping out of the dump
-    # would still leave twenty thousand comparisons and look like a pass. Every sheet that
-    # holds cached values has to contribute some.
-    silent = sorted({names[k[0]] for k in cached} - {names[k[0]] for k in both})
-    if silent:
-        print("FAIL: %d sheet(s) carry cached values that were never compared: %s"
-              % (len(silent), ", ".join(silent[:8])))
+    # A total or a per-sheet check can still pass when individual cells are missing.
+    missing = sorted(set(cached) - set(live))
+    if missing:
+        print("FAIL: %d cached value(s) are missing from the Excel dump" % len(missing))
+        for pos, row, col in missing[:20]:
+            print("  - %s row %d col %d" % (names[pos], row, col))
+        if len(missing) > 20:
+            print("  ... and %d more" % (len(missing) - 20))
         return 1
 
     if len(both) < FLOOR:

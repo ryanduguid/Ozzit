@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+- The cached-value verifier now fails when any cached cell is missing from the
+  Excel dump, even when the total remains above the minimum and every sheet is
+  represented. A regression test covers complete, incomplete and stale dumps.
+- Lease guidance distinguishes nominal and effective annual rates and points to
+  `oz.PeriodRateλ` for effective-rate conversion. The guide, inline help and lease
+  builder use the corrected wording. The workbook and AFE store are synchronised;
+  calculation formulas and all 19,444 cached values are unchanged.
+- The function guide records 14 Dates and 46 Financial functions, and 94 functions
+  without dedicated worksheets. The release checklist includes the pinned Ruff
+  check alongside the existing gates.
+- A [native rolling-sum benchmark](docs/rolling-sum-benchmark.md) found that a
+  cumulative-total alternative was faster on long rows but changed text handling
+  and lost small values after a large value. The current formula is retained.
+
 ## v3.4.0, 6 September 2026, rates, day counts and a DATEDIF replacement
 
 ### Four functions added and three changed; the workbook is otherwise v3.3.0

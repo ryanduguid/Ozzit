@@ -1,13 +1,17 @@
 """Fixture tests for workbook readers that sit at untyped file boundaries."""
 
 import base64
+import contextlib
+import io
 import json
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from unittest.mock import patch
 
 
 TOOLS = Path(__file__).resolve().parents[1]
@@ -141,6 +145,32 @@ class WorkbookFixtureTests(unittest.TestCase):
 
         with self.assertRaisesRegex(SystemExit, "are not worksheets"):
             verify_cache.cached_values(workbook)
+
+    def test_cache_gate_requires_each_cached_cell_even_above_the_floor(self):
+        workbook = self.write_archive("cache.xlsx", self.cache_parts())
+        complete = (
+            "1\t1\t1\tA&B\n1\t2\t2\tTrue\n1\t3\t3\tinline <value>\n"
+            "1\t4\t4\t123.5\n1\t6\t27\tcached text\n"
+        )
+        for label, dump, expected in (
+            ("complete", complete, 0),
+            ("one missing cell", complete.replace("1\t4\t4\t123.5\n", ""), 1),
+            ("stale value", complete.replace("123.5", "999"), 1),
+        ):
+            with self.subTest(label=label):
+                def dump_values(args, **kwargs):
+                    Path(args[args.index("-Out") + 1]).write_text(dump, encoding="utf-8")
+                    return subprocess.CompletedProcess(args, 0, "", "")
+
+                output = io.StringIO()
+                with patch.object(verify_cache, "WORKBOOK", str(workbook)), \
+                     patch.object(verify_cache, "FLOOR", 4), \
+                     patch.object(verify_cache.subprocess, "run", side_effect=dump_values), \
+                     contextlib.redirect_stdout(output):
+                    result = verify_cache.main()
+                self.assertEqual(result, expected, output.getvalue())
+                if label == "one missing cell":
+                    self.assertIn("row 4 col 4", output.getvalue())
 
 
 class CacheComparisonTests(unittest.TestCase):

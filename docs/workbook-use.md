@@ -52,3 +52,6 @@ The helpers are kept because they still work on the Excel 2024 baseline and insi
 No formula in the workbook is volatile except the sheet-name titles and the two `oz.RangeToDAEλ` demonstration cells (that function wraps OFFSET by design, as the changelog explains), so editing a cell recalculates only what depends on it rather than the whole file. That covers the random-number formulas behind the sample data in both their forms. The sample data is fixed rather than randomly generated, which also means the worked examples match their captions every time you open them.
 
 Each module has its own tab colour, gridlines are hidden, and every sheet opens at the top left on the cover.
+
+The [rolling-sum benchmark](rolling-sum-benchmark.md) records calculation timings
+and the numerical checks behind retaining the current `oz.RollingSumλ` formula.

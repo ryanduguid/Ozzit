@@ -6,9 +6,9 @@ part of the name.
 
 | Group | Functions | Covers |
 |---|---|---|
-| Dates | 13 | Dates and timelines: periods, schedules, overlaps, occurrence tests, financial-year labels |
+| Dates | 14 | Dates and timelines: periods, schedules, overlaps, occurrence tests, financial-year labels |
 | Essentials | 17 | Array essentials: row and column totals, averages, counts, range conversion |
-| Financial | 43 | Financial building blocks: amortisation, depreciation, corkscrews, IRR, rolling sums, GST, AASB 16 leases |
+| Financial | 46 | Financial building blocks: amortisation, depreciation, corkscrews, IRR, rolling sums, GST, AASB 16 leases |
 | Ratios | 39 | Financial ratios: liquidity, leverage, margins, returns, market multiples |
 | Utilities | 17 | Standalone copies of the Essentials functions, each carrying a `U` suffix |
 | Debt | 5 | Debt sculpting: amortisation schedule, fixed and variable DSCR sculpting, sculpting interest |
@@ -70,7 +70,7 @@ utilities copies. The five About tables take words instead: `oz.AboutFinancialλ
 | `oz.RangeToDAEλ` | Convert a static range into a dynamic array |
 | `oz.FinancialRatios` | Three dozen financial Ratios |
 
-The other 90 functions, including all of Ratios, Utilities, Debt and the AASB 16 lease helpers and every module About table except `oz.AboutEssentialsλ`, have no dedicated worksheet; call any of them with no arguments for inline help, `oz.FinancialRatios` demonstrates the ratio suite on one worksheet, and [functions.csv](../functions.csv) lists every function with its signature.
+The other 94 functions, including all of Ratios, Utilities, Debt and the AASB 16 lease helpers and every module About table except `oz.AboutEssentialsλ`, have no dedicated worksheet; call any of them with no arguments for inline help, `oz.FinancialRatios` demonstrates the ratio suite on one worksheet, and [functions.csv](../functions.csv) lists every function with its signature.
 
 ## Dynamic-Array Formula Walkthrough
 
