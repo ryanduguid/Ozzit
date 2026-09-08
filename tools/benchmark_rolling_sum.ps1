@@ -7,14 +7,25 @@ $before = (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash
 $xl = $null; $wb = $null
 $lambda = [char]0x03BB
 $candidate = '=LAMBDA(values,size,LET(totals,SCAN(0,values,LAMBDA(acc,value,acc+value)),cols,SEQUENCE(,COLUMNS(values)),totals-IF(cols>size,CHOOSECOLS(totals,IF(cols>size,cols-size,1)),0)))'
+# The native self-test uses the same backoff for Excel's busy COM server.
+# Keep retries outside the timed calculations.
+function Invoke-Excel([scriptblock]$op) {
+    for ($attempt = 1; $attempt -le 12; $attempt++) {
+        try { return & $op }
+        catch {
+            if ($attempt -eq 12 -or $_.Exception.GetBaseException().HResult -ne -2147418111) { throw }
+            Start-Sleep -Milliseconds (250 * $attempt)
+        }
+    }
+}
 try {
     $xl = New-Object -ComObject Excel.Application
     $xl.Visible = $false; $xl.DisplayAlerts = $false
     $xl.AutomationSecurity = 3; $xl.EnableEvents = $false
-    $wb = $xl.Workbooks.Open($Path, 0, $true)
-    $xl.Calculation = -4135
-    $ws = $wb.Worksheets.Add()
-    [void]$wb.Names.Add('bench_prefix', $candidate)
+    $wb = Invoke-Excel { $xl.Workbooks.Open($Path, 0, $true) }
+    Invoke-Excel { $xl.Calculation = -4135 }
+    $ws = Invoke-Excel { $wb.Worksheets.Add() }
+    Invoke-Excel { [void]$wb.Names.Add('bench_prefix', $candidate) }
     Write-Output "Excel $($xl.Version) build $($xl.Build)"
     Write-Output "Measured: $([DateTimeOffset]::Now.ToString('o'))"
     Write-Output "Workbook SHA-256: $($before.ToLowerInvariant())"
@@ -23,15 +34,15 @@ try {
     Write-Output '|---:|---:|---:|---:|---:|'
     foreach ($case in @(@(120,12), @(1200,120), @(10000,120), @(10000,1000))) {
         $n = $case[0]; $size = $case[1]
-        [void]$ws.UsedRange.ClearContents()
+        Invoke-Excel { [void]$ws.UsedRange.ClearContents() }
         $data = New-Object 'object[,]' 1,$n
         for ($i = 0; $i -lt $n; $i++) { $data[0,$i] = [double]((($i * 17) % 997) / 100.0) }
         $inputRange = $ws.Range($ws.Cells.Item(1,1), $ws.Cells.Item(1,$n))
-        $inputRange.Value2 = $data
+        Invoke-Excel { $inputRange.Value2 = $data }
         $address = $inputRange.Address($false,$false)
         $old = $ws.Range('A3'); $new = $ws.Range('A5')
-        $old.Formula2 = "=oz.RollingSum$lambda($address,$size)"
-        $new.Formula2 = "=bench_prefix($address,$size)"
+        Invoke-Excel { $old.Formula2 = "=oz.RollingSum$lambda($address,$size)" }
+        Invoke-Excel { $new.Formula2 = "=bench_prefix($address,$size)" }
         for ($i=0; $i -lt 3; $i++) { [void]$old.Calculate(); [void]$new.Calculate() }
         $oldTimes=@(); $newTimes=@()
         for ($i=0; $i -lt 9; $i++) {
@@ -66,10 +77,10 @@ try {
         @{ Name='error leaves window'; Values='HSTACK(1,NA(),3,4,5)'; Size=2 },
         @{ Name='text in input'; Values='{1,"x",3,4}'; Size=2 }
     )) {
-        [void]$ws.UsedRange.ClearContents()
-        $ws.Range('A3').Formula2 = "=oz.RollingSum$lambda($($case.Values),$($case.Size))"
-        $ws.Range('A5').Formula2 = "=bench_prefix($($case.Values),$($case.Size))"
-        [void]$ws.Calculate()
+        Invoke-Excel { [void]$ws.UsedRange.ClearContents() }
+        Invoke-Excel { $ws.Range('A3').Formula2 = "=oz.RollingSum$lambda($($case.Values),$($case.Size))" }
+        Invoke-Excel { $ws.Range('A5').Formula2 = "=bench_prefix($($case.Values),$($case.Size))" }
+        Invoke-Excel { [void]$ws.Calculate() }
         $count = if ($case.Name -eq 'large value leaves window') { 3 } elseif ($case.Name -eq 'error leaves window') { 5 } else { 4 }
         $oldText = for ($i=1; $i -le $count; $i++) { $cell = $ws.Cells.Item(3,$i); if ($cell.Value2 -is [double]) { $cell.Value2.ToString('R',[Globalization.CultureInfo]::InvariantCulture) } else { $cell.Text } }
         $newText = for ($i=1; $i -le $count; $i++) { $cell = $ws.Cells.Item(5,$i); if ($cell.Value2 -is [double]) { $cell.Value2.ToString('R',[Globalization.CultureInfo]::InvariantCulture) } else { $cell.Text } }
@@ -77,9 +88,27 @@ try {
     }
 }
 finally {
-    if ($wb) { [void]$wb.Close($false) }
-    if ($xl) { [void]$xl.Quit(); [void][Runtime.InteropServices.Marshal]::ReleaseComObject($xl) }
-    [GC]::Collect(); [GC]::WaitForPendingFinalizers()
+    try {
+        if ($wb) { Invoke-Excel { [void]$wb.Close($false) } }
+    }
+    finally {
+        try {
+            if ($xl) { Invoke-Excel { [void]$xl.Quit() } }
+        }
+        finally {
+            # $range aliases an anchor; release each retained wrapper only once.
+            $range = $null
+            foreach ($com in @($cell, $old, $new, $inputRange, $ws, $wb, $xl)) {
+                if ($null -ne $com -and [Runtime.InteropServices.Marshal]::IsComObject($com)) {
+                    [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($com)
+                }
+            }
+            $com = $null
+            $cell = $range = $old = $new = $inputRange = $ws = $wb = $xl = $null
+            [GC]::Collect(); [GC]::WaitForPendingFinalizers()
+            [GC]::Collect(); [GC]::WaitForPendingFinalizers()
+        }
+    }
 }
 $after = (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash
 if ($after -ne $before) { throw 'Workbook bytes changed' }
