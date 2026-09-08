@@ -34,7 +34,14 @@ Four functions cover lessee accounting. They compose: the liability feeds the sc
 | `oz.ROUScheduleλ(Cost, Periods)` | Opening, depreciation and closing rows for the right-of-use asset |
 | `oz.LeaseRemeasureλ(RevisedPayments, Rate, CarryingLiability, CarryingROU, [InAdvance])` | Revised liability, adjustment, revised asset and the remainder taken to profit or loss |
 
-`Rate` is the rate **per period**, not per year: divide an annual rate by the number of periods in a year before passing it. Set `InAdvance` to `TRUE` when the first supplied payment is made at the measurement date. That payment is excluded from the liability and the schedule's payment row; the remaining payments unwind after one period of interest. A schedule with payments in advance therefore has one fewer liability period. Add a payment made at or before commencement to the right-of-use asset cost instead.
+`Rate` is the rate **per period**. Convert an effective annual rate with
+`oz.PeriodRateλ(AnnualRate, PeriodsPerYear)`. For example, a 5% effective annual
+rate gives `oz.PeriodRateλ(0.05, 12)`, approximately 0.4074% per month. Divide a
+nominal annual rate by `PeriodsPerYear` only when its compounding periods match
+the payment periods: 5% nominal compounded monthly gives `0.05 / 12`,
+approximately 0.4167% per month.
+
+Set `InAdvance` to `TRUE` when the first supplied payment is made at the measurement date. That payment is excluded from the liability and the schedule's payment row; the remaining payments unwind after one period of interest. A schedule with payments in advance therefore has one fewer liability period. Add a payment made at or before commencement to the right-of-use asset cost instead.
 
 The functions take these inputs rather than deciding them:
 

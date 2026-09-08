@@ -37,7 +37,7 @@ Every source archive must still include `ATTRIBUTION.md` and `LICENCE`.
 
 ## Approval and tag
 
-A human maintainer explicitly approves the exact candidate commit and release version after all ten gates pass.
+A human maintainer explicitly approves the exact candidate commit and release version after all eleven gates pass.
 Create an annotated, cryptographically signed tag for that exact commit. Run
 `git verify-tag` and record the tag object SHA, peeled commit SHA and
 verification result.
@@ -55,7 +55,7 @@ The uploaded bundle contains exactly three files:
 
 The signed tag and GitHub's generated source archive remain the source distribution. Inspect that archive as the equivalent of `git archive` for the exact tag; do not upload a redundant custom source archive. The standalone workbook and tagged workbook must have the same SHA-256.
 
-After all ten gates pass in a clean candidate, stage and independently verify the bundle in two fresh directories outside the repository:
+After all eleven gates pass in a clean candidate, stage and independently verify the bundle in two fresh directories outside the repository:
 
 ```powershell
 python tools/prepare_release_bundle.py create --version X.Y.Z --source-commit <full-commit-sha> --output <first-new-directory>
@@ -70,15 +70,17 @@ The independent verifier must record and compare GitHub's API `digest` for the u
 
 ## Verification gates
 
-Install the pinned type checker in the clean candidate:
+Install the pinned linter and type checker in the clean candidate:
 
 ```powershell
+python -m pip install "ruff==0.16.6"
 python -m pip install "mypy==2.3.1"
 ```
 
-Then run the following eight static and repository gates:
+Then run the following nine static and repository gates:
 
 ```powershell
+python -m ruff check .
 python -m mypy --config-file mypy.ini
 python tools/verify_workbook.py ozzit.xlsx
 python tools/verify_sources.py ozzit.xlsx src
@@ -89,7 +91,7 @@ python tools/verify_afe.py ozzit.xlsx src
 python -m unittest discover -s tools/tests -v
 ```
 
-All eight gate commands must exit zero. Record their substantive type-check, function,
+All nine gate commands must exit zero. Record the lint result and substantive type-check, function,
 signature, table, example, index, module and test counts rather than only their
 exit status.
 
