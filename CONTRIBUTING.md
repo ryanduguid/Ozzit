@@ -34,3 +34,10 @@ python -m unittest discover -s tools/tests -v
 For a workbook change, also run the native Excel self-test and cached-value
 gate named in `RELEASING.md`. Release preparation, tagging and publication are
 governed solely by that document and require the stated human approval.
+
+For a change to `templates/13-week-cash-flow-forecast.xlsx`, also run its separate
+native gate after confirming no Excel process is running:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\excel_cash_flow_selftest.ps1
+```

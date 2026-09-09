@@ -113,6 +113,35 @@ $dsf = "oz.DebtSculptFixed$L"
 $dsv = "oz.DebtSculptVariable$L"
 $ilrv = "oz.InterestLRV$L"
 
+# A mismatched input must produce a diagnostic, never silently discard periods or rows.
+foreach ($fn in $dsf, $dsv, $lrv) {
+    $cover = if ($fn -eq $dsf) { '1.2' } else { '{1.2,1.2}' }
+    $apr = if ($fn -eq $dsf) { '0.06' } else { '{0.06,0.06}' }
+    foreach ($debt in '{1000,0;999999,999999}', '{1000;0}') {
+        Same "Debt rejects non-row debt: $fn $debt" "IF(ISTEXT(INDEX($fn(,$debt,{300,300},$cover,$apr,12),1,1)),`"diagnostic`",`"number`")" 'diagnostic'
+    }
+    foreach ($cash in '{300,300,999999}', '300', '{300,300;999999,999999}') {
+        Same "Debt rejects mismatched cash: $fn $cash" "IF(ISTEXT(INDEX($fn(,{1000,0},$cash,$cover,$apr,12),1,1)),`"diagnostic`",`"number`")" 'diagnostic'
+    }
+    $cover3 = if ($fn -eq $dsf) { '1.2' } else { '{1.2,1.2,1.2}' }
+    $apr3 = if ($fn -eq $dsf) { '0.06' } else { '{0.06,0.06,0.06}' }
+    Same "Debt rejects a shorter cash row: $fn" "IF(ISTEXT(INDEX($fn(,{1000,0,0},{300,300},$cover3,$apr3,12),1,1)),`"diagnostic`",`"number`")" 'diagnostic'
+    if ($fn -eq $dsf) {
+        Same 'Fixed debt rejects a DSCR column' "IF(ISTEXT(INDEX($fn(,{1000,0},{300,300},{1.2;1.2},0.06,12),1,1)),`"diagnostic`",`"number`")" 'diagnostic'
+        Same 'Fixed debt rejects an APR column' "IF(ISTEXT(INDEX($fn(,{1000,0},{300,300},1.2,{0.06;0.06},12),1,1)),`"diagnostic`",`"number`")" 'diagnostic'
+    }
+    if ($fn -ne $dsf) {
+        Same "Debt rejects a shorter DSCR row: $fn" "IF(ISTEXT(INDEX($fn(,{1000,0,0},{300,300,300},$cover,$apr3,12),1,1)),`"diagnostic`",`"number`")" 'diagnostic'
+        Same "Debt rejects a shorter APR row: $fn" "IF(ISTEXT(INDEX($fn(,{1000,0,0},{300,300,300},$cover3,$apr,12),1,1)),`"diagnostic`",`"number`")" 'diagnostic'
+        Same "Debt rejects a shorter period-rate row: $fn" "IF(ISTEXT(INDEX($fn(,{1000,0,0},{300,300,300},$cover3,,, {0.01,0.01}),1,1)),`"diagnostic`",`"number`")" 'diagnostic'
+        foreach ($row in '{1.2,1.2,1.2}', '1.2', '{1.2,1.2;1.2,1.2}') {
+            Same "Debt rejects mismatched DSCR: $fn $row" "IF(ISTEXT(INDEX($fn(,{1000,0},{300,300},$row,$apr,12),1,1)),`"diagnostic`",`"number`")" 'diagnostic'
+            Same "Debt rejects mismatched APR: $fn $row" "IF(ISTEXT(INDEX($fn(,{1000,0},{300,300},$cover,$row,12),1,1)),`"diagnostic`",`"number`")" 'diagnostic'
+            Same "Debt rejects mismatched period rates: $fn $row" "IF(ISTEXT(INDEX($fn(,{1000,0},{300,300},$cover,,, $row),1,1)),`"diagnostic`",`"number`")" 'diagnostic'
+        }
+    }
+}
+
 # 1,000 drawn in period 1, 300 of cash a period, 1.2 times covered, 6% a year, 5 years.
 # Rows are opening balance, interest, MINUS the principal repayment, closing balance.
 $sched = "$lrv(, {1000,0,0,0,0}, {300,300,300,300,300}, {1.2,1.2,1.2,1.2,1.2}, {0.06,0.06,0.06,0.06,0.06}, 12)"
@@ -523,6 +552,10 @@ Near 'AnnualRate: agrees with EFFECT()'         "$ar(0.06/12) - EFFECT(0.06, 12)
 
 # --- Day count conventions. July 2026 has 31 days, September 30, and the year 365.
 $dc = "oz.DayCountRate$L"
+Near 'DayCount: three-year periods include every leap year' "SUMPRODUCT(ABS($dc(DATE({2026,2029,2032},1,1),0.1,4)-0.3))" '0' '0.0000000001'
+Near 'DayCount: multi-year end dates' "SUMPRODUCT(ABS($dc(DATE({2028,2031,2034},12,31),0.1,4,TRUE)-0.3))" '0' '0.0000000001'
+Near 'DayCount: partial first year then two whole years' "INDEX($dc(EDATE(DATE(2027,7,1),{0,30,60}),0.1,4),1,1)" '0.1*(184/365+2)' '0.0000000001'
+Near 'DayCount: multi-year column dates and rates' "SUMPRODUCT(ABS($dc(DATE({2026;2029;2032},1,1),{0.1;0.2;0.3},4)-{0.3,0.6,0.9}))" '0' '0.0000000001'
 $jul = "EDATE(DATE(2026,7,1), {0,1,2})"
 Same 'DayCount: Actual/365 over Jul to Sep'   "TEXTJOIN(`",`",FALSE,TEXT($dc($jul, 0.073),`"0.0000`"))"    '0.0062,0.0062,0.0060'
 Same 'DayCount: default convention is 3'      "TEXTJOIN(`",`",FALSE,TEXT($dc($jul, 0.073, Z1),`"0.0000`"))" '0.0062,0.0062,0.0060'

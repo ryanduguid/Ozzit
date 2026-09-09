@@ -108,10 +108,10 @@ DebtSculptFixedλ = LAMBDA(
                         "                   →Debt service (interest and principal)¶" &
                         "                   →Debt closing balance¶" &
                         "WEBPAGE:           →https://github.com/ryanduguid/Ozzit¶" &
-                        "VERSION:           →20 Aug 2026¶" &
+                        "VERSION:           →10 Sep 2026¶" &
                         "PARAMETERS:        →¶" &
                         "OpeningBalance     →(Optional) Model's debt on opening. Defaults to 0¶" &
-                        "Debt               →(Required) A row of new debt taken on in each period¶" &
+                        "Debt               →(Required) One row of new debt, at least two periods. Every period input must have this same width¶" &
                         "CFADS              →(Required) A row of Cash Flow Available for Debt Service in each period¶" &
                         "DSCR               →(Required) Debt Service Coverage Ratio, one number for all periods¶" &
                         "APR                →(Required) Interest's Annual Percentage Rate, one number for all periods¶" &
@@ -129,14 +129,14 @@ DebtSculptFixedλ = LAMBDA(
                             ISOMITTED( APR)
                         ),
     //  Check inputs - Errors in argument values
-        ErrMsgs,        {"Debt must be a dynamic array holding new debt (if any) in each period";
-                         "CFADS must be a dynamic array holding cash available for debt service in each period";
+        ErrMsgs,        {"Debt must be one row of new debt with at least two periods";
+                         "CFADS must be one row with the same number of periods as Debt";
                          "DSCR must be a single number holding debt service coverage ratio for all periods";
                          "APR must be a single number holding interest's annual percentage rate for all periods"},
-        Errors,         VSTACK( COLUMNS( Debt) <= 1,
-                                COLUMNS( CFADS) <= 1,
-                                NOT( AND( ISNUMBER( DSCR), COLUMNS( DSCR) = 1)),
-                                NOT( AND( ISNUMBER( APR), COLUMNS( APR) = 1))
+        Errors,         VSTACK( OR( ROWS( Debt) <> 1, COLUMNS( Debt) <= 1),
+                                OR( ROWS( CFADS) <> 1, COLUMNS( CFADS) <> COLUMNS( Debt)),
+                                NOT( AND( ISNUMBER( DSCR), ROWS( DSCR) = 1, COLUMNS( DSCR) = 1)),
+                                NOT( AND( ISNUMBER( APR), ROWS( APR) = 1, COLUMNS( APR) = 1))
                         ),
         Messages,       FILTER( ErrMsgs, Errors, ""),
     //  Check inputs - Set optional arguments' defaults
@@ -194,10 +194,10 @@ DebtSculptVariableLRVλ = LAMBDA(
                         "                   →Principal repayments¶" &
                         "                   →Debt closing balance¶" &
                         "WEBPAGE:           →https://github.com/ryanduguid/Ozzit¶" &
-                        "VERSION:           →6 Sep 2026¶" &
+                        "VERSION:           →10 Sep 2026¶" &
                         "PARAMETERS:        →¶" &
                         "OpeningBalance     →(Optional) Model's debt on opening. Defaults to 0¶" &
-                        "Debt               →(Required) A row of new debt taken on in each period¶" &
+                        "Debt               →(Required) One row of new debt, at least two periods. Every period input must have this same width¶" &
                         "CFADS              →(Required) A row of Cash Flow Available for Debt Service in each period¶" &
                         "DSCR               →(Required) A row of Debt Service Coverage Ratios, one per period¶" &
                         "APR                →(Required unless PeriodRates is given) A row of Interest's Annual Percentage Rates, one per period. Each period charges APR / 12 * MonthsPerPeriod¶" &
@@ -218,14 +218,16 @@ DebtSculptVariableLRVλ = LAMBDA(
                             AND( ISOMITTED( APR), NOT( UseRates))
                         ),
     //  Check inputs - Errors in argument values
-        ErrMsgs,        {"Debt must be a dynamic array holding new debt (if any) in each period";
-                         "CFADS must be a dynamic array holding cash available for debt service in each period";
-                         "DSCR must be a dynamic array holding debt service coverage ratio for each period";
-                         "APR or PeriodRates must be a dynamic array holding an interest rate for each period"},
-        Errors,         VSTACK( COLUMNS( Debt) <= 1,
-                                COLUMNS( CFADS) <= 1,
-                                COLUMNS( DSCR) <= 1,
-                                IF( UseRates, COLUMNS( PeriodRates) <= 1, COLUMNS( APR) <= 1)
+        ErrMsgs,        {"Debt must be one row of new debt with at least two periods";
+                         "CFADS must be one row with the same number of periods as Debt";
+                         "DSCR must be one row with the same number of periods as Debt";
+                         "APR or PeriodRates must be one row with the same number of periods as Debt"},
+        Errors,         VSTACK( OR( ROWS( Debt) <> 1, COLUMNS( Debt) <= 1),
+                                OR( ROWS( CFADS) <> 1, COLUMNS( CFADS) <> COLUMNS( Debt)),
+                                OR( ROWS( DSCR) <> 1, COLUMNS( DSCR) <> COLUMNS( Debt)),
+                                IF( UseRates,
+                                    OR( ROWS( PeriodRates) <> 1, COLUMNS( PeriodRates) <> COLUMNS( Debt)),
+                                    OR( ROWS( APR) <> 1, COLUMNS( APR) <> COLUMNS( Debt)))
                         ),
         Messages,       FILTER( ErrMsgs, Errors, ""),
     //  Check inputs - Set optional arguments' defaults
@@ -289,10 +291,10 @@ DebtSculptVariableλ = LAMBDA(
                         "                   →Debt service (interest and principal)¶" &
                         "                   →Debt closing balance¶" &
                         "WEBPAGE:           →https://github.com/ryanduguid/Ozzit¶" &
-                        "VERSION:           →6 Sep 2026¶" &
+                        "VERSION:           →10 Sep 2026¶" &
                         "PARAMETERS:        →¶" &
                         "OpeningBalance     →(Optional) Model's debt on opening. Defaults to 0¶" &
-                        "Debt               →(Required) A row of new debt taken on in each period¶" &
+                        "Debt               →(Required) One row of new debt, at least two periods. Every period input must have this same width¶" &
                         "CFADS              →(Required) A row of Cash Flow Available for Debt Service in each period¶" &
                         "DSCR               →(Required) A row of Debt Service Coverage Ratios, one per period¶" &
                         "APR                →(Required unless PeriodRates is given) A row of Interest's Annual Percentage Rates, one per period. Each period charges APR / 12 * MonthsPerPeriod¶" &
@@ -313,14 +315,16 @@ DebtSculptVariableλ = LAMBDA(
                             AND( ISOMITTED( APR), NOT( UseRates))
                         ),
     //  Check inputs - Errors in argument values
-        ErrMsgs,        {"Debt must be a dynamic array holding new debt (if any) in each period";
-                         "CFADS must be a dynamic array holding cash available for debt service in each period";
-                         "DSCR must be a dynamic array holding debt service coverage ratio for each period";
-                         "APR or PeriodRates must be a dynamic array holding an interest rate for each period"},
-        Errors,         VSTACK( COLUMNS( Debt) <= 1,
-                                COLUMNS( CFADS) <= 1,
-                                COLUMNS( DSCR) <= 1,
-                                IF( UseRates, COLUMNS( PeriodRates) <= 1, COLUMNS( APR) <= 1)
+        ErrMsgs,        {"Debt must be one row of new debt with at least two periods";
+                         "CFADS must be one row with the same number of periods as Debt";
+                         "DSCR must be one row with the same number of periods as Debt";
+                         "APR or PeriodRates must be one row with the same number of periods as Debt"},
+        Errors,         VSTACK( OR( ROWS( Debt) <> 1, COLUMNS( Debt) <= 1),
+                                OR( ROWS( CFADS) <> 1, COLUMNS( CFADS) <> COLUMNS( Debt)),
+                                OR( ROWS( DSCR) <> 1, COLUMNS( DSCR) <> COLUMNS( Debt)),
+                                IF( UseRates,
+                                    OR( ROWS( PeriodRates) <> 1, COLUMNS( PeriodRates) <> COLUMNS( Debt)),
+                                    OR( ROWS( APR) <> 1, COLUMNS( APR) <> COLUMNS( Debt)))
                         ),
         Messages,       FILTER( ErrMsgs, Errors, ""),
     //  Check inputs - Set optional arguments' defaults

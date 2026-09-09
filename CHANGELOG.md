@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Debt sculpting rejects inputs with extra rows or mismatched period counts instead
+  of silently dropping data. Fixed and variable debt schedules use the same shape
+  checks; valid schedules and blank optional period-rate defaults are unchanged.
+- Actual/Actual day counts use each calendar year's length, including periods
+  spanning several years. Whole intervening years contribute exactly one each.
+  The source and the rate-helper builder carry the same correction.
+- The cash-flow template averages closing-cash variances over the same fully
+  actualised weeks it counts. Partial weeks no longer inflate the average.
+- Added 48 native library assertions and a separate eight-case native cash-flow
+  gate covering blank, zero, partial and complete actuals. The template gate closes
+  without saving and checks that the workbook bytes are unchanged.
+
 - The cached-value verifier now fails when any cached cell is missing from the
   Excel dump, even when the total remains above the minimum and every sheet is
   represented. A regression test covers complete, incomplete and stale dumps.

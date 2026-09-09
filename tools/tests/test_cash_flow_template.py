@@ -974,7 +974,7 @@ class CashFlowTemplateContractTests(unittest.TestCase):
             "A33": 'COUNTIFS(\'Weekly Review\'!$D$6:$D$18,"<>",\'Weekly Review\'!$H$6:$H$18,"<>",\'Weekly Review\'!$L$6:$L$18,"<>")',
             "B33": 'IF(A33=0,"",IF(SUMIF(\'Weekly Review\'!$D$6:$D$18,"<>",\'Weekly Review\'!$C$6:$C$18)=0,"",SUM(\'Weekly Review\'!$E$6:$E$18)/SUMIF(\'Weekly Review\'!$D$6:$D$18,"<>",\'Weekly Review\'!$C$6:$C$18)))',
             "C33": 'IF(A33=0,"",IF(SUMIF(\'Weekly Review\'!$H$6:$H$18,"<>",\'Weekly Review\'!$G$6:$G$18)=0,"",SUM(\'Weekly Review\'!$I$6:$I$18)/SUMIF(\'Weekly Review\'!$H$6:$H$18,"<>",\'Weekly Review\'!$G$6:$G$18)))',
-            "D33": 'IF(A33=0,"",SUM(\'Weekly Review\'!$M$6:$M$18)/A33)',
+            "D33": 'IF(A33=0,"",SUMIFS(\'Weekly Review\'!$M$6:$M$18,\'Weekly Review\'!$D$6:$D$18,"<>",\'Weekly Review\'!$H$6:$H$18,"<>",\'Weekly Review\'!$L$6:$L$18,"<>")/A33)',
             "E33": 'IF(COUNTIF(\'Weekly Review\'!$O$6:$O$18,"INCOMPLETE")>0,"INCOMPLETE",IF(COUNTIF(\'Weekly Review\'!$O$6:$O$18,"COMPLETE")>0,"COMPLETE","NOT STARTED"))',
         }
         self.assertEqual(
