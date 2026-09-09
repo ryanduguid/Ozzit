@@ -20,6 +20,16 @@ The scenario receipt adjustment is calculated from customer receipts, overdue re
 
 ## Checks and limitations
 
+Average closing-cash bias includes only weeks with receipts, payments and closing-cash actuals entered. A zero is an actual; a blank is missing. Partially entered weeks remain outside both the variance total and its week count.
+
+After changing this template, close Excel and run the native regression gate from the repository root:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\excel_cash_flow_selftest.ps1
+```
+
+It checks blank, zero, partial and complete actuals, positive and negative variances, and removing an actual. It closes without saving its test inputs and verifies that the workbook hash is unchanged.
+
 `Checks & Sources` contains separate `MODEL STATUS` and `LIQUIDITY STATUS` results. Its nine model checks confirm exactly 13 weeks, a Monday start, a valid scenario, the opening-cash tie, weekly roll-forwards, weekly receipt and payment totals, the Week 13 closing-cash equation and the absence of formula errors. A liquidity warning is a business alert and is not a model-integrity failure. The same sheet records the official sources and the scope notes used when the workbook was prepared.
 
 This is an illustrative FP&A cash-planning model. It is not tax advice, and it is not BAS, payroll, superannuation, financial or legal advice. Statutory amounts, payment timing and dates are planning assumptions confirmed by the user or adviser. The workbook does not determine tax classifications, entity-specific lodgement dates or payroll treatment, and it does not import transaction-level actuals. Confirm the completed forecast with the responsible finance professional before relying on it.

@@ -126,9 +126,9 @@ DayCountRateλ = LAMBDA(
     //  Help
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →DayCountRateλ(Timeline, APR, [Convention], [EndDates])¶" &
-                            "DESCRIPTION:   →Interest rate for each period of a timeline under a day count convention.¶NOTES!         →Returns a row with one rate per timeline period, whichever way the¶               →timeline runs: APR multiplied by the days in the period and divided by¶               →the days in the year, as the convention counts them. Pass the result to¶               →DebtSculptVariableλ() or DebtSculptVariableLRVλ() as PeriodRates in place¶               →of a flat twelfth of the APR. With start dates each period runs from its¶               →date to the day before the next, and the last period takes its length¶               →from the one before it; with end dates each runs from the day after the¶               →previous date to its own, and the first period is the one inferred. A¶               →gap of 28 days or more is read as whole calendar months, a shorter one¶               →as days. 30/360 counts every month as 30 days on the European rule.¶               →Under Actual/Actual a period that straddles 31 December splits its days¶               →between the two years, each over that year's own length (the ISDA rule).¶" &
+                            "DESCRIPTION:   →Interest rate for each period of a timeline under a day count convention.¶NOTES!         →Returns a row with one rate per timeline period, whichever way the¶               →timeline runs: APR multiplied by the days in the period and divided by¶               →the days in the year, as the convention counts them. Pass the result to¶               →DebtSculptVariableλ() or DebtSculptVariableLRVλ() as PeriodRates in place¶               →of a flat twelfth of the APR. With start dates each period runs from its¶               →date to the day before the next, and the last period takes its length¶               →from the one before it; with end dates each runs from the day after the¶               →previous date to its own, and the first period is the one inferred. A¶               →gap of 28 days or more is read as whole calendar months, a shorter one¶               →as days. 30/360 counts every month as 30 days on the European rule.¶               →Under Actual/Actual each calendar year uses its own length as the¶               →denominator (the ISDA rule), including periods spanning several years.¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
-                            "VERSION:       →6 Sep 2026¶" &
+                            "VERSION:       →10 Sep 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Timeline       →(Required) A row or column of period dates, at least two, evenly spaced.¶" &
                             "APR            →(Required) Annual percentage rate, one value or one per period.¶" &
@@ -179,17 +179,20 @@ DayCountRateλ = LAMBDA(
                             360 * (YEAR(Next) - YEAR(Starts)) + 30 * (MONTH(Next) - MONTH(Starts))
                                 + IF(DAY(Next) > 30, 30, DAY(Next)) - IF(DAY(Starts) > 30, 30, DAY(Starts)),
                             Next - Starts),
-    //  Actual/Actual splits a period at 1 January, each part over its own year's length.
+    //  Actual/Actual counts partial first and last years, plus any whole years between.
     //  IF rather than MIN, because MIN would collapse the row to one value.
         YearOne,        YEAR(Starts),
         Boundary,       DATE(YearOne + 1, 1, 1),
         Split,          IF(Next < Boundary, Next, Boundary),
         DaysOne,        IF(DAY(DATE(YearOne, 2, 29)) = 29, 366, 365),
-        DaysTwo,        IF(DAY(DATE(YearOne + 1, 2, 29)) = 29, 366, 365),
+        YearLast,       YEAR(Next),
+        LastYearStart,  DATE(YearLast, 1, 1),
+        DaysLast,       DATE(YearLast + 1, 1, 1) - LastYearStart,
         Fraction,       SWITCH(Method,
                             1, Days / 360,
                             2, Days / 360,
-                            4, (Split - Starts) / DaysOne + (Next - Split) / DaysTwo,
+                            4, (Split - Starts) / DaysOne + IF(YearLast > YearOne,
+                                YearLast - YearOne - 1 + (Next - LastYearStart) / DaysLast, 0),
                             Days / 365),
         Rates,          Rate * Fraction,
         Result,         IF(OR(Count < 2, NOT(OR(Method = {1,2,3,4}))), #VALUE!, Rates),
