@@ -36,17 +36,12 @@ from pathlib import Path
 from xml.sax.saxutils import escape as xml_escape
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from compile_sources import render  # noqa: E402
 from sanitise_workbook import read_text, write_deterministic, write_text  # noqa: E402
 from verify_sources import canonical, qualify, statements, NAME  # noqa: E402
 
 MODULE = "Financial"
 NAMESPACE = "oz"
-
-# Post-2007 functions carry a marker in the stored form. This is the set the
-# library already ships, narrowed to the ones these four definitions call.
-XLFN = frozenset(
-    {"LAMBDA", "LET", "ISOMITTED", "TEXTSPLIT", "SEQUENCE", "SCAN", "HSTACK", "VSTACK", "DROP"}
-)
 
 # The About table row each function adds, and the heading they sit under.
 ABOUT_HEADING = "LEASES (AASB 16)   →"
@@ -293,224 +288,6 @@ for _name, _comment, _block, _about in FUNCTIONS:
 # --------------------------------------------------------------------------- #
 
 
-def _split_literals(text: str) -> list[tuple[bool, str]]:
-    """Alternating (is_string, chunk) pairs, honouring the "" escape."""
-    out: list[tuple[bool, str]] = []
-    buf: list[str] = []
-    i, n = 0, len(text)
-    while i < n:
-        if text[i] == '"':
-            if buf:
-                out.append((False, "".join(buf)))
-                buf = []
-            lit = ['"']
-            i += 1
-            while i < n:
-                if text[i] == '"':
-                    if i + 1 < n and text[i + 1] == '"':
-                        lit.append('""')
-                        i += 2
-                        continue
-                    lit.append('"')
-                    i += 1
-                    break
-                lit.append(text[i])
-                i += 1
-            out.append((True, "".join(lit)))
-            continue
-        buf.append(text[i])
-        i += 1
-    if buf:
-        out.append((False, "".join(buf)))
-    return out
-
-
-def _strip_comments(text: str) -> str:
-    out, i, n = [], 0, len(text)
-    while i < n:
-        if text[i] == '"':
-            lit, i = _read_string(text, i)
-            out.append(lit)
-            continue
-        if text[i] == "/" and i + 1 < n and text[i + 1] == "/":
-            while i < n and text[i] != "\n":
-                i += 1
-            continue
-        if text[i] == "/" and i + 1 < n and text[i + 1] == "*":
-            end = text.find("*/", i + 2)
-            i = end + 2 if end != -1 else n
-            continue
-        out.append(text[i])
-        i += 1
-    return "".join(out)
-
-
-def _read_string(text: str, i: int) -> tuple[str, int]:
-    lit, n = ['"'], len(text)
-    i += 1
-    while i < n:
-        if text[i] == '"':
-            if i + 1 < n and text[i + 1] == '"':
-                lit.append('""')
-                i += 2
-                continue
-            lit.append('"')
-            i += 1
-            break
-        lit.append(text[i])
-        i += 1
-    return "".join(lit), i
-
-
-def declaration_params(body: str) -> list[str]:
-    """The [Name] parameters the outer LAMBDA declares, in order."""
-    head = _strip_comments(body[body.index("LAMBDA(") + len("LAMBDA(") :])
-    depth, out, i = 0, [], 0
-    buf: list[str] = []
-    while i < len(head):
-        char = head[i]
-        if char == '"':
-            _lit, i = _read_string(head, i)
-            break
-        if char in "({[":
-            if char == "[" and depth == 0:
-                close = head.index("]", i)
-                out.append(head[i + 1 : close])
-                i = close + 1
-                continue
-            depth += 1
-        elif char in ")}]":
-            if depth == 0:
-                break
-            depth -= 1
-        elif head[i : i + 4] == "LET(":
-            break
-        buf.append(char)
-        i += 1
-    return out
-
-
-def local_names(body: str, params: list[str]) -> list[str]:
-    """Every name Excel stores with the _xlpm. marker: parameters and LET bindings."""
-    code = _strip_comments(body)
-    names = list(params)
-    # LET binding names: the identifier at the start of each "name, value," pair. The
-    # library writes one per line, name first, so the line start is a reliable anchor.
-    for match in re.finditer(r"^\s{4,}([A-Za-z_][A-Za-z0-9_]*\??)\s*,", code, re.MULTILINE):
-        if match.group(1) not in names:
-            names.append(match.group(1))
-    # Inner LAMBDA parameters, stored the same way. Every argument that is a bare
-    # identifier is a parameter; the last argument is the body and is an expression.
-    # Missing one of these is invisible to the source comparison, because that
-    # comparison strips the very marker being missed, so it is parsed properly here
-    # and checked again by unmarked_names() once the stored form exists.
-    for match in re.finditer(r"\bLAMBDA\s*\(", code):
-        for argument in _arguments(code, match.end()):
-            argument = argument.strip()
-            if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*\??", argument) and argument not in names:
-                names.append(argument)
-    return names
-
-
-def _arguments(text: str, start: int) -> list[str]:
-    """The top-level arguments of a call whose opening bracket ends at start."""
-    out, buf, depth, i, n = [], [], 0, start, len(text)
-    while i < n:
-        char = text[i]
-        if char == '"':
-            lit, i = _read_string(text, i)
-            buf.append(lit)
-            continue
-        if char in "({[":
-            depth += 1
-        elif char in ")}]":
-            if depth == 0:
-                break
-            depth -= 1
-        elif char == "," and depth == 0:
-            out.append("".join(buf))
-            buf = []
-            i += 1
-            continue
-        buf.append(char)
-        i += 1
-    out.append("".join(buf))
-    return out
-
-
-# Functions Excel stores without a marker, which is every name that predates the
-# 2007 file format. Anything else left bare in a stored definition is a mistake.
-PLAIN = frozenset(
-    {
-        "AND", "CHOOSE", "COLUMNS", "FALSE", "IF", "INT", "ISNUMBER", "MAX", "MIN",
-        "OR", "ROWS", "SUM", "TRANSPOSE", "TRIM", "TRUE",
-    }
-)
-
-
-def unmarked_names(stored: str, library: set[str]) -> list[str]:
-    """Identifiers in a stored definition that carry no marker and are not built in.
-
-    Excel marks every parameter, LET binding and post-2007 function. A name that
-    reaches the workbook without its marker is read as something else entirely: an
-    unmarked LAMBDA parameter makes Excel reject the whole definition. The source
-    comparison cannot see this, because it strips the markers before comparing.
-    """
-    bare = []
-    for is_string, chunk in _split_literals(stored):
-        if is_string:
-            continue
-        for match in re.finditer(r"(?<![A-Za-z0-9_.])([A-Za-z_][A-Za-z0-9_.]*\??)", chunk):
-            name = match.group(1)
-            if name.startswith(("_xlfn.", "_xlpm.", "_xlop.", "_xlws.", f"{NAMESPACE}.")):
-                continue
-            if name in PLAIN:
-                continue
-            bare.append(name)
-    return sorted(set(bare))
-
-
-def to_stored(body: str, params: list[str], locals_: list[str], library: set[str]) -> str:
-    """Render a published source body in the form xl/workbook.xml stores."""
-    pieces = []
-    for is_string, chunk in _split_literals(_strip_comments(body)):
-        if is_string:
-            pieces.append(chunk)
-            continue
-        # Declaration markers first: [Name] is an optional parameter, not an array.
-        for param in params:
-            chunk = chunk.replace(f"[{param}]", f"\0OP\0{param}")
-        # Library calls take the namespace the Advanced Formula Environment compiles in.
-        for bare in sorted(library, key=len, reverse=True):
-            chunk = re.sub(
-                r"(?<![A-Za-z0-9_.!])" + re.escape(bare) + r"(?=\s*\()",
-                f"\0LIB\0{bare}",
-                chunk,
-            )
-        # Post-2007 functions carry their marker.
-        for fn in sorted(XLFN, key=len, reverse=True):
-            chunk = re.sub(
-                r"(?<![A-Za-z0-9_.\0])" + fn + r"(?=\s*\()", f"\0FN\0{fn}", chunk
-            )
-        # Everything the function binds itself is a _xlpm. name.
-        for local in sorted(locals_, key=len, reverse=True):
-            chunk = re.sub(
-                r"(?<![A-Za-z0-9_.\0])" + re.escape(local) + r"(?![A-Za-z0-9_?])",
-                f"\0PM\0{local}",
-                chunk,
-            )
-        chunk = re.sub(r"\s+", " ", chunk)
-        pieces.append(chunk)
-    stored = "".join(pieces)
-    stored = (
-        stored.replace("\0OP\0", "_xlop.")
-        .replace("\0FN\0", "_xlfn.")
-        .replace("\0PM\0", "_xlpm.")
-        .replace("\0LIB\0", f"{NAMESPACE}.")
-    )
-    return stored.strip()
-
-
 def build_definitions(library: set[str]) -> dict[str, tuple[str, str, str]]:
     """Qualified name -> (comment, stored body, published body), self-checked."""
     out = {}
@@ -518,14 +295,7 @@ def build_definitions(library: set[str]) -> dict[str, tuple[str, str, str]]:
         match = NAME.match(statements(block)[0])
         assert match and match.group(1) == name, f"{name}: source block does not declare it"
         body = match.group(2).strip()
-        params = declaration_params(body)
-        stored = to_stored(body, params, local_names(body, params), library)
-        loose = unmarked_names(stored, library)
-        if loose:
-            raise ValueError(
-                f"{name}: {', '.join(loose)} reached the stored form without a marker; "
-                "Excel will not read the definition"
-            )
+        stored = render(body, library)
         # The gate's own comparison, run before anything is written. This is what
         # stopped the two hand-written lists drifting the last time.
         want = canonical(qualify(body, NAMESPACE, library))
