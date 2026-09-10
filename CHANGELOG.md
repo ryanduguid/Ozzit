@@ -231,7 +231,7 @@ run on the v3.3.0 candidate after the two defects above were repaired.
 ### The native self-test covers every function
 
 - **`tools/generate_selftest_examples.py` and `tools/selftest_examples.ps1` added.**
-  The self-test named 20 of the 134 functions and evaluated none of the worked
+  The self-test named 20 of the then 134 named formulas and evaluated none of the worked
   examples the help prints, which is how two functions shipped for several releases
   returning the opposite of their own example. The generated fragment, dot-sourced by
   `excel_selftest.ps1`, calls every function for its help and evaluates every worked
