@@ -109,7 +109,7 @@ class HelpSpillCheckTests(unittest.TestCase):
         tool = TOOLS / "verify_help_spills.py"
         stale = self.write("stale.xlsx", parts_for(CURRENT, STALE))
         before = stale.read_bytes()
-        result = subprocess.run([sys.executable, str(tool), str(stale)], capture_output=True, text=True, check=False)
+        result = subprocess.run([sys.executable, str(tool), str(stale)], capture_output=True, text=True, encoding="utf-8", check=False)
         self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
         self.assertIn(STALE_LINE, result.stdout)
         self.assertIn("FAIL: 1 of 2 cached helps", result.stderr)
@@ -117,7 +117,7 @@ class HelpSpillCheckTests(unittest.TestCase):
         self.assertEqual(stale.read_bytes(), before)
 
         current = self.write("current.xlsx", parts_for(CURRENT))
-        result = subprocess.run([sys.executable, str(tool), str(current)], capture_output=True, text=True, check=False)
+        result = subprocess.run([sys.executable, str(tool), str(current)], capture_output=True, text=True, encoding="utf-8", check=False)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("OK: every cached help", result.stdout)
         self.assertIn("1 anchors", result.stdout)
