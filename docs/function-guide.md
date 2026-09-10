@@ -4,7 +4,7 @@ Every function shares one prefix, `oz.`, so a call is three characters of namesp
 rather than eight. The groupings below describe what the library covers; they are not
 part of the name.
 
-| Group | Functions | Covers |
+| Group | Named formulas | Covers |
 |---|---|---|
 | Dates | 14 | Dates and timelines: periods, schedules, overlaps, occurrence tests, financial-year labels |
 | Essentials | 17 | Array essentials: row and column totals, averages, counts, range conversion |
@@ -70,7 +70,11 @@ utilities copies. The five About tables take words instead: `oz.AboutFinancialλ
 | `oz.RangeToDAEλ` | Convert a static range into a dynamic array |
 | `oz.FinancialRatios` | Three dozen financial Ratios |
 
-The other 94 functions, including all of Ratios, Utilities, Debt and the AASB 16 lease helpers and every module About table except `oz.AboutEssentialsλ`, have no dedicated worksheet; call any of them with no arguments for inline help, `oz.FinancialRatios` demonstrates the ratio suite on one worksheet, and [functions.csv](../functions.csv) lists every function with its signature.
+The other 94 named formulas have no dedicated worksheet: 90 LAMBDA functions
+and four About tables. They include all of Ratios, Utilities, Debt and the AASB 16
+lease helpers. Call a LAMBDA with no arguments for inline help; reference an About
+table by name without parentheses. `oz.FinancialRatios` demonstrates the ratio
+suite on one worksheet, and [functions.csv](../functions.csv) indexes all 138 names.
 
 ## Dynamic-Array Formula Walkthrough
 

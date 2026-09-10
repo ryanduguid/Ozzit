@@ -4,8 +4,8 @@
 
 `ozzit.xlsx` is the shipped authority. `src/*.txt`, the AFE store and
 `functions.csv` are bound publication views: do not edit or approve them in
-isolation. The workbook contains native Excel LAMBDA functions only; retain the
-ordinary `.xlsx` and no macros. Do not make tax classifications,
+isolation. The library has 133 native Excel LAMBDA functions and five named help
+tables. Retain the ordinary `.xlsx` and no macros. Do not make tax classifications,
 individual-tax or Division 7A decisions.
 
 For formula changes, follow the required run order in `tools/postbuild/README.md`:

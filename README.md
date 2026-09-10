@@ -20,7 +20,7 @@ Captured in Microsoft 365 using Ozzit v3.2.0, Australian tax!A19:B19; the review
 <details>
 <summary>Setup, function catalogue, workbook examples and reference</summary>
 
-A native Excel LAMBDA library for dynamic-array financial models, with inline help and editable demonstration worksheets under the `oz.` prefix. LibreOffice and older Excel versions cannot evaluate the functions.
+A library of 133 native Excel LAMBDA functions plus five named help tables for dynamic-array financial models, with inline help and editable demonstration worksheets under the `oz.` prefix. LibreOffice and older Excel versions cannot evaluate the functions.
 
 ## Capture evidence
 

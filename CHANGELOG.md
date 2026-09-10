@@ -21,7 +21,7 @@
   `oz.PeriodRateλ` for effective-rate conversion. The guide, inline help and lease
   builder use the corrected wording. The workbook and AFE store are synchronised;
   calculation formulas and all 19,444 cached values are unchanged.
-- The function guide records 14 Dates and 46 Financial functions, and 94 functions
+- The function guide records 14 Dates and 46 Financial named formulas, and 94 names
   without dedicated worksheets. The release checklist includes the pinned Ruff
   check alongside the existing gates.
 - A [native rolling-sum benchmark](docs/rolling-sum-benchmark.md) found that a
@@ -32,7 +32,8 @@
 
 ### Four functions added and three changed; the workbook is otherwise v3.3.0
 
-Four functions added, taking the library from 134 to 138, and three changed. Each
+Four LAMBDA functions added, taking the library from 129 to 133 LAMBDAs
+(134 to 138 named formulas, including five help tables), and three changed. Each
 came out of comparing the library against the public 5g function gists on 6
 September 2026; the ideas were taken and every definition written and tested here.
 No worksheet was added or changed, so all cached values are the ones v3.3.0 shipped.
@@ -230,7 +231,7 @@ run on the v3.3.0 candidate after the two defects above were repaired.
 ### The native self-test covers every function
 
 - **`tools/generate_selftest_examples.py` and `tools/selftest_examples.ps1` added.**
-  The self-test named 20 of the 134 functions and evaluated none of the worked
+  The self-test named 20 of the then 134 named formulas and evaluated none of the worked
   examples the help prints, which is how two functions shipped for several releases
   returning the opposite of their own example. The generated fragment, dot-sourced by
   `excel_selftest.ps1`, calls every function for its help and evaluates every worked
