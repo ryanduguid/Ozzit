@@ -1,4 +1,4 @@
-# Ozzit: see the GST arithmetic in Excel
+# Ozzit: Excel LAMBDA functions for Australian financial modelling
 
 Synthetic example. Review aid, not professional advice; the reviewer decides the GST treatment.
 
