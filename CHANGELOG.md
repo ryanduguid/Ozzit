@@ -1,6 +1,16 @@
 # Changelog
 
-## Unreleased
+## v3.4.1, 13 September 2026, Actual/Actual day counts and stricter debt-sculpting inputs
+
+### Corrections to the v3.4.0 workbook; no functions added
+
+Two calculation corrections and one help-text change to the v3.4.0 workbook, with
+tooling, test and documentation work around them. `oz.DayCountRateλ` under
+Actual/Actual now divides each calendar year's days by that year's length, including
+periods that span several years; v3.4.0 returned 0.30027 rather than 0.3 for three
+whole calendar years at 10%. The two variable debt-sculpting functions refuse
+malformed inputs instead of dropping rows. The lease guidance distinguishes nominal
+and effective annual rates. The library is still 133 LAMBDAs and five help tables.
 
 - Ruff checks `E4`, `E7`, `E9`, `F` and `I` rather than `E9` and `F82` alone, so
   unused imports, unused locals, loose statement style and import order are gates
@@ -27,9 +37,9 @@
   a leap year and a period spanning several years, each checked against a year
   fraction worked out by hand. The tests pin the shipped LAMBDA text as well, so
   a change to the arithmetic cannot pass silently.
-- The README states the SHA-256 of the tracked `main` workbook beside the v3.4.0
-  release asset digest, so a reader can check whichever file they hold. A tool test
-  keeps the published value equal to `release/workbook-base.json`.
+- The README states the SHA-256 of the tracked `main` workbook, which a tool test
+  keeps equal to `release/workbook-base.json`, so a reader can check the file they
+  hold. Between v3.4.0 and this release it sat beside the v3.4.0 asset digest.
 - Debt sculpting rejects inputs with extra rows or mismatched period counts instead
   of silently dropping data. Fixed and variable debt schedules use the same shape
   checks; valid schedules and blank optional period-rate defaults are unchanged.
