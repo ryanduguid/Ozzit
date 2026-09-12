@@ -4,7 +4,7 @@ Synthetic example. Review aid, not professional advice; the reviewer decides the
 
 **Input:** $1,100, assumed wholly taxable and GST-inclusive at 10%.
 
-Open [Ozzit v3.4.0](https://github.com/ryanduguid/Ozzit/releases/download/v3.4.0/ozzit.xlsx) in Microsoft 365 or Excel 2024 or later. No add-ins or macros.
+Open [Ozzit v3.4.1](https://github.com/ryanduguid/Ozzit/releases/download/v3.4.1/ozzit.xlsx) in Microsoft 365 or Excel 2024 or later. No add-ins or macros.
 
 ```excel
 =oz.GSTExtractλ(1100)
@@ -30,7 +30,7 @@ v3.2.0 release asset SHA-256: `13df5eb0e2e7a3d1b17a743a990c30adfd187d409be133996
 
 The [capture record and PowerShell reproduction](docs/native-gst-capture.md) preserve the Excel command, returned value, crop and image fingerprint.
 
-The screenshot uses a disposable copy with a synthetic label, an explicit argument in B19 and currency formatting. It certifies this example in v3.2.0. The v3.4.0 workbook is a different file; its full native gate results are recorded in its release notes and in [CHANGELOG.md](CHANGELOG.md). The shipped workbook was not edited.
+The screenshot uses a disposable copy with a synthetic label, an explicit argument in B19 and currency formatting. It certifies this example in v3.2.0. The v3.4.1 workbook is a different file; its full native gate results are recorded in its release notes and in [CHANGELOG.md](CHANGELOG.md). The shipped workbook was not edited.
 
 ## Guides
 
@@ -42,11 +42,9 @@ The screenshot uses a disposable copy with a synthetic label, an explicit argume
 
 ## Verification and attribution
 
-The tagged repository release is [v3.4.0](https://github.com/ryanduguid/Ozzit/releases/tag/v3.4.0), dated 6 September 2026; citation metadata is in [CITATION.cff](CITATION.cff).
+The tagged repository release is [v3.4.1](https://github.com/ryanduguid/Ozzit/releases/tag/v3.4.1), dated 13 September 2026; citation metadata is in [CITATION.cff](CITATION.cff).
 
-v3.4.0 `ozzit.xlsx` SHA-256: `8ea782fe7ee63605394acace586df76332fafedfea5d8bc43fb672e8424115a6` (438,726 bytes). Excel 16.0 build 20326 on 6 September 2026: 1,129 formulas recalculated with 0 in error, 818 self-test assertions with 0 failures, 19,444 cached values equal to what their formulas produce.
-
-The tracked `ozzit.xlsx` on `main` is a different file: SHA-256 `71db4f7650b8f40a27c06524bb031166dfe96b9f25c4b8e8ba2928679d2391e7` (438,897 bytes), the digest pinned in [release/workbook-base.json](release/workbook-base.json) and checked by the tool tests. It carries the corrections recorded under Unreleased in [CHANGELOG.md](CHANGELOG.md). Download the release asset to reproduce the v3.4.0 figures above.
+v3.4.1 `ozzit.xlsx` SHA-256: `71db4f7650b8f40a27c06524bb031166dfe96b9f25c4b8e8ba2928679d2391e7` (438,897 bytes), the same file as the tracked `ozzit.xlsx` on `main`, whose digest is pinned in [release/workbook-base.json](release/workbook-base.json) and checked by the tool tests. Excel 16.0 build 20430 on 13 September 2026: 1,129 formulas recalculated with 0 in error, 868 self-test assertions with 0 failures, 19,444 cached values equal to what their formulas produce.
 
 - [Repository checks](AGENTS.md) and [release and native verification](RELEASING.md)
 - [Changes](CHANGELOG.md) and [citation](CITATION.cff)
