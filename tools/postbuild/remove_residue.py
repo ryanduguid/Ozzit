@@ -41,6 +41,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from sanitise_workbook import column_number, write_deterministic  # noqa: E402
+from workbook import read_parts  # noqa: E402
 
 RESIDUE_SHEET = "FMTs"
 CUSTOM_FUNCTIONS = re.compile(r"<we:extLst>.*?</we:extLst>", re.DOTALL)
@@ -296,8 +297,7 @@ def freeze_panes(parts: dict[str, bytes], log: list[str]) -> None:
 
 
 def run(workbook: Path) -> list[str]:
-    with zipfile.ZipFile(workbook) as archive:
-        parts = {n: archive.read(n) for n in archive.namelist()}
+    parts = read_parts(workbook)
     log: list[str] = []
     drop_sheet(parts, RESIDUE_SHEET, log)
     drop_custom_properties(parts, log)

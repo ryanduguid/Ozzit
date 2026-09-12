@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- The postbuild passes share one reader, `tools/postbuild/workbook.py`: opening the
+  archive, reading whether a pass is already applied, and replacing a table of text
+  swaps. That replaces nine copies of the archive read, two near-identical copies of
+  the applied-or-absent check and four `apply_swaps` under four signatures. Every
+  pass writes the same bytes as before, checked by running the full run order and
+  the six verification gates over the same inputs and comparing.
 - The one-shot v3.0.0 migration moved to `tools/frozen/transform_from_earlier.py`
   and is excluded from the lint, type-check and test gates. It ran once against an
   input this repository does not ship, hardcodes the date it was run, and stops at

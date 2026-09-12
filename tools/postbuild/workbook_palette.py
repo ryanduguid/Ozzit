@@ -40,6 +40,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from sanitise_workbook import write_deterministic
+from workbook import read_parts
 
 EXPLICIT = {
     "3F656F": "5C2D91",
@@ -174,9 +175,8 @@ def _section(text: str, tag: str) -> tuple[str, str, str]:
 
 
 def run(workbook: Path) -> list[str]:
-    with zipfile.ZipFile(workbook) as archive:
-        order = archive.namelist()
-        parts = {n: archive.read(n) for n in order}
+    parts = read_parts(workbook)
+    order = list(parts)
 
     changes = []
 

@@ -39,6 +39,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from compile_sources import render  # noqa: E402
 from sanitise_workbook import read_text, write_deterministic, write_text  # noqa: E402
 from verify_sources import canonical, qualify, statements, NAME  # noqa: E402
+from workbook import oz_names, read_book, read_parts  # noqa: E402
+from workbook import workbook_state as book_state  # noqa: E402
 
 MODULE = "Financial"
 NAMESPACE = "oz"
@@ -340,16 +342,7 @@ def src_state(text: str) -> str:
 
 
 def workbook_state(book: str) -> str:
-    present = sum(1 for name in QUALIFIED if f'<definedName name="{name}"' in book)
-    about = book.count(ABOUT_HEADING)
-    if present == 0 and about == 0:
-        return "absent"
-    if present == len(QUALIFIED) and about == 1:
-        return "applied"
-    raise ValueError(
-        f"xl/workbook.xml holds {present} of {len(QUALIFIED)} lease defined names and "
-        f"{about} About heading(s); it is neither state this pass recognises"
-    )
+    return book_state(book, QUALIFIED, ABOUT_HEADING, "lease defined names")
 
 
 def add_to_src(text: str) -> str:
@@ -380,7 +373,7 @@ def add_to_workbook(book: str, definitions: dict[str, tuple[str, str, str]]) -> 
     book = book.replace(stored_anchor, stored_anchor + addition, 1)
 
     # Defined names, each in its case-insensitive alphabetical place.
-    existing = re.findall(r'<definedName name="(oz\.[^"]+)"', book)
+    existing = oz_names(book)
     for name in sorted(definitions, key=str.lower):
         comment, stored, _body = definitions[name]
         element = (
@@ -445,9 +438,8 @@ def run(workbook: Path, src_dir: Path, index: Path | None) -> list[str]:
         raise ValueError(f"src: missing {src_path}")
     src_text = read_text(src_path)
 
-    with zipfile.ZipFile(workbook) as archive:
-        parts = {name: archive.read(name) for name in archive.namelist()}
-    book = parts["xl/workbook.xml"].decode("utf-8")
+    parts = read_parts(workbook)
+    book = read_book(parts)
 
     src_status, book_status = src_state(src_text), workbook_state(book)
     if src_status != book_status:
