@@ -1,4 +1,5 @@
 import ast
+import json
 import re
 import subprocess
 import unittest
@@ -22,6 +23,7 @@ CLAUDE = ROOT / "CLAUDE.md"
 CONTRIBUTING = ROOT / "CONTRIBUTING.md"
 SRC = ROOT / "src"
 TOOLS = ROOT / "tools"
+WORKBOOK_BASE = ROOT / "release" / "workbook-base.json"
 
 
 EXPECTED_VERIFY_COMMANDS = (
@@ -289,6 +291,16 @@ class RepositoryPolicyTests(unittest.TestCase):
         releases = [tag for tag in tags if re.fullmatch(r"v\d+\.\d+\.\d+", tag)]
         for tag in releases:
             self.assertEqual(tag, f"v{version}", "the tagged commit publishes another version")
+
+    def test_readme_publishes_the_tracked_workbook_digest_as_well_as_the_release_asset(self):
+        # The release asset and the tracked workbook are different files whenever
+        # main is ahead of the tag. Publishing only the asset digest left readers
+        # unable to check the file they clone, so the README states both and this
+        # test keeps the tracked one equal to the manifest the gates already check.
+        base = json.loads(read_utf8(WORKBOOK_BASE))
+        readme = read_utf8(README)
+        self.assertIn(f"`{base['sha256']}` ({base['size']:,} bytes)", readme)
+        self.assertIn("release/workbook-base.json", readme)
 
 
 class RepositoryAttributionTests(unittest.TestCase):

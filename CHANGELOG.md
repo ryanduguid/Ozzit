@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- The README states the SHA-256 of the tracked `main` workbook beside the v3.4.0
+  release asset digest, so a reader can check whichever file they hold. A tool test
+  keeps the published value equal to `release/workbook-base.json`.
 - Debt sculpting rejects inputs with extra rows or mismatched period counts instead
   of silently dropping data. Fixed and variable debt schedules use the same shape
   checks; valid schedules and blank optional period-rate defaults are unchanged.
