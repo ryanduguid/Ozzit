@@ -25,6 +25,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from sanitise_workbook import write_deterministic
+from workbook import read_parts
 
 OLD = "oz.SumContains"
 NEW = "oz.SumContainsλ"
@@ -63,8 +64,7 @@ def edits(parts: dict[str, bytes]) -> dict[str, list[tuple[str, str, int]]]:
 
 
 def run(workbook: Path) -> list[str]:
-    with zipfile.ZipFile(workbook) as archive:
-        parts = {n: archive.read(n) for n in archive.namelist()}
+    parts = read_parts(workbook)
 
     failures: list[str] = []
     texts: dict[str, str] = {}

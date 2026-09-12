@@ -27,6 +27,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from sanitise_workbook import read_text, write_deterministic, write_text
+from workbook import BOOK, apply_swaps, read_book, read_parts
 
 MODULES = ("Dates", "Essentials", "Financial", "Ratios", "Utilities", "Debt")
 
@@ -108,11 +109,13 @@ def validate_store(text: str, label: str, failures: list[str]) -> None:
             )
 
 
-def apply_swaps(text: str) -> str:
+def swap_pairs() -> list[tuple[str, str]]:
+    """Both recognised anchors per swap: the pre-note text and the legacy note."""
+    pairs: list[tuple[str, str]] = []
     for old, new, _wb_expected, _src_expected in SWAPS:
-        text = text.replace(old, new)
-        text = text.replace(_legacy_replacement(old), new)
-    return text
+        pairs.append((old, new))
+        pairs.append((_legacy_replacement(old), new))
+    return pairs
 
 
 def run(workbook: Path, src_dir: Path) -> list[str]:
@@ -127,24 +130,23 @@ def run(workbook: Path, src_dir: Path) -> list[str]:
         original = read_text(path)
         src_originals[module] = original
 
-    with zipfile.ZipFile(workbook) as archive:
-        parts = {n: archive.read(n) for n in archive.namelist()}
-    book = parts["xl/workbook.xml"].decode("utf-8")
+    parts = read_parts(workbook)
+    book = read_book(parts)
+    original_book = parts[BOOK]
     validate_store(book, "workbook", failures)
     validate_store("\n".join(src_originals.values()), "src", failures)
 
     if failures:
         raise ValueError("; ".join(failures))
 
-    parts["xl/workbook.xml"] = apply_swaps(book).encode("utf-8")
+    pairs = swap_pairs()
+    parts[BOOK] = apply_swaps(book, pairs).encode("utf-8")
     src_texts = {
-        module: apply_swaps(original) for module, original in src_originals.items()
+        module: apply_swaps(original, pairs) for module, original in src_originals.items()
     }
 
     changed = []
-    with zipfile.ZipFile(workbook) as archive:
-        original_book = archive.read("xl/workbook.xml")
-    if parts["xl/workbook.xml"] != original_book:
+    if parts[BOOK] != original_book:
         write_deterministic(workbook, parts)
         changed.append("workbook")
     for module, text in src_texts.items():

@@ -138,9 +138,13 @@ class WorkbookTests(unittest.TestCase):
         after = self._book()
         self.assertIn("ISNUMBER(_xlfn.XMATCH(_xlpm.Value,_xlfn.TOCOL(_xlpm.List),0))+0", compile_sources.tight(after))
         # every other definition is untouched, byte for byte
-        strip = lambda book: [
-            line for line in book.split("</definedName>") if 'name="oz.IsInListλ"' not in line
-        ]
+        def strip(book):
+            return [
+                line
+                for line in book.split("</definedName>")
+                if 'name="oz.IsInListλ"' not in line
+            ]
+
         self.assertEqual(strip(before), strip(after))
         # and a second run has nothing to do
         self.assertEqual(compile_sources.run(self.workbook, self.src, False, None), [])

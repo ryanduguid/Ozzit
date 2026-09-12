@@ -4,9 +4,19 @@
 
 [tool.ruff]
 line-length = 100
-src = ["tools"]
+# Both roots a pass imports from: tools/ for the shared verifiers and compilers,
+# tools/postbuild/ for workbook.py. Without the second, the import sorter reads
+# workbook as a third-party package and files it above the first-party block.
+src = ["tools", "tools/postbuild"]
+# tools/frozen/ holds the one-shot v3.0.0 migration, kept for provenance and
+# never run again (ATTRIBUTION.md says what it was). Linting a frozen artefact
+# would only invite edits to it.
+extend-exclude = ["tools/frozen"]
 
 [tool.ruff.lint]
-# First-enablement set: syntax and undefined-name errors only (E9, F82).
-# Existing import layout and string literals stay as they are.
-select = ["E9", "F82"]
+# E4 import placement, E7 statement style, E9 syntax errors, F the full pyflakes
+# set (unused and undefined names, not just F82) and I import sorting. Every pass
+# that reads the workbook by path inserts tools/ on sys.path before importing from
+# it, so those imports carry an explicit `# noqa: E402` rather than a blanket
+# per-file exemption: the rule still applies to any import added above them.
+select = ["E4", "E7", "E9", "F", "I"]

@@ -20,7 +20,6 @@ import tempfile
 from pathlib import Path
 from typing import Any, TypedDict
 
-
 ASSETS = ("ozzit.xlsx", "provenance.json", "SHA256SUMS")
 CHECKSUMMED_ASSETS = ("ozzit.xlsx", "provenance.json")
 GATE_COMMANDS = (

@@ -1,11 +1,10 @@
+import re
 import unittest
 import xml.etree.ElementTree as ET
 import zipfile
-import re
 from datetime import date, timedelta
 from pathlib import Path
 from posixpath import dirname, join, normpath
-
 
 ROOT = Path(__file__).resolve().parents[2]
 WORKBOOK = ROOT / "templates" / "13-week-cash-flow-forecast.xlsx"

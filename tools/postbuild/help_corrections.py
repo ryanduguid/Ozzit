@@ -68,6 +68,7 @@ from typing import NamedTuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from sanitise_workbook import deterministic_bytes, read_text, write_text
+from workbook import BOOK, apply_swaps, read_book, read_parts
 
 MODULES = ("Dates", "Essentials", "Financial", "Ratios", "Utilities", "Debt")
 
@@ -358,23 +359,13 @@ def validate_strings(strings: str, failures: list[str]) -> None:
             )
 
 
-def apply_swaps(text: str, store: str) -> str:
-    for swap in SWAPS:
-        old, new = swap.workbook if store == "workbook" else swap.src
-        text = text.replace(old, new)
-    return text
+def swap_pairs(store: str) -> list[tuple[str, str]]:
+    """This store's serialisation of every correction, in SWAPS order."""
+    return [swap.workbook if store == "workbook" else swap.src for swap in SWAPS]
 
 
-def apply_cell_swaps(text: str) -> str:
-    for _what, old, new in CELL_SWAPS:
-        text = text.replace(old, new)
-    return text
-
-
-def apply_string_swaps(text: str) -> str:
-    for _what, old, new in STRING_SWAPS:
-        text = text.replace(old, new)
-    return text
+CELL_PAIRS = [(old, new) for _what, old, new in CELL_SWAPS]
+STRING_PAIRS = [(old, new) for _what, old, new in STRING_SWAPS]
 
 
 def _staged(path: Path) -> Path:
@@ -393,9 +384,8 @@ def run(workbook: Path, src_dir: Path) -> list[str]:
             continue
         src_originals[module] = read_text(path)
 
-    with zipfile.ZipFile(workbook) as archive:
-        parts = {name: archive.read(name) for name in archive.namelist()}
-    book = parts["xl/workbook.xml"].decode("utf-8")
+    parts = read_parts(workbook)
+    book = read_book(parts)
     sheets = {
         name: data.decode("utf-8")
         for name, data in parts.items()
@@ -416,15 +406,15 @@ def run(workbook: Path, src_dir: Path) -> list[str]:
         raise ValueError("; ".join(failures))
 
     changed: list[str] = []
-    updated_book = apply_swaps(book, "workbook").encode("utf-8")
-    rewritten = updated_book != parts["xl/workbook.xml"]
-    parts["xl/workbook.xml"] = updated_book
+    updated_book = apply_swaps(book, swap_pairs("workbook")).encode("utf-8")
+    rewritten = updated_book != parts[BOOK]
+    parts[BOOK] = updated_book
     for name, text in sheets.items():
-        updated_sheet = apply_cell_swaps(text).encode("utf-8")
+        updated_sheet = apply_swaps(text, CELL_PAIRS).encode("utf-8")
         if updated_sheet != parts[name]:
             parts[name] = updated_sheet
             rewritten = True
-    updated_strings = apply_string_swaps(strings).encode("utf-8")
+    updated_strings = apply_swaps(strings, STRING_PAIRS).encode("utf-8")
     if updated_strings != parts["xl/sharedStrings.xml"]:
         parts["xl/sharedStrings.xml"] = updated_strings
         rewritten = True
@@ -445,7 +435,7 @@ def run(workbook: Path, src_dir: Path) -> list[str]:
             changed.append("workbook")
 
         for module, original in src_originals.items():
-            text = apply_swaps(original, "src")
+            text = apply_swaps(original, swap_pairs("src"))
             if text == original:
                 continue
             destination = src_dir / f"{module}.txt"

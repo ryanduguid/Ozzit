@@ -1,9 +1,18 @@
 # Postbuild passes
 
-The v3.0.0 baseline comes from `tools/transform_from_earlier.py`, which still needs
+The v3.0.0 baseline comes from `tools/frozen/transform_from_earlier.py`, which still needs
 the uncommitted earlier workbook and stops at v3.0.0. Later passes start from the
 committed `ozzit.xlsx` and `src/` recorded in ATTRIBUTION.md. This directory holds
 the ones that are deterministic and safe to re-run.
+
+FY27 help text and the workbook palette are the tracked successors of the one-off
+session scripts that produced v3.1.0. Later passes, including GST help text, start
+from the committed `ozzit.xlsx` and `src/`. They do not read the earlier workbook.
+
+Each pass is a standalone script, run by path and never imported as a package.
+`workbook.py` is the one exception: it is the shared reader the passes import, and
+it holds the archive reading, the applied-or-absent check and the swap replacement
+that used to be copied from pass to pass.
 
 ## Run order
 

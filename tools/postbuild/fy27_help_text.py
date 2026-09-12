@@ -20,6 +20,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from sanitise_workbook import read_text, write_deterministic, write_text
+from workbook import BOOK, apply_swaps, read_book, read_parts
 
 MODULES = ("Dates", "Essentials", "Financial", "Ratios", "Utilities", "Debt")
 
@@ -59,7 +60,9 @@ SWAPS = [
 ]
 
 
-def apply_swaps(text: str, label: str, failures: list[str]) -> str:
+def check_swaps(text: str, label: str, failures: list[str]) -> list[tuple[str, str]]:
+    """The swaps this store earns, counting each against the text as it stands."""
+    pairs: list[tuple[str, str]] = []
     for old, new, wb_expected, src_expected in SWAPS:
         assert len(old) == len(new), f"length drift: {old[:40]!r}"
         hits = text.count(old)
@@ -72,8 +75,9 @@ def apply_swaps(text: str, label: str, failures: list[str]) -> str:
         if hits != expected:
             failures.append(f"{label}: {old[:50]!r} expected {expected} hits, got {hits}")
             continue
+        pairs.append((old, new))
         text = text.replace(old, new)
-    return text
+    return pairs
 
 
 def guard_anchors(text: str, label: str, failures: list[str]) -> None:
@@ -97,12 +101,12 @@ def run(workbook: Path, src_dir: Path) -> list[str]:
             continue
         original = read_text(path)
         src_originals.append(original)
-        src_texts[module] = apply_swaps(original, "src", failures)
+        src_texts[module] = apply_swaps(original, check_swaps(original, "src", failures))
 
-    with zipfile.ZipFile(workbook) as archive:
-        parts = {n: archive.read(n) for n in archive.namelist()}
-    book = parts["xl/workbook.xml"].decode("utf-8")
-    parts["xl/workbook.xml"] = apply_swaps(book, "workbook", failures).encode("utf-8")
+    parts = read_parts(workbook)
+    book = read_book(parts)
+    original_book = parts[BOOK]
+    parts[BOOK] = apply_swaps(book, check_swaps(book, "workbook", failures)).encode("utf-8")
 
     # Aggregate guard: across the whole library (pre-swap text), every swap must
     # be visible as either its old anchor or its replacement — otherwise the input
@@ -114,9 +118,7 @@ def run(workbook: Path, src_dir: Path) -> list[str]:
         raise ValueError("; ".join(failures))
 
     changed = []
-    with zipfile.ZipFile(workbook) as archive:
-        original_book = archive.read("xl/workbook.xml")
-    if parts["xl/workbook.xml"] != original_book:
+    if parts[BOOK] != original_book:
         write_deterministic(workbook, parts)
         changed.append("workbook")
     for module, text in src_texts.items():

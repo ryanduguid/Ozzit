@@ -13,12 +13,11 @@ import zipfile
 from pathlib import Path
 from unittest.mock import patch
 
-
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
-import verify_afe
-import verify_cache
+import verify_afe  # noqa: E402
+import verify_cache  # noqa: E402
 
 
 class WorkbookFixtureTests(unittest.TestCase):

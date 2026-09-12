@@ -2,6 +2,34 @@
 
 ## Unreleased
 
+- Ruff checks `E4`, `E7`, `E9`, `F` and `I` rather than `E9` and `F82` alone, so
+  unused imports, unused locals, loose statement style and import order are gates
+  instead of conventions. Line length stays 100. The findings are fixed: sorted
+  imports, an explicit `# noqa: E402` on each import that has to follow a
+  `sys.path` insert, and one lambda assignment turned into a function.
+- Dependabot watches the Python manifest as well as the GitHub Actions, with a
+  weekly grouped `pip` entry matching the sibling repositories. It has nothing to
+  raise until `pyproject.toml` declares its first dependency; the entry is there so
+  that dependency is covered from the commit that adds it.
+- The postbuild passes share one reader, `tools/postbuild/workbook.py`: opening the
+  archive, reading whether a pass is already applied, and replacing a table of text
+  swaps. That replaces nine copies of the archive read, two near-identical copies of
+  the applied-or-absent check and four `apply_swaps` under four signatures. Every
+  pass writes the same bytes as before, checked by running the full run order and
+  the six verification gates over the same inputs and comparing.
+- The one-shot v3.0.0 migration moved to `tools/frozen/transform_from_earlier.py`
+  and is excluded from the lint, type-check and test gates. It ran once against an
+  input this repository does not ship, hardcodes the date it was run, and stops at
+  v3.0.0, so it is kept for provenance only; ATTRIBUTION.md says so. Its 449-line
+  test rebuilt the script through the AST to avoid running it and is removed.
+- The four day-count conventions behind `oz.DayCountRateλ` now have direct tool
+  tests: 22 cases covering 30/360, Actual/360, Actual/365 and Actual/Actual, with
+  a leap year and a period spanning several years, each checked against a year
+  fraction worked out by hand. The tests pin the shipped LAMBDA text as well, so
+  a change to the arithmetic cannot pass silently.
+- The README states the SHA-256 of the tracked `main` workbook beside the v3.4.0
+  release asset digest, so a reader can check whichever file they hold. A tool test
+  keeps the published value equal to `release/workbook-base.json`.
 - Debt sculpting rejects inputs with extra rows or mismatched period counts instead
   of silently dropping data. Fixed and variable debt schedules use the same shape
   checks; valid schedules and blank optional period-rate defaults are unchanged.

@@ -25,7 +25,6 @@ value moves and verify_cache.py is unaffected.
 
 from __future__ import annotations
 
-import re
 import sys
 import zipfile
 from pathlib import Path
@@ -39,6 +38,8 @@ from compile_sources import (  # noqa: E402
     update_index,
 )
 from sanitise_workbook import read_text, write_deterministic, write_text  # noqa: E402
+from workbook import oz_names, read_book, read_parts  # noqa: E402
+from workbook import workbook_state as book_state  # noqa: E402
 
 NAMESPACE = "oz"
 
@@ -340,15 +341,7 @@ def src_state(module: str, text: str) -> str:
 
 
 def workbook_state(book: str) -> str:
-    present = sum(1 for name in QUALIFIED if f'<definedName name="{name}"' in book)
-    if present == 0:
-        return "absent"
-    if present == len(QUALIFIED):
-        return "applied"
-    raise ValueError(
-        f"xl/workbook.xml holds {present} of {len(QUALIFIED)} defined names; it is "
-        f"neither state this pass recognises"
-    )
+    return book_state(book, QUALIFIED)
 
 
 def add_to_src(module: str, text: str) -> str:
@@ -372,7 +365,7 @@ def add_to_src(module: str, text: str) -> str:
 
 def insert_names(book: str, compiled: list[Compiled]) -> str:
     """Each new defined name after its case-insensitive alphabetical predecessor."""
-    existing = sorted(re.findall(r'<definedName name="(oz\.[^"]+)"', book), key=str.lower)
+    existing = sorted(oz_names(book), key=str.lower)
     for item in sorted(compiled, key=lambda c: c.name.lower()):
         comment = xml_escape(item.comment).replace('"', "&quot;")
         element = (
@@ -398,9 +391,8 @@ def run(workbook: Path, src: Path, index: Path | None) -> list[str]:
             raise ValueError(f"src: missing {path}")
         texts[module] = read_text(path)
 
-    with zipfile.ZipFile(workbook) as archive:
-        parts = {name: archive.read(name) for name in archive.namelist()}
-    book = parts["xl/workbook.xml"].decode("utf-8")
+    parts = read_parts(workbook)
+    book = read_book(parts)
 
     states = {module: src_state(module, text) for module, text in texts.items()}
     states["workbook"] = workbook_state(book)

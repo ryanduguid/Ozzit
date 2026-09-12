@@ -1,11 +1,11 @@
 import ast
+import json
 import re
 import subprocess
 import unittest
 import zipfile
 from datetime import datetime
 from pathlib import Path
-
 
 ROOT = Path(__file__).resolve().parents[2]
 SECURITY = ROOT / "SECURITY.md"
@@ -22,6 +22,7 @@ CLAUDE = ROOT / "CLAUDE.md"
 CONTRIBUTING = ROOT / "CONTRIBUTING.md"
 SRC = ROOT / "src"
 TOOLS = ROOT / "tools"
+WORKBOOK_BASE = ROOT / "release" / "workbook-base.json"
 
 
 EXPECTED_VERIFY_COMMANDS = (
@@ -55,6 +56,27 @@ updates:
       codeql-action:
         patterns:
           - "github/codeql-action*"
+
+  # pyproject.toml is the Python manifest, and pip is how the verify workflow
+  # installs. Grouped into one pull request a week, as the sibling repositories
+  # group their Python updates.
+  #
+  # This finds nothing today. pyproject.toml carries tool configuration and
+  # declares no dependencies, and the only pinned packages are the ruff and mypy
+  # versions the lint job installs by command, which the pip ecosystem does not
+  # read. The entry is here so the first declared dependency is covered from the
+  # commit that declares it rather than whenever someone remembers.
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 2
+    groups:
+      python-dependencies:
+        patterns:
+          - "*"
 """
 
 
@@ -289,6 +311,16 @@ class RepositoryPolicyTests(unittest.TestCase):
         releases = [tag for tag in tags if re.fullmatch(r"v\d+\.\d+\.\d+", tag)]
         for tag in releases:
             self.assertEqual(tag, f"v{version}", "the tagged commit publishes another version")
+
+    def test_readme_publishes_the_tracked_workbook_digest_as_well_as_the_release_asset(self):
+        # The release asset and the tracked workbook are different files whenever
+        # main is ahead of the tag. Publishing only the asset digest left readers
+        # unable to check the file they clone, so the README states both and this
+        # test keeps the tracked one equal to the manifest the gates already check.
+        base = json.loads(read_utf8(WORKBOOK_BASE))
+        readme = read_utf8(README)
+        self.assertIn(f"`{base['sha256']}` ({base['size']:,} bytes)", readme)
+        self.assertIn("release/workbook-base.json", readme)
 
 
 class RepositoryAttributionTests(unittest.TestCase):

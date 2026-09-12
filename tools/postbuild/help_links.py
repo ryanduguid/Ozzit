@@ -22,6 +22,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from sanitise_workbook import read_text, write_deterministic
+from workbook import BOOK, apply_swaps, read_book, read_parts
 
 # (context prefix, old URL, new URL). The prefix is the row before WEBPAGE plus
 # the label, which is unique to the owning function; the neighbour keeping the
@@ -63,12 +64,6 @@ def validate_store(text: str, store: str, failures: list[str]) -> None:
             )
 
 
-def apply_swaps(text: str, store: str) -> str:
-    for old, new in _forms(store):
-        text = text.replace(old, new)
-    return text
-
-
 def run(workbook: Path, src_dir: Path) -> list[str]:
     failures: list[str] = []
     ratios_path = src_dir / "Ratios.txt"
@@ -76,9 +71,8 @@ def run(workbook: Path, src_dir: Path) -> list[str]:
         raise ValueError(f"src: missing {ratios_path}")
     ratios = read_text(ratios_path)
 
-    with zipfile.ZipFile(workbook) as archive:
-        parts = {n: archive.read(n) for n in archive.namelist()}
-    book = parts["xl/workbook.xml"].decode("utf-8")
+    parts = read_parts(workbook)
+    book = read_book(parts)
 
     validate_store(book, "workbook", failures)
     validate_store(ratios, "src", failures)
@@ -86,12 +80,12 @@ def run(workbook: Path, src_dir: Path) -> list[str]:
         raise ValueError("; ".join(failures))
 
     changed = []
-    new_book = apply_swaps(book, "workbook")
+    new_book = apply_swaps(book, _forms("workbook"))
     if new_book != book:
-        parts["xl/workbook.xml"] = new_book.encode("utf-8")
+        parts[BOOK] = new_book.encode("utf-8")
         write_deterministic(workbook, parts)
         changed.append("workbook")
-    new_ratios = apply_swaps(ratios, "src")
+    new_ratios = apply_swaps(ratios, _forms("src"))
     if new_ratios != ratios:
         with open(ratios_path, "w", encoding="utf-8", newline="") as handle:
             handle.write(new_ratios)

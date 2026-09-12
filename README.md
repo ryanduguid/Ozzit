@@ -46,6 +46,8 @@ The tagged repository release is [v3.4.0](https://github.com/ryanduguid/Ozzit/re
 
 v3.4.0 `ozzit.xlsx` SHA-256: `8ea782fe7ee63605394acace586df76332fafedfea5d8bc43fb672e8424115a6` (438,726 bytes). Excel 16.0 build 20326 on 6 September 2026: 1,129 formulas recalculated with 0 in error, 818 self-test assertions with 0 failures, 19,444 cached values equal to what their formulas produce.
 
+The tracked `ozzit.xlsx` on `main` is a different file: SHA-256 `71db4f7650b8f40a27c06524bb031166dfe96b9f25c4b8e8ba2928679d2391e7` (438,897 bytes), the digest pinned in [release/workbook-base.json](release/workbook-base.json) and checked by the tool tests. It carries the corrections recorded under Unreleased in [CHANGELOG.md](CHANGELOG.md). Download the release asset to reproduce the v3.4.0 figures above.
+
 - [Repository checks](AGENTS.md) and [release and native verification](RELEASING.md)
 - [Changes](CHANGELOG.md) and [citation](CITATION.cff)
 
