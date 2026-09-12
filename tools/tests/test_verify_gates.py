@@ -10,10 +10,11 @@ from unittest import mock
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
-import verify_signatures
-import verify_sources
-import verify_workbook
-import zipfile
+import zipfile  # noqa: E402
+
+import verify_signatures  # noqa: E402
+import verify_sources  # noqa: E402
+import verify_workbook  # noqa: E402
 
 ROOT = TOOLS.parent
 

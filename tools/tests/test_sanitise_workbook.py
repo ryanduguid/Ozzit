@@ -12,9 +12,9 @@ from unittest import mock
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
-import refresh_cache
-import sanitise_workbook
-import verify_workbook
+import refresh_cache  # noqa: E402
+import sanitise_workbook  # noqa: E402
+import verify_workbook  # noqa: E402
 
 ROOT = TOOLS.parent
 WORKBOOK = ROOT / "ozzit.xlsx"

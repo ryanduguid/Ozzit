@@ -11,13 +11,11 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-
 TOOLS = Path(__file__).resolve().parents[1]
 ROOT = TOOLS.parent
 sys.path.insert(0, str(TOOLS))
 
-import prepare_release_bundle as release_bundle
-
+import prepare_release_bundle as release_bundle  # noqa: E402
 
 SOURCE_COMMIT = "a" * 40
 GATE_RESULTS = [

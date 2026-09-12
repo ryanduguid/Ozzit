@@ -1,7 +1,7 @@
 import base64
 import json
-import re
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -15,7 +15,7 @@ sys.path.insert(0, str(TOOLS))
 ROOT = TOOLS.parent
 WORKBOOK = ROOT / "ozzit.xlsx"
 
-from verify_afe import find_afe_blob
+from verify_afe import find_afe_blob  # noqa: E402
 
 
 def afe_parts(workbook: Path) -> tuple[dict, bytes]:

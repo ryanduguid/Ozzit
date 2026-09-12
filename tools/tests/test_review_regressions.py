@@ -13,13 +13,14 @@ from unittest.mock import patch
 
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
-import sanitise_workbook
-import verify_workbook
+import sanitise_workbook  # noqa: E402
+import verify_workbook  # noqa: E402
+
 sys.path.insert(0, str(TOOLS / 'postbuild'))
-import aasb16_leases
-import remove_residue
-import strip_revision_history
-import workbook_palette
+import aasb16_leases  # noqa: E402
+import remove_residue  # noqa: E402
+import strip_revision_history  # noqa: E402
+import workbook_palette  # noqa: E402
 
 
 class ReviewRegressionTests(unittest.TestCase):

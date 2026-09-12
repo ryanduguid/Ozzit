@@ -38,7 +38,7 @@ from xml.sax.saxutils import escape as xml_escape
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from compile_sources import render  # noqa: E402
 from sanitise_workbook import read_text, write_deterministic, write_text  # noqa: E402
-from verify_sources import canonical, qualify, statements, NAME  # noqa: E402
+from verify_sources import NAME, canonical, qualify, statements  # noqa: E402
 from workbook import oz_names, read_book, read_parts  # noqa: E402
 from workbook import workbook_state as book_state  # noqa: E402
 

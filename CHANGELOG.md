@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Ruff checks `E4`, `E7`, `E9`, `F` and `I` rather than `E9` and `F82` alone, so
+  unused imports, unused locals, loose statement style and import order are gates
+  instead of conventions. Line length stays 100. The findings are fixed: sorted
+  imports, an explicit `# noqa: E402` on each import that has to follow a
+  `sys.path` insert, and one lambda assignment turned into a function.
 - Dependabot watches the Python manifest as well as the GitHub Actions, with a
   weekly grouped `pip` entry matching the sibling repositories. It has nothing to
   raise until `pyproject.toml` declares its first dependency; the entry is there so

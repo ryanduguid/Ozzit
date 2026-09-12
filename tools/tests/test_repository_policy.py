@@ -7,7 +7,6 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 SECURITY = ROOT / "SECURITY.md"
 RELEASING = ROOT / "RELEASING.md"
