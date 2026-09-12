@@ -57,6 +57,27 @@ updates:
       codeql-action:
         patterns:
           - "github/codeql-action*"
+
+  # pyproject.toml is the Python manifest, and pip is how the verify workflow
+  # installs. Grouped into one pull request a week, as the sibling repositories
+  # group their Python updates.
+  #
+  # This finds nothing today. pyproject.toml carries tool configuration and
+  # declares no dependencies, and the only pinned packages are the ruff and mypy
+  # versions the lint job installs by command, which the pip ecosystem does not
+  # read. The entry is here so the first declared dependency is covered from the
+  # commit that declares it rather than whenever someone remembers.
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 2
+    groups:
+      python-dependencies:
+        patterns:
+          - "*"
 """
 
 

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Dependabot watches the Python manifest as well as the GitHub Actions, with a
+  weekly grouped `pip` entry matching the sibling repositories. It has nothing to
+  raise until `pyproject.toml` declares its first dependency; the entry is there so
+  that dependency is covered from the commit that adds it.
 - The postbuild passes share one reader, `tools/postbuild/workbook.py`: opening the
   archive, reading whether a pass is already applied, and replacing a table of text
   swaps. That replaces nine copies of the archive read, two near-identical copies of
