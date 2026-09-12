@@ -66,6 +66,7 @@ def check_xml_part(name: str, data: bytes) -> str | None:
         return None
     except ET.ParseError as exc:
         fail(f"malformed XML in {name}: {exc}")
+        return None
     return text
 
 
@@ -107,18 +108,24 @@ def main() -> None:
         fail("AFE project store missing")
         report(z)
         return
-    store = json.loads(base64.b64decode(blob.group(1)).decode("utf-16-le"))
+    try:
+        store = json.loads(base64.b64decode(blob.group(1), validate=True).decode("utf-16-le"))
+    except (ValueError, UnicodeError) as exc:
+        fail(f"invalid AFE project store: {exc}")
+        report(z)
+        return
     store_text = json.dumps(store, ensure_ascii=False)
     for hit in BANNED.finditer(store_text):
         fail(f"banned token {hit.group(0)!r} in the AFE project store")
 
     workbook = xml_parts.get("xl/workbook.xml", "")
-    defined = dict(re.findall(r'<definedName name="([^"]+)"[^>]*>([^<]*)</definedName>', workbook))
+    defined = re.findall(r'<definedName name="([^"]+)"[^>]*>([^<]*)</definedName>', workbook)
+    defined_names = {name for name, _body in defined}
     sheets = set(re.findall(r'<sheet name="([^"]+)"', workbook))
     if not defined:
         fail("no defined names found")
 
-    for name, body in defined.items():
+    for name, body in defined:
         source = html.unescape(body)
         # Excel refuses to open the workbook, without saying why, when a defined
         # name runs past 8,192 characters. Every other gate passed the file that
@@ -132,7 +139,7 @@ def main() -> None:
         if code.count("(") != code.count(")"):
             fail(f"unbalanced parentheses in {name}")
         for token in set(TOKEN_RE.findall(source)):
-            if token not in defined and token not in sheets:
+            if token not in defined_names and token not in sheets:
                 fail(f"{name} references undefined {token}")
 
     for name in parts:
@@ -143,7 +150,7 @@ def main() -> None:
             fail(f"#REF! present in {name}")
         for formula in re.findall(r"<f[^>]*>([^<]*)</f>", text):
             for token in set(TOKEN_RE.findall(formula)):
-                if token not in defined and token not in sheets:
+                if token not in defined_names and token not in sheets:
                     fail(f"{name} uses undefined {token}")
 
     # Volatile formulas force the whole dependency chain to recalculate on every edit, which
@@ -180,16 +187,12 @@ def main() -> None:
     if declared != len(list(shared)):
         fail(f"sharedStrings uniqueCount {declared} != {len(list(shared))} entries")
 
-    # A reader has to see the right numbers, and there are two honest ways to get there.
-    # Either the file forces a recalculation on load, which is what a workbook built purely
-    # from XML needs because it has no formula engine to refresh what it edits, or its
-    # cached values are already correct, which only Excel can produce and only
-    # tools/verify_cache.py can confirm. Excel leaves a calculation chain behind when it
-    # saves, so its absence together with no fullCalcOnLoad means neither is true: the file
-    # would open showing whatever the build last left in it.
+    # This structural check catches a missing recalculation flag and calculation chain.
+    # A chain can survive XML edits that leave caches stale, so its presence proves
+    # nothing about cached values. The separate tools/verify_cache.py native Excel gate
+    # remains mandatory under RELEASING.md, including when this check passes.
     if 'fullCalcOnLoad="1"' not in workbook and "xl/calcChain.xml" not in parts:
-        fail("neither fullCalcOnLoad nor a calculation chain: this workbook would open "
-             "showing cached values nothing has refreshed. Run tools/refresh_cache.py, or "
+        fail("neither fullCalcOnLoad nor a calculation chain. Run tools/refresh_cache.py, or "
              "set fullCalcOnLoad")
 
     # docProps/app.xml repeats the sheet list, and nothing regenerates it: the build added
@@ -214,7 +217,7 @@ def main() -> None:
             if f'<definedName name="{cache}">#N/A</definedName>' not in workbook:
                 fail(f"slicer cache {cache} has no backing defined name")
 
-    report(z, defined)
+    report(z, dict(defined))
 
 
 def report(

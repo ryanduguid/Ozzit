@@ -29,7 +29,7 @@ import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from sanitise_workbook import write_deterministic
+from sanitise_workbook import read_text, write_deterministic, write_text
 from sync_afe_store import sync
 
 MODULES = ("Dates", "Essentials", "Financial", "Ratios", "Utilities", "Debt")
@@ -76,7 +76,8 @@ def strip_module(text: str) -> tuple[str, int]:
             blocks += 1
             kept = body[:heading.start()]
             if kept.strip():
-                out.append("/*" + kept.rstrip() + "\n*/")
+                newline = "\r\n" if "\r\n" in body else "\n"
+                out.append("/*" + kept.rstrip() + newline + "*/")
             elif text[end + 2:end + 4] == "\r\n":
                 end += 2
             elif text[end + 2:end + 3] == "\n":
@@ -90,7 +91,7 @@ def apply(workbook: Path, src: Path) -> list[str]:
 
     for module in MODULES:
         path = src / f"{module}.txt"
-        before = path.read_text(encoding="utf-8")
+        before = read_text(path)
         after, blocks = strip_module(before)
         if blocks == 0:
             continue
@@ -99,7 +100,7 @@ def apply(workbook: Path, src: Path) -> list[str]:
             raise ValueError(
                 f"{path.name}: expected {expected} REVISIONS blocks, found {blocks}"
             )
-        path.write_text(after, encoding="utf-8", newline="")
+        write_text(path, after)
         changes.append(f"stripped {blocks} REVISIONS blocks from {path.name}")
 
     with zipfile.ZipFile(workbook) as archive:

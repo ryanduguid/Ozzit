@@ -777,7 +777,7 @@ class CashFlowTemplateContractTests(unittest.TestCase):
             ["Week", "Week ending", "Closing cash", "Headroom", "Liquidity status"],
         )
         for index, column in enumerate(FORECAST_COLUMNS, start=12):
-            self.assertEqual(dashboard_formulas.get(f"A{index}"), f"ROW()-11")
+            self.assertEqual(dashboard_formulas.get(f"A{index}"), "ROW()-11")
             self.assertEqual(dashboard_formulas.get(f"B{index}"), f"'13-Week Forecast'!{column}$6")
             self.assertEqual(dashboard_formulas.get(f"C{index}"), f"'13-Week Forecast'!{column}$48")
             self.assertEqual(dashboard_formulas.get(f"D{index}"), f"'13-Week Forecast'!{column}$50")

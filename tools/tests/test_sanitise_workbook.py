@@ -288,9 +288,9 @@ class WorkbookToolTests(unittest.TestCase):
         self.assertNotIn("Traceback", result.stderr)
 
     def test_refresh_cache_delegates_all_cleanup_to_shared_sanitiser(self):
-        refresh_cache.WORKBOOK = str(self.workbook)
         completed = SimpleNamespace(returncode=0, stdout="refreshed", stderr="")
         with (
+            mock.patch.object(refresh_cache, "WORKBOOK", str(self.workbook)),
             mock.patch.object(refresh_cache.subprocess, "run", return_value=completed),
             mock.patch.object(
                 refresh_cache,

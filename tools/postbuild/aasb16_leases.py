@@ -469,9 +469,13 @@ def run(workbook: Path, src_dir: Path, index: Path | None) -> list[str]:
     changed: list[str] = []
     if src_status == "absent":
         write_text(src_path, add_to_src(src_text))
+        try:
+            parts["xl/workbook.xml"] = add_to_workbook(book, definitions).encode("utf-8")
+            write_deterministic(workbook, parts)
+        except Exception:
+            write_text(src_path, src_text)
+            raise
         changed.append(f"src/{MODULE}.txt")
-        parts["xl/workbook.xml"] = add_to_workbook(book, definitions).encode("utf-8")
-        write_deterministic(workbook, parts)
         changed.append("workbook")
 
     if index is not None and index.is_file():

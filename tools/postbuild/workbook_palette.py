@@ -225,7 +225,7 @@ def run(workbook: Path) -> list[str]:
             fills = fills.replace(f'rgb="{old}"', f'rgb="{new}"')
             folded += hits
     # phase_f also caught the indexed mint fill left by earlier passes.
-    hits = fills.count('indexed="42"')
+    hits = fills.count('<fgColor indexed="42"/>')
     if hits:
         fills = fills.replace('<fgColor indexed="42"/>', '<fgColor rgb="FFF3F1F6"/>')
         folded += hits

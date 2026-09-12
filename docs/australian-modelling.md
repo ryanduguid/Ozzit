@@ -10,7 +10,7 @@ The library is Australian-only: the foreign tax regimes and references the earli
 | Function | Purpose |
 |---|---|
 | `oz.DiminishingValueλ(Cost, Life)` | Diminishing balance at 200% of the straight-line rate, writing the residual off in the final period |
-| `oz.PrimeCostλ(Cost, Life)` | Straight line over whole years |
+| `oz.PrimeCostλ(Cost, Life)` | Straight line over `ROUNDUP(Life, 0)` periods, with any part-year remainder in the final period |
 | `oz.GSTAddλ(Amounts, [Rate])` | Adds GST to GST-exclusive amounts, 10% by default |
 | `oz.GSTExtractλ(Amounts, [Rate])` | Returns the GST inside GST-inclusive amounts |
 | `oz.FinancialYearλ(Dates, [StartMonth])` | Labels dates with their financial year, starting 1 July |
@@ -25,7 +25,7 @@ The same scope note is embedded as NOTES! rows in the `oz.GSTAddλ` and `oz.GSTE
 
 ## AASB 16 leases
 
-Four functions cover lessee accounting. They compose: the liability feeds the schedule, the schedule's opening balance feeds the right-of-use asset, and a later index review feeds the remeasurement.
+Four functions cover lessee accounting. `oz.ROUScheduleλ` takes the asset's `Cost` directly: the initial liability plus prepayments net of incentives, initial direct costs and applicable restoration costs under [AASB 16 paragraph 24](https://standards.aasb.gov.au/aasb-16-nov-2022). A later index review feeds the remeasurement.
 
 | Function | Purpose |
 |---|---|

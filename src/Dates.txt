@@ -453,7 +453,7 @@ ScheduleRatesλ = LAMBDA(
                             IF( ISNUMBER( RateStarts), RateStarts, DATEVALUE( RateStarts))
                         ),
     //  Procedure
-        Result,         XLOOKUP(CvtEnds, CvtStarts, Rates, "", -1),
+        Result,         XLOOKUP(CvtEnds, CvtStarts, Rates, "", -1, -1),
     //  Return Result
         CHOOSE( Help? + 1, Result, Help)
     )
@@ -520,7 +520,7 @@ ScheduleRatesByItemsλ = LAMBDA(
                                     LET(Item,       INDEX( Items, Row),
                                         ItemDates,  FILTER( CvtEffDates, ItemList = Item, -1), 
                                         ItemRates,  FILTER( RateList, ItemList = Item, 0), 
-                                        VSTACK( Acc, XLOOKUP( CvtPrdEnds, ItemDates, ItemRates, 0, -1))
+                                        VSTACK( Acc, XLOOKUP( CvtPrdEnds, ItemDates, ItemRates, 0, -1, -1))
                                     )
                                 )
                             ),
