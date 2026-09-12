@@ -5,6 +5,10 @@
 [tool.ruff]
 line-length = 100
 src = ["tools"]
+# tools/frozen/ holds the one-shot v3.0.0 migration, kept for provenance and
+# never run again (ATTRIBUTION.md says what it was). Linting a frozen artefact
+# would only invite edits to it.
+extend-exclude = ["tools/frozen"]
 
 [tool.ruff.lint]
 # First-enablement set: syntax and undefined-name errors only (E9, F82).

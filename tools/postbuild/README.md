@@ -1,6 +1,6 @@
 # Postbuild passes
 
-The v3.0.0 baseline comes from `tools/transform_from_earlier.py`, which still needs
+The v3.0.0 baseline comes from `tools/frozen/transform_from_earlier.py`, which still needs
 the uncommitted earlier workbook and stops at v3.0.0. Later passes start from the
 committed `ozzit.xlsx` and `src/` recorded in ATTRIBUTION.md. This directory holds
 the ones that are deterministic and safe to re-run.

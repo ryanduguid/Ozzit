@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- The one-shot v3.0.0 migration moved to `tools/frozen/transform_from_earlier.py`
+  and is excluded from the lint, type-check and test gates. It ran once against an
+  input this repository does not ship, hardcodes the date it was run, and stops at
+  v3.0.0, so it is kept for provenance only; ATTRIBUTION.md says so. Its 449-line
+  test rebuilt the script through the AST to avoid running it and is removed.
 - The four day-count conventions behind `oz.DayCountRateλ` now have direct tool
   tests: 22 cases covering 30/360, Actual/360, Actual/365 and Actual/Actual, with
   a leap year and a period spanning several years, each checked against a year
