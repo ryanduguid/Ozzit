@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- The four day-count conventions behind `oz.DayCountRateλ` now have direct tool
+  tests: 22 cases covering 30/360, Actual/360, Actual/365 and Actual/Actual, with
+  a leap year and a period spanning several years, each checked against a year
+  fraction worked out by hand. The tests pin the shipped LAMBDA text as well, so
+  a change to the arithmetic cannot pass silently.
 - The README states the SHA-256 of the tracked `main` workbook beside the v3.4.0
   release asset digest, so a reader can check whichever file they hold. A tool test
   keeps the published value equal to `release/workbook-base.json`.
