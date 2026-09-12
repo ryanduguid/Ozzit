@@ -120,11 +120,23 @@ def check(parts: dict[str, bytes]) -> tuple[list[str], int]:
             if name not in names:
                 raise ValueError(f"{part}: {name} is not a defined name")
             table = help_table(names[name], name)
-            if cols == len(table[0]) and cached_table(sheet, top, left, rows, cols) == table:
+            cached = cached_table(sheet, top, left, rows, cols)
+            if cols == len(table[0]) and cached == table:
                 continue
+            if rows == len(table) and cols == len(table[0]):
+                row, col = next((r, c) for r in range(rows) for c in range(cols)
+                                if cached[r][c] != table[r][c])
+                number, letters = left + col, ""
+                while number:
+                    number, remainder = divmod(number - 1, 26)
+                    letters = chr(65 + remainder) + letters
+                detail = f"first difference at {letters}{top + row}"
+            else:
+                detail = f"{rows} cached rows against {len(table)} in the definition"
+                if cols != len(table[0]):
+                    detail += f", {cols} cached columns against {len(table[0])}"
             stale.append(
-                f"{part}: the {name} help is stale, {rows} cached rows against "
-                f"{len(table)} in the definition"
+                f"{part}: the {name} help is stale, {detail}"
             )
     return stale, anchors
 

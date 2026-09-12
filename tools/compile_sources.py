@@ -1,6 +1,6 @@
 """Compile src/*.txt into the defined names ozzit.xlsx stores.
 
-Usage: python tools/compile_sources.py [workbook] [src dir] [--check] [--index functions.csv]
+Usage: python tools/compile_sources.py [workbook] [src dir] [--check] [--index=functions.csv]
 
 The workbook is the shipped authority and src/ is its published, typed-form
 view. Until now the only way to change a function was to hand-write both the

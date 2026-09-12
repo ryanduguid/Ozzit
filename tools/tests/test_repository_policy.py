@@ -247,7 +247,7 @@ class RepositoryPolicyTests(unittest.TestCase):
         # rewrites exactly those bytes and fails the gate with no hint why.
         config = read_utf8(EDITORCONFIG)
         self.assertIn("[src/*.txt]", config, ".editorconfig does not scope src/*.txt")
-        section = config[config.index("[src/*.txt]"):]
+        section = re.split(r"(?m)^\[", config.split("[src/*.txt]", 1)[1], maxsplit=1)[0]
         self.assertGreater(config.index("[src/*.txt]"), config.index("[*]"))
         self.assertIn("trim_trailing_whitespace = false", section)
         self.assertIn("insert_final_newline = false", section)

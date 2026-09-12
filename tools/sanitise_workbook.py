@@ -243,8 +243,10 @@ def sanitise(workbook: Path) -> list[str]:
     wb = parts["xl/workbook.xml"].decode("utf-8")
     new_wb = re.sub(r"<xr:revisionPtr\b[^>]*/>", "", wb)
     new_wb = re.sub(
-        r'(<workbookView\b)(?:\s+(?:xWindow|yWindow|windowWidth|windowHeight)="[^"]*")*',
-        lambda m: m.group(1) + " " + FIXED_WINDOW,
+        r'<workbookView\b[^>]*>',
+        lambda m: re.sub(
+            r'\s+(?:xWindow|yWindow|windowWidth|windowHeight)="[^"]*"', "", m.group(0)
+        ).replace("<workbookView", "<workbookView " + FIXED_WINDOW, 1),
         new_wb,
         count=1,
     )

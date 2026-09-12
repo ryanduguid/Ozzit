@@ -92,6 +92,10 @@ Same 'FY December start'       "$fy(DATE(2026,12,1),12)" 'FY2027'
 Same 'FY array, January start' "TEXTJOIN(`"|`",FALSE,$fy(DATE(2026,6,30)+{0;1},1))" 'FY2026|FY2026'
 Same 'FY help with no args'    "INDEX($fy(),1,1)" 'FUNCTION:'
 
+# Duplicate effective dates use the last matching rate, including item schedules.
+Near 'ScheduleRates: last duplicate wins' "INDEX(oz.ScheduleRates${L}({2,3},{1;1},{10;20}),1,1)" '20'
+Near 'ScheduleRatesByItems: last duplicate wins' "INDEX(oz.ScheduleRatesByItems${L}({2,3},`"item`",{`"item`";`"item`"},{1;1},{10;20}),1,1)" '20'
+
 # --- the Australian tax worksheet, as the reader actually sees it
 $au = "'Australian tax'!"
 Near 'Sheet: DV total equals cost' "${au}B10-${au}A6" '0'

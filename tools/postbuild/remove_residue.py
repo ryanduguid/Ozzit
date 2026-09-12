@@ -158,7 +158,8 @@ def drop_custom_properties(parts: dict[str, bytes], log: list[str]) -> None:
         if new != text:
             parts[name] = new.encode("utf-8")
     content_types = parts["[Content_Types].xml"].decode("utf-8")
-    content_types = re.sub(r'<Default Extension="bin"[^>]*/>', "", content_types)
+    if not any(name.lower().endswith(".bin") for name in parts):
+        content_types = re.sub(r'<Default Extension="bin"[^>]*/>', "", content_types)
     parts["[Content_Types].xml"] = content_types.encode("utf-8")
     log.append(f"removed {len(bins)} per-sheet custom properties")
 

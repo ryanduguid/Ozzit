@@ -380,7 +380,6 @@ added, and all 20,228 cached values are the ones v3.1.0 shipped.
   cancels the row under test.
 
 
-held the credit has been cleared and the removal is now enforced by a gate.
 
 - **Per-function revision histories removed from `src/`.** 125 `REVISIONS` comment
   blocks across Dates, Essentials, Financial, Ratios and Utilities, 417 lines of

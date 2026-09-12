@@ -65,6 +65,7 @@ class WorkbookPaletteTests(unittest.TestCase):
             parts = {n: archive.read(n) for n in archive.namelist()}
         styles = parts["xl/styles.xml"].decode("utf-8")
         fonts = styles[styles.index("<fonts") : styles.index("</fonts>")]
+        self.assertIn('rgb="FF5C2D91"', fonts, "precondition: purple font present")
         styles = styles.replace(
             fonts,
             fonts.replace('rgb="FF5C2D91"', 'rgb="FF006600"', 1),

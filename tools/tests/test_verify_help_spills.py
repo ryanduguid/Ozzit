@@ -55,7 +55,7 @@ STALE = (
     '<row r="5"><c r="A5" t="str"><v/></c><c r="B5" t="str"><v/></c></row>'
     "</sheetData></worksheet>"
 )
-STALE_LINE = "xl/worksheets/sheet2.xml: the oz.Gλ help is stale, 2 cached rows against 2 in the definition"
+STALE_LINE = "xl/worksheets/sheet2.xml: the oz.Gλ help is stale, first difference at B4"
 
 
 def parts_for(*sheets: str) -> dict[str, bytes]:
