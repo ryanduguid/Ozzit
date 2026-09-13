@@ -24,7 +24,7 @@ from workbook import BOOK, apply_swaps, read_book, read_parts
 
 MODULES = ("Dates", "Essentials", "Financial", "Ratios", "Utilities", "Debt")
 
-# (old, new, workbook hits, src hits) — both stores sit inside string literals,
+# (old, new, workbook hits, src hits) - both stores sit inside string literals,
 # so doubled quotes appear in both. Counts are from the v3.0.0 -> v3.1.0 commit.
 SWAPS = [
     ('SEQUENCE(,90,""1/1/2025"")', 'SEQUENCE(,90,""1/7/2026"")', 3, 3),
@@ -109,7 +109,7 @@ def run(workbook: Path, src_dir: Path) -> list[str]:
     parts[BOOK] = apply_swaps(book, check_swaps(book, "workbook", failures)).encode("utf-8")
 
     # Aggregate guard: across the whole library (pre-swap text), every swap must
-    # be visible as either its old anchor or its replacement — otherwise the input
+    # be visible as either its old anchor or its replacement - otherwise the input
     # is the wrong artefact or the swap table is stale.
     aggregate = book + "\n" + "\n".join(src_originals)
     guard_anchors(aggregate, "library", failures)

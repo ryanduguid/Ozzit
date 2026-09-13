@@ -4,12 +4,12 @@ Usage: python tools/verify_signatures.py [src dir]
 
 Every function carries its own help. It states its parameters twice, once on the
 FUNCTION line as a signature and again as a table below it, and ends with worked
-examples a reader is meant to copy. All three are hand-written text inside a string
-literal, so no structural check ever reads them, and all three drift, separately. A function written by copying a neighbour keeps the
-neighbour's name, its signature, its table, or all three. A parameter renamed in the
+examples a reader is meant to copy. All 3 are hand-written text inside a string
+literal, so no structural check ever reads them, and all 3 drift, separately. A function written by copying a neighbour keeps the
+neighbour's name, its signature, its table, or all 3. A parameter renamed in the
 LAMBDA is not renamed in the help. A capital lands one key early and Flow1 becomes
 FLow1. Every one of those shipped at least once, and one function's table described a
-different function's arguments for six releases, leaving its own three undocumented.
+different function's arguments for 6 releases, leaving its own 3 undocumented.
 
 The LAMBDA's own declaration is the ground truth for both: it is what the function
 actually takes. The comparisons are character for character, because case is exactly
@@ -19,7 +19,7 @@ Four conventions are honoured rather than reported:
 
   * the internal DoNotUse parameter is a period counter, kept out of the signature; the
     table may explain it or leave it out, and both are accepted
-  * help is a two-column table, so a long row wraps onto one with an empty label, and
+  * help is a 2-column table, so a long row wraps onto one with an empty label, and
     the rows must be rejoined before either can be read
   * a table row whose label ends in ! is an aside, not a parameter: NOTE!, NOTES!
   * square brackets are ignored. The earlier workbook declares every parameter optional so that a
@@ -34,7 +34,7 @@ nothing looked wrong: copy the line and you run a different function. Every func
 named anywhere in a help must also be one the library declares, which catches a
 reference to LableAmortiseλ that no release ever defined. That runs on every
 declaration, About tables included: they are the one help a reader is told to copy
-names out of, and skipping them let AboutDatesλ ship a DIAGNOSTICS block naming ten
+names out of, and skipping them let AboutDatesλ ship a DIAGNOSTICS block naming 10
 λDV functions that have never existed. An About table also names functions in its
 label column, without a following bracket, so those are checked as well.
 
@@ -233,7 +233,7 @@ def main() -> int:
                     else:
                         seen_desc[key] = label
 
-            # Before the LAMBDA guard: the five About tables are not LAMBDAs, and they
+            # Before the LAMBDA guard: the 5 About tables are not LAMBDAs, and they
             # are exactly where a call to a function that does not exist survived.
             for called in sorted(set(CALL.findall(literals(body)))):
                 if called not in declared_names:

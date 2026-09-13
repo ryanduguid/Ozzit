@@ -64,7 +64,7 @@ class WorkbookToolTests(unittest.TestCase):
     def test_long_literal_split_by_an_excel_save_is_folded_back(self):
         # Excel stores a string literal over 255 characters as
         # _xlfn._LONGTEXT("...","...") when it saves; the 6 September 2026 cache
-        # refresh rewrote six defined names that way and verify_sources.py then
+        # refresh rewrote 6 defined names that way and verify_sources.py then
         # rejected the workbook. The sanitiser puts the plain literal back.
         parts = self._parts()
         book = parts["xl/workbook.xml"].decode("utf-8")

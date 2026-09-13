@@ -1,20 +1,20 @@
-# Ozzit - Australian Native Excel LAMBDA Function Library
-> 133 native Excel LAMBDA functions plus five help tables for dynamic-array financial modelling, with Australian GST, financial-year, depreciation and AASB 16 lessee helpers. No VBA, add-ins or external dependencies.
+# Ozzit - Australian native Excel LAMBDA function library
+> 133 native Excel LAMBDA functions plus 5 help tables for dynamic-array financial modelling, with Australian GST, financial-year, depreciation and AASB 16 lessee helpers. No VBA, add-ins or external dependencies.
 
-## Package Overview
+## Package overview
 - **Repository**: https://github.com/ryanduguid/Ozzit
-- **Domain**: Library of 133 native Excel `LAMBDA` functions plus five help tables for dynamic-array financial modelling. Australian additions are GST add/extract, a 1 July financial-year label, two modelling depreciation schedules and four AASB 16 lessee schedules. General additions since v3.3.0 are two effective-rate converters, a day count convention rate row (30/360, Actual/360, Actual/365, Actual/Actual) and a DATEDIF replacement.
-- **Provenance**: Built from scratch by Ryan Duguid. See ATTRIBUTION.md. The 138 named formulas comprise 133 LAMBDAs and five help tables. Describe only the helpers the workbook ships.
-- **Source Context**: Native Excel financial-modelling conventions (amortisation, corkscrews, ratios, debt sculpting) plus the five Australian helpers listed below.
+- **Domain**: Library of 133 native Excel `LAMBDA` functions plus 5 help tables for dynamic-array financial modelling. Australian additions are GST add/extract, a 1 July financial-year label, 2 modelling depreciation schedules and 4 AASB 16 lessee schedules. General additions since v3.3.0 are 2 effective-rate converters, a day count convention rate row (30/360, Actual/360, Actual/365, Actual/Actual) and a DATEDIF replacement.
+- **Provenance**: Built from scratch by Ryan Duguid. See ATTRIBUTION.md. The 138 named formulas comprise 133 LAMBDAs and 5 help tables. Describe only the helpers the workbook ships.
+- **Source Context**: Native Excel financial-modelling conventions (amortisation, corkscrews, ratios, debt sculpting) plus the 5 Australian helpers listed below.
 
-## Functional Categories
-- **Financial & Lending**: Dynamic-array loan amortisation, compound interest, IRR, corkscrews, and debt sculpting (`oz.Amortiseλ`, `oz.IRRλ`, `oz.DebtSculptFixedλ`, and related names in functions.csv).
+## Functional categories
+- **Financial and lending**: Dynamic-array loan amortisation, compound interest, IRR, corkscrews, and debt sculpting (`oz.Amortiseλ`, `oz.IRRλ`, `oz.DebtSculptFixedλ`, and related names in functions.csv).
 - **Australian helpers actually shipped**: `oz.GSTAddλ`, `oz.GSTExtractλ`, `oz.FinancialYearλ`, `oz.DiminishingValueλ`, `oz.PrimeCostλ`. GST helpers do 10% arithmetic only. The depreciation helpers are modelling schedules, not ATO Division 40 methods, and they do not implement immediate write-off or low-value pools.
 - **AASB 16 leases (lessee)**: `oz.LeaseLiabilityλ`, `oz.LeaseScheduleλ`, `oz.ROUScheduleλ`, `oz.LeaseRemeasureλ`. Present value of unpaid lease payments, the liability corkscrew, straight-line right-of-use depreciation, and remeasurement for an index or rate review at the unchanged discount rate. Arithmetic only: they do not decide the lease term, what is a lease payment, or whether an arrangement contains a lease.
 - **Ratios and array essentials**: Liquidity, leverage, margin and return ratios, plus row/column totals and averages.
 - **Not in this library**: individual marginal income tax, Medicare Levy or Surcharge, Division 7A interest, Stage 3 tax-rate cards, 13-week cash-flow builders (the standalone workbook in `templates/` is a separate template, not a function), DSO/DPO engines, lessor accounting, or the AASB 16 short-term and low-value recognition exemptions.
 
-## Architectural Invariants
+## Architectural invariants
 1. **Zero External Dependencies**: 100% native Microsoft Excel LAMBDA dynamic-array functions.
 2. **No VBA or Macros**: Contains no VBA code, XLAM add-ins, or binary dependencies.
 3. **Supported Excel Baseline**: Requires Microsoft 365 or Excel 2024 and later with `LAMBDA` and dynamic arrays. LibreOffice and older Excel versions do not evaluate the functions.

@@ -4,7 +4,7 @@ The 1280 × 640 PNG is rendered from [social-preview.svg](social-preview.svg).
 The SVG retains the existing repository card's purple palette, border and
 type hierarchy. It contains text and geometry only.
 
-Copy source: AGENTS.md and README.md at commit 7171e5418317e02d9621028d4f705c16fe3ba852; functions.csv has 138 named entries, including five help tables.
+Copy source: AGENTS.md and README.md at commit 7171e5418317e02d9621028d4f705c16fe3ba852; functions.csv has 138 named entries, including 5 help tables.
 Checked 11 September 2026. No package version, accounting rule or source-review
 date changes in this card.
 

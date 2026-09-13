@@ -6,7 +6,7 @@ This pass starts from the committed ozzit.xlsx and src/ (the post-v3.0.0 input
 recorded in ATTRIBUTION.md). It does not read the earlier workbook and does not
 go through transform_from_earlier.py.
 
-It inserts a NOTES! block after DESCRIPTION and before WEBPAGE in the two GST
+It inserts a NOTES! block after DESCRIPTION and before WEBPAGE in the 2 GST
 helpers' inline help, PeriodDiffλ style, inside the existing quoted DESCRIPTION
 string so the help stays one Excel string with ¶ rows. Anchors are help-only
 (`DESCRIPTION:   →…¶"`): the same one-line blurbs also live in AboutFinancialλ

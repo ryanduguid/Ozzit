@@ -6,11 +6,11 @@ pass writes nothing. Nothing asserted what the day counts come to, which is how
 the Actual/Actual defect that the Unreleased CHANGELOG records reached a release.
 
 The arithmetic itself lives in an Excel LAMBDA, so it cannot be executed here.
-This module closes the gap in two halves that have to agree:
+This module closes the gap in 2 halves that have to agree:
 
 1. `fraction()` restates each convention in Python, and the cases below assert it
    against year fractions worked out by hand in the comments beside them.
-2. `FormulaPinTests` asserts that the shipped LAMBDA still spells those same four
+2. `FormulaPinTests` asserts that the shipped LAMBDA still spells those same 4
    rules, comparing whitespace-normalised text against the published source. The
    builder's constants are byte-identical to `src/Financial.txt`, which is what
    `verify_sources.py` proves against the workbook, so pinning the constant pins
@@ -188,7 +188,7 @@ class ActualActualTests(unittest.TestCase):
         )
 
     def test_a_period_crossing_into_a_leap_year_splits_at_new_year(self):
-        # 1 Dec 2023 to 1 Feb 2024, two months straddling 1 January.
+        # 1 Dec 2023 to 1 Feb 2024, 2 months straddling 1 January.
         # First part: 1 Dec 2023 to 1 Jan 2024 is 31 days over 2023's 365 = 31/365.
         # Last part:  1 Jan 2024 to 1 Feb 2024 is 31 days over 2024's 366 = 31/366,
         #             because 2024 is a leap year. No whole years in between.

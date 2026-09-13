@@ -2,7 +2,7 @@
 # own formulas produce.
 #
 # The build edits the workbook as XML and has no formula engine, so anything downstream of
-# a value it changes keeps the answer it had before. Shifting the sample dates forward two
+# a value it changes keeps the answer it had before. Shifting the sample dates forward 2
 # years left 3,193 cached cells across 43 sheets holding numbers their formulas no longer
 # produce. Excel replaced them on open, so no reader ever saw one, but a file that
 # disagrees with itself cannot be checked by anything except Excel.

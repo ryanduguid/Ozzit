@@ -56,6 +56,6 @@ The recorded run printed:
 Excel=16.0 build=20326; formula==oz.GSTExtractλ(1100); value=100; text=$100.00
 ```
 
-Set the window to 1280 by 900 pixels. Keep B19 selected and the formula bar visible. Capture the contiguous rectangle from the name box and formula bar down through row 19, ending immediately after column B. The published capture used window-local x=8, y=185, width=594, height=214 pixels; the ribbon, account name and other applications are outside that crop. Different display scaling may require a different rectangle. No views were stitched and no displayed values were altered.
+Set the window to 1,280 by 900 pixels. Keep B19 selected and the formula bar visible. Capture the contiguous rectangle from the name box and formula bar down through row 19, ending immediately after column B. The published capture used window-local x=8, y=185, width=594, height=214 pixels; the ribbon, account name and other applications are outside that crop. Different display scaling may require a different rectangle. No views were stitched and no displayed values were altered.
 
 If opening requires repair, calculation raises an error or the value differs from $100.00, retain the actual diagnostic and do not publish a success image. Do not hard-code the result or mask an error. Follow [RELEASING.md](../RELEASING.md) for native acceptance of a corrected workbook; this small calculation does not replace those gates.

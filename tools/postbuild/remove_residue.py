@@ -20,7 +20,7 @@ add-ins that once edited it, and one presentation rule:
     dxfs           differential formats that no conditional format or table
                    style uses, and named cell styles that no cell format uses.
                    Both are renumbered where they are referenced.
-    freeze panes   the six demonstration sheets that run to hundreds of columns
+    freeze panes   the 6 demonstration sheets that run to hundreds of columns
                    freeze the columns up to their first data column, so the row
                    labels stay in view while the timeline scrolls.
 
@@ -189,7 +189,7 @@ def prune_styles(parts: dict[str, bytes], log: list[str]) -> None:
     # Differential formats: referenced by conditional formats (dxfId), by table styles
     # (dxfId) and by the tables themselves, whose attributes end in DxfId
     # (dataDxfId, headerRowDxfId, totalsRowDxfId and the border variants). The pass
-    # once read only the first two; the 2 September 2026 workbook dropped every
+    # once read only the first 2; the 2 September 2026 workbook dropped every
     # format the tables used and Excel refused to open it.
     dxfs_match = re.search(r'<dxfs count="(\d+)">(.*?)</dxfs>', styles, re.DOTALL)
     if dxfs_match is None:

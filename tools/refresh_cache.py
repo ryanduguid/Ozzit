@@ -4,7 +4,7 @@ Usage: python tools/refresh_cache.py [path/to/ozzit.xlsx]
 
 The build is pure zip and XML surgery with no formula engine, so every value it edits
 leaves the cells downstream of it holding an answer their formulas no longer produce.
-Shifting the sample dates forward two years left 3,193 such cells across 43 sheets. Excel
+Shifting the sample dates forward 2 years left 3,193 such cells across 43 sheets. Excel
 replaced them all on open, so no reader ever saw one, but a file that disagrees with itself
 can only be checked by opening it in Excel.
 

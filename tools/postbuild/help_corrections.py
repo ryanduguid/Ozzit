@@ -3,7 +3,7 @@
 Usage: python tools/postbuild/help_corrections.py [workbook] [src dir]
 
 Nine functions shipped disagreeing with their own inline help. Three of the
-corrections below change what a formula computes; the other six change only what
+corrections below change what a formula computes; the other 6 change only what
 the help claims.
 
 Code, in SWAPS:
@@ -16,16 +16,16 @@ Code, in SWAPS:
     CorkscrewλDV               gated its messages on an undocumented sixth
                                argument, so calling it the way the About tables
                                say returned #VALUE! instead of the diagnosis.
-                               Its two siblings never had that multiplier.
+                               Its 2 siblings never had that multiplier.
 
 Help text, also in SWAPS:
 
-    Movementλ                  its example passed three arguments to a
-                               two-parameter LAMBDA, so it could not be evaluated.
+    Movementλ                  its example passed 3 arguments to a
+                               2-parameter LAMBDA, so it could not be evaluated.
     Reversalλ                  its example printed the negated input rather than
                                the reversal, which is one period later.
     PeriodDiffλ                its example printed 1 where the formula returns 2.
-    AboutDatesλ                its DIAGNOSTICS block named ten λDV functions the
+    AboutDatesλ                its DIAGNOSTICS block named 10 λDV functions the
                                library has never declared.
     AboutRatiosλ               it listed DSIλ and DPRλ under their pre-rename
                                names.
@@ -40,12 +40,12 @@ workbook and source views out of sync.
 The workbook shows the same statements a second way, in cells no formula feeds,
 and those copies do not follow the defined names:
 
-    CELL_SWAPS     the two corrected examples are spilled onto the Reversalλ and
+    CELL_SWAPS     the 2 corrected examples are spilled onto the Reversalλ and
                    Movementλ demonstration sheets, and the cells caching that
                    spill hold the old text until Excel next recalculates. Excel
                    does refresh these, and tools/verify_cache.py is the gate that
                    proves it.
-    STRING_SWAPS   five shared strings are the whole content of a static literal
+    STRING_SWAPS   5 shared strings are the whole content of a static literal
                    cell: label and description columns typed out beside the
                    demonstrations, with no formula and under no spill anchor.
                    Excel never refreshes them, so a reader sees the pre-rename
@@ -89,7 +89,7 @@ def shared(what: str, old: str, new: str, hits: int = 1) -> Swap:
 
 # The stored form qualifies parameters with _xlpm./_xlop. and post-2007 functions
 # with _xlfn., and writes & as &amp;. src/ is the typed form. Neither is derived
-# from the other, so both anchors are spelled out.
+# from the other, so both anchors are spelt out.
 WORKBOOK_INCLUSIVE_OLD = (
     '"→", "¶")), _xlpm.Help?, OR(_xlfn.ISOMITTED(_xlpm.Value), '
     "_xlfn.ISOMITTED(_xlpm.Low), _xlfn.ISOMITTED(_xlpm.Hi)),"
@@ -100,7 +100,7 @@ WORKBOOK_INCLUSIVE_NEW = (
     "_xlfn.ISOMITTED(_xlpm.Low), _xlfn.ISOMITTED(_xlpm.Hi)),"
 )
 # IsInListλ and IsInListUλ open with the same omitted-argument block, so the
-# anchor runs on to the Result line that only the two IsBetween copies carry.
+# anchor runs on to the Result line that only the 2 IsBetween copies carry.
 SRC_INCLUSIVE_TAIL = (
     "    //  Check inputs - Omitted required arguments\n"
     "        Help?,          OR( ISOMITTED( Value),\n"
@@ -119,7 +119,7 @@ SRC_INCLUSIVE_NEW = (
 )
 
 # AboutDatesλ's DIAGNOSTICS block, row by row. The stored defined name collapses
-# the label padding src/ writes; nothing else about the two differs. The trailing
+# the label padding src/ writes; nothing else about the 2 differs. The trailing
 # "Timelineλ →" is the block's eleventh entry with its DV suffix missing, not a
 # second row for Timelineλ, so it goes with the rest. What replaces the block is
 # the empty last row every other About table ends on.
@@ -250,7 +250,7 @@ SWAPS: tuple[Swap, ...] = (
     ),
 )
 
-# The demonstration sheets cache the help each function spills. Only the two
+# The demonstration sheets cache the help each function spills. Only the 2
 # corrected example rows are cached anywhere, and each is one whole cell value.
 CELL_SWAPS: tuple[tuple[str, str, str], ...] = (
     (
@@ -271,7 +271,7 @@ CELL_SWAPS: tuple[tuple[str, str, str], ...] = (
 # entire value of every cell pointing at it. Replacing a whole element cannot
 # collide with another string or change the table's length, so the sst element's
 # count and uniqueCount stay correct; none of the new texts is already an <si>,
-# so no two entries become duplicates.
+# so no 2 entries become duplicates.
 STRING_SWAPS: tuple[tuple[str, str, str], ...] = (
     (
         "oz.FinancialRatios D11 names AboutRatiosλ",
@@ -418,7 +418,7 @@ def run(workbook: Path, src_dir: Path) -> list[str]:
     if updated_strings != parts["xl/sharedStrings.xml"]:
         parts["xl/sharedStrings.xml"] = updated_strings
         rewritten = True
-    # One correction, two stores. Staging writes every changed output under a
+    # One correction, 2 stores. Staging writes every changed output under a
     # temporary name and replaces the destinations only once all of them are on
     # disk, the way tools/sanitise_workbook.py replaces the workbook. A
     # permission, disk-space or interruption failure during staging therefore

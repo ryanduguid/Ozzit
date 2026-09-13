@@ -1,4 +1,4 @@
-"""Help-link pass: repoint two WEBPAGE rows copied from a neighbouring function.
+"""Help-link pass: repoint 2 WEBPAGE rows copied from a neighbouring function.
 
 Usage: python tools/postbuild/help_links.py [workbook] [src dir]
 

@@ -5,7 +5,7 @@ Usage: python tools/generate_selftest_examples.py [src dir] [output .ps1]
 Every function's inline help ends in worked examples a reader is meant to copy,
 and every gate that reads them checks their shape rather than their arithmetic.
 The native self-test in tools/excel_selftest.ps1 evaluates hand-written
-assertions in a real Excel, but named only 20 of the then 134 named formulas, and two
+assertions in a real Excel, but named only 20 of the then 134 named formulas, and 2
 functions shipped for several releases returning the opposite of their own
 printed example. This tool closes that gap: it reads every EXAMPLES block in
 src/, keeps each example that stands on its own (no table references, no
@@ -195,7 +195,7 @@ def number(text: str) -> tuple[Decimal, Decimal] | None:
 
     Exact decimals rather than floats: a total is the sum of the digits the help
     prints, and the committed fragment must not depend on how the running Python
-    adds floats (3.12 moved sum() to compensated summation, which changed three
+    adds floats (3.12 moved sum() to compensated summation, which changed 3
     totals and made the fragment irreproducible between interpreters).
     """
     match = NUMBER.match(text.strip())

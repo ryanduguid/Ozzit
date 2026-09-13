@@ -12,7 +12,7 @@ the native Excel gates, ensure no user Excel process is running and do not close
 or attach to one. Follow the evidence, hash and Excel-version requirements in
 `RELEASING.md`.
 
-Run the CI sequence exactly before submitting a change. The first two commands
+Run the CI sequence exactly before submitting a change. The first 2 commands
 are the `lint` job; the rest run on Python 3.10, 3.12 and 3.13. Install the git
 hooks once with `python -m pip install pre-commit && pre-commit install`; they
 run the pinned ruff check on staged files.

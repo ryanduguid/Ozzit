@@ -201,7 +201,7 @@ class RepositoryPolicyTests(unittest.TestCase):
         self.assertIn("synthetic", security.lower())
         self.assertIn("SHA256SUMS", releasing)
         self.assertIn("git archive", releasing.lower())
-        self.assertIn("exactly three files", releasing)
+        self.assertIn("exactly 3 files", releasing)
         self.assertIn("python tools/prepare_release_bundle.py create", releasing)
         self.assertIn("python tools/prepare_release_bundle.py verify", releasing)
         self.assertNotIn("Ozzit-<version>-source.zip", releasing)

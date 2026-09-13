@@ -154,7 +154,7 @@ Near 'Debt: repayments retire the principal exactly' "SUM(INDEX($sched, 3, 0))" 
 Near 'Debt: schedule ends at zero'                   "INDEX($sched, 4, 5)"      '0'     '0.0000001'
 Near 'Debt: closing = opening less repayment' `
      "SUMPRODUCT(ABS(INDEX($sched,4,0) - INDEX($sched,1,0) - INDEX($sched,3,0)))" '0' '0.0000001'
-# No new debt after period 1, so every opening must be the previous closing. Line the two
+# No new debt after period 1, so every opening must be the previous closing. Line the 2
 # rows up by dropping the first opening and the last closing rather than by position.
 Near 'Debt: each opening = the last closing' `
      "SUMPRODUCT(ABS(DROP(INDEX($sched,1,0),,1) - DROP(INDEX($sched,4,0),,-1)))" '0' '0.0000001'
@@ -165,11 +165,11 @@ Near 'Debt: balance never goes negative'             "MIN(0, MIN(INDEX($sched, 4
 # Cash well over the debt must clear it in one period, not leave twice the interest behind.
 Near 'Debt: surplus cash clears the balance' `
      "INDEX($lrv(, {1000,0}, {1800,1800}, {1.2,1.2}, {0.06,0.06}, 12), 4, 1)" '0' '0.0000001'
-# No cash must capitalise one period of interest, not two.
+# No cash must capitalise one period of interest, not 2.
 Near 'Debt: no cash capitalises interest once' `
      "LET(s, $lrv(, {1000,0}, {0,0}, {1.2,1.2}, {0.06,0.06}, 12), INDEX(s,4,1) - 1000 - INDEX(s,2,1))" '0' '0.0000001'
 
-# The other two sculpting functions pay the whole debt service, so their balances differ,
+# The other 2 sculpting functions pay the whole debt service, so their balances differ,
 # but the same roll-forward has to hold: closing = opening + interest - debt service.
 foreach ($fn in $dsf, $dsv) {
     $arg = if ($fn -eq $dsf) { '1.2, 0.06' } else { '{1.2,1.2,1.2}, {0.06,0.06,0.06}' }
@@ -228,7 +228,7 @@ Same 'PeriodStart: date on the anchor' `
      "TEXT($ps(DATE(2026,1,15), 3, DATE(2026,1,15)), `"yyyy-mm-dd`")" '2026-01-15'
 Same 'PeriodStart: help with no args' "INDEX($ps(),1,1)" 'FUNCTION:'
 
-# --- TimelineOffset. The interval is read off the timeline's first two dates and, up to
+# --- TimelineOffset. The interval is read off the timeline's first 2 dates and, up to
 # v2.3.0, converted to whole months and divided by. A daily, weekly or fortnightly
 # timeline rounds to no months at all, so every one of them returned #DIV/0!.
 $to = "oz.TimelineOffset$L"
@@ -244,7 +244,7 @@ Near 'TimelineOffset: weekly, one whole period before' "$to(DATE(2025,12,25), $w
 Near 'TimelineOffset: fortnightly, 30 days in'  "$to(DATE(2026,1,31), $fortnightly)"  '2'
 
 # A sub-monthly period is a fixed number of days, so the offset is the day difference
-# floored by that count. 200 dates at 3-day steps, starting three months before the
+# floored by that count. 200 dates at 3-day steps, starting 3 months before the
 # timeline does, so the negative side is covered too.
 foreach ($tl in @('daily', $daily, '1'), @('weekly', $weekly, '7'), @('fortnightly', $fortnightly, '14')) {
     Near "TimelineOffset: $($tl[0]) counts whole periods" `
@@ -265,8 +265,8 @@ foreach ($tl in @('monthly', '1', '15'), @('quarterly', '3', '15'), @('yearly', 
 }
 Same 'TimelineOffset: help with no args' "INDEX($to(),1,1)" 'FUNCTION:'
 
-# The two worked examples printed in the function's own help, which a reader is meant to
-# copy. Neither could be run as printed: the call was missing its two closing brackets.
+# The 2 worked examples printed in the function's own help, which a reader is meant to
+# copy. Neither could be run as printed: the call was missing its 2 closing brackets.
 Near 'TimelineOffset: documented example, inside the timeline' `
      "$to(`"15/2/2026`", EDATE(`"1/1/2026`", SEQUENCE( , 12, 0)))" '1'
 Near 'TimelineOffset: documented example, before the timeline' `
@@ -274,7 +274,7 @@ Near 'TimelineOffset: documented example, before the timeline' `
 
 
 # --- Amortise on a timeline shorter than a month. The period length is read off the first
-# two dates and rounded to whole months, which is nought below about a fortnight, and the
+# 2 dates and rounded to whole months, which is nought below about a fortnight, and the
 # next line divided by it: every daily, weekly and fortnightly call came back #DIV/0!. The
 # schedule is still solved monthly, so the test is that the same money turns up, dated into
 # the period that holds each month's start, and that the periods between hold nothing.
@@ -294,7 +294,7 @@ Near 'Amortise: daily holds the same money as monthly'       "SUM($amDy) - SUM($
 Near 'Amortise: weekly fills no extra periods' `
      "SUMPRODUCT(--(INDEX($amWk,3,0)<>0)) - SUMPRODUCT(--(INDEX($amMo,3,0)<>0))" '0'
 Near 'Amortise: weekly draws the debt down once' "SUMPRODUCT(--(INDEX($amWk,1,0)<>0)) - 1" '0'
-# Both timelines open on 1 January 2026, so month one is period one on each. Month two opens
+# Both timelines open on 1 January 2026, so month one is period one on each. Month 2 opens
 # on 1 February, 31 days on, which is the fifth week and not the second. These read row 3,
 # the interest, and row 2, the balance: both fall month on month, so a figure in the wrong
 # period is a figure that does not match. The payment row would not do, because a level
@@ -310,7 +310,7 @@ Near 'Amortise: weekly, the weeks between hold no interest' `
      "SUMPRODUCT(ABS(INDEX($amWk,3,SEQUENCE(,3,2))))" '0' '0.0000001'
 Near 'Amortise: weekly, the weeks between hold no payment' `
      "SUMPRODUCT(ABS(INDEX($amWk,4,SEQUENCE(,3,2))))" '0' '0.0000001'
-# A twenty-day period is no whole number of months either, and used to round to one and be
+# A 20-day period is no whole number of months either, and used to round to one and be
 # laid out as though it were a month long.
 Near 'Amortise: twenty-day periods hold the same money as monthly' `
      "SUM($am(10000, 0.05, 12, DATE(2026,1,1), DATE(2026,1,1) + SEQUENCE( , 20, 0) * 20)) - SUM($amMo)" '0' '0.0000001'
@@ -319,7 +319,7 @@ Near 'Amortise: twenty-day periods hold the same money as monthly' `
 $uneven = "DATE(2026,1,1) + SCAN(0, SEQUENCE( , 27, 0), LAMBDA(a,k, IF(k = 0, 0, a + IF(MOD(k,2) = 1, 5, 20))))"
 Near 'Amortise: an uneven timeline still counts each month once' `
      "SUM($am(10000, 0.05, 12, DATE(2026,1,1), $uneven)) - SUM($amMo)" '0' '0.0000001'
-# The month path is untouched. These three totals are what v2.5.0 produced.
+# The month path is untouched. These 3 totals are what v2.5.0 produced.
 $amL = "10000, 0.05, 48, DATE(2026,1,1)"
 Near 'Amortise: monthly unchanged'    "SUM($am($amL, EDATE(DATE(2026,1,1), SEQUENCE( , 24, 0))))"     '377875.31' '0.005'
 Near 'Amortise: quarterly unchanged'  "SUM($am($amL, EDATE(DATE(2026,1,1), SEQUENCE( , 8, 0) * 3)))" '132616.32' '0.005'
@@ -341,11 +341,11 @@ Near 'Depreciate: 49 weekly periods agree with 48' `
 Near 'Depreciate: weekly agrees with monthly' `
      "SUM(INDEX($dpW48,3,0)) - SUM(INDEX($dpMo,3,0))" '0' '0.005'
 Near 'Depreciate: no period is counted twice' "SUMPRODUCT(--(INDEX($dpW48,3,0)<>0)) - 12" '0'
-# Whole-month intervals are unchanged. Two, four and six months never failed: the SWITCH
-# lookups that only listed 1, 3 and 12 were read by two bindings nothing else read, so
+# Whole-month intervals are unchanged. Two, 4 and 6 months never failed: the SWITCH
+# lookups that only listed 1, 3 and 12 were read by 2 bindings nothing else read, so
 # Excel never evaluated them. They are gone rather than generalised.
 # Summing the whole block cannot see the depreciation row: BookValue is OpeningAmount less
-# Depreciation on the same period, so the two cancel cell for cell and the total collapses to
+# Depreciation on the same period, so the 2 cancel cell for cell and the total collapses to
 # the CAPEX plus twice the opening balances. Each interval is pinned twice, once on the
 # depreciation row and once on the block, so neither a changed schedule nor a changed
 # balance can pass unnoticed.
@@ -364,7 +364,7 @@ Near 'Depreciate: twenty-day periods collect a full year' `
      "SUM(INDEX($dp($dpA, DATE(2026,1,1) + SEQUENCE( , 18, 0) * 20),3,0)) - 2000" '0' '0.005'
 Near 'Depreciate: an uneven timeline collects a full year' `
      "SUM(INDEX($dp($dpA, $uneven),3,0)) - 2000" '0' '0.005'
-# A life in years is a life, not a date. Transposing arguments two and three puts 46,023
+# A life in years is a life, not a date. Transposing arguments 2 and 3 puts 46,023
 # where the life belongs and asks for 552,276 months of schedule.
 $dpTL = "EDATE(DATE(2026,1,1), SEQUENCE( , 12, 0))"
 Same 'Depreciate: a date where the life belongs is refused' `
@@ -415,7 +415,7 @@ Near 'InterestLRV: the sculpted schedule still retires the principal exactly' `
 Near 'InterestLRV: the retiring period is no longer free' `
      "INDEX($lrv(, {1000,0,0}, {2000,2000,2000}, {1,1,1}, {0.06,0.06,0.06}, 12), 2, 1) - 30" '0' '0.005'
 
-# --- The last two help-text misspellings in the library.
+# --- The last 2 help-text misspellings in the library.
 $tp = "oz.TimelinePosition$L"
 $ld = "oz.LabelDepreciate$L"
 Same 'TimelinePosition: help with no args' "INDEX($tp(),1,1)" 'FUNCTION:'
@@ -533,7 +533,7 @@ Same 'Remeasure: help with no args' "INDEX($lrem(),1,1)" 'FUNCTION:'
 
 # --- Return on equity. Net income over AVERAGE shareholders' equity, which is what the
 # help and the page it links have always said; until 6 Sep 2026 the function divided by
-# whatever it was handed. The two-argument call must return exactly what it did, because
+# whatever it was handed. The 2-argument call must return exactly what it did, because
 # the ratios worksheet caches it.
 $roe = "oz.ROE$L"
 Near 'ROE: two arguments, as cached'   "$roe(59.972, AVERAGE(251.635, 256.144))" '0.236213' '0.0000005'
@@ -571,7 +571,7 @@ Near 'DayCount: text dates'                   "INDEX($dc({`"2026-07-01`",`"2026-
 Near 'DayCount: one APR per period'           "INDEX($dc($jul, {0.05,0.06,0.07}),1,3) - 0.07*30/365" '0' '0.0000000001'
 Near 'DayCount: Actual/Actual, leap February' "INDEX($dc(EDATE(DATE(2028,1,1), {0,1,2}), 0.073, 4),1,2) - 0.073*29/366" '0' '0.0000000001'
 Near 'DayCount: weekly timeline'              "INDEX($dc(DATE(2026,7,1) + {0,7,14}, 0.073),1,3) - 0.073*7/365" '0' '0.0000000001'
-# Actual/Actual on a week that straddles 31 December: four days in one year, three in the
+# Actual/Actual on a week that straddles 31 December: 4 days in one year, 3 in the
 # next, each over its own year's length. Common to leap, then leap to common.
 Near 'DayCount: Actual/Actual, common into leap' "INDEX($dc(DATE(2023,12,28) + {0,7,14}, 0.073, 4),1,1) - 0.073*(4/365 + 3/366)" '0' '0.0000000001'
 Near 'DayCount: Actual/Actual, leap into common' "INDEX($dc(DATE(2024,12,28) + {0,7,14}, 0.073, 4),1,1) - 0.073*(4/366 + 3/365)" '0' '0.0000000001'
@@ -663,7 +663,7 @@ Fuzz 'fuzz: ROE = income / AVERAGE(open, close)' `
      'ni, RANDBETWEEN(-500,5000), ce, RANDBETWEEN(1000,90000), oe, RANDBETWEEN(1000,90000)' `
      '"ni="&ni&" ce="&ce&" oe="&oe' `
      "$roe(ni, ce, oe)" 'ni/AVERAGE(oe, ce)' '0.0000001'
-# The two rate converters invert each other, and the monthly one agrees with NOMINAL().
+# The 2 rate converters invert each other, and the monthly one agrees with NOMINAL().
 Fuzz 'fuzz: AnnualRate(PeriodRate(a)) = a' `
      'a, RANDBETWEEN(1,2000)/10000, n, CHOOSE(RANDBETWEEN(1,4),1,4,12,52)' '"a="&a&" n="&n' `
      "$ar($pr(a, n), n)" 'a' '0.000000001'
@@ -688,7 +688,7 @@ Fuzz 'fuzz: DayCount end dates match start dates' `
 Fuzz 'fuzz: DayCount Actual/360 = days/360' `
      'a, RANDBETWEEN(1,1500)/10000, y, RANDBETWEEN(2020,2030), s, RANDBETWEEN(1,12)' '"a="&a&" y="&y&" s="&s' `
      "INDEX($dc(EDATE(DATE(y,s,1), {0,1}), a, 2),1,1)" 'a*(EDATE(DATE(y,s,1),1)-DATE(y,s,1))/360' '0.000000001'
-# Where DATEDIF is right, on start days up to the 28th, the two agree.
+# Where DATEDIF is right, on start days up to the 28th, the 2 agree.
 Fuzz 'fuzz: DateDif M = DATEDIF M' `
      's, DATE(RANDBETWEEN(2000,2030), RANDBETWEEN(1,12), RANDBETWEEN(1,28)), e, s + RANDBETWEEN(0,4000)' `
      '"s="&TEXT(s,"yyyy-mm-dd")&" e="&TEXT(e,"yyyy-mm-dd")' `

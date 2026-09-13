@@ -1,4 +1,4 @@
-"""The shared postbuild reader, tested where two passes now depend on one copy."""
+"""The shared postbuild reader, tested where 2 passes now depend on one copy."""
 
 import sys
 import unittest

@@ -21,7 +21,7 @@ The same scope note is embedded as NOTES! rows in the `oz.GSTAddλ` and `oz.GSTE
 
 `oz.Depreciateλ` accepts the method codes `SLN`, `SYD`, `DB`, `DDB`, `VDB`, `DV` (diminishing value) and `PC` (prime cost).
 
-**Modelling parameters, not tax calculations.** The depreciation helpers compute multi-period asset amortisation from cost and effective life inputs and nothing else. `oz.DiminishingValueλ` amortises the remaining balance in the final period so the multi-year schedule reconciles exactly to initial cost (for example, a cost of 1,000 over five years produces 400, 240, 144, 86.40 and 129.60). `oz.Depreciateλ` allocates those annual values across a monthly timeline from each in-service date and writes the remaining book value off at disposal. None of that is a tax balancing adjustment or a deduction the ATO would accept, so apportion and adjust for tax in your own model.
+**Modelling parameters, not tax calculations.** The depreciation helpers compute multi-period asset amortisation from cost and effective life inputs and nothing else. `oz.DiminishingValueλ` amortises the remaining balance in the final period so the multi-year schedule reconciles exactly to initial cost (for example, a cost of 1,000 over 5 years produces 400, 240, 144, 86.40 and 129.60). `oz.Depreciateλ` allocates those annual values across a monthly timeline from each in-service date and writes the remaining book value off at disposal. None of that is a tax balancing adjustment or a deduction the ATO would accept, so apportion and adjust for tax in your own model.
 
 ## AASB 16 leases
 
@@ -47,7 +47,7 @@ The functions take these inputs rather than deciding them:
 
 - **The payments.** Supply all payments in order, including the measurement-date payment first when `InAdvance` is `TRUE`. Include an amount expected to be payable under a residual value guarantee, or the exercise price of a purchase option, in the final period where [AASB 16](https://standards.aasb.gov.au/aasb-16-nov-2022) paragraph 27 brings it into the lease payments. Leave out variable payments that depend on sales or usage.
 - **The rate.** Paragraph 26 discounts at the interest rate implicit in the lease where that rate can be readily determined, and at the lessee's incremental borrowing rate where it cannot. Where you have the fair value and the residual, `oz.IRRλ` over the same cash flows gives the implicit rate as an annual rate, because it wraps XIRR; convert it to the rate per period before passing it, for example `(1 + annual) ^ (1 / 12) - 1` for monthly payments.
-- **The asset's cost.** Paragraph 24 builds it from the initial liability, payments made at or before commencement less incentives received, initial direct costs, and an estimate of dismantling and restoration costs. Add those four up and pass the total as `Cost`.
+- **The asset's cost.** Paragraph 24 builds it from the initial liability, payments made at or before commencement less incentives received, initial direct costs, and an estimate of dismantling and restoration costs. Add those 4 up and pass the total as `Cost`.
 
 Together the liability and the asset produce a front-loaded expense profile. Interest falls as the liability unwinds while straight-line depreciation does not, so a lease costs more in its first period than its last even though the rent never moves.
 

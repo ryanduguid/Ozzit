@@ -1,4 +1,4 @@
-"""Rate and date helpers: four functions added in September 2026.
+"""Rate and date helpers: 4 functions added in September 2026.
 
 Usage: python tools/postbuild/rate_date_helpers.py [workbook] [src dir] [functions.csv]
 
@@ -13,7 +13,7 @@ verify_afe gates it.
 The stored form of each definition is rendered by tools/compile_sources.py from
 the published source, and that tool's own round-trip through verify_sources.py's
 comparison proves the rendering before anything is written. The About tables are
-then recompiled the same way, so the two views cannot drift.
+then recompiled the same way, so the 2 views cannot drift.
 
 Every insertion carries an asserted count. A second run reports "already applied"
 and writes nothing. A store that already holds some of the four but not all of

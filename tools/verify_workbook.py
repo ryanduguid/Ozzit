@@ -196,7 +196,7 @@ def main() -> None:
              "set fullCalcOnLoad")
 
     # docProps/app.xml repeats the sheet list, and nothing regenerates it: the build added
-    # the Australian tax worksheet to five places and not to this one, so the part disagreed
+    # the Australian tax worksheet to 5 places and not to this one, so the part disagreed
     # with the workbook until Excel rewrote it. A reader's file properties dialogue and any
     # tool that trusts app.xml sees this list, not the real one.
     if "docProps/app.xml" in parts:
