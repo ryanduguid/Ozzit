@@ -4,6 +4,16 @@
 
 ### Corrections to the v3.4.1 workbook; no functions added
 
+- `oz.Amortiseλ` refuses a supplied timeline whose dates do not advance by at least a day,
+  with a single-cell message in the same style as the depreciation life refusal. The
+  schedule is cropped to the last timeline date plus the gap before it, so a repeated or
+  out-of-order date moved that end and admitted a different number of months: 1 January to
+  1 June with 1 March repeated returned 5,772.61 of principal where the same span without
+  the repeat returns 4,937.63. `oz.Depreciateλ` is deliberately not guarded the same way:
+  it reads its period length off the first pair of dates and crops to `EDATE` of the last
+  one, neither of which a later repeat moves, and both the depreciation row and the column
+  count are unchanged by a repeat. An assertion pins that difference, and
+  `oz.DepreciateλDV` still reports such a timeline.
 - `oz.Amortiseλ`'s default timeline counts calendar months, so a month-end start no
   longer loses its final repayment month (a 14-month loan from 31 January returned 13
   columns), and a one-month loan gets a one-date monthly timeline instead of `#REF!`.
@@ -36,8 +46,8 @@
 - `oz.DateDifλ` help and the v3.4.0 entry below describe Excel's DATEDIF as a documented
   legacy compatibility function rather than an undocumented one. Microsoft publishes its
   syntax, arguments and the `MD` known issue. The warning about `MD` is unchanged.
-- Thirty-three native assertions cover the character counts and the 2 diagnostic
-  companions, so the acceptance baseline moves from 868 to 901.
+- Thirty-seven native assertions cover the character counts, the 2 diagnostic companions
+  and the timeline guard, so the acceptance baseline moves from 868 to 905.
 - The v3.4.1 entry below records the `oz.ScheduleRatesλ` and `oz.ScheduleRatesByItemsλ`
   duplicate-date change it left out, and its assertion count is the 50 that were added
   rather than 48. The published release description is unchanged and still omits both.

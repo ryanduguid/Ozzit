@@ -698,6 +698,17 @@ Amortiseλ = LAMBDA(
         FirstPeriod,        INDEX( Timeline, 1),
         Single?,            COUNTA( Timeline) < 2,
         SecondPeriod,       IF( Single?, EDATE( FirstPeriod, 1), INDEX( Timeline, 2)),
+    //  A supplied timeline has to advance. The approximate MATCH below buckets a repeated
+    //  or out-of-order date as one period, which moves money into a period the dates do not
+    //  justify instead of failing: 1 January to 1 June with 1 March repeated returned
+    //  5,772.61 of principal where the same span without the repeat returns 4,937.63. A
+    //  one-date timeline has no pair to measure. The default timeline always advances.
+        BadTimeline?,       IF( Single?, FALSE,
+                                LET( Dates, TOROW( Timeline),
+                                     MIN( DROP( Dates, , 1) - DROP( Dates, , -1)) < 1)),
+        TimelineMessage,    "Timeline must be period start dates where each date is at least a day "
+                            & "after the one before it. A repeated or out-of-order date puts one period's "
+                            & "money in another period.",
         DpP,                SecondPeriod - FirstPeriod,                 //Days Per Period
         LastGap,            IF( Single?, DpP, MAX( Timeline) - INDEX( Timeline, COUNTA( Timeline) - 1)),
         SubMonthly?,        DpP < 28,                                   //No month is shorter
@@ -798,8 +809,9 @@ Amortiseλ = LAMBDA(
                             )
                         )
                     ),
-    //  Return Result
-        CHOOSE(Help? + 1, Result, Help)
+    //  Return Result, Help, or the message
+        Return,     IF( Help?, 2, IF( BadTimeline?, 3, 1)),
+        CHOOSE( Return, Result, Help, TimelineMessage)
     ) 
 );
 
