@@ -684,16 +684,22 @@ Amortiseλ = LAMBDA(
         CvtStarts,          IF( ISNUMBER( StartDates), StartDates, DATEVALUE( StartDates)),
         Timeline,           IF( ISOMITTED( Timeline), 
                                 LET(LastMonths, EDATE( CvtStarts, Terms - 1),
-                                    MinDate,    MIN( CvtStarts), 
-                                    MaxTerm,    DATEDIF( MinDate, MAX( LastMonths), "M") + 1,
-                                    EDATE( MinDate, SEQUENCE( 1, MaxTerm, 0))), 
+                                    MinDate,    MIN( CvtStarts),
+                                    LastMonth,  MAX( LastMonths),
+                                //  Count calendar months, not DATEDIF "M": a month-end start
+                                //  lands its last EDATE in a shorter month and DATEDIF drops it.
+                                    MaxTerm,    ( YEAR( LastMonth) - YEAR( MinDate)) * MpY
+                                                + MONTH( LastMonth) - MONTH( MinDate) + 1,
+                                    EDATE( MinDate, SEQUENCE( 1, MaxTerm, 0))),
                                 Timeline
                             ),
     //  Determine timeline's interval (length of periods) and orientation (horizontal or vertical)
+    //  A one-date timeline (a one-month loan) has no second date to measure, so it is monthly.
         FirstPeriod,        INDEX( Timeline, 1),
-        SecondPeriod,       INDEX( TImeline, 2),
+        Single?,            COUNTA( Timeline) < 2,
+        SecondPeriod,       IF( Single?, EDATE( FirstPeriod, 1), INDEX( Timeline, 2)),
         DpP,                SecondPeriod - FirstPeriod,                 //Days Per Period
-        LastGap,            MAX( Timeline) - INDEX( Timeline, COUNTA( Timeline) - 1),
+        LastGap,            IF( Single?, DpP, MAX( Timeline) - INDEX( Timeline, COUNTA( Timeline) - 1)),
         SubMonthly?,        DpP < 28,                                   //No month is shorter
         MpP,                MAX( @ROUND( DpP / ADpM, 0), 1),            //Months Per Period, never nought
 
@@ -933,7 +939,7 @@ Depreciateλ = LAMBDA(
                             "PARAMETERS:    →¶" & 
                             "InitialValues  →(Required) The purchase values of each asset to depreciate¶" & 
                             "InServiceDates →(Required) The dates from which to start depreciating each asset¶" & 
-                            "LifeInYears    →(Required) The number of years with which to depreciate each asset.¶" & 
+                            "LifeInYears    →(Required) The whole number of years over which to depreciate each asset.¶" & 
                             "               →More than 0 and no more than 100. A date here is not a life:¶" & 
                             "               →the arguments read InitialValues, InServiceDates, LifeInYears, Timeline.¶" & 
                             "Timeline       →(Required) The model's timeline or a row of period start dates. ¶" & 
@@ -966,8 +972,9 @@ Depreciateλ = LAMBDA(
     //  Check inputs - a life in years must be a life, not a date
         LifeGiven,      IF( ISOMITTED( LifeInYears), 1, LifeInYears),
         LifeNums,       IFERROR( VALUE( LifeGiven), -1),
-        BadLife?,       OR( MIN( LifeNums) <= 0, MAX( LifeNums) > 100),
-        LifeMessage,    "LifeInYears must be a number of years greater than 0 and no more than 100. "
+        BadLife?,       OR( MIN( LifeNums) <= 0, MAX( LifeNums) > 100,
+                            SUMPRODUCT( --( MOD( LifeNums, 1) <> 0)) > 0),
+        LifeMessage,    "LifeInYears must be a whole number of years greater than 0 and no more than 100. "
                         & "Check the argument order: InitialValues, InServiceDates, LifeInYears, Timeline.",
     //  Set defaults and apply convenience conversions
         SalvageValues,  IF( ISOMITTED( SalvageValues), 
@@ -1323,9 +1330,13 @@ SLNλ = LAMBDA(
                             ISOMITTED( Salvage),
                             ISOMITTED( Life)
                         ),
-    //  Procedure
-        Depn,           SLN(Cost, Salvage, Life),
-        Result,         EXPAND(Depn, 1, Life, Depn),
+    //  Procedure. A fractional life keeps its whole years at the annual charge and
+    //  puts the remainder in one final part-year column, so nothing is left undepreciated.
+        Depn,           SLN( Cost, Salvage, Life),
+        Whole,          INT( Life),
+        Result,         IF( Whole = Life, EXPAND( Depn, 1, Life, Depn),
+                            IF( Whole = 0, Cost - Salvage,
+                                HSTACK( EXPAND( Depn, 1, Whole, Depn), Cost - Salvage - Depn * Whole))),
     //  Return Result or Help
         CHOOSE( Help? + 1, Result, Help)
     )
@@ -1407,9 +1418,10 @@ DBλ = LAMBDA(
                         ),
     //  Set defaults for optional values
         Months,         IF( ISOMITTED( Months), 12, Months),
-    //  Procedure
-        Depn,           DB( Cost, Salvage, Life, SEQUENCE( , Life - 1 ), Months),   
-        Result,         HSTACK( Depn, Cost - Sum(Depn) - Salvage),
+    //  Procedure. A one-year life has no preceding years to schedule, so the whole
+    //  depreciable amount is the final-year balance.
+        Depn,           DB( Cost, Salvage, Life, SEQUENCE( , MAX( Life - 1, 1)), Months),
+        Result,         IF( Life < 2, Cost - Salvage, HSTACK( Depn, Cost - SUM( Depn) - Salvage)),
     //  Return Result or Help
         CHOOSE( Help? + 1, Result, Help)
     )
@@ -1452,9 +1464,10 @@ DDBλ = LAMBDA(
                         ),
     //  Set defaults for optional values
         Factor,         IF( ISOMITTED( Factor), 2, Factor),
-    //  Procedure
-        Depn,           DDB( Cost, Salvage, Life, SEQUENCE( , Life -1), Factor),   
-        Result,         HSTACK( Depn, Cost - Sum(Depn) - Salvage),
+    //  Procedure. A one-year life has no preceding years to schedule, so the whole
+    //  depreciable amount is the final-year balance.
+        Depn,           DDB( Cost, Salvage, Life, SEQUENCE( , MAX( Life - 1, 1)), Factor),
+        Result,         IF( Life < 2, Cost - Salvage, HSTACK( Depn, Cost - SUM( Depn) - Salvage)),
     //  Return Result or Help
         CHOOSE( Help? + 1, Result, Help)
     )
@@ -1794,9 +1807,10 @@ TimelineOffsetλ = LAMBDA(
     /*  Premise:        Create a short timeline that is in sync with the model's timeline that spans 
                         from the timeline start to the date in question plus one period on either side.
                         No we can use MATCH() to find which timeline period    */
-    //  Determine timeline's interval (length of periods)
+    //  Determine timeline's interval (length of periods). A one-date timeline has no
+    //  second date to measure, so it is read as monthly.
         Period1,        INDEX( Timeline, 1),
-        Period2,        INDEX( Timeline, 2), 
+        Period2,        IF( COUNTA( Timeline) < 2, EDATE( Period1, 1), INDEX( Timeline, 2)),
         DpP,            Period2 - Period1,                    //Days Per Period
         MpP,            MAX( ROUND( DpP/30.5, 0), 1),         //Months Per Period, never zero
         SubMonthly?,    ROUND( DpP/30.5, 0) = 0,
@@ -1855,7 +1869,9 @@ TimelinePositionλ = LAMBDA(
     //  Precedure
         Rows,           ROWS(Array),
         Cols,           COLUMNS(Array),
-        Result,         IF( COLUMNS(TIMELINE) > 1, 
+    //  A one-date timeline is neither wide nor tall; read it as horizontal so the
+    //  array keeps its rows and lands in that single period.
+        Result,         IF( OR( COLUMNS( Timeline) > 1, ROWS( Timeline) = 1),
                         //  Horizontal Timeline
                             MAKEARRAY( Rows, COLUMNS( Timeline),
                                 LAMBDA(R, C,

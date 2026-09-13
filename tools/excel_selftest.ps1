@@ -294,6 +294,25 @@ Near 'Amortise: daily holds the same money as monthly'       "SUM($amDy) - SUM($
 Near 'Amortise: weekly fills no extra periods' `
      "SUMPRODUCT(--(INDEX($amWk,3,0)<>0)) - SUMPRODUCT(--(INDEX($amMo,3,0)<>0))" '0'
 Near 'Amortise: weekly draws the debt down once' "SUMPRODUCT(--(INDEX($amWk,1,0)<>0)) - 1" '0'
+# --- Default timeline edges. A month-end start lands its last EDATE in a shorter month, which
+# DATEDIF "M" under-counted, cropping the final repayment; and a one-month loan has a one-date
+# timeline with no second date to measure. Row 6 is the principal portion of each payment.
+$amEnd = "$am(1400, 0, 14, DATE(2026,1,31))"
+$amEndRate = "$am(1400, 0.12, 14, DATE(2026,1,31))"
+$amOne = "$am(100, 0, 1, DATE(2026,1,1))"
+Near 'Amortise: month-end start keeps all 14 months on the default timeline' "COLUMNS($amEnd)" '14'
+Near 'Amortise: month-end start repays the whole principal'         "ABS(SUM(INDEX($amEnd,6,0)))" '1400' '0.0000001'
+Near 'Amortise: month-end start at 12% keeps all 14 months'         "COLUMNS($amEndRate)" '14'
+Near 'Amortise: month-end start at 12% repays the whole principal'  "ABS(SUM(INDEX($amEndRate,6,0)))" '1400' '0.0000001'
+Near 'Amortise: one-month loan is a schedule, not an error'         "SUMPRODUCT(--ISERROR($amOne))" '0'
+Near 'Amortise: one-month loan repays the whole principal'          "ABS(SUM(INDEX($amOne,6,0)))" '100' '0.0000001'
+# --- Depreciation edges: a one-year life has no preceding years to schedule, and a
+# fractional straight-line life keeps its remainder instead of dropping it.
+Near 'DB: one-year life depreciates cost less salvage'   "SUM(oz.DB$L(1000, 100, 1))" '900'
+Near 'DDB: one-year life depreciates cost less salvage'  "SUM(oz.DDB$L(1000, 100, 1))" '900'
+Near 'SLN: 1.5-year life depreciates the whole cost'     "SUM(oz.SLN$L(120, 0, 1.5))" '120'
+Near 'SLN: 1.5-year life takes 2 columns'                "COLUMNS(oz.SLN$L(120, 0, 1.5))" '2'
+Near 'SLN: half-year life depreciates the whole cost'    "SUM(oz.SLN$L(120, 0, 0.5))" '120'
 # Both timelines open on 1 January 2026, so month one is period one on each. Month 2 opens
 # on 1 February, 31 days on, which is the fifth week and not the second. These read row 3,
 # the interest, and row 2, the balance: both fall month on month, so a figure in the wrong
