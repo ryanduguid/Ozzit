@@ -772,7 +772,7 @@ DateDifλ = LAMBDA(
     //  Help
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →DateDifλ(StartDate, EndDate, [Unit])¶" &
-                            "DESCRIPTION:   →Whole years, months or days between two dates, and the remainders.¶NOTES!         →Excel's DATEDIF is undocumented and its MD unit can return a negative¶               →or wrong day count around month ends. This counts a month as complete¶               →when EDATE() of the start date has arrived, so a month after 31 January¶               →is the last day of February, and takes every remainder from that same¶               →anniversary. A reversed range or an unknown unit returns #NUM!.¶" &
+                            "DESCRIPTION:   →Whole years, months or days between two dates, and the remainders.¶NOTES!         →Excel documents DATEDIF as a legacy compatibility function and warns¶               →its MD unit can return a negative or wrong day count. This counts a¶               →month as complete when EDATE() of the start date has arrived, so a¶               →month after 31 January is the last day of February, and takes every¶               →remainder from there. A reversed range or an unknown unit returns #NUM!.¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
                             "VERSION:       →6 Sep 2026¶" &
                             "PARAMETERS:    →¶" &

@@ -23,9 +23,10 @@ remappable, so a future in-band addition to the palette cannot drift on reruns.
 
 One honest limitation: the band remap is the v3.1.0 formula, which is not a fixed
 point for high-saturation salmon inputs (the output can stay above the band's
-saturation gate). Against a true v3.0.0-state workbook the pass reproduces v3.1.0
-once; the guard then correctly blocks a second application. No v3.0.0 workbook is
-available to test that path, so it is documented rather than asserted.
+saturation gate). The guard runs inside recolour, before the workbook is written, so
+such an input is rejected on its first run and nothing is written at all, rather than
+being converted once and refused on a later pass. No v3.0.0 workbook is available to
+show how that input behaved there, so this is documented rather than asserted.
 
 Pure XML surgery: no COM, no recalculation.
 """

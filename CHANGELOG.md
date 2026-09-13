@@ -15,18 +15,61 @@
 - `oz.OperatingRatioλ` help no longer lists COGS under OperatingExpenses, which the
   formula adds separately, and `oz.OperatingMarginλ` help defines operating earnings as
   revenue less COGS and the other operating expenses.
+- `oz.CountCλ` and `oz.CountCUλ` return 0 for empty text and count a comma when a comma
+  is the character asked for, instead of `#VALUE!` for either. A single character is now
+  taken as itself rather than as a comma separated list, and the help says so.
+- `oz.AmortiseλDV` accepts a zero APR and a sub-monthly timeline, and `oz.DepreciateλDV`
+  accepts a sub-monthly timeline. Both parents calculate those inputs, so the companions
+  were sending readers to change data that was already right. Each still refuses a
+  negative APR and a timeline that does not advance, with wording that matches.
+  `oz.DepreciateλDV` reads LifeInYears the way its parent does, so a fractional life is
+  refused by the companion instead of passing a check its parent then fails.
+- Both companions measure every consecutive timeline gap rather than the first one alone.
+  A date repeated later in the row passed the check while the parent's approximate
+  `MATCH` buckets both copies into one period: a 3-date timeline with the second date
+  repeated returned TRUE from each companion and repaid 2,453.42 of a 10,000 loan.
+- `oz.DSIλ` help prints the 365-day multiplier its formula applies and states that the
+  cost of goods sold is a full year's.
+- `oz.PriceToBookRatioλ` help names its denominator as tangible book value per share and
+  points at `oz.BVPSλ`, which keeps intangible assets; the `oz.BVPSλ` help says so too.
+  Neither calculation changed.
+- `oz.DateDifλ` help and the v3.4.0 entry below describe Excel's DATEDIF as a documented
+  legacy compatibility function rather than an undocumented one. Microsoft publishes its
+  syntax, arguments and the `MD` known issue. The warning about `MD` is unchanged.
+- Thirty-three native assertions cover the character counts and the 2 diagnostic
+  companions, so the acceptance baseline moves from 868 to 901.
+- The v3.4.1 entry below records the `oz.ScheduleRatesλ` and `oz.ScheduleRatesByItemsλ`
+  duplicate-date change it left out, and its assertion count is the 50 that were added
+  rather than 48. The published release description is unchanged and still omits both.
+- The v3.1.0 entry gives the sizes of the files that exist, 439,008 bytes in the tag and
+  439,056 bytes in the uploaded asset, and marks its earlier 440,590 as unsupported. The
+  v2.6.0 entry dates the whole-repository MIT change to v3.2.0, which is where `LICENCE`
+  and `ATTRIBUTION.md` agree it happened.
+- `verify_sources.py` normalises the stored-form markers outside string literals only. It
+  read `"[0]!FY"` and `"FY"` as the same definition, so a changed help string could pass.
+- `verify_index.py` and `verify_previous_names.py` reject a duplicate function row rather
+  than letting a later row replace an earlier one. A contradictory duplicate passed both.
+- `tools/postbuild/rate_date_helpers.py` writes the source modules inside its recovery
+  block, so an interrupted run leaves none of them applied, and it reads the supplied
+  index before reporting the pass already applied. An index missing one of the 4 rows
+  exited 0 and left it missing.
+- Two comments corrected: the palette pass rejects an unstable colour before its first
+  write, not on a second run; and the self-test's uneven timeline alternates 5 and 20
+  days, with `InterestLRVλ` solving in closed form rather than iterating.
 
 ## v3.4.1, 13 September 2026, Actual/Actual day counts and stricter debt-sculpting inputs
 
 ### Corrections to the v3.4.0 workbook; no functions added
 
-Two calculation corrections and one help-text change to the v3.4.0 workbook, with
+Three calculation corrections and one help-text change to the v3.4.0 workbook, with
 tooling, test and documentation work around them. `oz.DayCountRateλ` under
 Actual/Actual now divides each calendar year's days by that year's length, including
 periods that span several years; v3.4.0 returned 0.30027 rather than 0.3 for 3
 whole calendar years at 10%. The 2 variable debt-sculpting functions refuse
-malformed inputs instead of dropping rows. The lease guidance distinguishes nominal
-and effective annual rates. The library is still 133 LAMBDAs and 5 help tables.
+malformed inputs instead of dropping rows. `oz.ScheduleRatesλ` and
+`oz.ScheduleRatesByItemsλ` take the last of several rates sharing one effective date
+rather than the first. The lease guidance distinguishes nominal and effective annual
+rates. The library is still 133 LAMBDAs and 5 help tables.
 
 - Ruff checks `E4`, `E7`, `E9`, `F` and `I` rather than `E9` and `F82` alone, so
   unused imports, unused locals, loose statement style and import order are gates
@@ -64,9 +107,14 @@ and effective annual rates. The library is still 133 LAMBDAs and 5 help tables.
   The source and the rate-helper builder carry the same correction.
 - The cash-flow template averages closing-cash variances over the same fully
   actualised weeks it counts. Partial weeks no longer inflate the average.
-- Added 48 native library assertions and a separate 8-case native cash-flow
+- `oz.ScheduleRatesλ` and `oz.ScheduleRatesByItemsλ` search their effective dates in
+  reverse, so where several rates carry the same effective date the last one wins.
+  v3.4.0 returned the first. Two assertions cover it. Rates with distinct effective
+  dates are unaffected.
+- Added 50 native library assertions and a separate 8-case native cash-flow
   gate covering blank, zero, partial and complete actuals. The template gate closes
-  without saving and checks that the workbook bytes are unchanged.
+  without saving and checks that the workbook bytes are unchanged. The acceptance
+  baseline moves from 818 assertions to 868, all 50 of them hand-written.
 
 - The cached-value verifier now fails when any cached cell is missing from the
   Excel dump, even when the total remains above the minimum and every sheet is
@@ -113,8 +161,9 @@ No worksheet was added or changed, so all cached values are the ones v3.3.0 ship
   functions, `oz.DebtSculptVariableλ` and `oz.DebtSculptVariableLRVλ`, take the
   result through a new optional PeriodRates argument, and when it is given APR and
   MonthsPerPeriod are ignored.
-- **`oz.DateDifλ(StartDate, EndDate, [Unit])`.** Excel's DATEDIF is undocumented
-  and its MD unit can return a negative or wrong count around month ends. This one
+- **`oz.DateDifλ(StartDate, EndDate, [Unit])`.** Excel documents DATEDIF as a
+  legacy compatibility function and warns that its MD unit can return a negative
+  or wrong count around month ends. This one
   counts a month as complete when EDATE() of the start date has arrived and takes
   every remainder from that same anniversary. Where DATEDIF is right, on start
   days up to the 28th, the self-test proves the 2 agree on random dates.
@@ -541,7 +590,9 @@ baseline that grew around them.
   styling additions cost slightly more than the stripped parts saved. Against the copy
   in circulation that was last saved through Excel, which carried all of the above, it
   was 13.6% smaller. The zip-writer fix below and the later help edits bring the
-  released workbook to 440,590 bytes.
+  workbook in the v3.1.0 tag to 439,008 bytes; the uploaded release asset is 439,056
+  bytes. This entry first gave 440,590 bytes, which matches neither file and whose
+  provenance has not been established.
 
 - **`RangeToDAλ`, `RangeToDAEλ` and `RangeToDAUλ` keep OFFSET, on purpose.** OFFSET is
   volatile and replacing it looked like the obvious speed win, but INDEX cannot do what
@@ -744,8 +795,9 @@ baseline that grew around them.
 
 - **A licence, for the parts of this repository that can carry one.** [LICENCE](LICENCE) is
   MIT and covers `tools/`, `.github/`, the Markdown files and `assets/`. It does not extend
-  to `nabla.xlsx`, `src/` or `functions.csv`, which were carved out at the time. v3.0.0
-  removed the carve-out; MIT now covers the whole repository.
+  to `nabla.xlsx`, `src/` or `functions.csv`, which were carved out at the time. v3.2.0
+  removed the carve-out; MIT now covers the whole repository. v3.0.0 and v3.1.0 still
+  recorded it, in `LICENCE` and `ATTRIBUTION.md` respectively.
 
   `ATTRIBUTION.md` now also records the build input. The earlier workbook is not in this
   repository and cannot be, so it names the file's size, its sha256 and its part count,

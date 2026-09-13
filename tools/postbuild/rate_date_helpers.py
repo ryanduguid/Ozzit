@@ -25,6 +25,7 @@ value moves and verify_cache.py is unaffected.
 
 from __future__ import annotations
 
+import csv
 import sys
 import zipfile
 from pathlib import Path
@@ -215,7 +216,7 @@ DateDifλ = LAMBDA(
     //  Help
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →DateDifλ(StartDate, EndDate, [Unit])¶" &
-                            "DESCRIPTION:   →Whole years, months or days between two dates, and the remainders.¶NOTES!         →Excel's DATEDIF is undocumented and its MD unit can return a negative¶               →or wrong day count around month ends. This counts a month as complete¶               →when EDATE() of the start date has arrived, so a month after 31 January¶               →is the last day of February, and takes every remainder from that same¶               →anniversary. A reversed range or an unknown unit returns #NUM!.¶" &
+                            "DESCRIPTION:   →Whole years, months or days between two dates, and the remainders.¶NOTES!         →Excel documents DATEDIF as a legacy compatibility function and warns¶               →its MD unit can return a negative or wrong day count. This counts a¶               →month as complete when EDATE() of the start date has arrived, so a¶               →month after 31 January is the last day of February, and takes every¶               →remainder from there. A reversed range or an unknown unit returns #NUM!.¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
                             "VERSION:       →6 Sep 2026¶" &
                             "PARAMETERS:    →¶" &
@@ -344,6 +345,28 @@ def workbook_state(book: str) -> str:
     return book_state(book, QUALIFIED)
 
 
+def index_state(index: Path | None) -> str | None:
+    """"absent", "applied", or None when no index is supplied, raising on a partial one.
+
+    functions.csv is one of the stores this pass writes, so it is one of the stores the
+    applied-or-absent check has to read. Left out, an index missing one of the four rows
+    was reported as already applied and the missing row was never written.
+    """
+    if index is None or not index.is_file():
+        return None
+    with index.open(encoding="utf-8-sig", newline="") as handle:
+        listed = {row.get("function", "") for row in csv.DictReader(handle)}
+    present = sum(1 for name in QUALIFIED if name in listed)
+    if present == 0:
+        return "absent"
+    if present == len(QUALIFIED):
+        return "applied"
+    raise ValueError(
+        f"{index.name} holds {present} of {len(QUALIFIED)} helper rows; "
+        "it is neither state this pass recognises"
+    )
+
+
 def add_to_src(module: str, text: str) -> str:
     """The module with its About rows inserted after the anchor and its blocks appended."""
     anchor, heading, _width = ABOUT[module]
@@ -396,6 +419,9 @@ def run(workbook: Path, src: Path, index: Path | None) -> list[str]:
 
     states = {module: src_state(module, text) for module, text in texts.items()}
     states["workbook"] = workbook_state(book)
+    supplied_index = index_state(index)
+    if supplied_index is not None:
+        states[index.name if index is not None else "index"] = supplied_index
     if len(set(states.values())) != 1:
         raise ValueError(
             "the stores disagree (%s); the views must not be applied separately"
@@ -404,20 +430,20 @@ def run(workbook: Path, src: Path, index: Path | None) -> list[str]:
     if states["workbook"] == "applied":
         return []
 
-    changed: list[str] = []
-    for module in MODULES:
-        write_text(src / f"{module}.txt", add_to_src(module, texts[module]))
-        changed.append(f"src/{module}.txt")
-
     # Rendered from the published source and proven against it, the way every
     # compiled definition is; then the About tables catch up through the same tool.
     # The compiler reads src/ from disk, so src/ is written first and the index next;
-    # the workbook, which is what marks the pass applied, is written last. If anything
-    # before that fails, src/ and the index go back to what they were rather than
-    # staying half-applied.
+    # the workbook, which is what marks the pass applied, is written last. Every write
+    # is inside the recovery block, including the first: a failure part-way through the
+    # source loop used to leave the modules already written standing, so the pass then
+    # read one module as applied and another as absent and refused to run at all.
+    changed: list[str] = []
     index_before = index.read_bytes() if index is not None and index.is_file() else None
     indexed = False
     try:
+        for module in MODULES:
+            write_text(src / f"{module}.txt", add_to_src(module, texts[module]))
+            changed.append(f"src/{module}.txt")
         compiled = compile_sources(src)
         book = insert_names(book, [c for c in compiled if c.name in QUALIFIED])
         book, _recompiled = apply(book, compiled)

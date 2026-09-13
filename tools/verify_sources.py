@@ -45,6 +45,7 @@ OPENERS, CLOSERS = "({[", ")}]"
 NAME = re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_.λ]*)\s*=\s*(.+)$", re.DOTALL)
 OPTIONAL = re.compile(r"_xlop\.([A-Za-z_][A-Za-z0-9_]*\??)")   # ? is legal in a parameter name
 PREFIX = re.compile(r"_xl[a-z]+\.", re.IGNORECASE)
+PLACEHOLDER = re.compile("\x00(\\d+)\x00")            # a held-aside string literal
 
 failures: list[str] = []
 
@@ -151,20 +152,27 @@ def canonical(formula: str) -> str:
     A string literal is kept exactly: its whitespace is its own text, so "a b" and
     "ab" are different definitions and a source that differs from the workbook only
     inside a literal is still a mismatch.
+
+    Every normalisation is therefore applied to the code between the literals and to
+    nothing else. Each literal is held aside behind a placeholder while the stored
+    markers go and SINGLE() is unwrapped, then put back verbatim. Run over the whole
+    text instead, the marker strip erases meaningful characters inside a literal, so
+    "[0]!FY" reads as "FY" and a changed help string passes as unchanged.
     """
-    formula = OPTIONAL.sub(r"[\1]", formula)          # BEFORE the generic prefix strip
-    formula = PREFIX.sub("", formula).replace("[0]!", "")
-    parts, i, n = [], 0, len(formula)
-    while i < n:
-        c = formula[i]
-        if c == '"':
-            lit, i = read_string(formula, i)
-            parts.append(lit)
+    parts: list[str] = []
+    literals: list[str] = []
+    for is_string, chunk in split_literals(formula):
+        if is_string:
+            parts.append(f"\x00{len(literals)}\x00")
+            literals.append(chunk)
             continue
-        if not c.isspace():
-            parts.append(c.upper())
-        i += 1
-    return unwrap_single("".join(parts))
+        chunk = OPTIONAL.sub(r"[\1]", chunk)          # BEFORE the generic prefix strip
+        chunk = PREFIX.sub("", chunk).replace("[0]!", "")
+        parts.append("".join(c.upper() for c in chunk if not c.isspace()))
+    # SINGLE() can wrap an expression containing a literal, so it is unwrapped over the
+    # placeholders rather than per chunk; the placeholders carry no brackets of their own.
+    unwrapped = unwrap_single("".join(parts))
+    return PLACEHOLDER.sub(lambda m: literals[int(m.group(1))], unwrapped)
 
 
 def qualify(formula: str, module: str, names: Collection[str]) -> str:

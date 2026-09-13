@@ -93,6 +93,18 @@ def main() -> int:
             "description": description,
         }
 
+    # Keying the rows first would let a later duplicate replace an earlier one, so a
+    # contradictory row could sit in the published index behind a valid one and every
+    # field check would still pass. The name is the index's identifier: reject a repeat
+    # before anything reads the fields.
+    counts: dict[str, int] = {}
+    for row in rows:
+        name = row.get("function", "")
+        counts[name] = counts.get(name, 0) + 1
+    for name, count in sorted(counts.items()):
+        if count > 1:
+            failures.append(f"{name} appears {count} times in {INDEX.name}")
+
     actual = {row.get("function", ""): row for row in rows}
     for name in sorted(set(expected) - set(actual)):
         failures.append(f"{name} is in the workbook but missing from functions.csv")
@@ -111,7 +123,7 @@ def main() -> int:
             print(f"  - {item}")
         return 1
     print(
-        f"OK: all {len(expected)} functions.csv rows match the workbook and source modules"
+        f"OK: all {len(rows)} functions.csv rows match the workbook and source modules"
     )
     return 0
 
