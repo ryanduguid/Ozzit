@@ -8,13 +8,13 @@ once; AboutFinancialλ and comment= must keep the one-line descriptions.
 
 import importlib.util
 import re
-import shutil
 import subprocess
 import sys
-import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+
+from .pass_contract import PassContractMixin
 
 ROOT = Path(__file__).resolve().parents[3]
 TOOLS = ROOT / "tools"
@@ -43,27 +43,8 @@ def defined_name(book: str, name: str) -> str:
     return match.group(0)
 
 
-class GstHelpTextTests(unittest.TestCase):
-    def setUp(self):
-        self.directory = Path(tempfile.mkdtemp(prefix="ozzit-gst-help-"))
-
-    def tearDown(self):
-        shutil.rmtree(self.directory, ignore_errors=True)
-
-    def _run(self, workbook, src_dir):
-        return subprocess.run(
-            [sys.executable, str(PASS_SCRIPT), str(workbook), str(src_dir)],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-
-    def _copy_tree(self):
-        workbook = self.directory / "ozzit.xlsx"
-        shutil.copy2(WORKBOOK, workbook)
-        src = self.directory / "src"
-        shutil.copytree(ROOT / "src", src)
-        return workbook, src
+class GstHelpTextTests(PassContractMixin, unittest.TestCase):
+    PASS_SCRIPT = PASS_SCRIPT
 
     def test_notes_label_is_padded_to_15_and_has_no_raw_ampersand(self):
         self.assertTrue(NOTES.startswith("NOTES!         →"))
@@ -82,16 +63,6 @@ class GstHelpTextTests(unittest.TestCase):
         sanitise = instructions.index("python tools/sanitise_workbook.py ozzit.xlsx")
         self.assertLess(gst, afe)
         self.assertLess(afe, sanitise)
-
-    def test_pass_is_byte_noop_on_current_workbook(self):
-        workbook, src = self._copy_tree()
-        before = workbook.read_bytes()
-        src_before = {p.name: p.read_bytes() for p in src.glob("*.txt")}
-        result = self._run(workbook, src)
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn("already", result.stdout.lower())
-        self.assertEqual(workbook.read_bytes(), before)
-        self.assertEqual({p.name: p.read_bytes() for p in src.glob("*.txt")}, src_before)
 
     def test_pass_does_not_rewrite_about_or_comment(self):
         workbook, src = self._copy_tree()

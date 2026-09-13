@@ -6,12 +6,10 @@ workbook it must be a byte no-op; on a workbook reverted to the v3.0.0 text it
 must apply each swap exactly the recorded number of times.
 """
 
-import shutil
-import subprocess
-import sys
-import tempfile
 import unittest
 from pathlib import Path
+
+from .pass_contract import PassContractMixin
 
 ROOT = Path(__file__).resolve().parents[3]
 TOOLS = ROOT / "tools"
@@ -25,37 +23,8 @@ EXAMPLE_SWAPS = [
 ]
 
 
-class Fy27HelpTextTests(unittest.TestCase):
-    def setUp(self):
-        self.directory = Path(tempfile.mkdtemp(prefix="ozzit-postbuild-"))
-
-    def tearDown(self):
-        shutil.rmtree(self.directory, ignore_errors=True)
-
-    def _run(self, workbook, src_dir):
-        return subprocess.run(
-            [sys.executable, str(PASS_SCRIPT), str(workbook), str(src_dir)],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-
-    def _copy_tree(self):
-        workbook = self.directory / "ozzit.xlsx"
-        shutil.copy2(WORKBOOK, workbook)
-        src = self.directory / "src"
-        shutil.copytree(ROOT / "src", src)
-        return workbook, src
-
-    def test_pass_is_byte_noop_on_current_workbook(self):
-        workbook, src = self._copy_tree()
-        before = workbook.read_bytes()
-        src_before = {p.name: p.read_bytes() for p in src.glob("*.txt")}
-        result = self._run(workbook, src)
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn("already", result.stdout.lower())
-        self.assertEqual(workbook.read_bytes(), before)
-        self.assertEqual({p.name: p.read_bytes() for p in src.glob("*.txt")}, src_before)
+class Fy27HelpTextTests(PassContractMixin, unittest.TestCase):
+    PASS_SCRIPT = PASS_SCRIPT
 
     def test_pass_transforms_v30_text_and_is_length_preserving(self):
         workbook, src = self._copy_tree()

@@ -10,13 +10,12 @@ store whose anchors do not match must fail rather than write a partial result.
 
 import importlib.util
 import shutil
-import subprocess
-import sys
-import tempfile
 import unittest
 import zipfile
 from pathlib import Path
 from unittest import mock
+
+from .pass_contract import PassContractMixin
 
 ROOT = Path(__file__).resolve().parents[3]
 TOOLS = ROOT / "tools"
@@ -32,27 +31,8 @@ CELL_SWAPS = _mod.CELL_SWAPS
 STRING_SWAPS = _mod.STRING_SWAPS
 
 
-class HelpCorrectionsTests(unittest.TestCase):
-    def setUp(self):
-        self.directory = Path(tempfile.mkdtemp(prefix="ozzit-help-corrections-"))
-
-    def tearDown(self):
-        shutil.rmtree(self.directory, ignore_errors=True)
-
-    def _run(self, workbook, src_dir):
-        return subprocess.run(
-            [sys.executable, str(PASS_SCRIPT), str(workbook), str(src_dir)],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-
-    def _copy_tree(self):
-        workbook = self.directory / "ozzit.xlsx"
-        shutil.copy2(WORKBOOK, workbook)
-        src = self.directory / "src"
-        shutil.copytree(ROOT / "src", src)
-        return workbook, src
+class HelpCorrectionsTests(PassContractMixin, unittest.TestCase):
+    PASS_SCRIPT = PASS_SCRIPT
 
     def _rewrite_workbook(self, workbook, parts):
         with zipfile.ZipFile(workbook, "w", zipfile.ZIP_DEFLATED) as archive:
@@ -128,16 +108,6 @@ class HelpCorrectionsTests(unittest.TestCase):
         result = self._run(workbook, src)
         self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("sharedStrings", result.stdout + result.stderr)
-
-    def test_pass_is_byte_noop_on_current_workbook(self):
-        workbook, src = self._copy_tree()
-        before = workbook.read_bytes()
-        src_before = {p.name: p.read_bytes() for p in src.glob("*.txt")}
-        result = self._run(workbook, src)
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn("already", result.stdout.lower())
-        self.assertEqual(workbook.read_bytes(), before)
-        self.assertEqual({p.name: p.read_bytes() for p in src.glob("*.txt")}, src_before)
 
     def test_each_swap_is_reapplied_to_a_reverted_pair_of_stores(self):
         for swap in SWAPS:

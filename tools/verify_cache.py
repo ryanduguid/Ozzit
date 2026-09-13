@@ -28,6 +28,8 @@ if hasattr(sys.stdout, "reconfigure"):
 
 WORKBOOK = sys.argv[1] if len(sys.argv) > 1 else "ozzit.xlsx"
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+from sanitise_workbook import column_number  # noqa: E402
 
 # Below this the run proved nothing and the pass would be vacuous.
 FLOOR = 15000
@@ -42,13 +44,6 @@ CellKey = tuple[int, int, int]
 KIND_RE = re.compile(r't="([^"]+)"')
 INLINE_T_RE = re.compile(r"<t[^>]*>(.*?)</t>", re.S)
 V_RE = re.compile(r"<v>(.*?)</v>", re.S)
-
-
-def column(letters: str) -> int:
-    n = 0
-    for ch in letters:
-        n = n * 26 + ord(ch) - 64
-    return n
 
 
 def cached_values(
@@ -103,7 +98,7 @@ def cached_values(
                 else:
                     value = raw
             if value is not None:
-                out[(pos, int(m.group(2)), column(m.group(1)))] = value
+                out[(pos, int(m.group(2)), column_number(m.group(1)))] = value
     return out, names
 
 
