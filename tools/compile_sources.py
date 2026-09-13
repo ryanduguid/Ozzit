@@ -53,7 +53,7 @@ from xml.sax.saxutils import escape as xml_escape
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from sanitise_workbook import read_text, write_deterministic  # noqa: E402
 from verify_index import index_fields  # noqa: E402
-from verify_sources import NAME, canonical, qualify, statements  # noqa: E402
+from verify_sources import NAME, canonical, qualify, read_string, statements  # noqa: E402
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -144,24 +144,6 @@ def header_comments(text: str) -> dict[str, str]:
 # --------------------------------------------------------------------------- #
 
 
-def read_string(text: str, i: int) -> tuple[str, int]:
-    """Copy a double-quoted literal verbatim, honouring the "" escape."""
-    lit, n = ['"'], len(text)
-    i += 1
-    while i < n:
-        if text[i] == '"':
-            if i + 1 < n and text[i + 1] == '"':
-                lit.append('""')
-                i += 2
-                continue
-            lit.append('"')
-            i += 1
-            break
-        lit.append(text[i])
-        i += 1
-    return "".join(lit), i
-
-
 def split_literals(text: str) -> list[tuple[bool, str]]:
     """Alternating (is_string, chunk) pairs, honouring the "" escape."""
     out: list[tuple[bool, str]] = []
@@ -230,15 +212,6 @@ def arguments(text: str, start: int) -> list[str]:
 
 def is_identifier(text: str) -> bool:
     return re.fullmatch(r"[A-Za-z_][A-Za-z0-9_λ]*\??", text.strip()) is not None
-
-
-def declaration_params(code: str) -> list[str]:
-    """The parameters the outer LAMBDA declares, in order, brackets dropped."""
-    head = code.index("LAMBDA(") + len("LAMBDA(")
-    params = []
-    for argument in arguments(code, head)[:-1]:
-        params.append(argument.strip().strip("[]").strip())
-    return params
 
 
 def optional_params(code: str) -> set[str]:

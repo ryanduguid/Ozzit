@@ -174,10 +174,10 @@ class WorkbookFixtureTests(unittest.TestCase):
 
 class CacheComparisonTests(unittest.TestCase):
     def test_column_converts_a1_letters_to_one_based_numbers(self):
-        self.assertEqual(verify_cache.column("A"), 1)
-        self.assertEqual(verify_cache.column("Z"), 26)
-        self.assertEqual(verify_cache.column("AA"), 27)
-        self.assertEqual(verify_cache.column("ZZ"), 702)
+        self.assertEqual(verify_cache.column_number("A"), 1)
+        self.assertEqual(verify_cache.column_number("Z"), 26)
+        self.assertEqual(verify_cache.column_number("AA"), 27)
+        self.assertEqual(verify_cache.column_number("ZZ"), 702)
 
     def test_fold_normalises_all_physical_newline_forms(self):
         self.assertEqual(verify_cache.fold("a\r\nb\rc\nd"), r"a\nb\nc\nd")
