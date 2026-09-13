@@ -1,7 +1,7 @@
 ## Modules
 
-Every function shares one prefix, `oz.`, so a call is three characters of namespace
-rather than eight. The groupings below describe what the library covers; they are not
+Every function shares one prefix, `oz.`, so a call is 3 characters of namespace
+rather than 8. The groupings below describe what the library covers; they are not
 part of the name.
 
 | Group | Named formulas | Covers |
@@ -13,11 +13,11 @@ part of the name.
 | Utilities | 17 | Standalone copies of the Essentials functions, each carrying a `U` suffix |
 | Debt | 5 | Debt sculpting: amortisation schedule, fixed and variable DSCR sculpting, sculpting interest |
 
-Where two groups shipped a function of the same name, the fuller implementation keeps
+Where 2 groups shipped a function of the same name, the fuller implementation keeps
 the plain name and the other takes a one-letter tag: `B` for debt, `E` for essentials,
 `U` for utilities. So `oz.Amortiseλ` is the financial amortisation schedule and
 `oz.AmortiseBλ` the debt one; `oz.SumRowsλ` and `oz.SumRowsUλ` are the essentials and
-utilities copies. The five About tables take words instead: `oz.AboutFinancialλ`,
+utilities copies. The 5 About tables take words instead: `oz.AboutFinancialλ`,
 `oz.AboutRatiosλ`, and so on.
 
 ## Worksheet catalogue
@@ -27,7 +27,7 @@ utilities copies. The five About tables take words instead: `oz.AboutFinancialλ
 | `oz.CountDOWλ` | Count instances of a specific day of the week between two dates |
 | `oz.IsBetweenλ` | Determine if a value is between a lower and upper limit |
 | `oz.IsOccurrenceDateλ` | Determine if a date passed is when a potentially repeating event happens |
-| `oz.OverLapDaysλ` | Return how many days overlap two period ranges. |
+| `oz.OverLapDaysλ` | Return how many days overlap 2 period ranges. |
 | `oz.Periodsλ` | Determine the number of periods from Starts to Ends inclusive |
 | `oz.PeriodLabelλ` | Creates a label for a date based on period interval |
 | `oz.ScheduleRatesλ` | Schedule rates that persist until replaced in a timeline. |
@@ -71,17 +71,17 @@ utilities copies. The five About tables take words instead: `oz.AboutFinancialλ
 | `oz.FinancialRatios` | Three dozen financial Ratios |
 
 The other 94 named formulas have no dedicated worksheet: 90 LAMBDA functions
-and four About tables. They include all of Ratios, Utilities, Debt and the AASB 16
+and 4 About tables. They include all of Ratios, Utilities, Debt and the AASB 16
 lease helpers. Call a LAMBDA with no arguments for inline help; reference an About
 table by name without parentheses. `oz.FinancialRatios` demonstrates the ratio
 suite on one worksheet, and [functions.csv](../functions.csv) indexes all 138 names.
 
-## Dynamic-Array Formula Walkthrough
+## Dynamic-array formula walkthrough
 
 Ozzit functions use native Excel dynamic arrays to spill full calculation schedules from a single formula cell:
 
-### 1. Loan Amortisation (`=oz.Amortiseλ(Principals, APRs, Terms, StartDates, [Timeline])`)
-Spills a six-row corkscrew per loan across the model's timeline, one column per period: debt issued, opening balance, interest, payment, closing balance and the principal repaid. Payments are monthly; on a quarterly or annual timeline the months are grouped, and on a weekly or daily one each month lands in the period holding its start. `oz.LabelAmortiseλ` labels the rows and `oz.SumAmortiseλ` totals them. For a single 100,000 loan at 5% over 60 months from 1 July 2026, with the timeline omitted, the block runs:
+### 1. Loan amortisation (`=oz.Amortiseλ(Principals, APRs, Terms, StartDates, [Timeline])`)
+Spills a 6-row corkscrew per loan across the model's timeline, one column per period: debt issued, opening balance, interest, payment, closing balance and the principal repaid. Payments are monthly; on a quarterly or annual timeline the months are grouped, and on a weekly or daily one each month lands in the period holding its start. `oz.LabelAmortiseλ` labels the rows and `oz.SumAmortiseλ` totals them. For a single 100,000 loan at 5% over 60 months from 1 July 2026, with the timeline omitted, the block runs:
 
 | Row | Jul 2026 | Aug 2026 | Sep 2026 | ... |
 | :--- | ---: | ---: | ---: | :---: |
@@ -92,14 +92,14 @@ Spills a six-row corkscrew per loan across the model's timeline, one column per 
 | Closing balance | 98,529.54 | 97,052.96 | 95,570.22 | ... |
 | Principal repaid | 1,470.46 | 1,476.58 | 1,482.73 | ... |
 
-### 2. Diminishing Value Depreciation (`=oz.DiminishingValueλ(Cost, Life)`)
+### 2. Diminishing value depreciation (`=oz.DiminishingValueλ(Cost, Life)`)
 Calculates diminishing balance at 200% straight-line rate with exact terminal residual write-off:
 
 | Year 1 | Year 2 | Year 3 | Year 4 | Year 5 (Residual Write-off) | Total Written Off |
 | :---: | :---: | :---: | :---: | :---: | :---: |
 | \$400.00 | \$240.00 | \$144.00 | \$86.40 | \$129.60 | \$1,000.00 |
 
-### 3. GST Arithmetic (`=oz.GSTExtractλ(Amounts)` & `=oz.GSTAddλ(Amounts)`)
+### 3. GST arithmetic (`=oz.GSTExtractλ(Amounts)` & `=oz.GSTAddλ(Amounts)`)
 Extracts or appends GST across full dynamic arrays according to *ANTS(GST)A 1999* ss 9-70/75:
 - `=oz.GSTExtractλ(1100)` -> returns `$100.00`
 - `=oz.GSTAddλ(1000)` -> returns `$1,100.00`

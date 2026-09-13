@@ -70,7 +70,7 @@ def git_blob_sha1(path: Path) -> str:
 
 
 def validate_version(value: str) -> str:
-    """Accept only a canonical three-part numeric release version."""
+    """Accept only a canonical 3-part numeric release version."""
     if VERSION_RE.fullmatch(value) is None:
         raise ValueError("version must be canonical X.Y.Z without a v prefix")
     return value
@@ -204,7 +204,7 @@ def _normalise_gate_output(text: str, root: Path, workbook: Path) -> str:
 
 
 def run_semantic_gates(root: Path, workbook: Path) -> list[GateResult]:
-    """Run the six deterministic gates bound to the staged workbook and source views."""
+    """Run the 6 deterministic gates bound to the staged workbook and source views."""
     # Resolve before use. The gates echo the workbook path they are handed, so an
     # unresolved path would both record checkout-specific evidence that a later
     # verify run cannot reproduce and be re-interpreted against cwd=root below.

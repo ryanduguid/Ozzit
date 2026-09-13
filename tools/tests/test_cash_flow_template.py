@@ -1020,7 +1020,7 @@ class CashFlowTemplateContractTests(unittest.TestCase):
             "must not link to the live forecast",
             "use `Dashboard`",
             "action deadline",
-            "three-scenario comparison",
+            "3-scenario comparison",
             "use `Weekly Review`",
             "compare receipt, payment and closing-cash variances",
             "record owner commentary",

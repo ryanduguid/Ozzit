@@ -48,7 +48,7 @@ try {
         $pos++
         $ur = $ws.UsedRange
         $r0 = $ur.Row; $c0 = $ur.Column
-        # Not Invoke-Excel: PowerShell flattens a two-dimensional array returned through a
+        # Not Invoke-Excel: PowerShell flattens a 2-dimensional array returned through a
         # function, which turns the whole sheet into one row and hides every difference.
         $vals = $ur.Value2
         if ($null -eq $vals) { continue }

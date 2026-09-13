@@ -6,7 +6,7 @@ This pass starts from the committed ozzit.xlsx and src/ (the post-v3.0.0 input
 recorded in ATTRIBUTION.md). It does not read the earlier workbook and does not
 go through transform_from_earlier.py.
 
-Three stores hold the same revision text and all three are rewritten together:
+Three stores hold the same revision text and all 3 are rewritten together:
 src/*.txt, the Advanced Formula Environment store in customXml/item1.xml, and
 docProps/core.xml. Leaving any one of them behind puts the gates out of sync,
 so the AFE store is resynchronised from src/ in the same run.

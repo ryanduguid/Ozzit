@@ -35,7 +35,7 @@ python tools/sanitise_workbook.py ozzit.xlsx   # always last, after any Excel sa
 After `tools/refresh_cache.py` has saved the workbook through Excel, run
 `tools/postbuild/remove_residue.py` again and then `tools/sanitise_workbook.py`:
 an Excel save leaves named cell styles unused, renumbers the worksheet parts and
-splits long string literals, and those two passes put the file back into the
+splits long string literals, and those 2 passes put the file back into the
 state every gate expects.
 
 All postbuild passes are idempotent: on a current workbook each reports "already
@@ -61,7 +61,7 @@ their definitions; `tools/refresh_cache.py` in Excel is what refreshes them, and
 `remove_residue.py` drops what nothing in the workbook reads (the hidden FMTs sheet, the
 per-sheet custom properties, the stale custom-function declaration on the Excel Labs
 reference, unused differential formats and named styles) and freezes the label columns
-on the six wide demonstration sheets. `sync_afe_store.py` then copies all six `src/`
+on the 6 wide demonstration sheets. `sync_afe_store.py` then copies all 6 `src/`
 modules into the workbook's Advanced Formula Environment store; this step is required
 after any pass that changes `src/`. `generate_selftest_examples.py` rewrites the native
 self-test's generated assertions from the help, and the tool tests fail when that
@@ -74,10 +74,10 @@ run after any text pass that touches `src/`. A build that starts from the earlie
 workbook still emits those blocks at v3.0.0, so this pass is what removes them. The
 help-corrections pass is the last of the repair passes: it repairs the functions that shipped
 disagreeing with their own inline help. Two of the corrected examples are spilled onto
-demonstration worksheets, so it rewrites the cells caching that spill, and five of the
+demonstration worksheets, so it rewrites the cells caching that spill, and 5 of the
 corrected statements are also typed into label and description cells that no formula
 feeds, so it rewrites those shared strings too. The rate and date helpers pass runs
-after it and is the last text pass: it adds four functions (`oz.PeriodRateλ`,
+after it and is the last text pass: it adds 4 functions (`oz.PeriodRateλ`,
 `oz.AnnualRateλ`, `oz.DayCountRateλ` and `oz.DateDifλ`) on the same pattern as the
 AASB 16 pass, except that it renders the stored forms through `compile_sources.py`
 rather than carrying a renderer of its own.

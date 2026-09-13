@@ -333,7 +333,7 @@ class ReleaseBundleTests(unittest.TestCase):
 
         The gates echo the workbook path they are handed, so evidence recorded from
         one spelling of that path has to match evidence re-run from another. The
-        bundle is always staged outside the repository, so the two spellings are
+        bundle is always staged outside the repository, so the 2 spellings are
         never identical in practice.
         """
         recorded = []

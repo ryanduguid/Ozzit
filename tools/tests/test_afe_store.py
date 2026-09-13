@@ -125,7 +125,7 @@ class AfeGateTests(unittest.TestCase):
                 if info.filename == "customXml/item1.xml":
                     data = data.replace(encoded, replacement)
                 output.writestr(info, data)
-        # one missing module and five missing names
+        # one missing module and 5 missing names
         utf8 = self._run(target, "utf-8")
         self._assert_controlled_failure(utf8, 1 + len(debt_names))
         self.assertIn("AFE module /projects/Debt missing", utf8.stdout)

@@ -37,7 +37,7 @@ Every source archive must still include `ATTRIBUTION.md` and `LICENCE`.
 
 ## Approval and tag
 
-A human maintainer explicitly approves the exact candidate commit and release version after all eleven gates pass.
+A human maintainer explicitly approves the exact candidate commit and release version after all 11 gates pass.
 Create an annotated, cryptographically signed tag for that exact commit. Run
 `git verify-tag` and record the tag object SHA, peeled commit SHA and
 verification result.
@@ -47,7 +47,7 @@ Tag signing, remote tag publication and release publication are separate authori
 
 ## Future release bundle
 
-The uploaded bundle contains exactly three files:
+The uploaded bundle contains exactly 3 files:
 
 1. `ozzit.xlsx`: the consumer workbook copied byte-for-byte from the tagged tree.
 2. `provenance.json`: canonical JSON binding the version and full candidate commit to the locked workbook hash, size, Git blob, last workbook change and deterministic workbook-gate results. It also states the copy-only build limit and the gates that remain outside the bundle.
@@ -55,7 +55,7 @@ The uploaded bundle contains exactly three files:
 
 The signed tag and GitHub's generated source archive remain the source distribution. Inspect that archive as the equivalent of `git archive` for the exact tag; do not upload a redundant custom source archive. The standalone workbook and tagged workbook must have the same SHA-256.
 
-After all eleven gates pass in a clean candidate, stage and independently verify the bundle in two fresh directories outside the repository:
+After all 11 gates pass in a clean candidate, stage and independently verify the bundle in 2 fresh directories outside the repository:
 
 ```powershell
 python tools/prepare_release_bundle.py create --version X.Y.Z --source-commit <full-commit-sha> --output <first-new-directory>
@@ -64,7 +64,7 @@ python tools/prepare_release_bundle.py create --version X.Y.Z --source-commit <f
 python tools/prepare_release_bundle.py verify --bundle <second-new-directory> --version X.Y.Z --source-commit <full-commit-sha>
 ```
 
-Require all three files in both directories to be byte-identical. The tool refuses a dirty checkout, a mismatched workbook base, non-canonical version or commit values, an output inside the source repository and any existing output path. It runs commands as argument lists without a shell, stages under a fresh sibling directory and exposes the final name only after structural verification succeeds. It never tags, uploads or publishes anything.
+Require all 3 files in both directories to be byte-identical. The tool refuses a dirty checkout, a mismatched workbook base, non-canonical version or commit values, an output inside the source repository and any existing output path. It runs commands as argument lists without a shell, stages under a fresh sibling directory and exposes the final name only after structural verification succeeds. It never tags, uploads or publishes anything.
 
 The independent verifier must record and compare GitHub's API `digest` for the uploaded checksum file. If a detached signature is added later, define whether it sits outside the checksum set and verify it separately; do not create a checksum and signature cycle. Do not add a cosmetic SPDX or CycloneDX inventory to this workbook-only bundle.
 
@@ -77,7 +77,7 @@ python -m pip install "ruff==0.16.6"
 python -m pip install "mypy==2.3.1"
 ```
 
-Then run the following nine static and repository gates:
+Then run the following 9 static and repository gates:
 
 ```powershell
 python -m ruff check .
@@ -91,7 +91,7 @@ python tools/verify_afe.py ozzit.xlsx src
 python -m unittest discover -s tools/tests -v
 ```
 
-All nine gate commands must exit zero. Record the lint result and substantive type-check, function,
+All 9 gate commands must exit zero. Record the lint result and substantive type-check, function,
 signature, table, example, index, module and test counts rather than only their
 exit status.
 
@@ -120,7 +120,7 @@ and review that change. Do not silently weaken a floor.
 
 ## Packaging, independent verification and immutability
 
-1. Build the exact three-file bundle from the signed tag into a fresh staging directory outside the repository, then repeat it and compare every byte.
+1. Build the exact 3-file bundle from the signed tag into a fresh staging directory outside the repository, then repeat it and compare every byte.
 2. Compute `provenance.json` and `SHA256SUMS` only after the workbook has its final bytes.
 3. Upload the assets to a draft release. A draft upload is not approval, publication or evidence of immutability.
 4. An independent verifier downloads every asset from GitHub rather than reading the builder's local staging directory.

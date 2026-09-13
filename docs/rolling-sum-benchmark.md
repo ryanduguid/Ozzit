@@ -25,10 +25,10 @@ AEST. Timings will vary between runs.
 
 Each input was a horizontal row of numbers, with zero-based column `i` holding
 `((i * 17) % 997) / 100`. The current function and the candidate below occupied
-separate spill anchors on a temporary sheet. Calculation was manual. After three
-warm-up calculations per anchor, `Range.Calculate()` was timed nine times per
+separate spill anchors on a temporary sheet. Calculation was manual. After 3
+warm-up calculations per anchor, `Range.Calculate()` was timed 9 times per
 anchor, alternating which anchor ran first. The table reports medians, including
-COM call overhead, and the largest absolute difference across the two output
+COM call overhead, and the largest absolute difference across the 2 output
 rows. These timings describe this machine and these inputs.
 
 ```excel

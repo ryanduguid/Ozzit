@@ -3,8 +3,8 @@
 Three things were copied from pass to pass rather than shared: opening the
 archive and decoding xl/workbook.xml, reading whether a pass is already applied
 from the defined names it adds, and replacing a table of text swaps. Ten passes
-held nine copies of the first, two near-identical copies of the second, and four
-copies of the third under four different signatures. One copy each lives here.
+held 9 copies of the first, 2 near-identical copies of the second, and 4
+copies of the third under 4 different signatures. One copy each lives here.
 
 Reading only. Each pass still owns its own writing, because the order it writes
 its stores in and what it restores on failure are decisions the pass makes, not

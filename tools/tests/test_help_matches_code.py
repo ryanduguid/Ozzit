@@ -8,7 +8,7 @@ every gate passing.
 
 Each check reads every store that states the thing. src/ is what a reader diffs
 and imports; the defined name in ozzit.xlsx is what Excel actually evaluates, and
-the two have drifted apart before. A claim spilled onto a demonstration worksheet
+the 2 have drifted apart before. A claim spilled onto a demonstration worksheet
 is checked in the cell caching that spill as well. A claim typed into a label or
 description column is checked in the shared string table, because such a cell has
 no formula and sits under no spill anchor: Excel never revisits it, so correcting
@@ -127,7 +127,7 @@ class HelpMatchesCodeTests(unittest.TestCase):
 
     def test_about_dates_lists_no_diagnostic_function_the_library_never_shipped(self):
         # The block told readers to insert 'DV' and type CountDOWλDV( Start, End, 1).
-        # The library declares three λDV functions, all in Financial, and no release
+        # The library declares 3 λDV functions, all in Financial, and no release
         # ever defined a Dates one, so every call it named returned #NAME?.
         for store in (self.modules["Dates"], defined_name(self.book, "oz.AboutDatesλ")):
             self.assertNotIn("DIAGNOSTICS", store)
@@ -135,7 +135,7 @@ class HelpMatchesCodeTests(unittest.TestCase):
             self.assertIn("FinancialYearλ", store)
 
     def test_about_ratios_names_the_two_ratios_as_the_library_declares_them(self):
-        # The same two rows are typed a second time into the label column of the
+        # The same 2 rows are typed a second time into the label column of the
         # oz.FinancialRatios sheet, in cells no formula feeds, so both stores and
         # the shared string table have to agree.
         stores = (
@@ -198,7 +198,7 @@ class HelpMatchesCodeTests(unittest.TestCase):
     def test_sum_depreciate_is_not_described_as_totalling_book_value(self):
         # The block's Book Value row falls to the SWITCH default and stays 0.
         # Totalling a balance row would be meaningless, so the code is right.
-        # The same sentence is typed into two static cells, the TOC row for the
+        # The same sentence is typed into 2 static cells, the TOC row for the
         # function and the heading of its own demonstration sheet, and both read
         # the one shared string.
         claim = "CAPEX, Depreciation, Book Value, Salvage Value"

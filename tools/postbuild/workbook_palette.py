@@ -3,16 +3,16 @@
 Usage: python tools/postbuild/workbook_palette.py [workbook]
 
 Palette:
-  #5C2D91 brand purple — the one accent: titles, links, Financial tab
-  #04001F near-black   — section headings
-  #2B2733 dark neutral — emphasis font
-  #B1AFAD warm grey    — input shading family
-  #4F485E grey-violet  — structure tabs / secondary
+ #5C2D91 brand purple - the one accent: titles, links, Financial tab
+ #04001F near-black - section headings
+ #2B2733 dark neutral - emphasis font
+ #B1AFAD warm grey - input shading family
+ #4F485E grey-violet - structure tabs / secondary
 
 Three sources merged:
-  phase_c2 — explicit colour map, teal/salmon hue remap, font-family consolidation
-  phase_e  — help-label greens/blues/maroon folded to brand purple / warning red
-  phase_f  — mint help-block fill folded to pale lavender
+ phase_c2 - explicit colour map, teal/salmon hue remap, font-family consolidation
+ phase_e - help-label greens/blues/maroon folded to brand purple / warning red
+ phase_f - mint help-block fill folded to pale lavender
 
 Deliberately NOT remapped: the TOC length-guard conditional format keeps its
 warning red (font C00000, fill FFCCCC). The pale-yellow FFFFCC fill is folded.
@@ -156,7 +156,7 @@ def recolour(text: str) -> tuple[str, int]:
     # still remappable after one pass would drift on every subsequent run.
     residual = re.findall(r'rgb="[0-9A-Fa-f]{8}"', text) + re.findall(
         r'val="[0-9A-Fa-f]{6}"(?=/>|")', text
-    )  # invariant: these two shapes are exactly what rep8/rep6 write. Add a
+    )  # invariant: these 2 shapes are exactly what rep8/rep6 write. Add a
     # substitution shape elsewhere and this scan must grow the same pattern.
     for token in residual:
         hexv = token.split('"')[1]

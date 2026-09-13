@@ -4,7 +4,7 @@
 
 `ozzit.xlsx` is the shipped authority. `src/*.txt`, the AFE store and
 `functions.csv` are bound publication views: do not edit or approve them in
-isolation. The library has 133 native Excel LAMBDA functions and five named help
+isolation. The library has 133 native Excel LAMBDA functions and 5 named help
 tables. Retain the ordinary `.xlsx` and no macros. Do not make tax classifications,
 individual-tax or Division 7A decisions.
 
@@ -18,7 +18,7 @@ change requires recalculation or cache validation.
 
 ## Verification
 
-Run the CI sequence exactly. The first two commands are the `lint` job; the rest
+Run the CI sequence exactly. The first 2 commands are the `lint` job; the rest
 run on Python 3.10, 3.12 and 3.13:
 
 ```powershell

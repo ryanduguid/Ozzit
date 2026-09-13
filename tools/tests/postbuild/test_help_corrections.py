@@ -1,8 +1,8 @@
 """Contract for tools/postbuild/help_corrections.py.
 
 The pass repairs the functions that shipped disagreeing with their own inline
-help: in the defined names, in src/, in the two cells caching a corrected example
-and in the five shared strings that are the whole content of a static literal
+help: in the defined names, in src/, in the 2 cells caching a corrected example
+and in the 5 shared strings that are the whole content of a static literal
 cell. On the current workbook it must be a byte no-op; on a workbook reverted to
 any one of the pre-correction texts it must apply that swap exactly once; and a
 store whose anchors do not match must fail rather than write a partial result.
@@ -188,7 +188,7 @@ class HelpCorrectionsTests(PassContractMixin, unittest.TestCase):
         self.assertIn("FAIL", result.stdout + result.stderr)
 
     def test_no_store_is_written_when_an_output_write_fails(self):
-        # Anchor validation catches the two failures above before any output.
+        # Anchor validation catches the 2 failures above before any output.
         # This one lands during the output phase, where the workbook and the
         # modules are separate destinations: a permission or disk-space failure
         # on one of them must leave both stores byte-identical, not a corrected

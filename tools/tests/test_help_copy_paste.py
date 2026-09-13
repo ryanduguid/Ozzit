@@ -2,7 +2,7 @@
 
 verify_signatures.py already reads FUNCTION lines, parameter tables and
 worked examples. These checks cover the leftovers that live outside those
-three: Name Manager comments in functions.csv, the About-table prose, and
+3: Name Manager comments in functions.csv, the About-table prose, and
 source comments that never make it into a LAMBDA body.
 """
 

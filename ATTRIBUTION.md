@@ -16,12 +16,12 @@ That claim describes the v3.0.0 baseline. Post-v3.0.0 passes start from the comm
 
 ## What changed from the earlier workbook
 
-- All earlier namespaces were replaced by a single `oz.` prefix, with a one-letter tag where two modules shared a function name. Earlier branding, artwork, the cover video thumbnails and their YouTube link, and Dropbox file links were removed. One maths-citation link (a Diarmuid Early video, credited in an `IntOnIntλ` source comment) was retained deliberately.
-- Help-block links that pointed at earlier gists and the earlier site now point at this repository, relabelled from "Gist URL" to "Repository".
+- All earlier namespaces were replaced by a single `oz.` prefix, with a one-letter tag where 2 modules shared a function name. Earlier branding, artwork, the cover video thumbnails and their YouTube link, and Dropbox file links were removed. One maths-citation link (a Diarmuid Early video, credited in an `IntOnIntλ` source comment) was retained deliberately.
+- Help-block links that pointed at earlier gists and the earlier site now point at this repository, relabelled from 'Gist URL' to 'Repository'.
 - Per-function revision histories were removed from the module sources, from the Advanced Formula Environment store and from the workbook's creator metadata. This repository's own history is in [CHANGELOG.md](CHANGELOG.md) and in git.
 - American English converted to Australian English throughout, including function renames (`Amortizeλ` family to `Amortiseλ`).
 - Calibri replaced with Aptos; US date formats replaced with day-first formats; sample data currency set to AUD.
-- All sample and demonstration dates moved forward two years, calendar-aware (29 February maps to 28 February in non-leap targets); function version stamps set to 18 August 2026 by the v3.0.0 transform (the v3.1.0 help-text passes later re-dated them to 20 August 2026).
+- All sample and demonstration dates moved forward 2 years, calendar-aware (29 February maps to 28 February in non-leap targets); function version stamps set to 18 August 2026 by the v3.0.0 transform (the v3.1.0 help-text passes later re-dated them to 20 August 2026).
 - Defects repaired: the undefined `Sheetλ` title formula on 46 worksheets, an undefined about-box function, locale-fragile `RANDBETWEEN` text-date arguments, a dead table-of-contents link, and assorted typos.
-- The foreign depreciation regime was removed outright, and five Australian functions were added: diminishing-value and prime-cost depreciation schedules, two GST helpers and a financial-year label. The two depreciation schedules are modelling helpers, not tax calculations, and v2.1.0 removed the claim that they implement an ATO method.
+- The foreign depreciation regime was removed outright, and 5 Australian functions were added: diminishing-value and prime-cost depreciation schedules, 2 GST helpers and a financial-year label. The 2 depreciation schedules are modelling helpers, not tax calculations, and v2.1.0 removed the claim that they implement an ATO method.
 - Removed an empty Power Query data mashup, orphaned rich-value image residue, and the embedded printer configuration.

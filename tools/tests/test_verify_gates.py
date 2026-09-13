@@ -178,7 +178,7 @@ class VerifyGateTests(unittest.TestCase):
         return result, output.getvalue()
 
     def test_verify_signatures_rejects_an_about_table_label_that_is_not_declared(self):
-        # The five About tables are the one help a reader copies names out of, and
+        # The 5 About tables are the one help a reader copies names out of, and
         # they are not LAMBDAs, so the whole reference check used to skip them.
         directory = self._copy_src()
         try:

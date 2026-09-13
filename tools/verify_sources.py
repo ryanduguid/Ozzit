@@ -6,7 +6,7 @@ src/ exists so the library can be read, diffed and imported back into Excel. Tha
 only means anything if what is published matches what ships, and if it is written
 in the form Excel accepts as input rather than the form the file format stores.
 
-Four differences between the two are conventions, not divergences, and are mapped
+Four differences between the 2 are conventions, not divergences, and are mapped
 rather than ignored:
 
     stored form            typed form         why

@@ -2,12 +2,12 @@
 
 Usage: python tools/sync_afe_store.py [workbook] [src dir]
 
-All six modules are rewritten, Debt included now that nothing in it recurses by
+All 6 modules are rewritten, Debt included now that nothing in it recurses by
 name. The pass preserves the store's schema, locale, project name order and
 JSON layout, re-encodes UTF-16LE/base64, and writes through the canonical
 archive writer.
 
-The store holds two views of the same library: the module texts, and a flat
+The store holds 2 views of the same library: the module texts, and a flat
 projectNames index. verify_afe.py gates both, so both are synchronised here.
 Only the texts were, until a function was added and the index did not follow.
 A name still shipping keeps its place in the index, so the existing grouping

@@ -7,10 +7,10 @@
 Two calculation corrections and one help-text change to the v3.4.0 workbook, with
 tooling, test and documentation work around them. `oz.DayCountRateλ` under
 Actual/Actual now divides each calendar year's days by that year's length, including
-periods that span several years; v3.4.0 returned 0.30027 rather than 0.3 for three
-whole calendar years at 10%. The two variable debt-sculpting functions refuse
+periods that span several years; v3.4.0 returned 0.30027 rather than 0.3 for 3
+whole calendar years at 10%. The 2 variable debt-sculpting functions refuse
 malformed inputs instead of dropping rows. The lease guidance distinguishes nominal
-and effective annual rates. The library is still 133 LAMBDAs and five help tables.
+and effective annual rates. The library is still 133 LAMBDAs and 5 help tables.
 
 - Ruff checks `E4`, `E7`, `E9`, `F` and `I` rather than `E9` and `F82` alone, so
   unused imports, unused locals, loose statement style and import order are gates
@@ -23,16 +23,16 @@ and effective annual rates. The library is still 133 LAMBDAs and five help table
   that dependency is covered from the commit that adds it.
 - The postbuild passes share one reader, `tools/postbuild/workbook.py`: opening the
   archive, reading whether a pass is already applied, and replacing a table of text
-  swaps. That replaces nine copies of the archive read, two near-identical copies of
-  the applied-or-absent check and four `apply_swaps` under four signatures. Every
+  swaps. That replaces 9 copies of the archive read, 2 near-identical copies of
+  the applied-or-absent check and 4 `apply_swaps` under 4 signatures. Every
   pass writes the same bytes as before, checked by running the full run order and
-  the six verification gates over the same inputs and comparing.
+  the 6 verification gates over the same inputs and comparing.
 - The one-shot v3.0.0 migration moved to `tools/frozen/transform_from_earlier.py`
   and is excluded from the lint, type-check and test gates. It ran once against an
   input this repository does not ship, hardcodes the date it was run, and stops at
   v3.0.0, so it is kept for provenance only; ATTRIBUTION.md says so. Its 449-line
   test rebuilt the script through the AST to avoid running it and is removed.
-- The four day-count conventions behind `oz.DayCountRateλ` now have direct tool
+- The 4 day-count conventions behind `oz.DayCountRateλ` now have direct tool
   tests: 22 cases covering 30/360, Actual/360, Actual/365 and Actual/Actual, with
   a leap year and a period spanning several years, each checked against a year
   fraction worked out by hand. The tests pin the shipped LAMBDA text as well, so
@@ -48,7 +48,7 @@ and effective annual rates. The library is still 133 LAMBDAs and five help table
   The source and the rate-helper builder carry the same correction.
 - The cash-flow template averages closing-cash variances over the same fully
   actualised weeks it counts. Partial weeks no longer inflate the average.
-- Added 48 native library assertions and a separate eight-case native cash-flow
+- Added 48 native library assertions and a separate 8-case native cash-flow
   gate covering blank, zero, partial and complete actuals. The template gate closes
   without saving and checks that the workbook bytes are unchanged.
 
@@ -68,10 +68,10 @@ and effective annual rates. The library is still 133 LAMBDAs and five help table
 
 ## v3.4.0, 6 September 2026, rates, day counts and a DATEDIF replacement
 
-### Four functions added and three changed; the workbook is otherwise v3.3.0
+### Four functions added and 3 changed; the workbook is otherwise v3.3.0
 
 Four LAMBDA functions added, taking the library from 129 to 133 LAMBDAs
-(134 to 138 named formulas, including five help tables), and three changed. Each
+(134 to 138 named formulas, including 5 help tables), and 3 changed. Each
 came out of comparing the library against the public 5g function gists on 6
 September 2026; the ideas were taken and every definition written and tested here.
 No worksheet was added or changed, so all cached values are the ones v3.3.0 shipped.
@@ -79,13 +79,13 @@ No worksheet was added or changed, so all cached values are the ones v3.3.0 ship
 - **`oz.ROEλ` divided by closing equity.** Return on equity is net income over
   average shareholders' equity, which is what its own help and the Investopedia page
   it links describe. It now takes an optional third argument, OpeningEquity, and
-  divides by the average of opening and closing when it is given. Called with two
+  divides by the average of opening and closing when it is given. Called with 2
   arguments, or with a blank opening cell, it returns exactly what it did before,
   so the ratios worksheet's cached value stands.
 - **`oz.PeriodRateλ(AnnualRate, [PeriodsPerYear])` and
-  `oz.AnnualRateλ(PeriodRate, [PeriodsPerYear])`.** The four AASB 16 functions take
+  `oz.AnnualRateλ(PeriodRate, [PeriodsPerYear])`.** The 4 AASB 16 functions take
   a rate per period, and anyone holding an annual incremental borrowing rate had to
-  convert it by hand. These are the two directions of
+  convert it by hand. These are the 2 directions of
   `(1 + annual) ^ (1 / periods) - 1`, and the self-test proves them against
   Excel's own NOMINAL() and against each other on random rates.
 - **`oz.DayCountRateλ(Timeline, APR, [Convention], [EndDates])`.** One interest
@@ -93,7 +93,7 @@ No worksheet was added or changed, so all cached values are the ones v3.3.0 ship
   with Actual/Actual splitting a period at 1 January so each part is counted over
   its own year's length, the ISDA rule.
   Every debt path in the library charged a flat twelfth of the APR; Australian
-  facilities are mostly quoted Actual/365. The two variable debt sculpting
+  facilities are mostly quoted Actual/365. The 2 variable debt sculpting
   functions, `oz.DebtSculptVariableλ` and `oz.DebtSculptVariableLRVλ`, take the
   result through a new optional PeriodRates argument, and when it is given APR and
   MonthsPerPeriod are ignored.
@@ -101,7 +101,7 @@ No worksheet was added or changed, so all cached values are the ones v3.3.0 ship
   and its MD unit can return a negative or wrong count around month ends. This one
   counts a month as complete when EDATE() of the start date has arrived and takes
   every remainder from that same anniversary. Where DATEDIF is right, on start
-  days up to the 28th, the self-test proves the two agree on random dates.
+  days up to the 28th, the self-test proves the 2 agree on random dates.
 - **Randomised self-test checks.** `tools/excel_selftest.ps1` grew a `Fuzz` helper
   that draws fresh inputs for every trial, compares a function with an independent
   Excel formula and prints the inputs that produced any miss. Twenty-three of them
@@ -110,17 +110,17 @@ No worksheet was added or changed, so all cached values are the ones v3.3.0 ship
   does not find. The first run caught one in `oz.DayCountRateλ` before it shipped:
   on an end-date timeline the first period's start was stepped back with EDATE(),
   which from 28 February lands on 28 January rather than 31 January.
-- **`tools/postbuild/rate_date_helpers.py` added.** It adds the four functions to
+- **`tools/postbuild/rate_date_helpers.py` added.** It adds the 4 functions to
   the src modules, their About tables, the defined names and functions.csv on the
   AASB 16 pass's pattern, rendering the stored forms through `compile_sources.py`
   rather than carrying a renderer of its own.
 
-## v3.3.0, 6 September 2026, ten function repairs and a workbook Excel will open
+## v3.3.0, 6 September 2026, 10 function repairs and a workbook Excel will open
 
 ### The workbook on main between 2 and 6 September could not be opened by Excel
 
 Every static gate passed the workbook that PR 64 merged on 2 September, and Excel
-refused it with "Unable to get the Open property of the Workbooks class". Two
+refused it with 'Unable to get the Open property of the Workbooks class'. Two
 independent causes, found by transplanting parts between the v3.2.0 asset and main
 and opening each variant in Excel:
 
@@ -145,22 +145,22 @@ static gate:
 
 - **Two Debt help examples were not valid Excel.** `oz.DebtSculptVariableλ` and
   `oz.DebtSculptVariableLRVλ` printed `{6%,6%,6%}` as their APR argument, and an
-  array constant cannot carry the percent operator, so the native self-test's
+  array constant cannot carry the per cent operator, so the native self-test's
   generated assertions for those examples could not even be entered. The
   examples now read `{0.06,0.06,0.06}`.
-- **The generated help assertions for the three `…λDV` validators called a
+- **The generated help assertions for the 3 `…λDV` validators called a
   function that does not exist.** The generator wrote the λ as `$L` inside a
   double-quoted PowerShell string, and PowerShell reads `$LDV` as one variable,
   so `oz.Amortise$LDV()` reached Excel as `oz.Amortise()`. The generator now
   writes `${L}`, and the assertion accepts what a validator actually answers
   with no arguments: TRUE (Amortise, Corkscrew) or a column of messages
   (Depreciate), never an error.
-- **Excel's save disturbs three things the postbuild passes assumed fixed.** It
+- **Excel's save disturbs 3 things the postbuild passes assumed fixed.** It
   stores a string literal over 255 characters as `_xlfn._LONGTEXT("…","…")`
-  (six defined names; `verify_sources.py` then rejected the workbook), it
+  (6 defined names; `verify_sources.py` then rejected the workbook), it
   renumbers the worksheet parts when a sheet has been removed (so
   `sheet_names.py`'s fixed `sheet25.xml` pointed at another sheet), and it leaves
-  eleven named cell styles unused. `sanitise_workbook.py` now folds the long
+  11 named cell styles unused. `sanitise_workbook.py` now folds the long
   literals back, with a test; `sheet_names.py` resolves both worksheet parts by
   sheet name; and `remove_residue.py` runs again after any Excel save, which
   `tools/postbuild/README.md` now says.
@@ -174,7 +174,7 @@ now writes its rewritten sources with LF so the suite passes on a Windows clone.
 
 ### 13-week cash-flow forecast template
 
-`templates/13-week-cash-flow-forecast.xlsx` is documented as its own deliverable: a README section near the top and the guide in `templates/README.md`. It is a standalone native-formula workbook for weekly liquidity planning, separate from `ozzit.xlsx` and its `oz.` functions. It ships in the tagged source archive at that path. The uploaded release bundle stays the three files `RELEASING.md` defines (`ozzit.xlsx`, `provenance.json` and `SHA256SUMS`), so the template is not a fourth release asset. Its arithmetic has not been through the workbook gates, which cover `ozzit.xlsx` only.
+`templates/13-week-cash-flow-forecast.xlsx` is documented as its own deliverable: a README section near the top and the guide in `templates/README.md`. It is a standalone native-formula workbook for weekly liquidity planning, separate from `ozzit.xlsx` and its `oz.` functions. It ships in the tagged source archive at that path. The uploaded release bundle stays the 3 files `RELEASING.md` defines (`ozzit.xlsx`, `provenance.json` and `SHA256SUMS`), so the template is not a fourth release asset. Its arithmetic has not been through the workbook gates, which cover `ozzit.xlsx` only.
 
 ### Functions that returned wrong answers on ordinary inputs
 
@@ -184,7 +184,7 @@ re-implemented in Python and run over its demonstration sheet's inputs, and ever
 cached cell it feeds came back unchanged (Periodsλ, both by-item schedulers,
 Movementλ, RollingSumλ, IsOccurrenceDateλ across 2,190 cells, SumPeriodsλ, and the
 depreciation aggregation over 300 randomised timelines). The native gates were
-run on the v3.3.0 candidate after the two defects above were repaired.
+run on the v3.3.0 candidate after the 2 defects above were repaired.
 
 - **`oz.Depreciateλ` no longer errors on a disposal before the end of life.** It
   expanded the monthly allocation to the months until disposal, and `EXPAND` cannot
@@ -211,12 +211,12 @@ run on the v3.3.0 candidate after the two defects above were repaired.
   `*` and `?` as ordinary characters. `MATCH` needed one dimension and honoured
   wildcards, so a grid returned FALSE for everything. Their Name Manager comments,
   copied from `oz.IsBetweenλ`, now describe them.
-- **The Debt module returns errors instead of the help table.** All five functions
+- **The Debt module returns errors instead of the help table.** All 5 functions
   swapped any error in the result for their help, so a DSCR of nought or a cash-flow
   row one column short produced help rather than an error. They now show help only
   when a required argument is omitted, the messages when one fails validation, and
   the error otherwise.
-- **`oz.CashRatioλ` spills a two-column help** again: one row lacked its separator,
+- **`oz.CashRatioλ` spills a 2-column help** again: one row lacked its separator,
   so `TEXTSPLIT` padded every other row's third column with `#N/A`.
 - **`oz.SumPeriodsλ` drops a date before the first period start** instead of erroring
   the whole row.
@@ -231,17 +231,17 @@ run on the v3.3.0 candidate after the two defects above were repaired.
   linear fixed point to a tolerance of 0.01; it is solved in closed form, which
   reproduces its documented 222.90 and every self-test value. With nothing recursing
   by name, the module joins the Advanced Formula Environment store, and
-  `verify_afe.py` requires all six modules.
+  `verify_afe.py` requires all 6 modules.
 - **`oz.Depreciateλ`, `oz.Amortiseλ` (on sub-monthly timelines) and `oz.SumPeriodsλ`
   aggregate months into periods with one matrix product** rather than a full indicator
   scan per output cell.
-- **`oz.Periodsλ` lifts over arrays** instead of counting the whole input three times
+- **`oz.Periodsλ` lifts over arrays** instead of counting the whole input 3 times
   per cell; a single date or interval code applies to every element, and an unknown
   code is still `#N/A`.
 - **`oz.CorkScrewReversalλ` and `oz.Movementλ`** are a `SCAN` over the closing balance
   and one subtraction of the array from itself shifted a column. **`oz.LabelAmortiseλ`**
-  builds its labels cell by cell, and **the four rolling functions** take each window
-  directly rather than copying the whole prefix, sizing by `COLUMNS` in all four.
+  builds its labels cell by cell, and **the 4 rolling functions** take each window
+  directly rather than copying the whole prefix, sizing by `COLUMNS` in all 4.
   `oz.Amortiseλ` reduces over its loans instead of recursing.
 
 ### A compiler from `src/` to the workbook
@@ -262,7 +262,7 @@ run on the v3.3.0 candidate after the two defects above were repaired.
   which needs Excel, could say so. The tool models TRIM and TEXTSPLIT over the stored
   literal and reports every cached help that no longer matches its definition. It only
   reads: a stale help is refreshed by `tools/refresh_cache.py` in Excel, as the
-  cached-value rule requires, and the ten helps this release changed are stale until that
+  cached-value rule requires, and the 10 helps this release changed are stale until that
   runs. On every other anchor the model reproduces Excel's own cache exactly, which is
   what proves it.
 
@@ -270,14 +270,14 @@ run on the v3.3.0 candidate after the two defects above were repaired.
 
 - **`tools/generate_selftest_examples.py` and `tools/selftest_examples.ps1` added.**
   The self-test named 20 of the then 134 named formulas and evaluated none of the worked
-  examples the help prints, which is how two functions shipped for several releases
+  examples the help prints, which is how 2 functions shipped for several releases
   returning the opposite of their own example. The generated fragment, dot-sourced by
   `excel_selftest.ps1`, calls every function for its help and evaluates every worked
   example that stands on its own: a printed number within half its last digit, a
   boolean, a list or grid by count and total, a label exactly, a date, or a shape. Totals
   and tolerances are exact decimal sums of the printed digits, so every Python version
   writes the same fragment. The baseline moves from 438 assertions to 730, and the tool
-  tests fail when the fragment is stale. The three Debt help assertions search for their row rather than index it.
+  tests fail when the fragment is stale. The 3 Debt help assertions search for their row rather than index it.
 
 ### Residue and determinism
 
@@ -286,11 +286,11 @@ run on the v3.3.0 candidate after the two defects above were repaired.
   Description custom properties readable only from VBA, and the stale declaration on
   the Excel Labs reference that the workbook contains custom functions; prunes the 102
   unused differential formats and 32 unused named cell styles, renumbering every
-  reference; and freezes the label columns on the six demonstration sheets that run to
+  reference; and freezes the label columns on the 6 demonstration sheets that run to
   hundreds of columns. The workbook drops from 211 parts to 169 and from 443,448 to
   430,497 bytes.
 - **`sanitise_workbook.py` pins session state.** Every Excel save wrote the account
-  that saved, the save time, the window's size and position and the Excel build, so two
+  that saved, the save time, the window's size and position and the Excel build, so 2
   saves of the same content never had the same bytes. The last editor is now the
   workbook's creator, the modified stamp the archive date, the window fixed and the
   build and revision pointer dropped.
@@ -298,7 +298,7 @@ run on the v3.3.0 candidate after the two defects above were repaired.
 ### Documentation
 
 - **`README.md` describes `oz.Amortiseλ` as it is:** the walkthrough gave it a
-  four-argument signature and a five-column schedule it never had.
+  4-argument signature and a 5-column schedule it never had.
 - **The implicit-rate advice converts.** `oz.IRRλ` wraps `XIRR` and returns an annual
   rate; the lease functions take a rate per period, and the README and the lease help
   now say how to convert.
@@ -326,20 +326,20 @@ run on the v3.3.0 candidate after the two defects above were repaired.
   function carries neither a FUNCTION line nor a parameter table. Omitted, the argument
   evaluated as 0, so a real problem fell through to `CHOOSE`'s third branch and
   `=oz.CorkscrewλDV(0, {"a","b"})` returned `#VALUE!` where `oz.AmortiseλDV` and
-  `oz.DepreciateλDV` name the fault. Those two never carried the multiplier, so the
+  `oz.DepreciateλDV` name the fault. Those 2 never carried the multiplier, so the
   parameter is now gone.
-- **Four worked examples corrected.** `oz.Movementλ`'s passed three arguments to a
-  two-parameter LAMBDA, so it could not be evaluated. `oz.Reversalλ`'s printed the
+- **Four worked examples corrected.** `oz.Movementλ`'s passed 3 arguments to a
+  2-parameter LAMBDA, so it could not be evaluated. `oz.Reversalλ`'s printed the
   negated input, `-100,-110,-130`, where the function returns the reversal one period
   later, `0,-100,-110`. `oz.PeriodDiffλ`'s printed 1 for a span its formula counts as
   2. `oz.AboutFinancialλ` and `README.md` listed Book Value among the rows
   `oz.SumDepreciateλ` totals, a row that falls to the `SWITCH` default and stays 0.
-- **Five static strings, read by six cells, repeat a corrected claim and are corrected
+- **Five static strings, read by 6 cells, repeat a corrected claim and are corrected
   with it.** A label or description column is typed into the sheet, not spilled into
   it: the cell has no formula and sits under no spill anchor, so Excel never refreshes
   it and correcting the defined name alone would have left the old sentence on screen.
   The `oz.FinancialRatios` label column named `Aboutλ`, `DSIRatioλ` and
-  `DividendPayoutRatioλ`, three pre-rename names for `oz.AboutRatiosλ`, `oz.DSIλ` and
+  `DividendPayoutRatioλ`, 3 pre-rename names for `oz.AboutRatiosλ`, `oz.DSIλ` and
   `oz.DPRλ`. The TOC row for `oz.SumDepreciateλ` and the heading of its own
   demonstration sheet share the one string that listed Book Value. And
   `oz.IsOccurrenceDateλ`'s sheet wrote its signature out with a fifth argument,
@@ -347,19 +347,19 @@ run on the v3.3.0 candidate after the two defects above were repaired.
   show.
 - **`oz.AboutDatesλ` no longer sends readers to functions that do not exist.** Its
   DIAGNOSTICS block told them to insert `DV` and type `CountDOWλDV( Start, End, 1)`.
-  The library declares three `λDV` functions, all in Financial, and no release ever
+  The library declares 3 `λDV` functions, all in Financial, and no release ever
   defined a Dates one, so every call it named returned `#NAME?`.
 - **`oz.AboutRatiosλ` names `DSIλ` and `DPRλ`,** the names the library declares,
   rather than the pre-rename `DSIRatioλ` and `DividendPayoutRatioλ`.
 - **`verify_signatures.py` now checks the About tables.** Its docstring already
   promised that every function named in a help must be one the library declares, but
-  the not-a-LAMBDA guard skipped the five About tables before that check ran, which is
-  the hole the twelve names above lived in. The label column is checked too, since an
+  the not-a-LAMBDA guard skipped the 5 About tables before that check ran, which is
+  the hole the 12 names above lived in. The label column is checked too, since an
   About table names a function without a following bracket.
 - **`tools/postbuild/help_corrections.py` added.** It applies every correction to the
-  defined names in `ozzit.xlsx` and to `src/` together, refreshes the two cells caching
-  the corrected examples on their demonstration sheets and the five shared strings the
-  static label and description cells read, and reports "already applied" on a second
+  defined names in `ozzit.xlsx` and to `src/` together, refreshes the 2 cells caching
+  the corrected examples on their demonstration sheets and the 5 shared strings the
+  static label and description cells read, and reports 'already applied' on a second
   run.
 - **`.editorconfig` exempts `src/*.txt`.** `verify_afe.py` compares those files with
   the workbook's Advanced Formula Environment store byte for byte, and the `[*]` rules
@@ -370,10 +370,10 @@ run on the v3.3.0 candidate after the two defects above were repaired.
 
 ### Deterministic release candidate staging
 
-- **`tools/prepare_release_bundle.py` added.** From a clean candidate it copies the exact tracked workbook into a fresh external staging directory, reruns the six workbook-bound gates and emits only `ozzit.xlsx`, canonical `provenance.json` and canonical `SHA256SUMS`. A second mode independently verifies the closed inventory, hashes, base lock and gate evidence. The tool neither tags nor publishes, refuses to overwrite a destination and cleans an unpublished staging directory after failure.
+- **`tools/prepare_release_bundle.py` added.** From a clean candidate it copies the exact tracked workbook into a fresh external staging directory, reruns the 6 workbook-bound gates and emits only `ozzit.xlsx`, canonical `provenance.json` and canonical `SHA256SUMS`. A second mode independently verifies the closed inventory, hashes, base lock and gate evidence. The tool neither tags nor publishes, refuses to overwrite a destination and cleans an unpublished staging directory after failure.
 - **The shipped workbook now has an explicit byte lock.** `release/workbook-base.json` records its SHA-256, byte length, Git blob and last workbook-changing commit. This is honest copy-only provenance: the post-v3.0.0 process still does not regenerate the present workbook from the earlier workbook.
 - **The binary migration is recoverable.** `ozzit.xlsx` remains tracked until one release asset has been published, downloaded independently and matched to both its checksum and exact signed tag. Removing it, rewriting history or force-pushing is outside this change.
-- **Release counts and tests are current.** The release guide now names all ten gates and the 438-assertion native baseline. Sixteen release-bundle regression contracts cover deterministic output, tampering, closed inputs, base drift, Git-history binding, shell avoidance, output isolation, no-overwrite behaviour and failure cleanup.
+- **Release counts and tests are current.** The release guide now names all 10 gates and the 438-assertion native baseline. Sixteen release-bundle regression contracts cover deterministic output, tampering, closed inputs, base drift, Git-history binding, shell avoidance, output isolation, no-overwrite behaviour and failure cleanup.
 
 ### AASB 16 lease functions
 
@@ -390,7 +390,7 @@ added, and all 20,228 cached values are the ones v3.1.0 shipped.
   measurement-date payment, then each remaining payment follows a period of interest.
 - **`oz.ROUScheduleλ(Cost, Periods)`.** Straight-line right-of-use asset, returning
   opening, depreciation and closing rows. It takes a cost rather than assembling one,
-  because paragraph 24 adds four components a schedule cannot infer.
+  because paragraph 24 adds 4 components a schedule cannot infer.
 - **`oz.LeaseRemeasureλ(RevisedPayments, Rate, CarryingLiability, CarryingROU,
   [InAdvance])`.** Remeasures the liability for revised payments under paragraph 42(b),
   at the unchanged discount rate paragraph 43 requires. Paragraph 39 takes the
@@ -401,18 +401,18 @@ added, and all 20,228 cached values are the ones v3.1.0 shipped.
   paragraph reference was read against the AASB 16 compilation on 24 August 2026, not
   carried across from a search result.
 - **`tools/postbuild/aasb16_leases.py` added.** One spec per function generates both
-  the published source and the stored defined name, rather than the two being written
+  the published source and the stored defined name, rather than the 2 being written
   in parallel and left to drift. Each generated definition is round-tripped through
   `verify_sources.py`'s own comparison before anything is written.
 - **`sync_afe_store.py` now synchronises `projectNames`, not only the module texts.**
-  The Advanced Formula Environment store holds two views of the library and
+  The Advanced Formula Environment store holds 2 views of the library and
   `verify_afe.py` gates both, but only one was ever written. Adding a function
-  therefore failed that gate with the index four names short. A name still shipping
+  therefore failed that gate with the index 4 names short. A name still shipping
   keeps its place, a new one is filed after the last name from its own module, and a
   name that no longer ships is dropped.
 - **`excel_selftest.ps1` grew from 259 assertions to 438.** The liability is checked
   against Excel's own `NPV`, an independent oracle rather than a restatement of the
-  same arithmetic. The schedule is checked by identity across four rates, four term
+  same arithmetic. The schedule is checked by identity across 4 rates, 4 term
   lengths and both timings: it closes to nil, each opening is the closing before it,
   and every period reconciles. Both identities name a row, because a whole-block total
   cancels the row under test.
@@ -427,8 +427,8 @@ added, and all 20,228 cached values are the ones v3.1.0 shipped.
 - **The Advanced Formula Environment store and the workbook creator metadata cleared.**
   `docProps/core.xml` now credits the Ozzit project alone, and the AFE store was
   resynchronised from the stripped `src/`.
-- **`tools/postbuild/strip_revision_history.py` added.** It applies all three edits
-  together, asserts the expected block count per module, and reports "already applied"
+- **`tools/postbuild/strip_revision_history.py` added.** It applies all 3 edits
+  together, asserts the expected block count per module, and reports 'already applied'
   on a second run. It reproduces the hand-applied result byte for byte. A build that
   starts from Ryan Duguid's earlier workbook still emits the blocks at v3.0.0, so this pass is
   what removes them.
@@ -454,13 +454,13 @@ baseline that grew around them.
 
 - **`oz.CorkscrewλDV` described `oz.Depreciateλ`.** Its Name Manager comment, source
   header and `functions.csv` row were copied from the neighbouring DV function. The
-  LAMBDA takes Opening and Flow1–4; the comment now says Corkscrewλ.
+  LAMBDA takes Opening and Flow1 to 4; the comment now says Corkscrewλ.
 - **`oz.AboutFinancialλ` described `oz.RollingAvgλ` as a maximum.** The About table
   reused `oz.RollingMaxλ`'s sentence. It now matches the dedicated RollingAvgλ help:
   averages of a moving window, not a maximum.
 - **`oz.CountColsλ`, `oz.CountColsUλ`, `oz.CountAColsλ` and `oz.CountAColsUλ` were
   indexed as row functions.** Source help already said column; the workbook comments
-  and `functions.csv` still said "each row", which is what `CountRowsλ` correctly
+  and `functions.csv` still said 'each row', which is what `CountRowsλ` correctly
   says. The index now says column.
 - **`oz.Corkscrewλ` and `oz.CorkScrewReversalλ` still advertised `<Coming Soon>` as
   their WEBPAGE.** Every other function points at the repository; they now do too.
@@ -498,7 +498,7 @@ baseline that grew around them.
   on 141 cells moved forward, each sheet shifted by whole months so the relationships
   between its dates are the ones they always were. Where an example's documented result
   depends on the dates rather than the arithmetic, the shift is an exact multiple of the
-  recurrence: `CountDOWλ` moves from 22/3/2012–10/4/2012 to 23/7/2026–11/8/2026 and still
+  recurrence: `CountDOWλ` moves from 22/3/2012 to 10/4/2012 and from 23/7/2026 to 11/8/2026 and still
   answers 3. The help text carries the new dates too, rewritten to the same character
   count so the columns in all 130 help blocks stay aligned.
 
@@ -508,16 +508,16 @@ baseline that grew around them.
 
 - **The workbook is styled to a dark purple palette**, applied as one deliberate system: purple `#5C2D91` as the single accent, near-black
   `#04001F` and a warm grey for everything else. The legacy accents inherited from
-  the earlier workbook are gone: two greens, two blues and a maroon in the help blocks fold into the
+  the earlier workbook are gone: 2 greens, 2 blues and a maroon in the help blocks fold into the
   brand purple, and the mint, yellow and pink cell fills fold into the neutral greys.
-  Thirteen font colours become eight. `assets/ozzit.svg` moves off its teal to match.
+  Thirteen font colours become 8. `assets/ozzit.svg` moves off its teal to match.
 
 - **The workbook no longer carries a copy of my filesystem.** Saving through Excel adds
   parts that have no business in a distributed workbook: 50 `printerSettings` binaries
   pinned to whatever printer was installed, an `x15ac:absPath` recording the directory the
   file was last saved from, and always-calculate flags on 83 cells that compute nothing
-  volatile. All three are stripped, along with five worksheet relationship parts left
-  empty once the printer settings went. The zip is rebuilt deterministically, so two
+  volatile. All 3 are stripped, along with 5 worksheet relationship parts left
+  empty once the printer settings went. The zip is rebuilt deterministically, so 2
   builds of the same content produce the same bytes, and the part count is back to the
   211 this workbook shipped with.
 
@@ -575,14 +575,14 @@ baseline that grew around them.
 - **The final legacy palette and copy defects are gone.** The mint formula highlights on
   109 cells become pale lavender `#DED9E8`; the 44 visible function straplines move from
   sub-AA `#808080` to the existing `#6E6862` neutral; 23 real date cells stop using the
-  reader's locale-dependent short-date format; and eight copied or missing A2 descriptions
+  reader's locale-dependent short-date format; and 8 copied or missing A2 descriptions
   now state what their sheets demonstrate. `tools/polish_workbook.py` makes the pass
   reproducible and idempotent, with an executable presentation contract in CI.
 
 - **The AFE authoring view now carries the same library the workbook calculates.** Four
-  modules in the Advanced Formula Environment store still said 19 Aug 2026 after the
-  shipped names and `src/` moved to 20 Aug; six stale strings are synchronised. A new
-  gate requires all five AFE-compatible modules to equal `src/` and keeps recursive Debt
+  modules in the Advanced Formula Environment store still said 19 August 2026 after the
+  shipped names and `src/` moved to 20 Aug; 6 stale strings are synchronised. A new
+  gate requires all 5 AFE-compatible modules to equal `src/` and keeps recursive Debt
   out, matching the documented import path.
 
 - **The deterministic postbuild passes are now tracked, idempotent tools.** The FY27
@@ -606,12 +606,12 @@ baseline that grew around them.
 
   Nothing else changes. The bare names are untouched, so `nb.Amortiseλ` becomes
   `oz.Amortiseλ` and `nb.SumRowsUλ` becomes `oz.SumRowsUλ`: the migration is a
-  three-character find and replace, and no argument, result or rounding moves with it. The
+  3-character find and replace, and no argument, result or rounding moves with it. The
   259 assertions in the Excel self-test answer exactly what they answered before.
 
   The rename is length-preserving throughout, because the help block every function
-  carries is aligned in columns: `Nabla` and `Ozzit` are both five characters, `nb.` and
-  `oz.` both three, and the bare `nb` the help text names in prose is two, like `oz`.
+  carries is aligned in columns: `Nabla` and `Ozzit` are both 5 characters, `nb.` and
+  `oz.` both 3, and the bare `nb` the help text names in prose is 2, like `oz`.
   `tools/rebrand_to_ozzit.py` asserts that property on every string it rewrites rather
   than trusting it, so not one of the 130 help blocks needed re-aligning.
 
@@ -634,20 +634,20 @@ baseline that grew around them.
 ## v2.6.0, 19 August 2026, any period length
 
 - **`nb.Amortiseλ` returned `#DIV/0!` on every timeline shorter than a month.** It reads
-  the period length off the timeline's first two dates and rounds it to whole months, which
-  is nought for anything under about a fortnight, and the next two lines divide by it.
+  the period length off the timeline's first 2 dates and rounds it to whole months, which
+  is nought for anything under about a fortnight, and the next 2 lines divide by it.
   Daily, weekly and fortnightly timelines all failed.
 
   The schedule is solved monthly whatever the timeline, because the function's own
   description says the payments are monthly, and only then folded into the timeline's
   periods. Flooring the count at one month is not enough on its own: the folded block is
-  laid down one period at a time, so a weekly timeline would date month two a week after
+  laid down one period at a time, so a weekly timeline would date month 2 a week after
   month one and report a year of interest inside a quarter. Each month's figures now go in
   the one period that contains that month's start, and the periods between hold nothing,
-  which is what `nb.Depreciateλ` has always done on the same timelines. The two balance
+  which is what `nb.Depreciateλ` has always done on the same timelines. The 2 balance
   rows are dated the same way rather than divided, because they are balances.
 
-  A twelve-month loan drawn on 1 January 2026 now reports the same money on a weekly, a
+  A 12-month loan drawn on 1 January 2026 now reports the same money on a weekly, a
   fortnightly and a daily timeline as it does on a monthly one, to the cent, and puts the
   first month in period one and the second in the week that holds 1 February rather than
   the week after the first.
@@ -660,30 +660,30 @@ baseline that grew around them.
   opens, so a timeline whose periods are not all the same length still counts every month
   once. Only the last period has no successor to ask, and it runs on as far as the period
   before it did. Whole-month timelines are untouched and answer exactly what
-  they answered before, six-monthly ones included: two- and six-month intervals were never
+  they answered before, 6-monthly ones included: 2- and 6-month intervals were never
   affected, measured in Excel, because the schedule arithmetic is generic in the count.
-  `PpY` divided twelve by that count, nothing read it, and it is gone.
+  `PpY` divided 12 by that count, nothing read it, and it is gone.
 
 - **`nb.Depreciateλ` dropped the last period of any timeline shorter than a month.** Every
   period but the last takes its end date from the next period's start. The last has no
   successor and was given `EDATE(` its own start`, MpP) - 1`, which at nought months is the
   day *before* it opens, so nothing could fall inside it. Forty-eight weekly periods from
   1 January 2026 reported **1,833.37** of a 2,000.00 year: December went missing outright,
-  while forty-nine weekly periods and twelve monthly ones both reported 2,000.00. The last
+  while 49 weekly periods and 12 monthly ones both reported 2,000.00. The last
   period now ends one period on from its own start, counted in months where the timeline is
   monthly or longer and in days where it is shorter.
 
-  Nothing else about it was broken. The published source carried two `SWITCH` lookups that
+  Nothing else about it was broken. The published source carried 2 `SWITCH` lookups that
   listed only monthly, quarterly and yearly and returned `#N/A` for anything else, and this
   changelog has twice named them as a reason the function fails on other intervals. That
   was wrong, and Excel says so: each is read by exactly one binding, nothing reads those
-  two bindings, and Excel never evaluates them. Two-, four- and six-month timelines have
-  always returned correct schedules. All four bindings are deleted rather than generalised,
-  and the parameter table no longer names three intervals as though they were the only ones.
+  2 bindings, and Excel never evaluates them. Two-, 4- and 6-month timelines have
+  always returned correct schedules. All 4 bindings are deleted rather than generalised,
+  and the parameter table no longer names 3 intervals as though they were the only ones.
 
 - **`nb.Depreciateλ` stopped responding when a life in years was not a life.** Its
   arguments read `InitialValues`, `InServiceDates`, `LifeInYears`, `Timeline`. Transposing
-  the middle two puts a date serial where the life belongs, and 1 January 2026 is 46,023,
+  the middle 2 puts a date serial where the life belongs, and 1 January 2026 is 46,023,
   so the function is asked for a schedule 552,276 months long and Excel stops answering
   rather than erroring. It now checks that every life is a number over 0 and no more than
   100 and returns a message naming the argument order, and clamps the life it uses as well
@@ -719,12 +719,12 @@ baseline that grew around them.
   are both the principal and the first pass is the last. The published example is nowhere
   near the cap and still prints 222.90. No balance anywhere moves, because a closing
   balance is the principal less the payment and never read the interest, which is exactly
-  why the six balance identities in the self-test could not see this.
+  why the 6 balance identities in the self-test could not see this.
 
 - **Two help-text misspellings, the last of their kind.** `nb.TimelinePositionλ`'s
-  parameter table spelled the word the function is named after "timline", which v2.5.0
+  parameter table spelt the word the function is named after 'timline', which v2.5.0
   fixed in `nb.TimelineOffsetλ` and named as still outstanding here. `nb.LabelDepreciateλ`'s
-  said "teh".
+  said 'teh'.
 
 - **A licence, for the parts of this repository that can carry one.** [LICENCE](LICENCE) is
   MIT and covers `tools/`, `.github/`, the Markdown files and `assets/`. It does not extend
@@ -743,12 +743,12 @@ baseline that grew around them.
   ones are heavy enough to lose it, and the failure looks like a crash in the harness
   rather than a slow workbook, so it now waits and says so if the answers never arrive.
 
-  Twenty-eight cells changed across the whole workbook, all of them text, all on the four
+  Twenty-eight cells changed across the whole workbook, all of them text, all on the 4
   sheets that display the help of the functions above. No numeric cell anywhere differs
   from v2.5.0.
 
 - A note for whoever adds a line of help next: a function's help spills down its own
-  demonstration sheet, and the sheets are laid out with between nought and seven free rows
+  demonstration sheet, and the sheets are laid out with between nought and 7 free rows
   underneath. `nb.Amortiseλ` has one. Two added rows blocked its spill and the whole help
   block came back an error, which `tools/verify_cache.py` caught and the self-test's
   error-cell scan would have caught too.
@@ -756,24 +756,24 @@ baseline that grew around them.
 ## v2.5.0, 19 August 2026, an example that runs
 
 - **`nb.TimelineOffsetλ`'s worked example could not be run as printed.** The call was
-  missing the two closing brackets that finish `EDATE` and the function call itself, so
+  missing the 2 closing brackets that finish `EDATE` and the function call itself, so
   copying the one line a reader is meant to copy got a syntax error rather than an answer.
   The Result column beside it was empty, where every other example in the library prints
   what it returns, which is how the missing brackets went unseen: there was no answer to
   disagree with. The earlier workbook wrote it against 2/15/2022 and a timeline starting 1/1/2023, and
-  the date sweep moved both forward two years with everything else, which still left the
-  example two years behind the 1 January 2026 timeline the demonstration sheet builds.
+  the date sweep moved both forward 2 years with everything else, which still left the
+  example 2 years behind the 1 January 2026 timeline the demonstration sheet builds.
 
-  It is now two rows against that same timeline, one date inside it and one before it,
+  It is now 2 rows against that same timeline, one date inside it and one before it,
   because a date falling before a model's timeline is what the function's own discussion
   comment is written for. `tools/excel_selftest.ps1` runs both and holds them to the
   printed results, 1 and -11, so the example cannot drift from what it claims again. The
-  parameter table above it also spelled "timline", which is now the word the function is
+  parameter table above it also spelt 'timline', which is now the word the function is
   named after.
 
   Five cells changed, all of them on the sheet that displays this function's own help. No
   other sheet, no formula and no defined name's behaviour differs from v2.4.0.
-  `nb.TimelinePositionλ`'s parameter table carries the same "timline" spelling and is
+  `nb.TimelinePositionλ`'s parameter table carries the same 'timline' spelling and is
   untouched.
 
 ## v2.4.0, 19 August 2026, period starts that exist
@@ -791,32 +791,32 @@ baseline that grew around them.
   anchor to the date of interest and steps the anchor on by that many, then steps back one
   period where a truncated quotient overshoots.
 
-  Measured against that schedule over 9,900 cases, being eleven anchors by five period
+  Measured against that schedule over 9,900 cases, being 11 anchors by 5 period
   lengths by 180 dates at 13-day steps from January 2024, the old procedure was wrong 169
   times. Every one had an anchor on the 29th, 30th or 31st, 29 February included; anchors on
   the 1st, 15th and 28th were already right and answer exactly as before.
   `("31/1/2026", 1, "5/3/2026")` gave 2 March 2026 and now gives 28 February 2026.
 
-  The new procedure compares two dates rather than taking months and days out of them, and
+  The new procedure compares 2 dates rather than taking months and days out of them, and
   Excel orders every number before any text, so a date written as text would never compare
   as a date. Both date arguments are converted first, the same way the Dates module's
   functions do it, and `tools/verify_sources.py` already fails a conversion that is bound
   and never read.
 
 - **`nb.TimelineOffsetλ` divided by zero on every daily, weekly and fortnightly timeline.**
-  It reads the interval off the timeline's first two dates and rounds it to whole months,
+  It reads the interval off the timeline's first 2 dates and rounds it to whole months,
   which is zero for anything shorter than about a fortnight, and the next line divides by
   it. Every such call returned `#DIV/0!`.
 
   A sub-monthly period is a fixed number of days, which is what makes it easy: the offset is
   now the day difference floored by that count, so a date 20 days into a weekly timeline is
-  in period 2 and one three days before it starts is in period -1. The month path is
+  in period 2 and one 3 days before it starts is in period -1. The month path is
   untouched and answers exactly what it answered before on monthly, quarterly and yearly
   timelines, month-end anchored ones included, over 200 dates at 11-day steps.
 
   This does not make `nb.Amortiseλ` work on a sub-monthly timeline. It calls
   `nb.TimelineOffsetλ` on whatever timeline it is handed, so it did inherit this failure,
-  but it rounds the same interval to months itself and then divides twelve by it, so a
+  but it rounds the same interval to months itself and then divides 12 by it, so a
   weekly timeline still fails there on its own arithmetic. `nb.Depreciateλ` holds a third
   copy of the rounding and turns nought months into `#N/A`. Neither is changed here.
 
@@ -837,11 +837,11 @@ cells across 43 of the 50 sheets were stale, and Excel hid every one of them by
 recalculating on open. And it no longer carries a path off the machine that built it,
 which every release since v1.2.0 has published.
 
-The rest came from a full audit: thirteen readers across the build, the gates, the
+The rest came from a full audit: 13 readers across the build, the gates, the
 workbook, the LAMBDA sources, the prose and the CI, each finding put to a second pass that
 tried to refute it. Two functions were comparing a raw date against a converted one, a
 worked example called a different function, `functions.csv` disagreed with the workbook it
-is generated from, and nine comment banners named or described the wrong function.
+is generated from, and 9 comment banners named or described the wrong function.
 
 Two gates are new or widened as a result, and one stopped asking for something that is no
 longer true.
@@ -856,7 +856,7 @@ longer true.
   so CI fails rather than trusting either step to have run.
 
 - **Two more functions compared a raw date against a converted one,** the defect their
-  non-ByItems siblings had until v2.2.0. The check added then could not see these two: each
+  non-ByItems siblings had until v2.2.0. The check added then could not see these 2: each
   does read its conversion, but only to pass it to the recursive call, so the first row of
   the result came from the raw argument and every row below it from the converted one, off
   the same call. Given period bounds written as text, `nb.ScheduleValuesByItemsλ` returned
@@ -875,8 +875,8 @@ longer true.
   published a signature cut off mid-parameter list with a bracket left open, because its
   help wraps onto a second row and the exporter read only the first. 31 descriptions
   carried `_x000a_`, the raw OOXML escape for a line break out of a Name Manager comment,
-  and two began with the help table's column delimiter. All fixed at the source, and
-  `tools/verify_previous_names.py` now checks the two columns nothing checked: brackets
+  and 2 began with the help table's column delimiter. All fixed at the source, and
+  `tools/verify_previous_names.py` now checks the 2 columns nothing checked: brackets
   balance, no raw escapes, no leading delimiter, nothing empty.
 
 - **`docProps/app.xml` described a 49-sheet workbook that has 50.** The build registered
@@ -896,7 +896,7 @@ longer true.
   and they are the one piece of the published source that drifted with nothing watching.
   Three misnamed their function: `→SumContainsλ` with the help table's arrow on it,
   `InterestCoverateRatioλ` and `PriceToCashsRatioλ`. Six described a different one:
-  `CountColsλ` and `CountAColsλ` in both modules said "row" where they count columns, and
+  `CountColsλ` and `CountAColsλ` in both modules said 'row' where they count columns, and
   `IsInListλ` in both said it tests whether a value falls between two limits. Each is
   anchored to the name above it, because the same wording is correct above `CountRowsλ`
   and above `IsBetweenλ`.
@@ -905,23 +905,23 @@ longer true.
   never changed, in both the Essentials and Utilities copies. `nb.CountColsλ` published its
   signature as `CountColsλ( Array,)`, with an empty second argument in it.
 
-  The last three entries came from an outside review, checked one by one against the
-  source. Six of its nine banner claims landed on wording that is correct where it sits, so
-  only the three it named plus the six that are genuinely wrong were changed.
+  The last 3 entries came from an outside review, checked one by one against the
+  source. Six of its 9 banner claims landed on wording that is correct where it sits, so
+  only the 3 it named plus the 6 that are genuinely wrong were changed.
 
-- **The workbook now ships the numbers its own formulas produce.** An `.xlsx` stores two
+- **The workbook now ships the numbers its own formulas produce.** An `.xlsx` stores 2
   things for every calculated cell, the formula and the answer Excel last got from it, and
   nothing keeps them in step. The build edits the workbook as XML and has no formula
   engine, so every cell downstream of a value it changes keeps the answer it had before.
-  Shifting the sample dates forward two years left **3,193 cached cells across 43 of the 50
+  Shifting the sample dates forward 2 years left **3,193 cached cells across 43 of the 50
   sheets** holding numbers their own formulas no longer produce. `nb.IsOccurrenceDateλ`
   alone accounted for 978 of them.
 
   Nobody ever saw one. Excel recalculates on open and replaces the lot, which is precisely
   what made this worth finding: the file could be wrong in a way only a second tool could
   see, and everything that reads an `.xlsx` without a formula engine, from a diff to a
-  converter to a web preview, reads the cached answer. It is the same defect as the five
-  saved `#VALUE!` cells fixed in v2.2.0, three orders of magnitude wider.
+  converter to a web preview, reads the cached answer. It is the same defect as the 5
+  saved `#VALUE!` cells fixed in v2.2.0, 3 orders of magnitude wider.
 
   `tools/refresh_cache.py` recalculates the workbook in Excel and saves it, then clears the
   always-calculate flags Excel puts back. `fullCalcOnLoad` comes off with them: that flag
@@ -944,7 +944,7 @@ longer true.
   the formula produces. Run against the previous build it reports all 3,193 by sheet, row
   and column. It refuses to pass on fewer than 15,000 comparisons, so a run that silently
   read almost nothing fails rather than reporting success.
-- `tools/refresh_cache.ps1` and `tools/dump_values.ps1`, the two Excel steps the pair above
+- `tools/refresh_cache.ps1` and `tools/dump_values.ps1`, the 2 Excel steps the pair above
   drive. Both fold in a lesson that cost real time: `CalculationState` comes back over COM
   as the name `xlDone` rather than as `0`, so the obvious test against `0` is true forever
   and a wait built on it never ends early.
@@ -958,7 +958,7 @@ longer true.
 - `tools/verify_cache.py` fails when a sheet holding cached values contributes no
   comparisons at all. A floor on the total is not enough on its own: one sheet dropping out
   of the dump would still leave twenty thousand comparisons and look like a pass.
-- `tools/verify_workbook.py` no longer demands `fullCalcOnLoad`. There are two honest ways
+- `tools/verify_workbook.py` no longer demands `fullCalcOnLoad`. There are 2 honest ways
   for a reader to see the right numbers, and that flag is only one of them. It now fails
   when a workbook has neither `fullCalcOnLoad` nor the calculation chain Excel leaves
   behind when it saves, which is the case where the file would open showing whatever the
@@ -972,7 +972,7 @@ longer true.
   lines were there, so every closing balance carried one period's interest too much and the
   error compounded into the next opening balance.
 
-  On 1,000 of debt at 6% with CFADS of 300 and a DSCR of 1.2 over five periods, it repaid
+  On 1,000 of debt at 6% with CFADS of 300 and a DSCR of 1.2 over 5 periods, it repaid
   1,078.60 of a 1,000 loan and still reported 92.80 outstanding. The cash paid was 1,250
   against 1,171.40 actually owed; the 78.60 overpaid plus the 92.80 still owing came to
   171.40, which is the whole interest charge counted a second time.
@@ -982,38 +982,38 @@ longer true.
   to it. A negative repayment needs no special case: when the cash cannot cover the
   interest, subtracting a negative capitalises the shortfall, which is what should happen.
   The same schedule now repays exactly 1,000 and closes at 0. With no cash at all the debt
-  grows by one period of interest rather than two, and 1,500 of cash against 1,000 of debt
+  grows by one period of interest rather than 2, and 1,500 of cash against 1,000 of debt
   clears it in one period rather than leaving 30.93 behind.
 
 - **Two sculpting functions told the reader to label the wrong row.** `nb.DebtSculptFixedλ`
-  and `nb.DebtSculptVariableλ` both suggest "Principal repayments" for their third row,
+  and `nb.DebtSculptVariableλ` both suggest 'Principal repayments' for their third row,
   which holds the whole debt service: on the figures above that row reads 250 where the
   principal repaid is 190. Their arithmetic was never wrong, only the label, which now reads
-  "Debt service (interest and principal)". `nb.DebtSculptVariableLRVλ` keeps the original
+  'Debt service (interest and principal)'. `nb.DebtSculptVariableLRVλ` keeps the original
   label, because with the fix above its third row really is the principal repayment.
 
 - **The debt module had never had a numeric check of any kind,** which is how this shipped
   from v1.2.0 to v2.2.0. `tools/excel_selftest.ps1` now runs 152 assertions rather than 138.
-  The fourteen new ones are balance identities rather than expected figures, so a schedule
+  The 14 new ones are balance identities rather than expected figures, so a schedule
   that satisfies them cannot be double-counting whatever the inputs: repayments retire the
   principal exactly, closing equals opening less repayment, each opening is the previous
   closing, the cash used never exceeds CFADS over DSCR, the balance never goes negative, and
-  the same roll-forward holds for the two functions that pay the whole debt service. Run
-  against v2.2.0, seven of the fourteen fail, and they report the figures above by name.
+  the same roll-forward holds for the 2 functions that pay the whole debt service. Run
+  against v2.2.0, 7 of the fourteen fail, and they report the figures above by name.
 
   Not fixed, and worth knowing before relying on the final period of a sculpted schedule:
   `nb.InterestLRVλ` computes interest on the average balance over the period, but it is not
   told about the repayment cap, so in the one period where the cap binds it still assumes
-  the larger uncapped repayment and understates the interest. In the five-period schedule
+  the larger uncapped repayment and understates the interest. In the 5-period schedule
   above that is 0.97 in the final period against 4.22; with 1,500 of cash against 1,000 of
   debt it is 15.46 against 30.00. The balance is right either way, because the repayment is
   capped at the principal.
 
-  The five debt functions also remain absent from the workbook's embedded Advanced Formula
+  The 5 debt functions also remain absent from the workbook's embedded Advanced Formula
   Environment store, so the workbook still cannot be rebuilt from that store alone. They are
   the only self-recursive functions in the library, each calling itself by name, and an
   imported module takes its prefix from its container, so the recursion would call a name
-  that does not exist there. The earlier workbook leaves the same five out for the same reason. `src/`
+  that does not exist there. The earlier workbook leaves the same 5 out for the same reason. `src/`
   carries all 130 and `tools/verify_sources.py` checks all 130 on every push.
 
 ## v2.2.0, 18 August 2026, counting the way the help counts
@@ -1021,35 +1021,35 @@ longer true.
 v2.1.0 listed what it knew was still wrong and left it, because each of these changes
 moves results for anyone already relying on them. This release makes them right.
 
-`nb.Periodsλ` now counts the way its own four examples count, which returns one more
+`nb.Periodsλ` now counts the way its own 4 examples count, which returns one more
 period wherever an end date falls part way through one. `nb.ScheduleValuesλ` and
 `nb.ScheduleRatesλ` now read the date conversions they were computing and throwing away,
 so both answer correctly when given dates written as text. Nothing is renamed, and
 formulas written against v2.1.0 keep working. Across all 20,813 recalculated cells in the
-workbook, four moved, all four on the Periods demonstration sheet.
+workbook, 4 moved, all 4 on the Periods demonstration sheet.
 
 - **`nb.Periodsλ` returned one period fewer than its own examples claim.** It counted whole
-  intervals, which is what `DATEDIF` returns, while every one of its four worked examples
-  counts the period starts crossed between the two dates. Its description says as much: it
-  lists "End Date is inclusive" as one of its differences from `DATEDIF`, and then the
-  procedure called `DATEDIF`. From 31 March to 15 May is one whole month and two month
-  starts, and the help says 2. It now counts ordinals, the same way for all five intervals,
+  intervals, which is what `DATEDIF` returns, while every one of its 4 worked examples
+  counts the period starts crossed between the 2 dates. Its description says as much: it
+  lists 'End Date is inclusive' as one of its differences from `DATEDIF`, and then the
+  procedure called `DATEDIF`. From 31 March to 15 May is one whole month and 2 month
+  starts, and the help says 2. It now counts ordinals, the same way for all 5 intervals,
   so a part period at the end counts once and a whole one does not count twice.
 
   `D` is unchanged, because a day ordinal is the serial number itself. `W` follows
   `nb.PeriodLabelλ`'s own week numbering, which restarts each 1 January and so labels every
   year with 53 weeks, the last of them one or two days long. That is what makes the help's
-  fourth example -53 rather than the 52 whole weeks its two dates are apart. All four
+  fourth example -53 rather than the 52 whole weeks its 2 dates are apart. All 4
   examples now hold: 2, -2, -12 and -53.
 
   This changes results. Anything measured in months, quarters, weeks or years returns one
   more than it did wherever the end date falls part way through a period, which is most of
-  the time. The two demonstration cells that move are the quarters row, 4 to 5, and the
+  the time. The 2 demonstration cells that move are the quarters row, 4 to 5, and the
   weeks row, 52 to 53. If you were relying on whole-interval counts, `DATEDIF` is still
   there and still does that.
 
   The third example was also the one line in this help that could not be copied: it passed
-  four arguments to a function that takes three. The `-12` it claims is right without the
+  4 arguments to a function that takes 3. The `-12` it claims is right without the
   fourth.
 
 - **Four more functions threw away their date conversions,** the defect `nb.OverLapDaysλ`
@@ -1079,15 +1079,15 @@ workbook, four moved, all four on the Periods demonstration sheet.
 ### Added
 
 - `tools/verify_sources.py` now requires that a function which converts a date argument
-  goes on to read the conversion. It is the check that would have caught all five of these,
+  goes on to read the conversion. It is the check that would have caught all 5 of these,
   and it could not be added before they were fixed, because it fails on them. Run against
-  v2.1.0 it names all six bindings and the function each belongs to. A general unused-value
+  v2.1.0 it names all 6 bindings and the function each belongs to. A general unused-value
   check would need a real parser and would report a great deal more; this one asks a
   narrower question and gets a clean answer.
 
 ## v2.1.0, 18 August 2026, functions that do what they say
 
-v2.0.0 renamed every function. This one fixes what three of them compute, and stops two
+v2.0.0 renamed every function. This one fixes what 3 of them compute, and stops 2
 more from claiming to be something they are not.
 
 Nothing is renamed, so formulas written against v2.0.0 keep working. Three functions do
@@ -1095,17 +1095,17 @@ return different numbers, and only for the inputs they were handling wrongly: da
 as text to `nb.OverLapDaysλ`, a start date after the end date in `nb.Periodsλ`, and
 `No_Switch` set to `TRUE` in `nb.VDBλ`.
 
-- **`nb.OverLapDaysλ` compared its dates as text.** It converts all four arguments, so that
+- **`nb.OverLapDaysλ` compared its dates as text.** It converts all 4 arguments, so that
   a date written as text becomes a serial number, and then compared the raw arguments
-  anyway. The four conversions were never read. Two text dates therefore compared as
+  anyway. The 4 conversions were never read. Two text dates therefore compared as
   strings, which ranks `"7/1/2025"` after `"17/1/2025"`, so the function picked the wrong
   start and end and the subtraction that follows coerced them back to dates. Its own third
-  example claimed 12 shared days for two January 2025 periods that share 2. The comparison
+  example claimed 12 shared days for 2 January 2025 periods that share 2. The comparison
   now reads the converted values and the example says 2. Numbers
   and real dates are unaffected, because converting one returns it unchanged, which is why
   the rental schedule on the function's own demonstration sheet was right all along.
 - **`nb.Periodsλ` could not return a negative.** Its description promises "Returns negative
-  values if Date1 is after Date2" and two of its four examples show one, but the difference
+  values if Date1 is after Date2" and 2 of its 4 examples show one, but the difference
   was floored at 1 before `SIGN` saw it, so the sign was always `+1`.
   `=nb.Periodsλ("15/5/2025", "31/3/2025")` returned 1 where it should return -1. The sign
   now comes from the difference itself. Equal dates give a sign of 0 rather than 1, which
@@ -1118,7 +1118,7 @@ as text to `nb.OverLapDaysλ`, a start date after the end date in `nb.Periodsλ`
   straight line produces. Calls that omit the argument are unaffected, including
   `nb.Depreciateλ`'s `VDB` method, which never passed one.
 
-  All three came from the same external audit of v1.2.6, and each was confirmed in Excel
+  All 3 came from the same external audit of v1.2.6, and each was confirmed in Excel
   before it was fixed. Two of them were hidden by their own worked example, which printed
   the answer the bug produces. Every other cached value in the workbook is byte-identical
   to v2.0.0; the one cell that moved is the corrected example result on
@@ -1128,16 +1128,16 @@ as text to `nb.OverLapDaysλ`, a start date after the end date in `nb.Periodsλ`
   for anyone already relying on them and none is a one-line correction. `nb.Periodsλ`
   counts complete intervals where its examples count boundaries crossed, so its forward
   example returns 1 against the 2 it claims, and its `W` example 52 against 53. Its
-  demonstration sheet also ships five cached `#VALUE!` cells, which Excel replaces with
+  demonstration sheet also ships 5 cached `#VALUE!` cells, which Excel replaces with
   the right answers the moment the file opens. (This entry first said the function returns
   `#VALUE!` for range arguments. It does not; that claim came from a probe that named a
   worksheet which does not exist. The cached errors are stale, not live. Corrected the
-  same day, here and in the published release notes.) And four more functions ignore their
+  same day, here and in the published release notes.) And 4 more functions ignore their
   date
   conversions the way `nb.OverLapDaysλ` did: `nb.PeriodLabelλ`, `nb.ScheduleRatesλ`,
-  `nb.ScheduleValuesλ` and `nb.Timelineλ`, six dead conversions between them, all in Dates.
+  `nb.ScheduleValuesλ` and `nb.Timelineλ`, 6 dead conversions between them, all in Dates.
 
-- **The depreciation helpers no longer claim to be ATO methods.** `nb.DiminishingValueλ` described itself as the ATO 200% diminishing value method and `nb.PrimeCostλ` as the ATO prime cost method. Neither is one. They take a cost and an effective life and nothing else: no acquisition date, no income year, no days held, no disposal. `nb.DiminishingValueλ` also writes the entire undeducted residual off in its final period, so for a cost of 1,000 over five years it returns 400, 240, 144, 86.40 and 129.60, where a diminishing-balance calculation would deduct 51.84 that year and carry the rest forward. The schedules are unchanged and still useful for modelling; what changes is that they are now described as modelling schedules rather than tax calculations, in the function help, the method codes on `nb.Depreciateλ`, the Data Validation sheet, the Australian tax worksheet and the README. The worksheet now says so on its face, and the README says plainly not to use them to prepare a return.
+- **The depreciation helpers no longer claim to be ATO methods.** `nb.DiminishingValueλ` described itself as the ATO 200% diminishing value method and `nb.PrimeCostλ` as the ATO prime cost method. Neither is one. They take a cost and an effective life and nothing else: no acquisition date, no income year, no days held, no disposal. `nb.DiminishingValueλ` also writes the entire undeducted residual off in its final period, so for a cost of 1,000 over 5 years it returns 400, 240, 144, 86.40 and 129.60, where a diminishing-balance calculation would deduct 51.84 that year and carry the rest forward. The schedules are unchanged and still useful for modelling; what changes is that they are now described as modelling schedules rather than tax calculations, in the function help, the method codes on `nb.Depreciateλ`, the Data Validation sheet, the Australian tax worksheet and the README. The worksheet now says so on its face, and the README says plainly not to use them to prepare a return.
 
   Raised by an external audit of v1.2.6. Its arithmetic checks out: the fifth-year deduction under a plain diminishing-balance calculation is 51.84, not the 129.60 residual the function returns.
 
@@ -1145,16 +1145,16 @@ as text to `nb.OverLapDaysλ`, a start date after the end date in `nb.Periodsλ`
 - **`nb.RollingAvgλ` claimed a result belonging to `nb.RollingSumλ`,** the same copy going the other way: its call was right and its answer, `1,3,6,9,12`, was the running total rather than the running average. Excel gives `1,1.5,2,3,4`, which is what it now says.
 - **`nb.Amortiseλ`'s help pointed at a function that does not exist,** `LableAmortiseλ`, a transposition of `LabelAmortiseλ`.
 - **The build's help corrections can no longer reach a live formula.** Correcting help text also refreshes any copy of that help already spilled and cached on a demonstration sheet, and that refresh was a blanket text replace across the whole worksheet. Fixing `nb.ScheduleValuesByItemsλ`'s example rewrote a real formula on a neighbouring sheet, changing which function it called and spilling `#SPILL!` across it. The Excel gate caught it before it shipped. The refresh is now confined to cached values, never formulas, and a parameter label must match a whole cell rather than appear anywhere inside one.
-- **`tools/verify_signatures.py` now reads the worked examples too.** It already checked the signature and the parameter table; it now also requires that a function's examples call that function, and that every function named anywhere in a help is one the library declares. Both are pure text, so both run in CI. Run against the source before these fixes it reports all four defects above by name. 76 example blocks are checked.
+- **`tools/verify_signatures.py` now reads the worked examples too.** It already checked the signature and the parameter table; it now also requires that a function's examples call that function, and that every function named anywhere in a help is one the library declares. Both are pure text, so both run in CI. Run against the source before these fixes it reports all 4 defects above by name. 76 example blocks are checked.
 
-- **v2.0.0's own release text carried three defects the rename left behind.** The flat-namespace substitution ran over the prose as well as the code: the README's coverage note became "all of `nb`, `nb` and `nb`" where it meant Ratios, Utilities and Debt, and this changelog named `nb.IsInListλ` twice where the second is `nb.IsInListUλ`. It also said 89 functions change prefix and nothing else; 89 is only the count that never collided, and the true figure including the 17 collision winners is 106, checked against `functions.csv`. The cell-comparison claim omitted the capitalisation of the product name from `nabla` to `Nabla` in 29 places, done in the same build. Corrected here and in the published v2.0.0 release notes.
+- **v2.0.0's own release text carried 3 defects the rename left behind.** The flat-namespace substitution ran over the prose as well as the code: the README's coverage note became "all of `nb`, `nb` and `nb`" where it meant Ratios, Utilities and Debt, and this changelog named `nb.IsInListλ` twice where the second is `nb.IsInListUλ`. It also said 89 functions change prefix and nothing else; 89 is only the count that never collided, and the true figure including the 17 collision winners is 106, checked against `functions.csv`. The cell-comparison claim omitted the capitalisation of the product name from `nabla` to `Nabla` in 29 places, done in the same build. Corrected here and in the published v2.0.0 release notes.
 - **`previous_name` is now pinned to a released baseline rather than to the build's own intermediate names.** The column shipped correct in v2.0.0, but it was derived from the `nabla.<module>.` names the build uses internally before it flattens them, which happen to match what v1.2.6 shipped only because nothing has been added since. The next function added would have published a previous name that no release ever carried, and the build's count check could not have caught it, because both sides of that count come from the same build. The 130 names v1.2.6 shipped are now recorded in `tools/released-names-v1.2.6.txt`, and a function whose previous name is not in that file records nothing rather than a plausible-looking guess. A baseline name that no function claims now stops the build and says which name, because a function disappearing without a forwarding address is the one thing this column exists to prevent.
 
 ### Added
 
-- `tools/verify_previous_names.py`, a fifth gate and the fourth in CI. The build's asserts guarantee the column is right when it is generated, but the committed file is what people read, so this checks the published index against the published baseline. Exercised against four deliberate breakages: a fabricated previous name, a dropped function, one old name claimed twice, and two unrelated functions with their previous names swapped. It names the offending function in each case rather than reporting a count.
+- `tools/verify_previous_names.py`, a fifth gate and the fourth in CI. The build's asserts guarantee the column is right when it is generated, but the committed file is what people read, so this checks the published index against the published baseline. Exercised against 4 deliberate breakages: a fabricated previous name, a dropped function, one old name claimed twice, and 2 unrelated functions with their previous names swapped. It names the offending function in each case rather than reporting a count.
 
-  That last case is why the check does more than count. Claiming every baseline name exactly once proves the mapping is a bijection, which is not the same as proving it is the right one: swap two functions' previous names and every count still balances while a reader is sent to the wrong function. The rename only ever appended to a bare name, adding a `B`, `E` or `U` tag or a module word, so each new bare name must begin with the old one. All 130 satisfy that, and a swap does not.
+  That last case is why the check does more than count. Claiming every baseline name exactly once proves the mapping is a bijection, which is not the same as proving it is the right one: swap 2 functions' previous names and every count still balances while a reader is sent to the wrong function. The rename only ever appended to a bare name, adding a `B`, `E` or `U` tag or a module word, so each new bare name must begin with the old one. All 130 satisfy that, and a swap does not.
 
 ## v2.0.0, 18 August 2026, one namespace
 
@@ -1162,13 +1162,13 @@ as text to `nb.OverLapDaysλ`, a start date after the end date in `nb.Periodsλ`
 `nabla.f.Amortiseλ` is now `nb.Amortiseλ`. Models built on the old names keep working
 only if they keep the old workbook, which stays available at the `v1.2.6` tag.
 
-Six module prefixes became one. The gain is five fewer characters on every call and, more
+Six module prefixes became one. The gain is 5 fewer characters on every call and, more
 to the point, autocomplete that works: typing `=nb.` narrows to this library instead of
-requiring you to remember which of six modules a function lived in first.
+requiring you to remember which of 6 modules a function lived in first.
 
 Of the 130 functions, 106 change prefix and nothing else. Seventeen bare names existed in
 more than one module: the fuller implementation keeps the plain name and the other 19 take
-a one-letter tag, `B` for debt, `E` for essentials, `U` for utilities. The five About
+a one-letter tag, `B` for debt, `E` for essentials, `U` for utilities. The 5 About
 tables take words, so `nabla.f.Aboutλ` is now `nb.AboutFinancialλ` and the bare name
 `Aboutλ` is gone.
 
@@ -1190,35 +1190,35 @@ name dropped and none invented.
   did not offer.
 - The entry below for the namespace work said the tag scheme covered 23 functions. It
   covers 19; the other 4 were the About renames, counted twice.
-- **`tools/verify_signatures.py` now reads the parameter tables too.** It checked the FUNCTION line and stopped there, which is why the table defects fixed in v1.2.6 had to be found by hand. The two are independent pieces of hand-written text, so the checks are independent: 117 signatures and 122 parameter tables, the extra five being the debt module's functions, which have never carried a FUNCTION line but do carry tables. A row whose label ends in `!` is an aside rather than a parameter, and the internal `DoNotUse` counter may be documented or omitted. Run against v1.2.5 it reports all four table divergences; against v1.2.3, twenty-four problems across both checks.
+- **`tools/verify_signatures.py` now reads the parameter tables too.** It checked the FUNCTION line and stopped there, which is why the table defects fixed in v1.2.6 had to be found by hand. The 2 are independent pieces of hand-written text, so the checks are independent: 117 signatures and 122 parameter tables, the extra 5 being the debt module's functions, which have never carried a FUNCTION line but do carry tables. A row whose label ends in `!` is an aside rather than a parameter, and the internal `DoNotUse` counter may be documented or omitted. Run against v1.2.5 it reports all 4 table divergences; against v1.2.3, 24 problems across both checks.
 
-## v1.2.6, 18 Aug 2026, parameter tables that describe their own function
+## v1.2.6, 18 August 2026, parameter tables that describe their own function
 
 Every function's help repeats its parameters as a table below the signature. v1.2.4 corrected the signatures; this corrects the tables, which are a separate piece of hand-written text and had drifted on their own. Every parameter table in the library now lists exactly what its function declares.
 
-- **`nabla.r.EquityRatioλ` documented a different function's arguments.** Its parameter table listed `OperatingIncome` and `InterestExpenses`, which belong to `InterestCoverageRatioλ`, while the function takes `ShareholdersEquity`, `TotalAssets` and `IntangibleAssets`. This is the second half of the copy that gave it the wrong name until v1.2.3: the name and the table came across together and only the name was corrected then. Its three real parameters had never been described at all. They are now, in the wording its neighbours already use for the same quantities.
+- **`nabla.r.EquityRatioλ` documented a different function's arguments.** Its parameter table listed `OperatingIncome` and `InterestExpenses`, which belong to `InterestCoverageRatioλ`, while the function takes `ShareholdersEquity`, `TotalAssets` and `IntangibleAssets`. This is the second half of the copy that gave it the wrong name until v1.2.3: the name and the table came across together and only the name was corrected then. Its 3 real parameters had never been described at all. They are now, in the wording its neighbours already use for the same quantities.
 - **`nabla.r.EquityMultiplierλ` dropped a word from its second parameter.** Its table called it `ShareholdersEquity`; the LAMBDA and the signature above it both say `TotalShareholdersEquity`. `ShareholdersEquity` is what the neighbouring `DebtToEquityRatioλ` genuinely takes, which is where the shortened name came from.
-- **`IsBetweenλ` documented a parameter it does not have, and described the wrong limit.** Its parameter table called the second argument `Lo` where the LAMBDA and the signature above it both say `Low`, and the row for `Hi` read "The lower limit that the value must be less than", copied from the row above it, so the function's own help described its upper bound as a lower one. The `Inclusive` row referred to `Lo` as well. All three are corrected in the Essentials and Utilities copies, which are clones of each other; the Dates module's own `IsBetweenλ` has always had both right and its wording, "the higher limit that the value must be less than", is what the other two now use. Corrected in the module source, the defined name, and the demonstration sheet that had cached the old text.
+- **`IsBetweenλ` documented a parameter it does not have, and described the wrong limit.** Its parameter table called the second argument `Lo` where the LAMBDA and the signature above it both say `Low`, and the row for `Hi` read 'The lower limit that the value must be less than', copied from the row above it, so the function's own help described its upper bound as a lower one. The `Inclusive` row referred to `Lo` as well. All 3 are corrected in the Essentials and Utilities copies, which are clones of each other; the Dates module's own `IsBetweenλ` has always had both right and its wording, 'the higher limit that the value must be less than', is what the other 2 now use. Corrected in the module source, the defined name, and the demonstration sheet that had cached the old text.
 
-## v1.2.5, 18 Aug 2026, a colon back where it belongs
+## v1.2.5, 18 August 2026, a colon back where it belongs
 
-- **`EXAMPLES       :` in four help tables.** The label column is written as the label, then padding, then the arrow that separates it from the second column, so every arrow lines up. Four labels put the colon after the padding instead of before it, one character wider than every other row, and since the help is built with `TRIM()` the reader saw `EXAMPLES :` with the colon adrift. It affected `IsBetweenλ` and `IsInListλ`, each in both the Essentials and Utilities modules; those four are clones of one another and every other `EXAMPLES` label in the library was already correct. Corrected in the module source, the defined name, and the one demonstration sheet that had cached the old label.
+- **`EXAMPLES       :` in 4 help tables.** The label column is written as the label, then padding, then the arrow that separates it from the second column, so every arrow lines up. Four labels put the colon after the padding instead of before it, one character wider than every other row, and since the help is built with `TRIM()` the reader saw `EXAMPLES :` with the colon adrift. It affected `IsBetweenλ` and `IsInListλ`, each in both the Essentials and Utilities modules; those 4 are clones of one another and every other `EXAMPLES` label in the library was already correct. Corrected in the module source, the defined name, and the one demonstration sheet that had cached the old label.
 
-## v1.2.4, 18 Aug 2026, help you can read
+## v1.2.4, 18 August 2026, help you can read
 
 ### `IsInListλ` built its help sideways
 
-`TEXTSPLIT` takes the text, then a column delimiter, then an optional row delimiter. This one supplied a single delimiter: the arrow that should have separated the two columns was left concatenated onto the end of the text, and the pilcrow that should have ended each row became the column delimiter. Calling `nb.IsInListλ()` for help therefore returned one row of eleven columns and spilled sideways across the sheet instead of down it, with each label and its explanation run together in a single cell. The other 125 functions that build help this way supply both delimiters; these two were the only ones that did not. Both copies now do, and their help returns the 11-row, 2-column table it was always written to be, read back out of Excel to confirm it.
+`TEXTSPLIT` takes the text, then a column delimiter, then an optional row delimiter. This one supplied a single delimiter: the arrow that should have separated the 2 columns was left concatenated onto the end of the text, and the pilcrow that should have ended each row became the column delimiter. Calling `nb.IsInListλ()` for help therefore returned one row of 11 columns and spilled sideways across the sheet instead of down it, with each label and its explanation run together in a single cell. The other 125 functions that build help this way supply both delimiters; these 2 were the only ones that did not. Both copies now do, and their help returns the 11-row, 2-column table it was always written to be, read back out of Excel to confirm it.
 
 ### Help that describes its own parameters
 
-Every function's help opens with a signature, and repeats the same parameters as a table three rows below. Where the two disagreed, the table was right every time: it matches what the LAMBDA declares. Thirteen signatures did not, and four of them documented a neighbouring function's arguments outright, which is how the wrong-name defect fixed in v1.2.3 got in as well. Both were the same copy: name and parameter list came across together, and only the name was corrected.
+Every function's help opens with a signature, and repeats the same parameters as a table 3 rows below. Where the 2 disagreed, the table was right every time: it matches what the LAMBDA declares. Thirteen signatures did not, and 4 of them documented a neighbouring function's arguments outright, which is how the wrong-name defect fixed in v1.2.3 got in as well. Both were the same copy: name and parameter list came across together, and only the name was corrected.
 
 | function | its signature said | its signature says now |
 |---|---|---|
 | `nb.CorkScrewReversalλ` | `Opening, Flow1, ...` | `Opening, ReversalFlags, Flow1, ...` |
 | `nb.Movementλ` | `BeginningValue` | `BeginningValues` |
-| `nb.LabelAmortiseλ` | `[LoanNames]` alone | all four parameters |
+| `nb.LabelAmortiseλ` | `[LoanNames]` alone | all 4 parameters |
 | `nb.Depreciateλ` | `[Factor]` | `[Factors]` |
 | `nb.DBλ` | `[Month]` | `[Months]` |
 | `nb.TimelineOffsetλ` | `ArrayStart` | `Date` |
@@ -1232,32 +1232,32 @@ Every function's help opens with a signature, and repeats the same parameters as
 
 Three parameter tables disagreed with their own LAMBDA too, and were corrected the same way: `LoanAPR` and `LoanTerm` in `LabelAmortiseλ`, and `TotaldebtService` in `DSCRλ`.
 
-`nb.IsInListλ` and `nb.IsInListUλ` were the one case where the declaration was the odd one out. It shouts `LIST`, while the signature, the parameter table and one of the function's own two references all write `List`. Excel resolves identifiers case-insensitively, so the parameter is renamed to match the rest of the library rather than the help being made to shout back. Both functions were exercised in Excel afterwards, including the branch that calls `ISOMITTED()` on the renamed parameter.
+`nb.IsInListλ` and `nb.IsInListUλ` were the one case where the declaration was the odd one out. It shouts `LIST`, while the signature, the parameter table and one of the function's own 2 references all write `List`. Excel resolves identifiers case-insensitively, so the parameter is renamed to match the rest of the library rather than the help being made to shout back. Both functions were exercised in Excel afterwards, including the branch that calls `ISOMITTED()` on the renamed parameter.
 
-Each correction is applied in three places: the module source `src/` is exported from, the defined name Excel installs, and the help already spilled and cached on the demonstration sheets. Five sheets carried a stale copy. Every corrected signature was then read back out of a running Excel rather than trusted from the file.
+Each correction is applied in 3 places: the module source `src/` is exported from, the defined name Excel installs, and the help already spilled and cached on the demonstration sheets. Five sheets carried a stale copy. Every corrected signature was then read back out of a running Excel rather than trusted from the file.
 
 ### Added
 
 - `tools/verify_signatures.py` reads every function's help signature and compares it against the LAMBDA's own declaration, character for character, since case is exactly the kind of difference that goes unnoticed. It accounts for every declaration in every module and prints the tally, and fails if it parsed too few, because a checker that reads nothing passes everything. Square brackets are ignored: the earlier workbook declares every parameter optional so a function called with no arguments can return its own help, so the declaration says nothing about which arguments a caller may omit. Run against the previous release it reports all 15 divergences. Now runs in CI.
 
-- **`FLow1` in the corkscrew signatures.** `nb.Corkscrewλ` and `nb.CorkScrewReversalλ` both spelled their second argument `FLow1` on the FUNCTION line of their help, with a capital L. The parameter table three rows below spelled it `Flow1`, and so did the LAMBDA, so anyone copying the signature was copying a name the function does not have. Corrected in the module source, in the defined name, in `functions.csv`, and in the help output already cached on the demonstration sheet, which would otherwise have kept showing the typo until something forced a recalculation. Read back out of Excel afterwards, both functions now report `( Opening, Flow1, ...)`.
+- **`FLow1` in the corkscrew signatures.** `nb.Corkscrewλ` and `nb.CorkScrewReversalλ` both spelt their second argument `FLow1` on the FUNCTION line of their help, with a capital L. The parameter table 3 rows below spelt it `Flow1`, and so did the LAMBDA, so anyone copying the signature was copying a name the function does not have. Corrected in the module source, in the defined name, in `functions.csv`, and in the help output already cached on the demonstration sheet, which would otherwise have kept showing the typo until something forced a recalculation. Read back out of Excel afterwards, both functions now report `( Opening, Flow1, ...)`.
 
 ## 2026-08-18, later still
 
 ### One namespace: every function is now `nb.`
 
-Six module prefixes became one. `nabla.f.Amortiseλ` is now `nb.Amortiseλ`, which is five
+Six module prefixes became one. `nabla.f.Amortiseλ` is now `nb.Amortiseλ`, which is 5
 fewer characters on every call and, more to the point, makes formula autocomplete useful:
 typing `=nb.` narrows to this library instead of dumping 130 entries behind a prefix you
 had to spell out first.
 
 Collisions were the only real obstacle. Eighteen base names existed in more than one
-module, forty-one functions in total. Nothing was dropped: the fuller implementation keeps the
+module, 41 functions in total. Nothing was dropped: the fuller implementation keeps the
 plain name and the other takes a one-letter tag.
 
 - `B` for debt, `E` for essentials, `U` for utilities: `nb.AmortiseBλ`, `nb.IsBetweenEλ`,
   `nb.SumRowsUλ` and so on, 19 functions in all.
-- The five About tables take words rather than letters, because `nb.AboutRλ` tells a
+- The 5 About tables take words rather than letters, because `nb.AboutRλ` tells a
   reader nothing: `nb.AboutDatesλ`, `nb.AboutEssentialsλ`, `nb.AboutFinancialλ`,
   `nb.AboutRatiosλ`, `nb.AboutUtilitiesλ`.
 - The Utilities group is a copy of Essentials; 16 of its 17 functions are byte-identical
@@ -1271,7 +1271,7 @@ functions. Patching the workbook leaves 365 stale tokens in there. Building leav
 Also in this release:
 
 - The Advanced Formula Environment modules are named for what they hold (Dates,
-  Essentials, Financial, Ratios, Utilities, Debt) rather than by prefix, since six
+  Essentials, Financial, Ratios, Utilities, Debt) rather than by prefix, since 6
   containers all called `nb` would collide. `src/` follows the same names.
 - `functions.csv` keeps a `module` column, now filled from the group a function came from
   rather than parsed out of its name.
@@ -1303,32 +1303,32 @@ Applied to the module source and the defined name alike, so `src/` still reprodu
 
 `src/` exists so the library can be read, diffed and loaded back into Excel. Testing that last part for the first time found that one module could not be loaded at all.
 
-- **The five `nabla.debt.*` functions could not be imported.** The exporter wrote them by stripping the internal prefixes off the stored definitions, which destroyed two things. `_xlop.Name` marks an **optional** parameter; stripping the prefix leaves a required one, and since every one of those functions calls `ISOMITTED()` on its parameters, Excel rejected each definition outright. `[0]!` is the internal token for "a name in this workbook" and is not something you can type back in. The exporter now maps them to `[Name]` and to a bare reference. Measured in Excel: **nil of five accepted before, five of five after**, and swapping the published definitions into the workbook in place of the shipped ones leaves all 17,003 numeric cells identical.
+- **The 5 `nabla.debt.*` functions could not be imported.** The exporter wrote them by stripping the internal prefixes off the stored definitions, which destroyed 2 things. `_xlop.Name` marks an **optional** parameter; stripping the prefix leaves a required one, and since every one of those functions calls `ISOMITTED()` on its parameters, Excel rejected each definition outright. `[0]!` is the internal token for 'a name in this workbook' and is not something you can type back in. The exporter now maps them to `[Name]` and to a bare reference. Measured in Excel: **nil of 5 accepted before, 5 of 5 after**, and swapping the published definitions into the workbook in place of the shipped ones leaves all 17,003 numeric cells identical.
 - **`nabla.f.SumDepreciateλ` shipped a later revision than its own published source**, inherited from the earlier workbook: the installed function carries a blank help row and a different, behaviour-identical test for its omitted argument. The source is brought up to the version that ships.
 
 ### Added
 
-- `tools/verify_sources.py` compares every function in `src/` against the defined name that ships, and now runs in CI. It maps the four conventions that separate the stored form from the typed form rather than ignoring them: the `_xlfn.`/`_xlpm.`/`_xlws.` markers, `_xlop.Name` against `[Name]`, `[0]!Name` against a bare reference, and `SINGLE(x)` against `@x`. Mapping the parameter marker rather than stripping it is the point: stripping is what hid the defect above. Run against the previous release it reports all six divergences.
+- `tools/verify_sources.py` compares every function in `src/` against the defined name that ships, and now runs in CI. It maps the 4 conventions that separate the stored form from the typed form rather than ignoring them: the `_xlfn.`/`_xlpm.`/`_xlws.` markers, `_xlop.Name` against `[Name]`, `[0]!Name` against a bare reference, and `SINGLE(x)` against `@x`. Mapping the parameter marker rather than stripping it is the point: stripping is what hid the defect above. Run against the previous release it reports all 6 divergences.
 
 ## 2026-08-18, TOC filter
 
 - **The table of contents opened filtered.** The earlier workbook saved it with the Type slicer restricted to `Worksheet`, so 16 of the 66 entries, every one describing a table, were hidden on open with nothing to indicate they existed. The filter criteria and the row visibility stored alongside them also disagreed, because the row retyped from Worksheet to Function in the first round kept its old visibility. Both are cleared: the workbook now opens showing all 66 entries with every slicer button selected.
-- The slicer itself was exercised in Excel and was never at fault. Each of its three buttons filters exclusively and correctly (1 Function, 16 Table, 49 Worksheet) and clearing restores all 66. The `<autoFilter>` element is retained, since the slicer binds to it; it simply carries no criteria now.
+- The slicer itself was exercised in Excel and was never at fault. Each of its 3 buttons filters exclusively and correctly (1 Function, 16 Table, 49 Worksheet) and clearing restores all 66. The `<autoFilter>` element is retained, since the slicer binds to it; it simply carries no criteria now.
 
 ## 2026-08-18, later
 
 ### Run in Excel for the first time
 
-Every prior release was reasoned about statically. Opening `nabla.xlsx` in Excel 365 and executing the functions found four defects that no amount of file inspection would have caught. The workbook itself recalculated cleanly: 1,129 formulas, no error cells.
+Every prior release was reasoned about statically. Opening `nabla.xlsx` in Excel 365 and executing the functions found 4 defects that no amount of file inspection would have caught. The workbook itself recalculated cleanly: 1,129 formulas, no error cells.
 
-- `DiminishingValueλ` returned `#NUM!` for an effective life of two years or less. Capping the rate at 100% drives `(1-Rate)` to zero, and Excel evaluates `0^0` as `#NUM!` rather than 1. Two years is an ordinary ATO effective life, so the function was unusable for a common case.
-- `DiminishingValueλ` and `PrimeCostλ` silently under-depreciated any fractional effective life. `SEQUENCE` and `EXPAND` truncate a length of 6⅔ to six periods, and the residual write-off tested for the final period by comparing against the life rather than the period count, so it never fired. A 1,000 asset over 6⅔ years wrote off 882.34 and 899.96 respectively instead of 1,000, with no error shown. ATO effective lives are routinely fractional.
+- `DiminishingValueλ` returned `#NUM!` for an effective life of 2 years or less. Capping the rate at 100% drives `(1-Rate)` to zero, and Excel evaluates `0^0` as `#NUM!` rather than 1. Two years is an ordinary ATO effective life, so the function was unusable for a common case.
+- `DiminishingValueλ` and `PrimeCostλ` silently under-depreciated any fractional effective life. `SEQUENCE` and `EXPAND` truncate a length of 6⅔ to 6 periods, and the residual write-off tested for the final period by comparing against the life rather than the period count, so it never fired. A 1,000 asset over 6⅔ years wrote off 882.34 and 899.96 respectively instead of 1,000, with no error shown. ATO effective lives are routinely fractional.
 - `FinancialYearλ` gave the wrong answer for a range of dates, which is its headline use. `AND` is an aggregate: it collapsed the whole column to a single true or false, so every date inherited the first one's financial year. Labelling a column spanning 30 June produced one financial year for all of it.
 - The published module source in `src/` had drifted from the compiled function. `FinancialYearλ` shipped one definition inside the workbook and a different, older one in `src/nabla.d.txt`. Anyone importing the source got a function that behaved differently from the one being documented.
 
 ### Fixes
 
-- `DiminishingValueλ` guards the first period against `0^0`, derives its period count with `ROUNDUP` so a part year gets its own period, and writes the residual off against that count. Schedules now sum to cost for every life tested from one to forty years, whole or fractional.
+- `DiminishingValueλ` guards the first period against `0^0`, derives its period count with `ROUNDUP` so a part year gets its own period, and writes the residual off against that count. Schedules now sum to cost for every life tested from one to 40 years, whole or fractional.
 - `PrimeCostλ` derives its period count the same way and puts the part-year remainder in the final period.
 - `FinancialYearλ` multiplies instead of using `AND`, so each date is evaluated on its own.
 - `GSTAddλ` and `GSTExtractλ` return blank for a blank amount, so a part-filled column no longer fills with zeros.
@@ -1337,21 +1337,21 @@ Every prior release was reasoned about statically. Opening `nabla.xlsx` in Excel
 
 ### Added
 
-- `tools/excel_selftest.ps1`: opens the workbook in Excel, forces a full rebuild, fails on any error cell, and runs 138 assertions covering all sixteen effective lives, the GST and financial-year edge cases, and the demonstration worksheet. Every one of the four defects above fails this test on the previous build.
-- The **Australian tax** worksheet now shows the totals written off by both depreciation methods, which is the property a bad effective life breaks, and labels its dates with a single spilled call so the array path is demonstrated rather than sidestepped by four separate scalar calls.
+- `tools/excel_selftest.ps1`: opens the workbook in Excel, forces a full rebuild, fails on any error cell, and runs 138 assertions covering all 16 effective lives, the GST and financial-year edge cases, and the demonstration worksheet. Every one of the four defects above fails this test on the previous build.
+- The **Australian tax** worksheet now shows the totals written off by both depreciation methods, which is the property a bad effective life breaks, and labels its dates with a single spilled call so the array path is demonstrated rather than sidestepped by 4 separate scalar calls.
 
 ## 2026-08-18
 
 ### Verification round
-- Added an **Australian tax** worksheet demonstrating all five Australian functions, with a table-of-contents entry and its own tab colour. They previously had no on-sheet presence at all.
-- `DiminishingValueλ` now caps its rate at 100% (a life under two years previously wrote off more than cost) and writes the undeducted residual off in the final period, so a schedule sums to cost. The documented example changes to 400.00, 240.00, 144.00, 86.40, 129.60.
+- Added an **Australian tax** worksheet demonstrating all 5 Australian functions, with a table-of-contents entry and its own tab colour. They previously had no on-sheet presence at all.
+- `DiminishingValueλ` now caps its rate at 100% (a life under 2 years previously wrote off more than cost) and writes the undeducted residual off in the final period, so a schedule sums to cost. The documented example changes to 400.00, 240.00, 144.00, 86.40, 129.60.
 - `GSTAddλ` and `GSTExtractλ` no longer treat a blank Rate cell as nil GST; a blank now falls back to the 10% default.
 - `FinancialYearλ` returns blank rather than FY1900 for empty cells, uses array-safe coercion, and handles a January financial-year start correctly.
 - The `SEE ALSO` lines existed only in the compiled names, so an Excel Labs save would have silently deleted them. They are now in the module sources too.
-- Fixed worked examples the two-year date shift had invalidated: `CountDOWλ` stated 2 where it now returns 3, and `PeriodLabelλ` stated 2023 results against a 2025 input.
-- Fixed frozen sample data that produced uninformative demonstrations: the `Periodsλ` yearly row spanned one day short of a year and returned 0, and the onboarding dates were spaced 30 days apart against a twelve-year timeline so every customer landed in the first period.
+- Fixed worked examples the 2-year date shift had invalidated: `CountDOWλ` stated 2 where it now returns 3, and `PeriodLabelλ` stated 2023 results against a 2025 input.
+- Fixed frozen sample data that produced uninformative demonstrations: the `Periodsλ` yearly row spanned one day short of a year and returned 0, and the onboarding dates were spaced 30 days apart against a 12-year timeline so every customer landed in the first period.
 - Replaced the 13 volatile `RANDARRAY` grids that the first performance pass missed, so no formula in the workbook is volatile except the sheet-name titles.
-- Corrected earlier help defects: two missing column delimiters that collapsed a help row, and the misspelt `Liabilites` parameter.
+- Corrected earlier help defects: 2 missing column delimiters that collapsed a help row, and the misspelt `Liabilites` parameter.
 - The GST helpers are listed under their own AUSTRALIAN TAX heading in the module index rather than inside the depreciation suite.
 - Only the cover opens selected, and the table-of-contents columns were widened for the longer `nabla.*` names.
 
@@ -1360,7 +1360,7 @@ First nabla release, rebuilt from Ryan Duguid's earlier workbook of 6 July 2024.
 ### Renaming
 - Renamed every function namespace, worksheet, AFE module and help reference from the earlier namespaces to the `nabla.*` scheme.
 - Removed branded cover art, the cover video thumbnails and their YouTube link, Dropbox model links, and the source add-in credit line. A maths-citation video link in an IntOnIntλ source comment is retained as third-party credit.
-- Help links to the earlier gists and site replaced with this repository's URL and relabelled "Repository"; revision histories and creator metadata preserved.
+- Help links to the earlier gists and site replaced with this repository's URL and relabelled 'Repository'; revision histories and creator metadata preserved.
 - Workbook metadata retitled `nabla`.
 
 ### Australian English and conventions
@@ -1369,13 +1369,13 @@ First nabla release, rebuilt from Ryan Duguid's earlier workbook of 6 July 2024.
 - Help examples and sample text dates rewritten day-first.
 - Sample data Americanisms ported: currency label to AUD, `Apt.`/`Apartment` to `Unit`, `Wal*Art` to `Wool*Art`, household budget items to Pay/Home insurance/Strata levies/Petrol.
 - Removed the foreign depreciation regime the earlier library carried: its function, method code, dispatch branch inside `Depreciateλ` and the special-case life, salvage and disposal handling that went with it, plus the foreign tax authority reference on the Data Validation sheet and the foreign accounting-standard paragraph on the `Depreciateλ` worksheet. The library is now Australian-only.
-- Added five Australian functions, each with inline help, an AFE source module and a Name Manager description: `nabla.f.DiminishingValueλ` (ATO 200% diminishing value), `nabla.f.PrimeCostλ` (ATO prime cost), `nabla.f.GSTAddλ`, `nabla.f.GSTExtractλ` and `nabla.d.FinancialYearλ`.
+- Added 5 Australian functions, each with inline help, an AFE source module and a Name Manager description: `nabla.f.DiminishingValueλ` (ATO 200% diminishing value), `nabla.f.PrimeCostλ` (ATO prime cost), `nabla.f.GSTAddλ`, `nabla.f.GSTExtractλ` and `nabla.d.FinancialYearλ`.
 - `Depreciateλ` method codes are now `SLN`, `SYD`, `DB`, `DDB`, `VDB`, `DV` and `PC`; the Data Validation sheet and the `DepreciateλDV` diagnostic list the same set.
 - Worksheets print on A4.
 
 ### Dates
-- Function version stamps set to 18 Aug 2026 (110 version lines across help blocks and About tables, plus the AFE modules).
-- All sample and demonstration dates shifted forward two years, calendar-aware: text dates, ISO dates, every date-formatted serial cell (inputs, table data and cached outputs) and serial array constants; 29 February clamps to 28 February when the target year is not a leap year. Demo tables (rentals, loans, items) and their timeline anchors moved together, so every worked example stays internally consistent after recalculation.
+- Function version stamps set to 18 August 2026 (110 version lines across help blocks and About tables, plus the AFE modules).
+- All sample and demonstration dates shifted forward 2 years, calendar-aware: text dates, ISO dates, every date-formatted serial cell (inputs, table data and cached outputs) and serial array constants; 29 February clamps to 28 February when the target year is not a leap year. Demo tables (rentals, loans, items) and their timeline anchors moved together, so every worked example stays internally consistent after recalculation.
 - `fullCalcOnLoad` enabled so cached demo outputs refresh on first open.
 
 ### Fixes
@@ -1383,19 +1383,19 @@ First nabla release, rebuilt from Ryan Duguid's earlier workbook of 6 July 2024.
 - Replaced the undefined `Sheetλ` title formula on 46 worksheets with a self-contained `TEXTAFTER(CELL("filename",A1),"]")` title; the earlier file cached `#NAME?` in every one.
 - Replaced locale-fragile text-date arguments in `RANDBETWEEN` with `DATE()` calls.
 - Removed a dead table-of-contents hyperlink to a worksheet that never existed, an empty Power Query mashup, orphaned rich-value image residue, the regenerable `calcChain` cache, and a merged cell left behind by the removed cover section. The table-of-contents row for that worksheet now correctly reads Function rather than Worksheet.
-- Fixed typos: `Amoritization`, `Occurence`, `preceeding`, `dynamice`, "click and worksheet name", and a misspelling of the author's name.
+- Fixed typos: `Amoritization`, `Occurence`, `preceeding`, `dynamice`, 'click and worksheet name', and a misspelling of the author's name.
 - Repaired an inherited `#REF!` argument in the TimelinePositionλ demo timeline and the `nabla.u.Aboutλ` text that suggested the wrong module name.
-- Moved the first loan on the `Amortiseλ` worksheets to 1 March 2026. The earlier workbook started it a year before the model timeline with a ten-month term, so it was fully repaid before the first period and its six rows rendered as zeros; it now shows a partial schedule. The worksheet caption is restated to match.
+- Moved the first loan on the `Amortiseλ` worksheets to 1 March 2026. The earlier workbook started it a year before the model timeline with a 10-month term, so it was fully repaid before the first period and its 6 rows rendered as zeros; it now shows a partial schedule. The worksheet caption is restated to match.
 - Ported the remaining foreign sample data: household budget items became Australian equivalents (Pay, Home insurance, Strata levies, Petrol), and the depreciation note on the `Depreciateλ` worksheet was rewritten without its foreign accounting-standard framing.
 - Added Name Manager descriptions to every new defined name.
 - Defined `nabla.d.Aboutλ`, which the earlier workbook shipped as source but never installed, so it returned #NAME?.
 - Extended `tblMethods` to cover the added prime cost row, and fixed the table's own copy of the sample-date formula, which still held the pre-conversion text dates.
-- Carried the two-year date shift into help examples written with two-digit years and into cached values beyond 2064, which an earlier bound had skipped.
-- Fixed prose that the date shift had left stale ("that loan starts in 2020"), a doubled word introduced by the rename, and a US working-week aside in the occurrence-date help.
-- Fixed further earlier typos: "equally equally", "specifice text", "Some of Years".
+- Carried the 2-year date shift into help examples written with 2-digit years and into cached values beyond 2064, which an earlier bound had skipped.
+- Fixed prose that the date shift had left stale ('that loan starts in 2020'), a doubled word introduced by the rename, and a US working-week aside in the occurrence-date help.
+- Fixed further earlier typos: 'equally equally', 'specifice text', 'Some of Years'.
 
 ### Currency with Excel 365
-- Six helpers whose job Excel 365 has since taken over natively (the three `RangeToDAλ` copies, `FilterContainsλ`, `SumPeriodsλ` and `SumContainsλ`) now carry a `SEE ALSO` line in their inline help pointing at `TRIMRANGE`, the `REGEX` functions and `GROUPBY`/`PIVOTBY`. Checked against Microsoft's documentation in August 2026.
+- Six helpers whose job Excel 365 has since taken over natively (the 3 `RangeToDAλ` copies, `FilterContainsλ`, `SumPeriodsλ` and `SumContainsλ`) now carry a `SEE ALSO` line in their inline help pointing at `TRIMRANGE`, the `REGEX` functions and `GROUPBY`/`PIVOTBY`. Checked against Microsoft's documentation in August 2026.
 - The cover sheet states the Excel requirement: Microsoft 365, or Excel 2024 and later.
 - Replaced the earlier `Coming soon` webpage placeholders in 74 help blocks with the repository URL, and removed the duplicate `Website` line that repeated the `Repository` line in every About table.
 - Drawing text is tagged `en-AU` so Excel stops spell-checking Australian prose against a US dictionary, and the Advanced Formula Environment project store now declares the `en-au` locale with day-first date order.

@@ -12,7 +12,7 @@ sha256sum --check --ignore-missing SHA256SUMS
 
 On Windows, `Get-FileHash ozzit.xlsx -Algorithm SHA256` prints the same digest to compare against the `SHA256SUMS` line by eye. `SHA256SUMS` deliberately does not cover itself, so read it from the release page rather than trusting a local copy alone. `provenance.json` binds that workbook to its version, signed tag and candidate commit; [RELEASING.md](../RELEASING.md) describes what it asserts.
 
-The workbook tracked in this repository is the candidate the gates below run against. The release asset is that same file copied byte-for-byte from the tagged tree, so the two share a SHA-256 at the tag they were released from. Between releases the tracked copy can be ahead of the published one.
+The workbook tracked in this repository is the candidate the gates below run against. The release asset is that same file copied byte-for-byte from the tagged tree, so the 2 share a SHA-256 at the tag they were released from. Between releases the tracked copy can be ahead of the published one.
 
 1. Open `ozzit.xlsx`.
 2. Cell A1 of every visible worksheet links back to the table of contents; every name in the TOC links to its worksheet.
@@ -25,7 +25,7 @@ The workbook tracked in this repository is the candidate the gates below run aga
    Importing `src/` that way recreates the functions under the module container's own
    name, so `Dates.txt` produces `Dates.CountDOWλ` rather than `oz.CountDOWλ`: the
    Advanced Formula Environment takes the prefix from the container, and one flat
-   namespace cannot be six containers. The workbook is the authority for the `oz.`
+   namespace cannot be 6 containers. The workbook is the authority for the `oz.`
    names. `src/` is for reading, diffing, and pasting a single definition into Name
    Manager, where the name is yours to choose. To change a function, edit its
    definition in `src/` and run `tools/compile_sources.py`, which renders it into the
@@ -49,7 +49,7 @@ The helpers are kept because they still work on the Excel 2024 baseline and insi
 
 ## Performance and presentation
 
-No formula in the workbook is volatile except the sheet-name titles and the two `oz.RangeToDAEλ` demonstration cells (that function wraps OFFSET by design, as the changelog explains), so editing a cell recalculates only what depends on it rather than the whole file. That covers the random-number formulas behind the sample data in both their forms. The sample data is fixed rather than randomly generated, which also means the worked examples match their captions every time you open them.
+No formula in the workbook is volatile except the sheet-name titles and the 2 `oz.RangeToDAEλ` demonstration cells (that function wraps OFFSET by design, as the changelog explains), so editing a cell recalculates only what depends on it rather than the whole file. That covers the random-number formulas behind the sample data in both their forms. The sample data is fixed rather than randomly generated, which also means the worked examples match their captions every time you open them.
 
 Each module has its own tab colour, gridlines are hidden, and every sheet opens at the top left on the cover.
 

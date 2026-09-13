@@ -3,7 +3,7 @@
 The compiler is trusted with every defined name in the workbook, so the first
 contract is that it reproduces all of them from the tracked src/ without a
 change. The rest pin the marker rules Excel needs, the refusal of anything it
-cannot classify, and the two views it keeps in step: the Name Manager comment
+cannot classify, and the 2 views it keeps in step: the Name Manager comment
 and functions.csv.
 """
 

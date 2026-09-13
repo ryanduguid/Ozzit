@@ -4,8 +4,8 @@ Usage: python tools/postbuild/sheet_names.py [workbook]
 
 Every single-function demonstration sheet is named after its function,
 λ included; oz.SumContains was the one exception (its title drawing already
-reads SumContainsλ). The rename must land in five parts together: the sheet
-element in xl/workbook.xml, the two table-of-contents hyperlinks on sheet2,
+reads SumContainsλ). The rename must land in 5 parts together: the sheet
+element in xl/workbook.xml, the 2 table-of-contents hyperlinks on sheet2,
 the cached CELL("filename") title on the sheet itself (sheet25), the titles
 list in docProps/app.xml, and the table-of-contents row text in
 xl/sharedStrings.xml.
@@ -30,7 +30,7 @@ from workbook import read_parts
 OLD = "oz.SumContains"
 NEW = "oz.SumContainsλ"
 
-# part -> list of (old anchor, new anchor, expected count). The two worksheet parts
+# part -> list of (old anchor, new anchor, expected count). The 2 worksheet parts
 # are resolved by sheet name at run time: Excel renumbers worksheet parts when it
 # saves a workbook that has lost a sheet, so a fixed sheetN.xml is not an anchor.
 def edits(parts: dict[str, bytes]) -> dict[str, list[tuple[str, str, int]]]:

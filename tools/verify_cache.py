@@ -2,11 +2,11 @@
 
 Usage: python tools/verify_cache.py [path/to/ozzit.xlsx]
 
-An .xlsx stores two things for every calculated cell: the formula, and the answer Excel
+An .xlsx stores 2 things for every calculated cell: the formula, and the answer Excel
 last got from it. Nothing keeps them in step. The build edits values as XML with no formula
 engine, so every cell downstream of an edit keeps the answer it had before: shifting the
-sample dates forward two years left 3,193 cells across 43 sheets holding numbers their own
-formulas no longer produce, and five cells shipped a saved #VALUE! from v1.2.0 to v2.2.0.
+sample dates forward 2 years left 3,193 cells across 43 sheets holding numbers their own
+formulas no longer produce, and 5 cells shipped a saved #VALUE! from v1.2.0 to v2.2.0.
 
 None of that was ever visible in Excel, which recalculates and quietly replaces the lot.
 That is exactly what makes it worth a gate: the file can be wrong in a way only a second
@@ -67,7 +67,7 @@ def cached_values(
             shared.append(html.unescape(re.sub(r"<.*?>", "", si)))
 
     # Excel's Worksheets collection skips chart sheets while workbook.xml lists them, so a
-    # chart sheet would shift every position after it and compare two different sheets
+    # chart sheet would shift every position after it and compare 2 different sheets
     # against each other without saying so. There are none today; stop if that changes.
     charts = [n for n, t in order if "/worksheets/" not in ("/" + t.lstrip("/"))]
     if charts:
@@ -104,7 +104,7 @@ def cached_values(
 
 def fold(text: str) -> str:
     """One cell must be one line, the way the dumper writes it."""
-    marker = chr(92) + "n"          # the two characters backslash and n
+    marker = chr(92) + "n"          # the 2 characters backslash and n
     return (text.replace(chr(13) + chr(10), marker)
                 .replace(chr(10), marker)
                 .replace(chr(13), marker))

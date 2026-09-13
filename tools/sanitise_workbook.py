@@ -16,16 +16,16 @@ adds parts that do not belong in a distributed file:
 - the account name of whoever saved, the save time, the size and position of
   the Excel window and the build of Excel that wrote the file: none of it
   describes the workbook, and every one of them differs between two saves of
-  the same content on two machines,
+  the same content on 2 machines,
 - _xlfn._LONGTEXT("...","...") in a defined name, which is how Excel stores a
   string literal longer than 255 characters when it saves. It reads the plain
   literal back without complaint, and src/, the AFE store and every gate hold
   the plain literal, so the split is folded back into one string.
 
 All of it is removed or pinned here and the archive is rewritten sorted, at a
-fixed timestamp, at deflate level 9, so two saves of the same content produce
+fixed timestamp, at deflate level 9, so 2 saves of the same content produce
 the same bytes. The modified stamp is pinned to the archive date rather than
-kept, because a save time that changes on every save is exactly what makes two
+kept, because a save time that changes on every save is exactly what makes 2
 saves differ; the release evidence carries the real dates. verify_workbook.py fails the file on absPath or a stray
 always-calculate flag regardless; this tool exists so a save through Excel
 does not have to be reverted.
@@ -56,7 +56,7 @@ FIXED_STAMP = "%04d-%02d-%02dT%02d:%02d:%02dZ" % FIXED_DATE
 FIXED_WINDOW = 'xWindow="0" yWindow="0" windowWidth="28800" windowHeight="16000"'
 CELL_RE = re.compile(r"<c\b(?:(?!</c>|<c\b).)*?</c>|<c\b[^>]*/>", re.DOTALL)
 EMPTY_RELS = re.compile(rb"<Relationships[^>]*>\s*</Relationships>")
-# Excel's own split of a string literal over 255 characters: two or more literals
+# Excel's own split of a string literal over 255 characters: 2 or more literals
 # inside _xlfn._LONGTEXT(...). Quotes are unescaped in xl/workbook.xml element text.
 LONGTEXT = re.compile(r'_xlfn\._LONGTEXT\(("(?:[^"]|"")*"(?:,"(?:[^"]|"")*")+)\)')
 LITERAL = re.compile(r'"((?:[^"]|"")*)"')

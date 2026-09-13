@@ -1,4 +1,4 @@
-"""AASB 16 lease pass: four lessee functions added to the Financial group.
+"""AASB 16 lease pass: 4 lessee functions added to the Financial group.
 
 Usage: python tools/postbuild/aasb16_leases.py [workbook] [src dir] [functions.csv]
 
@@ -7,13 +7,13 @@ recorded in ATTRIBUTION.md). It does not read the earlier workbook and does not
 go through transform_from_earlier.py.
 
 It adds oz.LeaseLiabilityλ, oz.LeaseScheduleλ, oz.ROUScheduleλ and
-oz.LeaseRemeasureλ to four stores at once: src/Financial.txt, the defined names
+oz.LeaseRemeasureλ to 4 stores at once: src/Financial.txt, the defined names
 in xl/workbook.xml, the AboutFinancialλ function table in both of those, and
 functions.csv. The Advanced Formula Environment store is not touched here;
 tools/sync_afe_store.py copies src/ into it afterwards and verify_afe gates it.
 
 One spec per function generates both stores. The stored form is derived from the
-published source rather than written beside it, because the two hand-written
+published source rather than written beside it, because the 2 hand-written
 lists drifted the last time this library kept them in parallel. Every generated
 definition is then round-tripped through the comparison verify_sources.py itself
 uses, before anything is written.
@@ -299,7 +299,7 @@ def build_definitions(library: set[str]) -> dict[str, tuple[str, str, str]]:
         body = match.group(2).strip()
         stored = render(body, library)
         # The gate's own comparison, run before anything is written. This is what
-        # stopped the two hand-written lists drifting the last time.
+        # stopped the 2 hand-written lists drifting the last time.
         want = canonical(qualify(body, NAMESPACE, library))
         got = canonical(stored)
         if want != got:
