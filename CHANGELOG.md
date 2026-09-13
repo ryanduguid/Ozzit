@@ -24,6 +24,10 @@
   negative APR and a timeline that does not advance, with wording that matches.
   `oz.DepreciateλDV` reads LifeInYears the way its parent does, so a fractional life is
   refused by the companion instead of passing a check its parent then fails.
+- Both companions measure every consecutive timeline gap rather than the first one alone.
+  A date repeated later in the row passed the check while the parent's approximate
+  `MATCH` buckets both copies into one period: a 3-date timeline with the second date
+  repeated returned TRUE from each companion and repaid 2,453.42 of a 10,000 loan.
 - `oz.DSIλ` help prints the 365-day multiplier its formula applies and states that the
   cost of goods sold is a full year's.
 - `oz.PriceToBookRatioλ` help names its denominator as tangible book value per share and
@@ -32,8 +36,8 @@
 - `oz.DateDifλ` help and the v3.4.0 entry below describe Excel's DATEDIF as a documented
   legacy compatibility function rather than an undocumented one. Microsoft publishes its
   syntax, arguments and the `MD` known issue. The warning about `MD` is unchanged.
-- Twenty-nine native assertions cover the character counts and the 2 diagnostic
-  companions, so the acceptance baseline moves from 868 to 897.
+- Thirty-three native assertions cover the character counts and the 2 diagnostic
+  companions, so the acceptance baseline moves from 868 to 901.
 - The v3.4.1 entry below records the `oz.ScheduleRatesλ` and `oz.ScheduleRatesByItemsλ`
   duplicate-date change it left out, and its assertion count is the 50 that were added
   rather than 48. The published release description is unchanged and still omits both.

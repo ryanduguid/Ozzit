@@ -1564,9 +1564,13 @@ AmortiseλDV = LAMBDA(
                             COUNTA(Timeline) < 2),
     //  Amortiseλ reads a gap under 28 days as a sub-monthly timeline and lays the
     //  schedule out in days, so only a timeline that does not advance is wrong here.
+    //  Every consecutive pair is measured. The first gap alone let a repeated date
+    //  later in the row through, and the parent's approximate MATCH then buckets both
+    //  copies into one period and drops the duplicate's value.
         DVArg7,         IF( OR( ISOMITTED( Timeline), ISERROR( Timeline), DVArg5, DVArg6), 
                             FALSE, 
-                            (INDEX(Timeline, 2) - INDEX(Timeline, 1)) < 1 ),
+                            LET( Dates, TOROW( Timeline),
+                                 MIN( DROP( Dates, , 1) - DROP( Dates, , -1)) < 1)),
         DVErrors,       VSTACK( DVArg1, DVArg2, DVArg3, DVArg4, DVArg5, DVArg6, DVArg7),
         
     //  Any input errors detected?
@@ -1712,10 +1716,13 @@ DepreciateλDV = LAMBDA(
                             FALSE, 
                             COUNTA( Timeline) < 2),
     //  Depreciateλ supports a sub-monthly timeline, so only a timeline that does
-    //  not advance is wrong here.
+    //  not advance is wrong here. Every consecutive pair is measured, for the same
+    //  reason as Amortiseλ's: a repeated date later in the row passed the first-gap
+    //  test and the parent's approximate MATCH drops the duplicate's value.
         DVArg4b,        IF( OR( OR(ErrorsInArgs), DVArg4), 
                             FALSE, 
-                            (INDEX(Timeline, 2) - INDEX(Timeline, 1)) < 1 ),
+                            LET( Dates, TOROW( Timeline),
+                                 MIN( DROP( Dates, , 1) - DROP( Dates, , -1)) < 1)),
         DVArg5,         IF( OR( ISOMITTED( SalvageValues), OR(ISERROR(SalvageValues))), 
                             FALSE, 
                             OR( IFERROR( VALUE(SalvageValues) < 0, TRUE))),

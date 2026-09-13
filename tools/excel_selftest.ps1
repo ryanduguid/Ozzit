@@ -407,6 +407,8 @@ $dpDV = "oz.Depreciate${L}DV"
 $wkTL = "DATE(2026,1,1) + SEQUENCE( , 52, 0) * 7"
 $moTL = "EDATE(DATE(2026,1,1), SEQUENCE( , 14, 0))"
 $flatTL = "DATE(2026,1,1) + {0,0,0}"
+$dupTL = "DATE(2026,1,1) + {0,30,30}"
+$okTL = "DATE(2026,1,1) + {0,30,60}"
 Near 'Amortise DV: a weekly timeline is accepted'   "--($amDV(10000, 0.05, 12, DATE(2026,1,1), $wkTL))" '1'
 Near 'Amortise DV: a zero APR is accepted'          "--($amDV(10000, 0, 12, DATE(2026,1,1), $moTL))" '1'
 Near 'Amortise DV: a monthly timeline is accepted'  "--($amDV(10000, 0.05, 12, DATE(2026,1,1), $moTL))" '1'
@@ -422,6 +424,16 @@ Same 'Depreciate DV: a timeline that does not advance is still refused' `
 Same 'Depreciate DV: a fractional life is refused' `
      "LEFT(INDEX($dpDV(10000, DATE(2026,1,1), 1.5, $moTL),1,1),11)" 'LifeInYears'
 Near 'Depreciate DV: a one-year life is accepted'  "--($dpDV(10000, DATE(2026,1,1), 1, $moTL))" '1'
+# Only the first gap was measured, so a date repeated later in the row passed the
+# companion while the parent's approximate MATCH buckets both copies into one period.
+Same 'Amortise DV: a repeated date later in the timeline is refused' `
+     "LEFT(INDEX($amDV(10000, 0.05, 12, DATE(2026,1,1), $dupTL),1,1),8)" 'Timeline'
+Same 'Depreciate DV: a repeated date later in the timeline is refused' `
+     "LEFT(INDEX($dpDV(10000, DATE(2026,1,1), 5, $dupTL),1,1),11)" 'Each period'
+Near 'Amortise DV: a three-date timeline that advances is accepted' `
+     "--($amDV(10000, 0.05, 12, DATE(2026,1,1), $okTL))" '1'
+Near 'Depreciate DV: a three-date timeline that advances is accepted' `
+     "--($dpDV(10000, DATE(2026,1,1), 5, $okTL))" '1'
 
 # --- Character counts. Both count by splitting the text on the characters asked for, so
 # empty text had nothing to split and a comma could not be one of the characters: each
