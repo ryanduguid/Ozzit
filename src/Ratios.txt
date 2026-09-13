@@ -746,13 +746,13 @@ OperatingRatioλ = LAMBDA(
                         "WEBPAGE:           →https://www.investopedia.com/terms/o/operatingratio.asp ¶" &
                         "VERSION:           →20 Aug 2026¶" &
                         "PARAMETERS:→¶" & 
-                        "OperatingExpenses  →(Required) Operating Expenses which can include:¶" &
+                        "OperatingExpenses  →(Required) Operating Expenses excluding COGS, which is¶" &
+                                           "→supplied separately and added by the formula. Can include:¶" &
                                            "→Accounting and legal fees¶" &
                                            "→Bank charges¶" &
                                            "→Sales and marketing costs¶" &
                                            "→Non-capitalised research¶" &
                                            "→development (R&D) expenses¶" &
-                                           "→Cost of Goods Sold (COGS)¶" &
                         "CostOfGoodsSold    →(Required) Cost of Goods Sold (COGS) which can include:¶" &
                                            "→Office supply costs¶" &
                                            "→Rent and utility expenses¶" &
@@ -866,7 +866,8 @@ OperatingMarginλ = LAMBDA(
                         "WEBPAGE:           →https://www.investopedia.com/terms/o/operatingmargin.asp ¶" &
                         "VERSION:           →20 Aug 2026¶" &
                         "PARAMETERS:→¶" & 
-                        "OperatingEarnings  →(Required) Earnings Before Interest and tax (EBIT) which is revenue - COGS¶" & 
+                        "OperatingEarnings  →(Required) Earnings Before Interest and tax (EBIT), which is revenue¶" &
+                                           "→less COGS and less the other operating expenses¶" &
                         "Revenue            →(Required) Revenue¶" & 
                         "EXAMPLES:          →Formula (oz is assumed to be the module's name)¶" &
                         "40%                →=oz.OperatingMarginλ( .8, 2.0 )", 

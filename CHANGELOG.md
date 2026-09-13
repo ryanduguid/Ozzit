@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+### Corrections to the v3.4.1 workbook; no functions added
+
+- `oz.Amortiseλ`'s default timeline counts calendar months, so a month-end start no
+  longer loses its final repayment month (a 14-month loan from 31 January returned 13
+  columns), and a one-month loan gets a one-date monthly timeline instead of `#REF!`.
+- `oz.DBλ` and `oz.DDBλ` return the whole depreciable amount for a one-year life
+  instead of `#CALC!`, which also reached `oz.Depreciateλ` as `#VALUE!`.
+- `oz.SLNλ` keeps a fractional life's remainder in a final part-year column instead of
+  dropping it (a 1.5-year life on 120 returned 80). `oz.Depreciateλ` now requires a whole
+  number of years and its help and refusal message say so.
+- `oz.OperatingRatioλ` help no longer lists COGS under OperatingExpenses, which the
+  formula adds separately, and `oz.OperatingMarginλ` help defines operating earnings as
+  revenue less COGS and the other operating expenses.
+
 ## v3.4.1, 13 September 2026, Actual/Actual day counts and stricter debt-sculpting inputs
 
 ### Corrections to the v3.4.0 workbook; no functions added
