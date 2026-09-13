@@ -343,6 +343,19 @@ $amL = "10000, 0.05, 48, DATE(2026,1,1)"
 Near 'Amortise: monthly unchanged'    "SUM($am($amL, EDATE(DATE(2026,1,1), SEQUENCE( , 24, 0))))"     '377875.31' '0.005'
 Near 'Amortise: quarterly unchanged'  "SUM($am($amL, EDATE(DATE(2026,1,1), SEQUENCE( , 8, 0) * 3)))" '132616.32' '0.005'
 Near 'Amortise: six-monthly unchanged' "SUM($am($amL, EDATE(DATE(2026,1,1), SEQUENCE( , 8, 0) * 6)))" '92617.78' '0.005'
+# --- A supplied timeline has to advance. The window the schedule is cropped to ends at
+# MAX(Timeline) plus the gap before it, so a repeated or out-of-order date moved that end
+# and admitted a different number of months: 1 January to 1 June with 1 March repeated
+# returned 5,772.61 of principal where the same span without the repeat returns 4,937.63.
+$amSpan = "EDATE(DATE(2026,1,1), {0,1,2,3,4,5})"
+$amRepeat = "EDATE(DATE(2026,1,1), {0,1,2,2,3,4,5})"
+$amBackwards = "DATE(2026,1,1) + {0,60,30}"
+Near 'Amortise: a timeline that advances is unchanged' `
+     "SUM(INDEX($am(10000, 0.05, 12, DATE(2026,1,1), $amSpan),6,0))" '4937.63' '0.005'
+Same 'Amortise: a repeated timeline date is refused' `
+     "LEFT(INDEX($am(10000, 0.05, 12, DATE(2026,1,1), $amRepeat),1,1),8)" 'Timeline'
+Same 'Amortise: an out-of-order timeline date is refused' `
+     "LEFT(INDEX($am(10000, 0.05, 12, DATE(2026,1,1), $amBackwards),1,1),8)" 'Timeline'
 Same 'Amortise: help with no args' "INDEX($am(),1,1)" 'FUNCTION:'
 
 # --- Depreciate. Every period but the last takes its end date from the next period's start.
@@ -396,6 +409,12 @@ Same 'Depreciate: a life in words is refused' `
      "LEFT(INDEX($dp(10000, DATE(2026,1,1), `"five`", $dpTL),1,1),11)" 'LifeInYears'
 Near 'Depreciate: a life of 100 years is still a life' `
      "SUM(INDEX($dp(10000, DATE(2026,1,1), 100, $dpTL),3,0)) - 100" '0' '0.5'
+# Depreciate is not guarded the same way, on purpose. It reads its period length off the
+# first pair and crops to EDATE(MAX(Timeline), months per period), neither of which a later
+# repeat moves, so a repeated date leaves the money where it was. Pinned here so the
+# difference from Amortise is a checked result rather than an assumption.
+Near 'Depreciate: a repeated timeline date collects the same money' `
+     "SUM(INDEX($dp($dpA, $amRepeat),3,0)) - SUM(INDEX($dp($dpA, $amSpan),3,0))" '0' '0.005'
 Same 'Depreciate: help with no args' "INDEX($dp(),1,1)" 'FUNCTION:'
 
 # --- Diagnostic companions. The workbook guide sends a reader to these when a schedule

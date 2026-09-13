@@ -44,7 +44,7 @@ The screenshot uses a disposable copy with a synthetic label, an explicit argume
 
 The tagged repository release is [v3.4.1](https://github.com/ryanduguid/Ozzit/releases/tag/v3.4.1), dated 13 September 2026; citation metadata is in [CITATION.cff](CITATION.cff).
 
-Tracked `ozzit.xlsx` on `main` (v3.4.1 plus the unreleased corrections in [CHANGELOG.md](CHANGELOG.md)) SHA-256: `61bf4a24cd6b41a81fc655a1d470f2afb95eb331e1ab99cbf3fad25811fc911a` (441,745 bytes), whose digest is pinned in [release/workbook-base.json](release/workbook-base.json) and checked by the tool tests. Excel 16.0 build 20430 on 13 September 2026: 1,129 formulas recalculated with 0 in error, 901 self-test assertions with 0 failures, 19,444 cached values equal to what their formulas produce.
+Tracked `ozzit.xlsx` on `main` (v3.4.1 plus the unreleased corrections in [CHANGELOG.md](CHANGELOG.md)) SHA-256: `e6411112b5f32d3b66746f008f351a9ead461e0894db17a4ef6de6e56ff48d11` (442,542 bytes), whose digest is pinned in [release/workbook-base.json](release/workbook-base.json) and checked by the tool tests. Excel 16.0 build 20430 on 14 September 2026: 1,129 formulas recalculated with 0 in error, 905 self-test assertions with 0 failures, 19,444 cached values equal to what their formulas produce.
 
 - [Repository checks](AGENTS.md) and [release and native verification](RELEASING.md)
 - [Changes](CHANGELOG.md) and [citation](CITATION.cff)
