@@ -229,5 +229,38 @@ class VerifyGateTests(unittest.TestCase):
         self.assertIn("not a LAMBDA (5)", printed)
 
 
+class CanonicalStringTests(unittest.TestCase):
+    """The stored-form conventions are code, not text inside a string literal.
+
+    Stripping them across the whole formula erased meaningful characters from help
+    text, so a workbook whose literal read "[0]!FY" compared equal to a source
+    reading "FY" and the gate passed a definition that had changed.
+    """
+
+    def assertDiffers(self, stored, typed):
+        self.assertNotEqual(verify_sources.canonical(stored), verify_sources.canonical(typed))
+
+    def assertSame(self, stored, typed):
+        self.assertEqual(verify_sources.canonical(stored), verify_sources.canonical(typed))
+
+    def test_stored_markers_inside_a_literal_are_kept(self):
+        self.assertDiffers('=LET(x, "[0]!FY", x)', '=LET(x, "FY", x)')
+        self.assertDiffers('=LET(x, "_xlfn.FY", x)', '=LET(x, "FY", x)')
+        self.assertDiffers('=LET(x, "_xlop.Term", x)', '=LET(x, "[Term]", x)')
+        self.assertDiffers('=LET(x, "SINGLE(1)", x)', '=LET(x, "@1", x)')
+
+    def test_an_ordinary_literal_change_still_fails(self):
+        self.assertDiffers('=LET(x, "XXFY", x)', '=LET(x, "FY", x)')
+
+    def test_the_conventions_still_map_outside_a_literal(self):
+        self.assertSame("=_xlfn.TEXTSPLIT(a)", "=TEXTSPLIT(a)")
+        self.assertSame("=[0]!ozλ(1)", "=ozλ(1)")
+        self.assertSame("=SINGLE(A1)", "=@A1")
+        self.assertSame("=LAMBDA(_xlop.Term, 1)", "=LAMBDA([Term], 1)")
+
+    def test_single_unwraps_around_an_expression_holding_a_literal(self):
+        self.assertSame('=SINGLE(IF(a,"x",b))', '=@IF(a,"x",b)')
+
+
 if __name__ == "__main__":
     unittest.main()

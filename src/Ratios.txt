@@ -694,7 +694,7 @@ AssetTurnoverRatioλ = LAMBDA(
 /*  FUNCTION NAME:  DSIλ
     DESCRIPTION:*//**Days Sales in Inventory Ratio (aka Average age of inventory 
 indicates the average time in days that a company takes to turn its inventory 
-(Average Inventory/ Cost of Goods Sold) */
+(Average Inventory/Annual Cost of Goods Sold x 365) */
 DSIλ = LAMBDA(
 //  Parameter DeclaRations
         [AverageInventory],  
@@ -704,12 +704,12 @@ DSIλ = LAMBDA(
                         "FUNCTION:          →DSIλ( AverageInventory, CostOfGoodsSold)¶" & 
                         "DESCRIPTION:       →Days Sales in Inventory Ratio (aka Average age of inventory)¶" & 
                                            "→indicates the average time in days that a company takes to turn its inventory¶" & 
-                                           "→(Average Inventory/ Cost of Goods Sold)¶" & 
+                                           "→(Average Inventory/Annual Cost of Goods Sold x 365 days)¶" & 
                         "WEBPAGE:           →https://www.investopedia.com/terms/d/days-sales-inventory-dsi.asp ¶" &
                         "VERSION:           →20 Aug 2026¶" &
                         "PARAMETERS:→¶" & 
                         "AverageInventory→  (Required) Average of period open and close Inventory¶" & 
-                        "CostOfGoodsSold→   (Required) Cost of Goods Sold (COGS) ¶" & 
+                        "CostOfGoodsSold→   (Required) Cost of Goods Sold (COGS) for a full year ¶" & 
                         "EXAMPLES:          →Formula (oz is assumed to be the module's name)¶" &
                         "40.8949 days       →=oz.DSIλ(54.9, 490 )", 
                     "→", "¶" )
@@ -1200,7 +1200,7 @@ PriceToBookRatioλ = LAMBDA(
                         "VERSION:           →20 Aug 2026¶" &
                         "PARAMETERS:→¶" & 
                         "MarketPricePerShare→(Required) Market Price Per Share (Current market price of the share)¶" & 
-                        "BookValuePerShare  →(Required) Book Value Per share ¶" & 
+                        "BookValuePerShare  →(Required) Tangible book value per share (oz.BVPSλ keeps intangibles) ¶" & 
                                            "→(Total assets - intangible assets - total liabilities) ÷ number of outstanding shares ¶" & 
                         "EXAMPLES:          →Formula (oz is assumed to be the module's name)¶" &
                         "2.0                →=oz.PriceToBookRatioλ( 5, 2.50 )", 
@@ -1305,7 +1305,7 @@ BVPSλ = LAMBDA(
                         "WEBPAGE:           →https://corporatefinanceinstitute.com/resources/valuation/book-value-per-share-bvps/ ¶" &
                         "VERSION:           →20 Aug 2026¶" &
                         "PARAMETERS:→¶" & 
-                        "ShareholdersEquity →(Required) Shareholders' Equity (total assets - total liabilities) ¶" & 
+                        "ShareholdersEquity →(Required) Shareholders' Equity (total assets - total liabilities), intangibles kept ¶" & 
                         "PreferredStock     →(Required) Preferred Stock (securities that represent ownership in a corporation).¶" & 
                         "AverageSharesOutstanding→(Required) Average Shares Out Standing ¶" & 
                         "EXAMPLES:          →Formula (oz is assumed to be the module's name)¶" &

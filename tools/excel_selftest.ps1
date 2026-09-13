@@ -334,7 +334,7 @@ Near 'Amortise: weekly, the weeks between hold no payment' `
 Near 'Amortise: twenty-day periods hold the same money as monthly' `
      "SUM($am(10000, 0.05, 12, DATE(2026,1,1), DATE(2026,1,1) + SEQUENCE( , 20, 0) * 20)) - SUM($amMo)" '0' '0.0000001'
 # An unevenly spaced sub-monthly timeline must still tile the calendar: no month counted
-# twice, none dropped. This one alternates 5 and 40 day periods.
+# twice, none dropped. This one alternates 5 and 20 day periods.
 $uneven = "DATE(2026,1,1) + SCAN(0, SEQUENCE( , 27, 0), LAMBDA(a,k, IF(k = 0, 0, a + IF(MOD(k,2) = 1, 5, 20))))"
 Near 'Amortise: an uneven timeline still counts each month once' `
      "SUM($am(10000, 0.05, 12, DATE(2026,1,1), $uneven)) - SUM($amMo)" '0' '0.0000001'
@@ -397,6 +397,46 @@ Same 'Depreciate: a life in words is refused' `
 Near 'Depreciate: a life of 100 years is still a life' `
      "SUM(INDEX($dp(10000, DATE(2026,1,1), 100, $dpTL),3,0)) - 100" '0' '0.5'
 Same 'Depreciate: help with no args' "INDEX($dp(),1,1)" 'FUNCTION:'
+
+# --- Diagnostic companions. The workbook guide sends a reader to these when a schedule
+# looks wrong, so they must accept every input the parent calculates. Amortise and
+# Depreciate both take a sub-monthly timeline and Amortise takes a zero APR, and all 3
+# were reported as problems: the reader was told to change data that was already right.
+$amDV = "oz.Amortise${L}DV"
+$dpDV = "oz.Depreciate${L}DV"
+$wkTL = "DATE(2026,1,1) + SEQUENCE( , 52, 0) * 7"
+$moTL = "EDATE(DATE(2026,1,1), SEQUENCE( , 14, 0))"
+$flatTL = "DATE(2026,1,1) + {0,0,0}"
+Near 'Amortise DV: a weekly timeline is accepted'   "--($amDV(10000, 0.05, 12, DATE(2026,1,1), $wkTL))" '1'
+Near 'Amortise DV: a zero APR is accepted'          "--($amDV(10000, 0, 12, DATE(2026,1,1), $moTL))" '1'
+Near 'Amortise DV: a monthly timeline is accepted'  "--($amDV(10000, 0.05, 12, DATE(2026,1,1), $moTL))" '1'
+Same 'Amortise DV: a negative APR is still refused' `
+     "LEFT(INDEX($amDV(10000, -0.05, 12, DATE(2026,1,1), $moTL),1,1),3)" 'APR'
+Same 'Amortise DV: a timeline that does not advance is still refused' `
+     "LEFT(INDEX($amDV(10000, 0.05, 12, DATE(2026,1,1), $flatTL),1,1),8)" 'Timeline'
+Near 'Depreciate DV: a weekly timeline is accepted'  "--($dpDV(10000, DATE(2026,1,1), 5, $wkTL))" '1'
+Near 'Depreciate DV: a monthly timeline is accepted' "--($dpDV(10000, DATE(2026,1,1), 5, $moTL))" '1'
+Same 'Depreciate DV: a timeline that does not advance is still refused' `
+     "LEFT(INDEX($dpDV(10000, DATE(2026,1,1), 5, $flatTL),1,1),11)" 'Each period'
+# Depreciate refuses a fractional life outright, so the companion has to say so too.
+Same 'Depreciate DV: a fractional life is refused' `
+     "LEFT(INDEX($dpDV(10000, DATE(2026,1,1), 1.5, $moTL),1,1),11)" 'LifeInYears'
+Near 'Depreciate DV: a one-year life is accepted'  "--($dpDV(10000, DATE(2026,1,1), 1, $moTL))" '1'
+
+# --- Character counts. Both count by splitting the text on the characters asked for, so
+# empty text had nothing to split and a comma could not be one of the characters: each
+# returned #VALUE! for an input the help permits. A single character is now taken as
+# itself rather than as a comma separated list.
+$cc = "oz.CountC$L"
+$ccu = "oz.CountCU$L"
+Near 'CountC: empty text counts nought'   "$cc(`"`", `"a`")" '0'
+Near 'CountCU: empty text counts nought'  "$ccu(`"`", `"a`")" '0'
+Near 'CountC: a comma is a character'     "$cc(`"a,b,c`", `",`")" '2'
+Near 'CountCU: a comma is a character'    "$ccu(`"a,b,c`", `",`")" '2'
+Near 'CountC: a CSV still counts each character'  "$cc(`"aAbba`", `"a,b`")" '4'
+Near 'CountCU: a CSV still counts each character' "$ccu(`"aAbba`", `"a,b`")" '4'
+Near 'CountC: the count is case sensitive'  "$cc(`"aAbba`", `"A`")" '1'
+Near 'CountCU: the count is case sensitive' "$ccu(`"aAbba`", `"A`")" '1'
 
 # --- Allocate. The accumulator was rebuilt with HSTACK on every REDUCE pass, so the work
 # was quadratic in the number of amounts; it is a closed form and is now computed one
@@ -630,7 +670,7 @@ Near 'Debt: PeriodRates keep the roll-forward'    "SUMPRODUCT(ABS(INDEX($onrates
 Near 'Debt: without either rate row it is help'  "--ISTEXT(INDEX($dsv(, {1000,0,0}, {300,300,300}, {1.2,1.2,1.2}),1,1))" '1'
 # Interest on the average balance solves I = r * (P - (C - I) / 2) with C = 300 / 1.2 the cash
 # for debt service, so I = r * (P - C / 2) / (1 - r / 2) while the cash clears less than the
-# principal. InterestLRV iterates to within a cent of that.
+# principal. InterestLRV solves that in closed form; the check allows 0.001.
 Near 'Debt: LRV on PeriodRates, first interest'   "LET(r, 0.073*31/365, INDEX($lrv(, {1000,0,0}, {300,300,300}, {1.2,1.2,1.2}, , , $rates),2,1) - r*(1000-125)/(1-r/2))" '0' '0.001'
 Near 'Debt: blank PeriodRates cell is not given'  "SUMPRODUCT(ABS($dsv(, {1000,0,0}, {300,300,300}, {1.2,1.2,1.2}, {0.06,0.06,0.06}, 12, Z1) - $dsv(, {1000,0,0}, {300,300,300}, {1.2,1.2,1.2}, {0.06,0.06,0.06}, 12)))" '0' '0.0000001'
 Near 'Debt: blank PeriodRates range is not given' "SUMPRODUCT(ABS($dsv(, {1000,0,0}, {300,300,300}, {1.2,1.2,1.2}, {0.06,0.06,0.06}, 12, Z1:Z3) - $dsv(, {1000,0,0}, {300,300,300}, {1.2,1.2,1.2}, {0.06,0.06,0.06}, 12)))" '0' '0.0000001'
@@ -737,7 +777,7 @@ Fuzz 'fuzz: DateDif MD on days 29 to 31 = days past the last anniversary' `
      "$dd(s, e, `"MD`")" 'e - EDATE(s, SUMPRODUCT(--(EDATE(s, SEQUENCE(1,200)) <= e)))' '0.5'
 # Debt sculpting on period rates charges opening balance times the period's rate, and
 # the LRV variant charges interest on the average balance: I = r * (P - C / 2) / (1 - r / 2)
-# with C = 300 / 1.2 the cash for debt service, solved to within a cent by InterestLRV.
+# with C = 300 / 1.2 the cash for debt service, solved in closed form by InterestLRV.
 Fuzz 'fuzz: DebtSculptVariable interest = opening * period rate' `
      'd, RANDBETWEEN(1000,100000), r, RANDBETWEEN(1,20)/1000' '"d="&d&" r="&r' `
      "INDEX($dsv(, HSTACK(d,0,0), {300,300,300}, {1.2,1.2,1.2}, , , HSTACK(r,r,r)), 2, 1)" 'd*r' '0.0000001'

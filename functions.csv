@@ -38,7 +38,7 @@ oz.DBλ,Financial,nabla.f.DBλ,"DBλ(Cost, Salvage, Life, [Months])",Fixed decli
 oz.DDBλ,Financial,nabla.f.DDBλ,"DDBλ(Cost, Salvage, Life, [Factor])",Double-declining balance depreciation method for one asset or asset class.
 oz.DPRλ,Ratios,nabla.r.DPRλ,"DPRλ( DividendsPaid, NetIncome )",Dividend Payout Ratio is the percentage of earnings paid to shareholders via dividends (DividendsPaid/NetIncome)
 oz.DSCRλ,Ratios,nabla.r.DSCRλ,"DSCRλ( NetOperatingIncome, TotalDebtService)",Debt service coverage Ratio measures a firm’s available cash flow to pay its current debt obligations(Net Operating Income/Total Debt Service)
-oz.DSIλ,Ratios,nabla.r.DSIλ,"DSIλ( AverageInventory, CostOfGoodsSold)",Days Sales in Inventory Ratio (aka Average age of inventory indicates the average time in days that a company takes to turn its inventory (Average Inventory/ Cost of Goods Sold)
+oz.DSIλ,Ratios,nabla.r.DSIλ,"DSIλ( AverageInventory, CostOfGoodsSold)",Days Sales in Inventory Ratio (aka Average age of inventory indicates the average time in days that a company takes to turn its inventory (Average Inventory/Annual Cost of Goods Sold x 365)
 oz.DateDifλ,Dates,,"DateDifλ(StartDate, EndDate, [Unit])","Whole years, months or days between two dates, and the remainders DATEDIF gets wrong"
 oz.DayCountRateλ,Financial,,"DayCountRateλ(Timeline, APR, [Convention], [EndDates])","Interest rate for each period of a timeline under a day count convention: 30/360, Actual/360, Actual/365 or Actual/Actual"
 oz.DebtRatioλ,Ratios,nabla.r.DebtRatioλ,"DebtRatioλ( TotalDebt, TotalAssets)",Measures the extent of a company’s leverage

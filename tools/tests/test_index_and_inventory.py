@@ -40,6 +40,47 @@ class IndexAndInventoryTests(unittest.TestCase):
             writer.writerows(rows)
         return target
 
+    def _duplicated_index(self, function, **overrides):
+        """The index with a second, contradictory row for `function` prepended."""
+        target = self.directory / "functions.csv"
+        with INDEX.open(encoding="utf-8-sig", newline="") as source:
+            rows = list(csv.DictReader(source))
+            fields = list(rows[0])
+        original = next(row for row in rows if row["function"] == function)
+        rows.insert(0, {**original, **overrides})
+        with target.open("w", encoding="utf-8", newline="") as output:
+            writer = csv.DictWriter(output, fieldnames=fields, lineterminator="\n")
+            writer.writeheader()
+            writer.writerows(rows)
+        return target
+
+    def test_index_gate_rejects_a_duplicate_function_row(self):
+        # The valid row stays later in the file, so keying the rows by name hid the
+        # contradictory copy and every field check passed on the survivor.
+        index = self._duplicated_index(
+            "oz.AnnualRateλ", module="FabricatedModule", description="Fabricated"
+        )
+        result = self._run("verify_index.py", WORKBOOK, ROOT / "src", index)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("oz.AnnualRateλ appears 2 times", result.stdout)
+
+    def test_previous_name_gate_rejects_a_duplicate_function_row(self):
+        # oz.AnnualRateλ postdates the naming baseline, so its previous_name is blank
+        # and the claim checks skipped both copies.
+        index = self._duplicated_index("oz.AnnualRateλ", description="Fabricated")
+        result = self._run("verify_previous_names.py", index)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("oz.AnnualRateλ appears 2 times", result.stdout)
+
+    def test_both_index_gates_accept_the_published_index(self):
+        for tool, args in (
+            ("verify_index.py", (WORKBOOK, ROOT / "src", INDEX)),
+            ("verify_previous_names.py", (INDEX,)),
+        ):
+            with self.subTest(tool=tool):
+                result = self._run(tool, *args)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_index_gate_rejects_fabricated_description(self):
         index = self._mutated_index("description", "Fabricated description")
         result = self._run("verify_index.py", WORKBOOK, ROOT / "src", index)

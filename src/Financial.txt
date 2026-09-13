@@ -1549,7 +1549,7 @@ AmortiseλDV = LAMBDA(
                             OR( IFERROR( VALUE(Principal) < 1, TRUE))),
         DVArg2,         IF( OR( ISOMITTED( APR), ISERROR( APR)), 
                             FALSE, 
-                            OR( IFERROR( VALUE(APR) <= 0, TRUE))),
+                            OR( IFERROR( VALUE(APR) < 0, TRUE))),
         DVArg3,         IF( OR( ISOMITTED( Term), ISERROR( Term)), 
                             FALSE, 
                             OR( IFERROR( VALUE(Term) < 1, TRUE))),
@@ -1562,9 +1562,11 @@ AmortiseλDV = LAMBDA(
         DVArg6,         IF( OR( ISOMITTED( Timeline), ISERROR( Timeline), DVArg5), 
                             FALSE, 
                             COUNTA(Timeline) < 2),
+    //  Amortiseλ reads a gap under 28 days as a sub-monthly timeline and lays the
+    //  schedule out in days, so only a timeline that does not advance is wrong here.
         DVArg7,         IF( OR( ISOMITTED( Timeline), ISERROR( Timeline), DVArg5, DVArg6), 
                             FALSE, 
-                            (INDEX(Timeline, 2) - INDEX(Timeline, 1)) < 30 ),
+                            (INDEX(Timeline, 2) - INDEX(Timeline, 1)) < 1 ),
         DVErrors,       VSTACK( DVArg1, DVArg2, DVArg3, DVArg4, DVArg5, DVArg6, DVArg7),
         
     //  Any input errors detected?
@@ -1582,12 +1584,12 @@ AmortiseλDV = LAMBDA(
                     
                     //  Data validation errors
                         "Amount must be greater than 0";
-                        "APR must be a percentage greater than 0";
+                        "APR must be a percentage of 0 or more";
                         "Term must be the number of timeline periods until the debt is satisfied.";
                         "StartDate must be a valid date.";
-                        "Timeline must a row of period start dates with every period spanning a month, quarter or year.";
+                        "Timeline must a row of period start dates.";
                         "Timeline must a row of period start dates with more than 1 entry.";
-                        "Timeline must a row of period start dates spanning no less than a month."},
+                        "Timeline must a row of period start dates that advance by at least a day."},
         Messages,       FILTER(ErrMsgs, Errors2Show, ""),        
 
     //  Handle Error
@@ -1699,15 +1701,21 @@ DepreciateλDV = LAMBDA(
         DVArg2,         IF( OR( ISERROR( InServiceDates), ISERROR( Timeline)), 
                             FALSE, 
                             OR( IFERROR( VALUE(InServiceDates) < MIN( Timeline), TRUE))),
+    //  Depreciateλ takes a whole number of years from 1 to 100 and refuses anything
+    //  else, so the companion reads the life the same way its parent does.
         DVArg3,         IF( OR( ISERROR( LifeInYears)), 
                             FALSE, 
-                            OR( IFERROR( VALUE(LifeInYears) < 1, TRUE))),
+                            LET( Lives, IFERROR( VALUE( LifeInYears), -1),
+                                 OR( MIN( Lives) <= 0, MAX( Lives) > 100,
+                                     SUMPRODUCT( --( MOD( Lives, 1) <> 0)) > 0))),
         DVArg4,         IF( OR( ISERROR( Timeline)), 
                             FALSE, 
                             COUNTA( Timeline) < 2),
+    //  Depreciateλ supports a sub-monthly timeline, so only a timeline that does
+    //  not advance is wrong here.
         DVArg4b,        IF( OR( OR(ErrorsInArgs), DVArg4), 
                             FALSE, 
-                            (INDEX(Timeline, 2) - INDEX(Timeline, 1)) < 28 ),
+                            (INDEX(Timeline, 2) - INDEX(Timeline, 1)) < 1 ),
         DVArg5,         IF( OR( ISOMITTED( SalvageValues), OR(ISERROR(SalvageValues))), 
                             FALSE, 
                             OR( IFERROR( VALUE(SalvageValues) < 0, TRUE))),
@@ -1746,9 +1754,9 @@ DepreciateλDV = LAMBDA(
                     //  Data validation errors
                          "InitialValues must be an amount greater than 0";
                          "InServiceDates must be valid dates";
-                         "LifeInYears must be a number greater than 0";
-                         "Timeline must be a row of period start dates with every period spanning one month, quarter or year.";
-                         "Each period in the timeline must span one month, quarter or year.";
+                         "LifeInYears must be a whole number of years greater than 0 and no more than 100";
+                         "Timeline must be a row of period start dates with more than 1 entry.";
+                         "Each period in the timeline must advance by at least a day.";
                          "SalvageValues must be an amount not less than 0 or omitted";
                          "DisposalDates must be a date greater than InServiceDates or omitted";
                          "DisposalCosts must be an amount not less than 0 or omitted";

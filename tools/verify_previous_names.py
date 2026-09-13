@@ -11,8 +11,10 @@ The build fills the column and asserts as it goes, but the build is not what peo
 the committed CSV is. This checks the published file against the published baseline, so a
 stale or hand-edited CSV fails here rather than misinforming somebody mid-migration.
 
-Four things must hold:
+Five things must hold:
 
+  * each function appears once, since a duplicate row means the index contradicts
+    itself and whichever copy a reader stops at decides what they are told
   * every name the baseline records is claimed by exactly one function, since an
     unclaimed one is a function that disappeared without a forwarding address
   * no `previous_name` names something the baseline does not, since a previous name that
@@ -61,6 +63,17 @@ def main() -> int:
                  % (len(rows), len(released)))
 
     failures: list[str] = []
+
+    # A blank previous_name is expected for anything added since the baseline, so the
+    # claim checks below skip those rows entirely. That left a duplicate function name
+    # unremarked whenever the copy carried no previous name of its own.
+    times: dict[str, int] = {}
+    for row in rows:
+        times[row["function"]] = times.get(row["function"], 0) + 1
+    for name, count in sorted(times.items()):
+        if count > 1:
+            failures.append("%s appears %d times in %s" % (name, count, os.path.basename(CSV)))
+
     claimed: dict[str, str] = {}
     for row in rows:
         was = row["previous_name"].strip()

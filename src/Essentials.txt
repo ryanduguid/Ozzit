@@ -43,9 +43,9 @@ CountCλ = LAMBDA(
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
-                            "Text           →(Required) The string to interrogate¶" & 
+                            "Text           →(Required) The string to interrogate. Empty text returns 0¶" & 
                             "Characters     →(Required) A single character, or CSV of characters to find in Text¶" & 
-                                           "→NOTE! Case sensitive¶" & 
+                                           "→NOTE! Case sensitive. A single character is taken as itself, so a comma works¶" & 
                             "EXAMPLES:      →Formula (oz is assumed to be the module's name)¶" &
                                            "→=oz.CountCλ( ""Mary had a little lamb"", ""a,b"")", 
                         "→", "¶" )
@@ -54,10 +54,12 @@ CountCλ = LAMBDA(
        Help?,           OR( ISOMITTED( Text),
                             ISOMITTED( Characters)
                         ),
-    //  Set defaults
-        Characters,     TEXTSPLIT( Characters, "," ),
-    //  Procedure
-        Result,         LEN(Text) - SUM(LEN(TEXTSPLIT( Text, Characters))),
+    //  Set defaults. One character is taken as itself, so a comma can be asked for;
+    //  2 or more are read as the comma separated list the help describes.
+        Characters,     IF( LEN( Characters) = 1, Characters, TEXTSPLIT( Characters, "," )),
+    //  Procedure. Empty text holds none of them, and TEXTSPLIT has nothing to split.
+        Result,         IF( LEN( Text) = 0, 0,
+                            LEN( Text) - SUM( LEN( TEXTSPLIT( Text, Characters)))),
     //  Return Result
         CHOOSE(Help? + 1, Result, Help)        
     )
