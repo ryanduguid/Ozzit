@@ -11,8 +11,8 @@
   1 June with 1 March repeated returned 5,772.61 of principal where the same span without
   the repeat returns 4,937.63. `oz.Depreciateλ` is deliberately not guarded the same way:
   it reads its period length off the first pair of dates and crops to `EDATE` of the last
-  one, neither of which a later repeat moves, and both the depreciation row and the column
-  count are unchanged by a repeat. An assertion pins that difference, and
+  one, neither of which a later repeat moves, so the depreciation total is unchanged by a
+  repeat (the repeated date still adds a column). An assertion pins that total, and
   `oz.DepreciateλDV` still reports such a timeline.
 - `oz.Amortiseλ`'s default timeline counts calendar months, so a month-end start no
   longer loses its final repayment month (a 14-month loan from 31 January returned 13
