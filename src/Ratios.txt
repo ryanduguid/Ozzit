@@ -91,7 +91,7 @@ CurrentRatioλ = LAMBDA(
                                        "→Vendor non-trade receivables ¶" & 
                                        "→Assets expected to liquidated in the current year ¶" & 
                                        "→Marketable securities ¶" & 
-                                       "→Property, Plant and equipment (PPE) ¶" & 
+                                       "→PPE only when it meets current-asset classification criteria ¶" & 
                                        "→Marketable securities ¶" & 
                                        "→Assets expected to liquidated in the current year ¶" & 
                         "Liabilities     →(Required) Current Liabilities. Includes: ¶" & 
@@ -412,9 +412,9 @@ DSCRλ = LAMBDA(
                         "WEBPAGE:           →https://www.investopedia.com/terms/d/dscr.asp ¶" &
                         "VERSION:           →20 Aug 2026¶" &
                         "PARAMETERS:→¶" & 
-                        "NetOperatingIncome →(Required) Revenue - Certain Operating Expenses¶" & 
-                        "TotalDebtService   →(Required) Interest * (1-Tax Rate), principal, sinking fund,¶" &
-                                           "→and lease payments due in the coming year¶" & 
+                        "NetOperatingIncome →(Required) Income measure defined by the applicable covenant¶" & 
+                        "TotalDebtService   →(Required) Principal, interest and other payments defined by that covenant¶" &
+                                           "→Use the same period. Tax-adjust interest only if the covenant requires it¶" & 
                         "EXAMPLES:          →Formula (oz is assumed to be the module's name)¶" &
                         "6.142857           →=oz.DSCRλ(2150.0, 350.0)", 
                     "→", "¶" )
@@ -1450,8 +1450,8 @@ EPSλ = LAMBDA(
                         "PARAMETERS:→¶" & 
                         "NetIncome          →(Required) Net Income ¶" & 
                         "PreferredDividends →(Required) Dividends paid on prefered stock¶" & 
-                        "EndOfPeriodCommonSharesOutstanding→(Required) End of Periods Common Shares outstanding or ¶" & 
-                                           "→Weighted average number of shares outstanding¶" & 
+                        "EndOfPeriodCommonSharesOutstanding→(Required) Weighted-average ordinary shares for basic EPS¶" & 
+                                           "→Use closing shares only when they equal that weighted average¶" & 
                         "EXAMPLES:          →Formula (oz is assumed to be the module's name)¶" &
                         "1.909548           →=oz.EPSλ( 7.6, 0, 3.98 )", 
                     "→", "¶" )
