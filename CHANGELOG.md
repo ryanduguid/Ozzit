@@ -4,6 +4,10 @@
 
 ### Corrections to the v3.4.1 workbook; no functions added
 
+- Ratio help limits PPE to assets meeting current classification criteria, requires
+  weighted-average ordinary shares for basic EPS and follows the applicable DSCR
+  covenant's income and debt-service definitions. The lease guide includes the lessor's
+  initial direct costs when deriving the implicit rate. Calculation formulas are unchanged.
 - `oz.Amortiseλ` refuses a supplied timeline whose dates do not advance by at least a day,
   with a single-cell message in the same style as the depreciation life refusal. The
   schedule is cropped to the last timeline date plus the gap before it, so a repeated or
