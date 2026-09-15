@@ -24,7 +24,8 @@ if (@(Get-Process EXCEL -ErrorAction SilentlyContinue).Count -gt 0) {
 }
 
 $xl = New-Object -ComObject Excel.Application
-$xl.Visible = $false; $xl.DisplayAlerts = $false; $xl.AutomationSecurity = 1
+# msoAutomationSecurityForceDisable (3), not Low (1): reading values needs no macros.
+$xl.Visible = $false; $xl.DisplayAlerts = $false; $xl.AutomationSecurity = 3
 $wb = $null; $exit = 0
 $sw = [System.IO.StreamWriter]::new($Out, $false, (New-Object System.Text.UTF8Encoding $false))
 try {

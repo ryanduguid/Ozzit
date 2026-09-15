@@ -56,8 +56,9 @@ def main() -> int:
 
     if not rows:
         sys.exit("no rows read from %s" % CSV)
-    if "previous_name" not in rows[0]:
-        sys.exit("%s has no previous_name column" % CSV)
+    for column in ("function", "previous_name"):
+        if column not in rows[0]:
+            sys.exit("%s has no %s column" % (CSV, column))
     if len(rows) < FLOOR or len(released) < FLOOR:
         sys.exit("only %d functions and %d baseline names read: the check is not reading them"
                  % (len(rows), len(released)))
@@ -67,16 +68,20 @@ def main() -> int:
     # A blank previous_name is expected for anything added since the baseline, so the
     # claim checks below skip those rows entirely. That left a duplicate function name
     # unremarked whenever the copy carried no previous name of its own.
+    # A short row leaves csv.DictReader holding None, so every cell is read through
+    # "or empty". This gate exists to fail on a stale or hand-edited functions.csv,
+    # and a traceback would replace the diagnostic the reader needs.
     times: dict[str, int] = {}
     for row in rows:
-        times[row["function"]] = times.get(row["function"], 0) + 1
+        name = row["function"] or ""
+        times[name] = times.get(name, 0) + 1
     for name, count in sorted(times.items()):
         if count > 1:
             failures.append("%s appears %d times in %s" % (name, count, os.path.basename(CSV)))
 
     claimed: dict[str, str] = {}
     for row in rows:
-        was = row["previous_name"].strip()
+        was = (row["previous_name"] or "").strip()
         if not was:
             continue                     # added since the baseline, correctly recording nothing
         if was not in released:
@@ -90,7 +95,11 @@ def main() -> int:
             # the rename only ever appended to a bare name, so an unrelated pairing shows
             # up here even though it satisfies every count
             old_bare = was.rsplit(".", 1)[1].rstrip("λ")
-            new_bare = row["function"].split(".", 1)[1]
+            name = row["function"] or ""
+            if "." not in name:
+                failures.append("%s is not a qualified function name" % name)
+                continue
+            new_bare = name.split(".", 1)[1]
             if not new_bare.startswith(old_bare):
                 failures.append("%s is not a renaming of %s: %s does not begin with %s"
                                 % (row["function"], was, new_bare, old_bare))

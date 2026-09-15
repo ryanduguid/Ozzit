@@ -98,9 +98,12 @@ def set_existing_shared_cell(text: str, address: str, index: int) -> tuple[str, 
     return pattern.sub(rf"\g<1>{index}\2", text, count=1), True
 
 
-def add_financial_ratios_strapline(text: str, index: int) -> tuple[str, bool]:
+# Returns (text, changed, inserted). A repoint changes which shared string A2 points
+# at and adds no reference, so only an insert may raise the shared-string count.
+def add_financial_ratios_strapline(text: str, index: int) -> tuple[str, bool, bool]:
     if re.search(r'<c r="A2"[^>]*>', text):
-        return set_existing_shared_cell(text, "A2", index)
+        text, changed = set_existing_shared_cell(text, "A2", index)
+        return text, changed, False
     # Financial Ratios' sheet begins at row 1, so the first closing row is row 1.
     row = (
         '<row r="2" spans="1:11" x14ac:dyDescent="0.25">'
@@ -118,7 +121,7 @@ def add_financial_ratios_strapline(text: str, index: int) -> tuple[str, bool]:
             f'{match.group(2)}<mergeCell ref="A2:K2"/></mergeCells>'
         )
         text = text[: match.start()] + merged + text[match.end() :]
-    return text, True
+    return text, True, True
 
 
 def update_shared_and_sheets(
@@ -139,8 +142,8 @@ def update_shared_and_sheets(
         path = paths[sheet_name]
         sheet = parts[path].decode("utf-8")
         if sheet_name == "oz.FinancialRatios":
-            sheet, changed = add_financial_ratios_strapline(sheet, index)
-            if changed:
+            sheet, changed, inserted = add_financial_ratios_strapline(sheet, index)
+            if inserted:
                 added_references += 1
         else:
             sheet, changed = set_existing_shared_cell(sheet, "A2", index)

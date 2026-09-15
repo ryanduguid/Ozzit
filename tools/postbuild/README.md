@@ -22,6 +22,7 @@ python tools/postbuild/workbook_palette.py ozzit.xlsx
 python tools/postbuild/gst_help_text.py ozzit.xlsx src
 python tools/postbuild/strip_revision_history.py ozzit.xlsx src
 python tools/postbuild/help_corrections.py ozzit.xlsx src
+python tools/postbuild/aasb16_leases.py ozzit.xlsx src functions.csv
 python tools/postbuild/rate_date_helpers.py ozzit.xlsx src functions.csv
 python tools/compile_sources.py ozzit.xlsx src --index=functions.csv
 python tools/postbuild/remove_residue.py ozzit.xlsx
