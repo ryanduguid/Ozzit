@@ -33,7 +33,9 @@ if (@(Get-Process EXCEL -ErrorAction SilentlyContinue).Count -gt 0) {
 
 $before = (Get-Item $Path).Length
 $xl = New-Object -ComObject Excel.Application
-$xl.Visible = $false; $xl.DisplayAlerts = $false; $xl.AutomationSecurity = 1
+# msoAutomationSecurityForceDisable (3), not Low (1). $Path is a parameter, and a
+# recalculation needs no macros: the shipped workbook is an ordinary .xlsx with none.
+$xl.Visible = $false; $xl.DisplayAlerts = $false; $xl.AutomationSecurity = 3
 $wb = $null; $exit = 0
 try {
     $wb = Invoke-Excel { $xl.Workbooks.Open($Path, 0, $false) }

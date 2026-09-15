@@ -35,6 +35,8 @@ if hasattr(sys.stdout, "reconfigure"):
 
 WORKBOOK = sys.argv[1] if len(sys.argv) > 1 else "ozzit.xlsx"
 HERE = Path(__file__).resolve().parent
+# A full rebuild of this workbook takes seconds; 10 minutes is a hang, not a slow run.
+REFRESH_TIMEOUT_SECONDS = 600
 
 
 def main() -> int:
@@ -44,10 +46,21 @@ def main() -> int:
         return 1
 
     script = HERE / "refresh_cache.ps1"
-    proc = subprocess.run(
-        ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(script),
-         "-Path", str(workbook.resolve())],
-        capture_output=True, text=True, check=False)
+    try:
+        # Excel automation can stop on a modal dialog, and without a timeout the gate
+        # would wait for it forever. A host with no powershell.exe would otherwise raise
+        # FileNotFoundError before this script could print its own FAIL: line.
+        proc = subprocess.run(
+            ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(script),
+             "-Path", str(workbook.resolve())],
+            capture_output=True, text=True, check=False, timeout=REFRESH_TIMEOUT_SECONDS)
+    except FileNotFoundError:
+        print("FAIL: powershell.exe was not found, so Excel could not be driven")
+        return 1
+    except subprocess.TimeoutExpired:
+        print(f"FAIL: the Excel refresh did not finish within {REFRESH_TIMEOUT_SECONDS}s; "
+              "check for a modal dialog and close any Excel process before retrying")
+        return 1
     out = (proc.stdout or "").strip()
     if out:
         print(out)

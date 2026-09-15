@@ -70,7 +70,11 @@ finally {
             [GC]::Collect(); [GC]::WaitForPendingFinalizers()
         }
     }
-    $after = (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash
-    if ($after -ne $before) { throw 'Workbook bytes changed during the native test' }
-    Write-Output "Workbook unchanged: $after"
 }
+# Outside the finally. A throw inside it replaces the exception already in flight, so a
+# failed Check-Bias assertion was reported as 'Workbook bytes changed' and the assertion
+# that actually failed never reached the reader. A run that threw stops before this line,
+# which is the right precedence: the assertion failure is the news.
+$after = (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash
+if ($after -ne $before) { throw 'Workbook bytes changed during the native test' }
+Write-Output "Workbook unchanged: $after"

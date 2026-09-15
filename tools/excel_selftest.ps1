@@ -847,7 +847,8 @@ if (@(Get-Process EXCEL -ErrorAction SilentlyContinue).Count -gt 0) {
 try {
     $xl = New-Object -ComObject Excel.Application
     $xl.Visible = $false; $xl.DisplayAlerts = $false
-    $xl.AutomationSecurity = 1; $xl.AskToUpdateLinks = $false; $xl.EnableEvents = $false
+    # msoAutomationSecurityForceDisable (3), not Low (1): the self-test needs no macros.
+    $xl.AutomationSecurity = 3; $xl.AskToUpdateLinks = $false; $xl.EnableEvents = $false
 
     # Excel's COM server intermittently refuses the first call after a prior instance quits.
     $wb = Invoke-Excel { $xl.Workbooks.Open($Path, 0, $false) }

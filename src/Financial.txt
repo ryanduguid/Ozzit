@@ -1298,12 +1298,16 @@ PeriodDiffλ = LAMBDA(
         MpP,                SWITCH( Interval, "M", 1, "Q", 3, "Y", 12, 0),
     //  Procedure
         Months,             DATEDIF( StartDate, EndDate, "M") + 1,
-        Periods,            INT( Months / MpP),
-        PartialPeriod,      N( MOD( Months, MpP) > 0),
+    //  MpP is 0 for "W" and for any interval SWITCH does not recognise, and both
+    //  INT( Months / 0) and MOD( Months, 0) are #DIV/0!. The weekly result never
+    //  needs the month arithmetic, and an unrecognised interval is reported below.
+        Divisor,            IF( MpP = 0, 1, MpP),
+        Periods,            INT( Months / Divisor),
+        PartialPeriod,      N( MOD( Months, Divisor) > 0),
         EOMCorrection,      N( AND( EndDate = EOMONTH( EndDate, 0), DAY( StartDate) > Day( EndDate))),
-        Result,             IF( Interval = "W", 
-                                INT((EndDate - StartDate + 1) / 7),
-                                Periods + OR(PartialPeriod, EOMCorrection)),
+        Result,             IFS( Interval = "W", INT((EndDate - StartDate + 1) / 7),
+                                 MpP = 0,        NA(),
+                                 TRUE,           Periods + OR(PartialPeriod, EOMCorrection)),
     //  Return Result or Help
         CHOOSE( Help? + 1, Result, Help)
     )
@@ -1747,10 +1751,14 @@ DepreciateλDV = LAMBDA(
                             OR( IFERROR( VALUE(DisposalCosts) < 0, TRUE))),
         DVArg8,         IF( OR( ISOMITTED( Methods),  ISERROR( Methods)), 
                             FALSE, 
-                            OR(ISERROR( SEARCH( Methods, "SLN,SYD,DB,DDB,VDB,DV,PC")))),
+                        //  SEARCH matches a substring, so "D" passed and Depreciateλ's exact
+                        //  MATCH then returned #N/A. XMATCH with match_mode 0 is exact.
+                            OR(ISNA( XMATCH( Methods, {"SLN","SYD","DB","DDB","VDB","DV","PC"}, 0)))),
         DVArg9,         IF( OR( ISOMITTED( Factors),  ISERROR( Factors)), 
                             FALSE, 
-                            OR(IFERROR( VALUE( Factors) < 0, TRUE ))),
+                        //  The message requires a factor greater than zero, and a factor of 0
+                        //  reaches DDBλ or VDBλ, so reject it here rather than below.
+                            OR(IFERROR( VALUE( Factors) <= 0, TRUE ))),
         DVErrors,       VSTACK( DVArg1, DVArg2, DVArg3, DVArg4, DVArg4b, DVArg5, DVArg6, DVArg7, DVArg8, DVArg9 ),
         
     //  Any input errors detected?

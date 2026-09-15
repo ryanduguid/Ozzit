@@ -220,7 +220,11 @@ def main() -> int:
                     if named and named.group(1) not in declared_names:
                         failures.append("%s's table lists %s, which the library does "
                                         "not declare" % (name, label))
-                    if label not in declared_names or label == name:
+                    # Compare the same bare name LABEL produced. Testing the raw label
+                    # skipped every namespace-qualified row, such as oz.Fooλ, so those
+                    # rows never reached the shared-description check below.
+                    bare = named.group(1) if named else label
+                    if bare not in declared_names or bare == name:
                         continue
                     key = re.sub(r"\s+", " ", text).strip().lower()
                     if not key:

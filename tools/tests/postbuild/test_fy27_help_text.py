@@ -4,6 +4,11 @@ The pass rewrites dated help-text examples from the v3.0.0 state to the v3.1.0
 (FY27) state, length-preserving, with asserted hit counts. On the current
 workbook it must be a byte no-op; on a workbook reverted to the v3.0.0 text it
 must apply each swap exactly the recorded number of times.
+
+Run it as a module, the way CI's `unittest discover` loads it. Running the file
+by path leaves the relative import below with no parent package:
+
+    python -m unittest tools.tests.postbuild.test_fy27_help_text
 """
 
 import unittest

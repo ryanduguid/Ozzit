@@ -46,12 +46,15 @@ AmortiseBλ = LAMBDA(
     //  Check inputs - Errors in argument values
         ErrMsgs,        {"Principal must be a single number providing the opening debt amount.";
                          "APR must be a single number providing annual percentage rate for interest.";
-                         "Term must be a single number providing the number of periods to pay off the debt";
-                         "Model Periods must be a single number providing the number of periods in this model."},
+                         "Term must be a positive whole number of periods to pay off the debt";
+                         "Model Periods must be a positive whole number of periods in this model."},
+    //  Term reaches PMT( Rate, Term, Opening) and ModelPeriods reaches SEQUENCE:
+    //  a zero, negative or fractional value returns #NUM! rather than this message.
         Errors,         VSTACK( NOT( ISNUMBER( Principal)),
                                 NOT( ISNUMBER( APR)),
-                                NOT( ISNUMBER( Term)),
-                                NOT( ISNUMBER( ModelPeriods))
+                                NOT( AND( ISNUMBER( Term), Term > 0, Term = INT( Term))),
+                                NOT( AND( ISNUMBER( ModelPeriods), ModelPeriods > 0,
+                                          ModelPeriods = INT( ModelPeriods)))
                         ),
         Messages,       FILTER( ErrMsgs, Errors, ""),
     //  Check inputs - Set optional arguments' defaults
@@ -131,11 +134,13 @@ DebtSculptFixedλ = LAMBDA(
     //  Check inputs - Errors in argument values
         ErrMsgs,        {"Debt must be one row of new debt with at least two periods";
                          "CFADS must be one row with the same number of periods as Debt";
-                         "DSCR must be a single number holding debt service coverage ratio for all periods";
+                         "DSCR must be a single positive number holding debt service coverage ratio for all periods";
                          "APR must be a single number holding interest's annual percentage rate for all periods"},
+    //  DSCR divides Cash below, so zero returns #DIV/0! rather than this message.
         Errors,         VSTACK( OR( ROWS( Debt) <> 1, COLUMNS( Debt) <= 1),
                                 OR( ROWS( CFADS) <> 1, COLUMNS( CFADS) <> COLUMNS( Debt)),
-                                NOT( AND( ISNUMBER( DSCR), ROWS( DSCR) = 1, COLUMNS( DSCR) = 1)),
+                                NOT( AND( ISNUMBER( DSCR), ROWS( DSCR) = 1, COLUMNS( DSCR) = 1,
+                                          DSCR > 0)),
                                 NOT( AND( ISNUMBER( APR), ROWS( APR) = 1, COLUMNS( APR) = 1))
                         ),
         Messages,       FILTER( ErrMsgs, Errors, ""),
@@ -220,11 +225,14 @@ DebtSculptVariableLRVλ = LAMBDA(
     //  Check inputs - Errors in argument values
         ErrMsgs,        {"Debt must be one row of new debt with at least two periods";
                          "CFADS must be one row with the same number of periods as Debt";
-                         "DSCR must be one row with the same number of periods as Debt";
+                         "DSCR must be one row of positive numbers with the same number of periods as Debt";
                          "APR or PeriodRates must be one row with the same number of periods as Debt"},
+    //  Every DSCR element divides its period's cash below, so one zero returns
+    //  #DIV/0! for the whole schedule rather than this message.
         Errors,         VSTACK( OR( ROWS( Debt) <> 1, COLUMNS( Debt) <= 1),
                                 OR( ROWS( CFADS) <> 1, COLUMNS( CFADS) <> COLUMNS( Debt)),
-                                OR( ROWS( DSCR) <> 1, COLUMNS( DSCR) <> COLUMNS( Debt)),
+                                OR( ROWS( DSCR) <> 1, COLUMNS( DSCR) <> COLUMNS( Debt),
+                                    NOT( AND( ISNUMBER( DSCR))), OR( DSCR <= 0)),
                                 IF( UseRates,
                                     OR( ROWS( PeriodRates) <> 1, COLUMNS( PeriodRates) <> COLUMNS( Debt)),
                                     OR( ROWS( APR) <> 1, COLUMNS( APR) <> COLUMNS( Debt)))
@@ -317,11 +325,14 @@ DebtSculptVariableλ = LAMBDA(
     //  Check inputs - Errors in argument values
         ErrMsgs,        {"Debt must be one row of new debt with at least two periods";
                          "CFADS must be one row with the same number of periods as Debt";
-                         "DSCR must be one row with the same number of periods as Debt";
+                         "DSCR must be one row of positive numbers with the same number of periods as Debt";
                          "APR or PeriodRates must be one row with the same number of periods as Debt"},
+    //  Every DSCR element divides its period's cash below, so one zero returns
+    //  #DIV/0! for the whole schedule rather than this message.
         Errors,         VSTACK( OR( ROWS( Debt) <> 1, COLUMNS( Debt) <= 1),
                                 OR( ROWS( CFADS) <> 1, COLUMNS( CFADS) <> COLUMNS( Debt)),
-                                OR( ROWS( DSCR) <> 1, COLUMNS( DSCR) <> COLUMNS( Debt)),
+                                OR( ROWS( DSCR) <> 1, COLUMNS( DSCR) <> COLUMNS( Debt),
+                                    NOT( AND( ISNUMBER( DSCR))), OR( DSCR <= 0)),
                                 IF( UseRates,
                                     OR( ROWS( PeriodRates) <> 1, COLUMNS( PeriodRates) <> COLUMNS( Debt)),
                                     OR( ROWS( APR) <> 1, COLUMNS( APR) <> COLUMNS( Debt)))
@@ -401,11 +412,11 @@ InterestLRVλ = LAMBDA(
                         ),
     //  Check inputs - Errors in argument values
         ErrMsgs,        {"CFADS must be a single number holding cash available for debt service for this period";
-                         "DSCR must be a single number holding debt service coverage ratio for this period";
+                         "DSCR must be a single positive number holding debt service coverage ratio for this period";
                          "Principal must be a single number holding this period's opening debt balance";
                          "InterestRate must be a single number holding this period's interest rate (APR/Days in this year * Days in this period)"},
         Errors,         VSTACK( NOT( AND( ISNUMBER( CFADS), COLUMNS( CFADS) = 1)),
-                                NOT( AND( ISNUMBER( DSCR), COLUMNS( DSCR) = 1)),
+                                NOT( AND( ISNUMBER( DSCR), COLUMNS( DSCR) = 1, DSCR > 0)),
                                 NOT( AND( ISNUMBER( Principal), COLUMNS( Principal) = 1)),
                                 NOT( AND( ISNUMBER( InterestRate), COLUMNS( InterestRate) = 1))
                         ),
