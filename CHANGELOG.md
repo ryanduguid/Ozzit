@@ -7,16 +7,16 @@
 Calculation, refusal and help corrections to the v3.4.1 workbook, with tooling, test and
 documentation work around them. `oz.Amortiseλ` counts calendar months on its default
 timeline, so a month-end start keeps its final repayment month, and it refuses a supplied
-timeline whose dates do not advance. `oz.DBλ`, `oz.DDBλ` and `oz.SLNλ` handle a one-year
-life and a fractional one instead of returning an error or dropping the remainder. Seven
-functions no longer leave an input to spill an Excel error where their own message or
-answer belongs: a zero DSCR in the debt-sculpting functions, a zero, negative or
-fractional term in `oz.AmortiseBλ`, an unrecognised or weekly interval in
-`oz.PeriodDiffλ`, and a substring method name or zero factor that `oz.DepreciateλDV`
-passed to its parent. The 2 diagnostic companions accept the inputs their parents
-calculate and measure every timeline gap. Ratio, lease and
-`DATEDIF` help is corrected without changing a calculation. The library is still 133
-LAMBDAs and 5 help tables.
+timeline whose dates do not advance. `oz.DBλ` and `oz.DDBλ` return the whole depreciable
+amount for a one-year life instead of an error, and `oz.SLNλ` keeps a fractional life's
+remainder rather than dropping it. Seven functions no longer leave an input to spill an
+Excel error where their own message or answer belongs: a zero DSCR in the debt-sculpting
+functions, a zero, negative or fractional term in `oz.AmortiseBλ`, an unrecognised or
+weekly interval in `oz.PeriodDiffλ`, and a substring method name or zero factor that
+`oz.DepreciateλDV` passed to its parent. The 2 diagnostic companions accept a zero APR and
+a sub-monthly timeline, which their parents calculate, and measure every timeline gap
+rather than the first alone. Ratio, lease and `DATEDIF` help is corrected without changing
+a calculation. The library is still 133 LAMBDAs and 5 help tables.
 
 - Ratio help limits PPE to assets meeting current classification criteria, requires
   weighted-average ordinary shares for basic EPS and follows the applicable DSCR
@@ -52,6 +52,10 @@ LAMBDAs and 5 help tables.
   negative APR and a timeline that does not advance, with wording that matches.
   `oz.DepreciateλDV` reads LifeInYears the way its parent does, so a fractional life is
   refused by the companion instead of passing a check its parent then fails.
+- One divergence is left open. `oz.AmortiseλDV` refuses a timeline of fewer than 2 dates,
+  which `oz.Amortiseλ` now reads as a one-month loan and calculates, so the companion
+  still sends a reader to change data that is already right. Closing it means changing the
+  companion's own check, which needs a formula pass and its own recalculation evidence.
 - Both companions measure every consecutive timeline gap rather than the first one alone.
   A date repeated later in the row passed the check while the parent's approximate
   `MATCH` buckets both copies into one period: a 3-date timeline with the second date
