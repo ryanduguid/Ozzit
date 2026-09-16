@@ -13,8 +13,9 @@ functions no longer leave an input to spill an Excel error where their own messa
 answer belongs: a zero DSCR in the debt-sculpting functions, a zero, negative or
 fractional term in `oz.AmortiseBλ`, an unrecognised or weekly interval in
 `oz.PeriodDiffλ`, and a substring method name or zero factor that `oz.DepreciateλDV`
-passed to its parent. The 2 diagnostic companions accept the inputs their parents
-calculate and measure every timeline gap. Ratio, lease and
+passed to its parent. `oz.AmortiseλDV` accepts zero APR and sub-monthly timelines,
+and `oz.DepreciateλDV` accepts sub-monthly timelines; both measure every timeline gap.
+Ratio, lease and
 `DATEDIF` help is corrected without changing a calculation. The library is still 133
 LAMBDAs and 5 help tables.
 
