@@ -1,8 +1,22 @@
 # Changelog
 
-## Unreleased
+## v3.4.2, 16 September 2026, Amortisation timelines, depreciation lives and inputs that spilled an error
 
 ### Corrections to the v3.4.1 workbook; no functions added
+
+Calculation, refusal and help corrections to the v3.4.1 workbook, with tooling, test and
+documentation work around them. `oz.Amortiseλ` counts calendar months on its default
+timeline, so a month-end start keeps its final repayment month, and it refuses a supplied
+timeline whose dates do not advance. `oz.DBλ` and `oz.DDBλ` return the whole depreciable
+amount for a one-year life instead of an error, and `oz.SLNλ` keeps a fractional life's
+remainder rather than dropping it. Seven functions no longer leave an input to spill an
+Excel error where their own message or answer belongs: a zero DSCR in the debt-sculpting
+functions, a zero, negative or fractional term in `oz.AmortiseBλ`, an unrecognised or
+weekly interval in `oz.PeriodDiffλ`, and a substring method name or zero factor that
+`oz.DepreciateλDV` passed to its parent. The 2 diagnostic companions accept a zero APR and
+a sub-monthly timeline, which their parents calculate, and measure every timeline gap
+rather than the first alone. Ratio, lease and `DATEDIF` help is corrected without changing
+a calculation. The library is still 133 LAMBDAs and 5 help tables.
 
 - Ratio help limits PPE to assets meeting current classification criteria, requires
   weighted-average ordinary shares for basic EPS and follows the applicable DSCR
@@ -38,10 +52,29 @@
   negative APR and a timeline that does not advance, with wording that matches.
   `oz.DepreciateλDV` reads LifeInYears the way its parent does, so a fractional life is
   refused by the companion instead of passing a check its parent then fails.
+- One divergence is left open. `oz.AmortiseλDV` refuses a timeline of fewer than 2 dates,
+  which `oz.Amortiseλ` now reads as a one-month loan and calculates, so the companion
+  still sends a reader to change data that is already right. Closing it means changing the
+  companion's own check, which needs a formula pass and its own recalculation evidence.
 - Both companions measure every consecutive timeline gap rather than the first one alone.
   A date repeated later in the row passed the check while the parent's approximate
   `MATCH` buckets both copies into one period: a 3-date timeline with the second date
   repeated returned TRUE from each companion and repaid 2,453.42 of a 10,000 loan.
+- `oz.AmortiseBλ` requires a positive whole number of periods for Term and ModelPeriods.
+  Term reaches `PMT` and ModelPeriods reaches `SEQUENCE`, so a zero, negative or
+  fractional value spilled `#NUM!` in place of the function's own message.
+- The debt-sculpting functions require a positive DSCR rather than a number of the right
+  shape. DSCR divides that period's cash, so a zero returned `#DIV/0!` from
+  `oz.DebtSculptFixedλ` and `oz.InterestLRVλ`; `oz.DebtSculptVariableλ` and
+  `oz.DebtSculptVariableLRVλ` checked the DSCR row's shape alone, so one zero element
+  returned `#DIV/0!` for the whole schedule.
+- `oz.PeriodDiffλ` no longer divides by a months-per-period of 0. `"W"` never needed the
+  month arithmetic and still returns its count of weeks, and an interval the function
+  does not recognise returns `NA()` rather than `#DIV/0!`.
+- `oz.DepreciateλDV` matches the method name exactly with `XMATCH`. `SEARCH` matched a
+  substring, so `"D"` passed the companion and left the exact `MATCH` inside
+  `oz.Depreciateλ` returning `#N/A`. The companion also refuses a factor of 0, which its
+  own message already required and which otherwise reached `oz.DDBλ` or `oz.VDBλ`.
 - `oz.DSIλ` help prints the 365-day multiplier its formula applies and states that the
   cost of goods sold is a full year's.
 - `oz.PriceToBookRatioλ` help names its denominator as tangible book value per share and
@@ -67,6 +100,22 @@
   block, so an interrupted run leaves none of them applied, and it reads the supplied
   index before reporting the pass already applied. An index missing one of the 4 rows
   exited 0 and left it missing.
+- `refresh_cache.py` bounds its PowerShell call and reports a missing interpreter, so a
+  modal Excel dialogue no longer holds the gate open indefinitely. `refresh_cache.ps1`,
+  `dump_values.ps1` and `excel_selftest.ps1` force `AutomationSecurity` to
+  `msoAutomationSecurityForceDisable` rather than `Low`, as the 2 other native scripts
+  already did. A recalculation needs no macros and each takes its path as a parameter.
+- `verify_previous_names.py` validates both columns up front and reads every cell through
+  a default, so a malformed `functions.csv` fails with the gate's own diagnostic instead
+  of a `KeyError`, `AttributeError` or `IndexError` traceback. `verify_signatures.py`
+  compares the bare name the label produces, so a namespace-qualified About row reaches
+  the shared-description check rather than being skipped.
+- `polish_workbook.py` counts only an inserted shared-string reference, not a repointed
+  cell, which used to raise the expected shared-string count for a workbook that gained
+  none. `excel_cash_flow_selftest.ps1` checks the workbook hash outside its `finally`, so
+  a throw there no longer replaces the assertion failure already in flight.
+- The postbuild run order lists `aasb16_leases.py`, which writes `src/Financial.txt`, the
+  defined names and `functions.csv` and was missing from it.
 - Two comments corrected: the palette pass rejects an unstable colour before its first
   write, not on a second run; and the self-test's uneven timeline alternates 5 and 20
   days, with `InterestLRVλ` solving in closed form rather than iterating.
