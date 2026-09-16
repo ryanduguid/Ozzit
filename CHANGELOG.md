@@ -1,8 +1,22 @@
 # Changelog
 
-## Unreleased
+## v3.4.2, 16 September 2026, Amortisation timelines, depreciation lives and inputs that spilled an error
 
 ### Corrections to the v3.4.1 workbook; no functions added
+
+Calculation, refusal and help corrections to the v3.4.1 workbook, with tooling, test and
+documentation work around them. `oz.Amortiseλ` counts calendar months on its default
+timeline, so a month-end start keeps its final repayment month, and it refuses a supplied
+timeline whose dates do not advance. `oz.DBλ`, `oz.DDBλ` and `oz.SLNλ` handle a one-year
+life and a fractional one instead of returning an error or dropping the remainder. Seven
+functions no longer leave an input to spill an Excel error where their own message or
+answer belongs: a zero DSCR in the debt-sculpting functions, a zero, negative or
+fractional term in `oz.AmortiseBλ`, an unrecognised or weekly interval in
+`oz.PeriodDiffλ`, and a substring method name or zero factor that `oz.DepreciateλDV`
+passed to its parent. The 2 diagnostic companions accept the inputs their parents
+calculate and measure every timeline gap. Ratio, lease and
+`DATEDIF` help is corrected without changing a calculation. The library is still 133
+LAMBDAs and 5 help tables.
 
 - Ratio help limits PPE to assets meeting current classification criteria, requires
   weighted-average ordinary shares for basic EPS and follows the applicable DSCR
