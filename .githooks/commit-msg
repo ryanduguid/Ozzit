@@ -1,10 +1,6 @@
 #!/bin/sh
 # Refuse AI authorship credit before a commit is written.
 #
-# Enable once per clone:
-#
-#     git config core.hooksPath .githooks
-#
 # This mirrors the "No AI attribution" CI guard so a commit fails here rather
 # than after a push. It checks the two things that guard checks: authorship
 # credit in the message, and AI identities in the commit's own author and
@@ -52,9 +48,9 @@ check_identity() {
 	email=${rest%%>*}
 
 	hit=''
-	if printf '%s' "$email" | grep -Eqi "^($DOMAIN)\$|@($DOMAIN)\$"; then
-		hit="vendor email domain"
-	elif ai_name "$name"; then
+	# Vendor domains alone do not identify an AI; human employees are allowed.
+	# AI identities are matched by the same name/account expressions as CI.
+	if ai_name "$name"; then
 		hit="vendor name"
 	else
 		# GitHub noreply addresses carry the account name: 123+claude[bot]@...
@@ -96,7 +92,7 @@ awk -v vendor="$VENDOR" -v domain="$DOMAIN" -v hook="$hook" '
 			flag("session trailer")
 		else if (line ~ ("^[ \t]*_?[^a-z0-9]*\xf0\x9f\xa4\x96.*(" vendor ")"))
 			flag("robot emoji credit")
-		else if (line ~ ("^[ \t]*_?(generated|written|created|produced|assisted) (with|by) .*(" vendor ")"))
+		else if (line ~ ("^[ \t]*_?(generated|written|created|produced|reviewed|fixed|resolved|implemented|assisted|handled) (with|by) .*(" vendor ")"))
 			flag("generated-with footer")
 		else if (line ~ ("^[ \t]*[_<(]*https?://([a-z0-9.-]+\\.)?(" domain ")"))
 			flag("bare vendor url")
