@@ -38,6 +38,7 @@ The screenshot uses a disposable copy with a synthetic label, an explicit argume
 - [Modules, worksheets and formula walkthroughs](docs/function-guide.md)
 - [Australian conventions and lease modelling](docs/australian-modelling.md)
 - [Separate 13-week cash-flow template](docs/cash-flow-template.md)
+- [Comparing a modelling schedule with an accounting carrying amount](docs/depreciation-comparison.md)
 - [Function index](functions.csv) and [source views](src/)
 
 ## Verification and attribution
