@@ -57,13 +57,13 @@ if [ -z "${PY:-}" ]; then
 fi
 
 # core.commentString is the modern spelling and core.commentChar the older
-# alias; either may carry the special value `auto`. Both are passed through and
-# resolved below rather than defaulted here, so an unset value stays unset.
+# alias; either may carry the special value `auto`. Read both names together so
+# the last entry in Git's effective configuration order wins, as it does for
+# aliases in Git itself.
 MSG_FILE=$msg_file \
 AUTHOR_IDENT=$(git var GIT_AUTHOR_IDENT) \
 COMMITTER_IDENT=$(git var GIT_COMMITTER_IDENT) \
-COMMENT_STRING=$(git config --get core.commentString 2>/dev/null || true) \
-COMMENT_CHAR=$(git config --get core.commentChar 2>/dev/null || true) \
+COMMENT_CONFIG=$(git config --null --get-regexp '^core\\.(commentString|commentChar)$' 2>/dev/null || true) \
 	"$PY" - <<'PY'
 import os
 import re
@@ -126,7 +126,12 @@ def comment_markers():
     `auto` names no single character, so every character Git may pick is
     treated as a marker: that scans more lines, never fewer.
     """
-    configured = (os.environ.get("COMMENT_STRING") or os.environ.get("COMMENT_CHAR") or "").strip()
+    fields = os.environ.get("COMMENT_CONFIG", "").split("\0")
+    configured = ""
+    for index in range(0, len(fields) - 1, 2):
+        if fields[index].rsplit(".", 1)[-1] in ("commentString", "commentChar"):
+            configured = fields[index + 1]
+    configured = configured.strip()
     if not configured:
         return ("#",)
     if configured.casefold() == "auto":
@@ -202,8 +207,9 @@ for number, line in enumerate(lines, 1):
 
     for text, at in candidates:
         hit = None
-        for reading in readings(comparable(text)):
-            for name, rx in RX:
+        for reading in readings(text):
+            reading = comparable(reading)
+              for name, rx in RX:
                 if rx.match(reading):
                     hit = "line %d: %s (%s)" % (at, text.strip()[:120], name)
                     break
