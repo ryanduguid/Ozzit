@@ -13,7 +13,10 @@ checked arithmetically by `tools/tests/test_depreciation_comparison.py`.
 
 ### The asset
 
-Fabricated. A $120,000 item of plant, five-year life, acquired 1 July 2024.
+Fabricated. A $120,000 item of plant, five-year life, no residual value,
+acquired 1 July 2024. The residual value is stated because it decides what
+the depreciable amount is, and the diminishing-value comparison below turns
+on it.
 
 ### Prime cost, annual, and where it agrees
 
@@ -47,9 +50,20 @@ model needs and what the function's own help says it does.
 | 5 | 15,552.00 | 0.00 |
 
 An engine that keeps applying the 40% factor in the final period charges
-6,220.80 and leaves 9,331.20 on the books. Neither is wrong. They answer
-different questions, and a comparison that does not say which convention each
-side used will read as a 9,331.20 error that is not there.
+6,220.80 and leaves 9,331.20 on the books. That 9,331.20 is depreciable amount
+this asset's stated facts do not leave anywhere to go. AASB 116 allocates the
+depreciable amount, cost less residual value, over the useful life, and the
+facts here are a five-year life with no residual value, so a balance surviving
+period five means one of those facts is not what the schedule assumed: a
+residual value, a longer useful life, or a switch to straight line for the
+closing periods. A reducing balance never reaches nil on its own, which is why
+an entity using it has to say which of those it is doing.
+
+So the two figures are not two right answers. `oz.DiminishingValueλ` reconciles
+to cost because a model has to, and an engine that keeps applying the factor
+has an unallocated balance that its own assumptions must account for. A
+comparison that does not say which convention each side used will read as a
+9,331.20 error, and the real question is what the 9,331.20 is.
 
 ### Four things to line up before comparing a figure
 
@@ -60,8 +74,11 @@ side used will read as a 9,331.20 error that is not there.
 2. **Day count.** An engine may charge on actual days, on a 365-day year or in
    equal monthly instalments. Over a leap-containing year those differ. These
    functions have no day count at all: a period is a period.
-3. **The final period.** `oz.DiminishingValueλ` writes the residual off. Most
-   engines do not. The difference lands entirely in the last period.
+3. **The final period.** `oz.DiminishingValueλ` writes the closing balance off.
+   Most engines do not. The difference lands entirely in the last period, and
+   it is not a rounding difference: it is the whole unallocated balance, which
+   under AASB 116 has to be explained by a residual value, a different useful
+   life or a change of method rather than left sitting there.
 4. **What the number is.** This is a modelling schedule. It is not a deduction
    under ITAA 1997 Division 40, and an AASB 116 carrying amount is not one
    either. Neither figure belongs in a tax return without being worked out on

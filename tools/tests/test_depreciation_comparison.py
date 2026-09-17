@@ -129,6 +129,18 @@ class DepreciationComparisonTests(unittest.TestCase):
         self.assertIn("6,220.80", text)
         self.assertIn("9,331.20", text)
 
+    def test_the_unwritten_balance_is_not_called_acceptable(self) -> None:
+        """A surviving balance is unallocated depreciable amount, not a choice.
+
+        The document used to say neither treatment was wrong. On the stated
+        facts, a five-year life with no residual value, AASB 116 leaves the
+        9,331.20 nowhere to go, so saying so is the point of the comparison.
+        """
+        text = DOCUMENT.read_text(encoding="utf-8")
+        self.assertNotIn("Neither is wrong", text)
+        self.assertIn("no residual value", text)
+        self.assertIn("depreciable amount", text)
+
     def test_the_documented_movement_closes(self) -> None:
         opening, additions, depreciation = COST, Decimal("0.00"), Decimal("24000.00")
         self.assertEqual(opening + additions - depreciation, Decimal("96000.00"))
