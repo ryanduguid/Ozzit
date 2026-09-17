@@ -120,14 +120,17 @@ class DepreciationComparisonTests(unittest.TestCase):
         self.assertEqual(sum(diminishing_value(COST, LIFE)), COST)
         self.assertEqual(table_balances("### Diminishing value")[-1], Decimal("0.00"))
 
-    def test_the_documented_alternative_final_period_is_correct(self) -> None:
-        """The figures the document uses to name the convention difference."""
+    def test_the_documented_alternative_final_period_is_qualified(self) -> None:
+        """The alternative is tied to residual-value and useful-life assumptions."""
         charge, residual = unwritten_residual(COST, LIFE)
         self.assertEqual(charge, Decimal("6220.80"))
         self.assertEqual(residual, Decimal("9331.20"))
-        text = DOCUMENT.read_text(encoding="utf-8")
+        text = flat(DOCUMENT.read_text(encoding="utf-8"))
         self.assertIn("6,220.80", text)
         self.assertIn("9,331.20", text)
+        self.assertIn("residual-value and useful-life assumptions support it", text)
+        self.assertIn("five-year, nil-residual assumptions", text)
+        self.assertIn("must be allocated by the end of that life", text)
 
     def test_the_documented_movement_closes(self) -> None:
         opening, additions, depreciation = COST, Decimal("0.00"), Decimal("24000.00")

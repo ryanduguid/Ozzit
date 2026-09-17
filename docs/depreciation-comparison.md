@@ -13,7 +13,7 @@ checked arithmetically by `tools/tests/test_depreciation_comparison.py`.
 
 ### The asset
 
-Fabricated. A $120,000 item of plant, five-year life, acquired 1 July 2024.
+Fabricated. A $120,000 item of plant, five-year life, nil residual value, acquired 1 July 2024.
 
 ### Prime cost, annual, and where it agrees
 
@@ -47,9 +47,13 @@ model needs and what the function's own help says it does.
 | 5 | 15,552.00 | 0.00 |
 
 An engine that keeps applying the 40% factor in the final period charges
-6,220.80 and leaves 9,331.20 on the books. Neither is wrong. They answer
-different questions, and a comparison that does not say which convention each
-side used will read as a 9,331.20 error that is not there.
+6,220.80 and leaves 9,331.20 on the books. That closing balance is valid only
+if the engine's residual-value and useful-life assumptions support it. Under the
+five-year, nil-residual assumptions stated here, the remaining depreciable
+amount must be allocated by the end of that life; the engine's alternative is
+therefore an assumption difference, not an equally valid result. A comparison
+that does not align residual value, useful life and final-period convention will
+read as a 9,331.20 error without explaining the difference.
 
 ### Four things to line up before comparing a figure
 
