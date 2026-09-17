@@ -141,6 +141,19 @@ class DepreciationComparisonTests(unittest.TestCase):
         self.assertIn("no residual value", text)
         self.assertIn("depreciable amount", text)
 
+    def test_a_method_change_is_not_offered_as_a_way_to_clear_the_balance(self) -> None:
+        """AASB 116 changes the method only where the consumption pattern changed.
+
+        The document once listed a switch to straight line beside a residual
+        value and a longer life as ways to account for the closing balance.
+        A method changed to force a balance to nil, with the pattern
+        unchanged, is not a permitted change.
+        """
+        text = DOCUMENT.read_text(encoding="utf-8")
+        self.assertNotIn("or a switch to straight line", text)
+        self.assertIn("changed significantly", text)
+        self.assertIn("change in estimate", text)
+
     def test_the_documented_movement_closes(self) -> None:
         opening, additions, depreciation = COST, Decimal("0.00"), Decimal("24000.00")
         self.assertEqual(opening + additions - depreciation, Decimal("96000.00"))

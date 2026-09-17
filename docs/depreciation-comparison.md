@@ -55,9 +55,13 @@ this asset's stated facts do not leave anywhere to go. AASB 116 allocates the
 depreciable amount, cost less residual value, over the useful life, and the
 facts here are a five-year life with no residual value, so a balance surviving
 period five means one of those facts is not what the schedule assumed: a
-residual value, a longer useful life, or a switch to straight line for the
-closing periods. A reducing balance never reaches nil on its own, which is why
-an entity using it has to say which of those it is doing.
+residual value, or a longer useful life. A reducing balance never reaches nil
+on its own, which is why an entity using it has to say which of those it is
+doing. Changing the method is not a third option on its own: AASB 116 has the
+method reflect the pattern in which the asset's benefits are consumed and be
+reviewed each year, and it changes only where that expected pattern has
+changed significantly, accounted for as a change in estimate. A change made to
+force the balance to nil, with the pattern unchanged, is not that.
 
 So the two figures are not two right answers. `oz.DiminishingValueλ` reconciles
 to cost because a model has to, and an engine that keeps applying the factor
@@ -77,8 +81,9 @@ comparison that does not say which convention each side used will read as a
 3. **The final period.** `oz.DiminishingValueλ` writes the closing balance off.
    Most engines do not. The difference lands entirely in the last period, and
    it is not a rounding difference: it is the whole unallocated balance, which
-   under AASB 116 has to be explained by a residual value, a different useful
-   life or a change of method rather than left sitting there.
+   under AASB 116 has to be explained by a residual value or a different
+   useful life rather than left sitting there. A change of method explains it
+   only where the expected consumption pattern has changed significantly.
 4. **What the number is.** This is a modelling schedule. It is not a deduction
    under ITAA 1997 Division 40, and an AASB 116 carrying amount is not one
    either. Neither figure belongs in a tax return without being worked out on
