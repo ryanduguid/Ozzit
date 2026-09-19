@@ -98,9 +98,17 @@ def run(workbook: Path, src_dir: Path) -> list[str]:
             write_text(ratios_path, new_ratios)
             changed.append("src/Ratios.txt")
     except Exception:
-        write_text(ratios_path, ratios)
-        parts[BOOK] = book.encode("utf-8")
-        write_deterministic(workbook, parts)
+        # Restore the workbook first (it may already have been published), and
+        # still attempt the source restoration if that write also fails.
+        try:
+            parts[BOOK] = book.encode("utf-8")
+            write_deterministic(workbook, parts)
+        except Exception:
+            pass
+        try:
+            write_text(ratios_path, ratios)
+        except Exception:
+            pass
         raise
     return changed
 
