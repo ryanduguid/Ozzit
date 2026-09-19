@@ -17,6 +17,8 @@ one), and compares the table with the cells the anchor's spill range covers. On
 the tracked workbook the model reproduces every cache Excel wrote for a help
 that has not changed, which is what proves it. A help whose rows do not all
 carry exactly one arrow is refused, because Excel would pad it with #N/A.
+An anchor whose cell carries no cached value is reported as a failure:
+excluding it would let a spill Excel never saved pass the check unseen.
 
 This tool only reads. AGENTS.md reserves cached values for Excel-backed
 evidence, so a stale help is reported, never rewritten: run
@@ -42,7 +44,7 @@ if hasattr(sys.stdout, "reconfigure"):
 
 ANCHOR = re.compile(
     r'<c r="([A-Z]+)(\d+)"([^>]*)><f t="array" ref="([A-Z]+\d+:[A-Z]+\d+)"([^>]*)>'
-    r"(oz\.[A-Za-z0-9_]+λ(?:DV)?)\(\)</f><v>[^<]*</v></c>"
+    r"(oz\.[A-Za-z0-9_]+λ(?:DV)?)\(\)</f>(?:<v>[^<]*</v>)?</c>"
 )
 CELL = re.compile(r'<c r="([A-Z]+)(\d+)"([^>]*?)(?:/>|>(.*?)</c>)', re.DOTALL)
 SHEET = re.compile(r"xl/worksheets/sheet\d+\.xml")
@@ -119,6 +121,15 @@ def check(parts: dict[str, bytes]) -> tuple[list[str], int]:
             name = match.group(6)
             if name not in names:
                 raise ValueError(f"{part}: {name} is not a defined name")
+            # An anchor Excel never cached cannot be compared, so it is
+            # reported rather than silently excluded from both the count
+            # and the check.
+            if "<v" not in match.group(0):
+                stale.append(
+                    f"{part}: the {name} help has no cached value at its anchor; "
+                    "Excel has not recalculated and saved this sheet"
+                )
+                continue
             table = help_table(names[name], name)
             cached = cached_table(sheet, top, left, rows, cols)
             if cols == len(table[0]) and cached == table:

@@ -16,6 +16,10 @@ carries a NOTE keeps the NOTE and its closing delimiter, which is what preserves
 the IntOnIntλ maths citation. Comments with no REVISIONS heading are untouched,
 and no formula body is read or rewritten, so verify_sources stays green.
 
+Every module is validated before any module is written, and the writes sit in
+a recovery block that restores every module if one fails: a half-stripped set
+of sources would leave the gates out of sync.
+
 A second run reports "already applied" and writes nothing.
 
 Pure text surgery: no COM, no recalculation.
@@ -88,8 +92,11 @@ def strip_module(text: str) -> tuple[str, int]:
 
 
 def apply(workbook: Path, src: Path) -> list[str]:
-    changes: list[str] = []
-
+    # Validate every module first, then publish: the strip loop used to write
+    # each module inside the same loop that validated it, so a later module's
+    # unexpected revision-block count left the earlier modules already
+    # stripped on disk.
+    stripped: list[tuple[str, str, str, int]] = []
     for module in MODULES:
         path = src / f"{module}.txt"
         before = read_text(path)
@@ -101,8 +108,19 @@ def apply(workbook: Path, src: Path) -> list[str]:
             raise ValueError(
                 f"{path.name}: expected {expected} REVISIONS blocks, found {blocks}"
             )
-        write_text(path, after)
-        changes.append(f"stripped {blocks} REVISIONS blocks from {path.name}")
+        stripped.append((module, before, after, blocks))
+
+    changes: list[str] = []
+    try:
+        for module, _before, after, blocks in stripped:
+            write_text(src / f"{module}.txt", after)
+            changes.append(f"stripped {blocks} REVISIONS blocks from {module}.txt")
+    except Exception:
+        # A failure part-way through the writes restores every module, so the
+        # stores never hold a half-stripped set.
+        for module, before, _after, _blocks in stripped:
+            write_text(src / f"{module}.txt", before)
+        raise
 
     parts = read_parts(workbook)
     core = parts["docProps/core.xml"]

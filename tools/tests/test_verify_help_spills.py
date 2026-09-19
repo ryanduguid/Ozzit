@@ -105,6 +105,16 @@ class HelpSpillCheckTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "oz.Hλ is not a defined name"):
             spills.check(parts_for(CURRENT.replace("oz.Fλ()", "oz.Hλ()")))
 
+    def test_an_anchor_without_a_cached_value_is_reported(self):
+        uncached = CURRENT.replace(
+            '<f t="array" ref="A4:B6">oz.Fλ()</f><v>FUNCTION:</v></c>',
+            '<f t="array" ref="A4:B6">oz.Fλ()</f></c>',
+        )
+        self.assertEqual(spills.check(parts_for(uncached)), ([
+            "xl/worksheets/sheet1.xml: the oz.Fλ help has no cached value at its anchor; "
+            "Excel has not recalculated and saved this sheet"
+        ], 1))
+
     def test_cli_reports_stale_helps_and_never_writes(self):
         tool = TOOLS / "verify_help_spills.py"
         stale = self.write("stale.xlsx", parts_for(CURRENT, STALE))
