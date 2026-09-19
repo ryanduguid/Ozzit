@@ -8,10 +8,6 @@ line-length = 100
 # tools/postbuild/ for workbook.py. Without the second, the import sorter reads
 # workbook as a third-party package and files it above the first-party block.
 src = ["tools", "tools/postbuild"]
-# tools/frozen/ holds the one-shot v3.0.0 migration, kept for provenance and
-# never run again (ATTRIBUTION.md says what it was). Linting a frozen artefact
-# would only invite edits to it.
-extend-exclude = ["tools/frozen"]
 
 [tool.ruff.lint]
 # E4 import placement, E7 statement style, E9 syntax errors, F the full pyflakes
