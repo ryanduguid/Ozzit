@@ -44,7 +44,7 @@ if hasattr(sys.stdout, "reconfigure"):
 
 ANCHOR = re.compile(
     r'<c r="([A-Z]+)(\d+)"([^>]*)><f t="array" ref="([A-Z]+\d+:[A-Z]+\d+)"([^>]*)>'
-    r"(oz\.[A-Za-z0-9_]+λ(?:DV)?)\(\)</f>(?:<v>[^<]*</v>)?</c>"
+    r"(oz\.[A-Za-z0-9_]+λ(?:DV)?)\(\)</f>(?:<v>[^<]*</v>|<v/>)?</c>"
 )
 CELL = re.compile(r'<c r="([A-Z]+)(\d+)"([^>]*?)(?:/>|>(.*?)</c>)', re.DOTALL)
 SHEET = re.compile(r"xl/worksheets/sheet\d+\.xml")
