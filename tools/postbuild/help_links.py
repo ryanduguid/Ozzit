@@ -9,7 +9,9 @@ to the defined names in xl/workbook.xml and to src/Ratios.txt; the ratio
 functions have no dedicated worksheets, so there are no cached spills to
 refresh.
 
-Every swap carries an asserted hit count in both stores. A second run reports
+Every swap carries an asserted hit count in both stores, and both stores
+are written inside a recovery block that restores them if either write
+fails. A second run reports
 "already applied" and writes nothing. Pure text surgery: no COM, no
 recalculation.
 """
@@ -21,7 +23,7 @@ import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from sanitise_workbook import read_text, write_deterministic
+from sanitise_workbook import read_text, write_deterministic, write_text
 from workbook import BOOK, apply_swaps, read_book, read_parts
 
 # (context prefix, old URL, new URL). The prefix is the row before WEBPAGE plus
@@ -80,16 +82,32 @@ def run(workbook: Path, src_dir: Path) -> list[str]:
         raise ValueError("; ".join(failures))
 
     changed = []
+    # Both stores are computed before either is written, so a swap or
+    # serialisation failure cannot leave one store updated. The writes sit in
+    # a recovery block: a failure between them restores both stores before it
+    # propagates, because one updated store and one stale store would put the
+    # gates out of sync.
     new_book = apply_swaps(book, _forms("workbook"))
-    if new_book != book:
-        parts[BOOK] = new_book.encode("utf-8")
-        write_deterministic(workbook, parts)
-        changed.append("workbook")
     new_ratios = apply_swaps(ratios, _forms("src"))
-    if new_ratios != ratios:
-        with open(ratios_path, "w", encoding="utf-8", newline="") as handle:
-            handle.write(new_ratios)
-        changed.append("src/Ratios.txt")
+    try:
+        if new_book != book:
+            parts[BOOK] = new_book.encode("utf-8")
+            write_deterministic(workbook, parts)
+            changed.append("workbook")
+        if new_ratios != ratios:
+            write_text(ratios_path, new_ratios)
+            changed.append("src/Ratios.txt")
+    except Exception:
+        # Restore the published workbook first: its restoration must not
+        # depend on the source write succeeding. The source restore is
+        # belt-and-braces, because write_text is atomic and a failed write
+        # left the original bytes in place.
+        parts[BOOK] = book.encode("utf-8")
+        try:
+            write_deterministic(workbook, parts)
+        finally:
+            write_text(ratios_path, ratios)
+        raise
     return changed
 
 
