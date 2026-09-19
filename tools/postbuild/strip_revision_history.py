@@ -111,28 +111,36 @@ def apply(workbook: Path, src: Path) -> list[str]:
         stripped.append((module, before, after, blocks))
 
     changes: list[str] = []
+    original_workbook = workbook.read_bytes()
     try:
         for module, _before, after, blocks in stripped:
             write_text(src / f"{module}.txt", after)
             changes.append(f"stripped {blocks} REVISIONS blocks from {module}.txt")
+
+        parts = read_parts(workbook)
+        core = parts["docProps/core.xml"]
+        if core.count(OLD_CREATOR) == 1:
+            parts["docProps/core.xml"] = core.replace(OLD_CREATOR, NEW_CREATOR)
+            write_deterministic(workbook, parts)
+            changes.append("rewrote docProps/core.xml creator")
+        elif NEW_CREATOR not in core:
+            raise ValueError("docProps/core.xml carries neither the old nor the new creator")
+
+        changes.extend(change for change in sync(workbook, src) if "already" not in change)
+        return changes
     except Exception:
-        # A failure part-way through the writes restores every module, so the
-        # stores never hold a half-stripped set.
+        # Restore both the source modules and the workbook stores: all three
+        # revision-history views must either be published together or not at all.
         for module, before, _after, _blocks in stripped:
-            write_text(src / f"{module}.txt", before)
+            try:
+                write_text(src / f"{module}.txt", before)
+            except Exception:
+                pass
+        try:
+            workbook.write_bytes(original_workbook)
+        except Exception:
+            pass
         raise
-
-    parts = read_parts(workbook)
-    core = parts["docProps/core.xml"]
-    if core.count(OLD_CREATOR) == 1:
-        parts["docProps/core.xml"] = core.replace(OLD_CREATOR, NEW_CREATOR)
-        write_deterministic(workbook, parts)
-        changes.append("rewrote docProps/core.xml creator")
-    elif NEW_CREATOR not in core:
-        raise ValueError("docProps/core.xml carries neither the old nor the new creator")
-
-    changes.extend(change for change in sync(workbook, src) if "already" not in change)
-    return changes
 
 
 def main() -> None:
