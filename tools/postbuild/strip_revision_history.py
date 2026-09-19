@@ -4,7 +4,7 @@ Usage: python tools/postbuild/strip_revision_history.py [workbook] [src dir]
 
 This pass starts from the committed ozzit.xlsx and src/ (the post-v3.0.0 input
 recorded in ATTRIBUTION.md). It does not read the earlier workbook and does not
-go through transform_from_earlier.py.
+go through the one-shot v3.0.0 transform.
 
 Three stores hold the same revision text and all 3 are rewritten together:
 src/*.txt, the Advanced Formula Environment store in customXml/item1.xml, and
