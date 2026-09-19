@@ -141,10 +141,16 @@ def apply(workbook: Path, src: Path) -> list[str]:
         touched = True
         changes.extend(change for change in sync(workbook, src) if "already" not in change)
     except Exception:
-        for module, before, _after, _blocks in stripped:
-            write_text(src / f"{module}.txt", before)
-        if touched:
-            write_deterministic(workbook, original_parts)
+        # Restore the workbook first, the same ordering the help-link pass
+        # uses: a failure restoring one source module must not skip the
+        # workbook rollback, or a republished workbook could stay paired
+        # with stale sources.
+        try:
+            if touched:
+                write_deterministic(workbook, original_parts)
+        finally:
+            for module, before, _after, _blocks in stripped:
+                write_text(src / f"{module}.txt", before)
         raise
     return changes
 

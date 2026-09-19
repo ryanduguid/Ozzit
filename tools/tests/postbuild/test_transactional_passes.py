@@ -188,6 +188,30 @@ class StripRecoveryTests(unittest.TestCase):
         self.assertEqual(self._before(), before)
         self.assertEqual(self.workbook.read_bytes(), before_workbook)
 
+    def test_a_failed_source_restore_still_rolls_the_workbook_back(self) -> None:
+        # sync fails after the workbook phase is touched, and the restore of
+        # the first source module fails too: the workbook rollback must
+        # still happen, because it runs before the source restores.
+        before_workbook = self.workbook.read_bytes()
+
+        real_write = strip.write_text
+        calls = []
+
+        def failing_restore(path, text):
+            calls.append(Path(path).name)
+            if len(calls) >= 1 + len(MODULES) and Path(path).name == "Dates.txt":
+                # a restore write, not the publish write
+                raise PermissionError("synthetic failure on the Dates restore")
+            return real_write(path, text)
+
+        with mock.patch.dict(strip.EXPECTED_BLOCKS, self.expected):
+            with mock.patch.object(strip, "sync", side_effect=ValueError("synthetic AFE sync failure")):
+                with mock.patch.object(strip, "write_text", side_effect=failing_restore):
+                    with self.assertRaises(PermissionError):
+                        strip.apply(self.workbook, self.src)
+
+        self.assertEqual(self.workbook.read_bytes(), before_workbook)
+
     def test_validation_failure_leaves_every_module_untouched(self):
         # A later module with an unexpected block count must not leave the
         # earlier modules already stripped.
