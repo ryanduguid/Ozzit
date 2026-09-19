@@ -57,7 +57,7 @@ The screenshot uses a disposable copy with a synthetic label, an explicit argume
 
 ## Verification and attribution
 
-The tagged repository release is [v3.4.2](https://github.com/ryanduguid/Ozzit/releases/tag/v3.4.2), dated 16 September 2026; citation metadata is in [CITATION.cff](CITATION.cff). That cut is prepared here and awaits the signed tag, native gates and publication [RELEASING.md](RELEASING.md) reserves for a maintainer, so its tag, release page and download do not exist yet. The published release remains [v3.4.1](https://github.com/ryanduguid/Ozzit/releases/tag/v3.4.1).
+The prepared release candidate is [v3.4.2](https://github.com/ryanduguid/Ozzit/releases/tag/v3.4.2), dated 16 September 2026; citation metadata is in [CITATION.cff](CITATION.cff). That cut is prepared here and awaits the signed tag, native gates and publication [RELEASING.md](RELEASING.md) reserves for a maintainer, so its tag, release page and download do not exist yet. The published release remains [v3.4.1](https://github.com/ryanduguid/Ozzit/releases/tag/v3.4.1).
 
 v3.4.2 `ozzit.xlsx` SHA-256: `cc52d7faa43ba672c56cd2f6ff7588f8565d825908cfcca3fc2ead5ce9b6b350` (443,674 bytes), the same file as the tracked `ozzit.xlsx` on `main`, whose digest is pinned in [release/workbook-base.json](release/workbook-base.json) and checked by the tool tests. Excel 16.0 build 20430 on 16 September 2026: 1,129 formulas recalculated with 0 in error, 905 self-test assertions with 0 failures, 19,444 cached values equal to what their formulas produce.
 
