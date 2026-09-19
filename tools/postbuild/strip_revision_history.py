@@ -122,16 +122,30 @@ def apply(workbook: Path, src: Path) -> list[str]:
             write_text(src / f"{module}.txt", before)
         raise
 
-    parts = read_parts(workbook)
+    # The workbook phase (creator rewrite, then the AFE resynchronisation)
+    # sits in its own recovery block: a failure there must also restore the
+    # sources, or the sources would stay stripped while one or both workbook
+    # stores stayed stale.
+    original_parts = read_parts(workbook)
+    parts = dict(original_parts)
     core = parts["docProps/core.xml"]
-    if core.count(OLD_CREATOR) == 1:
-        parts["docProps/core.xml"] = core.replace(OLD_CREATOR, NEW_CREATOR)
-        write_deterministic(workbook, parts)
-        changes.append("rewrote docProps/core.xml creator")
-    elif NEW_CREATOR not in core:
-        raise ValueError("docProps/core.xml carries neither the old nor the new creator")
-
-    changes.extend(change for change in sync(workbook, src) if "already" not in change)
+    touched = False
+    try:
+        if core.count(OLD_CREATOR) == 1:
+            parts["docProps/core.xml"] = core.replace(OLD_CREATOR, NEW_CREATOR)
+            write_deterministic(workbook, parts)
+            touched = True
+            changes.append("rewrote docProps/core.xml creator")
+        elif NEW_CREATOR not in core:
+            raise ValueError("docProps/core.xml carries neither the old nor the new creator")
+        touched = True
+        changes.extend(change for change in sync(workbook, src) if "already" not in change)
+    except Exception:
+        for module, before, _after, _blocks in stripped:
+            write_text(src / f"{module}.txt", before)
+        if touched:
+            write_deterministic(workbook, original_parts)
+        raise
     return changes
 
 

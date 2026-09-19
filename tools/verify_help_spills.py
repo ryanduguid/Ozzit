@@ -44,7 +44,7 @@ if hasattr(sys.stdout, "reconfigure"):
 
 ANCHOR = re.compile(
     r'<c r="([A-Z]+)(\d+)"([^>]*)><f t="array" ref="([A-Z]+\d+:[A-Z]+\d+)"([^>]*)>'
-    r"(oz\.[A-Za-z0-9_]+λ(?:DV)?)\(\)</f>(?:<v>[^<]*</v>)?</c>"
+    r"(oz\.[A-Za-z0-9_]+λ(?:DV)?)\(\)</f>(?:<v(?:/>|>[^<]*</v>))?</c>"
 )
 CELL = re.compile(r'<c r="([A-Z]+)(\d+)"([^>]*?)(?:/>|>(.*?)</c>)', re.DOTALL)
 SHEET = re.compile(r"xl/worksheets/sheet\d+\.xml")
@@ -123,8 +123,9 @@ def check(parts: dict[str, bytes]) -> tuple[list[str], int]:
                 raise ValueError(f"{part}: {name} is not a defined name")
             # An anchor Excel never cached cannot be compared, so it is
             # reported rather than silently excluded from both the count
-            # and the check.
-            if "<v" not in match.group(0):
+            # and the check. SpreadsheetML writes an empty cache as a
+            # self-closing <v/>, which is no cached value here.
+            if "<v" not in match.group(0) or "<v/>" in match.group(0):
                 stale.append(
                     f"{part}: the {name} help has no cached value at its anchor; "
                     "Excel has not recalculated and saved this sheet"

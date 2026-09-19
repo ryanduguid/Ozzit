@@ -105,6 +105,19 @@ class HelpSpillCheckTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "oz.Hλ is not a defined name"):
             spills.check(parts_for(CURRENT.replace("oz.Fλ()", "oz.Hλ()")))
 
+    def test_a_self_closing_empty_cache_is_reported(self) -> None:
+        # SpreadsheetML writes an empty cached value as <v/>, which the
+        # ANCHOR pattern must still match: an anchor excluded by the
+        # pattern is invisible to both the count and the check.
+        self_closing = CURRENT.replace(
+            '<f t="array" ref="A4:B6">oz.Fλ()</f><v>FUNCTION:</v></c>',
+            '<f t="array" ref="A4:B6">oz.Fλ()</f><v/></c>',
+        )
+        self.assertEqual(spills.check(parts_for(self_closing)), ([
+            "xl/worksheets/sheet1.xml: the oz.Fλ help has no cached value at its anchor; "
+            "Excel has not recalculated and saved this sheet"
+        ], 1))
+
     def test_an_anchor_without_a_cached_value_is_reported(self):
         uncached = CURRENT.replace(
             '<f t="array" ref="A4:B6">oz.Fλ()</f><v>FUNCTION:</v></c>',

@@ -98,9 +98,15 @@ def run(workbook: Path, src_dir: Path) -> list[str]:
             write_text(ratios_path, new_ratios)
             changed.append("src/Ratios.txt")
     except Exception:
-        write_text(ratios_path, ratios)
+        # Restore the published workbook first: its restoration must not
+        # depend on the source write succeeding. The source restore is
+        # belt-and-braces, because write_text is atomic and a failed write
+        # left the original bytes in place.
         parts[BOOK] = book.encode("utf-8")
-        write_deterministic(workbook, parts)
+        try:
+            write_deterministic(workbook, parts)
+        finally:
+            write_text(ratios_path, ratios)
         raise
     return changed
 

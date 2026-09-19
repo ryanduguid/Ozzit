@@ -72,6 +72,30 @@ class HelpLinkRecoveryTests(unittest.TestCase):
         # a second run is a byte-stable no-op
         self.assertEqual(help_links.run(self.workbook, self.src), [])
 
+    def test_a_failed_ratios_restore_still_restores_the_workbook(self) -> None:
+        before_workbook = self.workbook.read_bytes()
+        before_ratios = self.ratios_path.read_bytes()
+
+        real_write = help_links.write_text
+        calls = []
+
+        def failing_restore(path, text):
+            calls.append(Path(path).name)
+            if Path(path).name == "Ratios.txt":
+                raise PermissionError("synthetic failure on every Ratios write")
+            return real_write(path, text)
+
+        with mock.patch.object(help_links, "write_text", side_effect=failing_restore):
+            with self.assertRaises(PermissionError):
+                help_links.run(self.workbook, self.src)
+
+        # The workbook restore happens before the source restore, so the
+        # workbook is back to its pre-run bytes even though the restore of
+        # the source write also failed.
+        self.assertEqual(calls, ["Ratios.txt", "Ratios.txt"])
+        self.assertEqual(self.workbook.read_bytes(), before_workbook)
+        self.assertEqual(self.ratios_path.read_bytes(), before_ratios)
+
     def test_a_failed_second_write_restores_both_stores(self):
         before_workbook = self.workbook.read_bytes()
         before_ratios = self.ratios_path.read_bytes()
@@ -149,6 +173,20 @@ class StripRecoveryTests(unittest.TestCase):
         written = [f"{module}.txt" for module in MODULES]
         self.assertEqual(calls, written[:2] + written)
         self.assertEqual(self._before(), before)
+
+    def test_a_failed_sync_restores_the_sources_and_the_workbook(self) -> None:
+        before = self._before()
+        before_workbook = self.workbook.read_bytes()
+
+        with mock.patch.dict(strip.EXPECTED_BLOCKS, self.expected):
+            with mock.patch.object(
+                strip, "sync", side_effect=ValueError("synthetic AFE sync failure")
+            ):
+                with self.assertRaisesRegex(ValueError, "synthetic AFE sync failure"):
+                    strip.apply(self.workbook, self.src)
+
+        self.assertEqual(self._before(), before)
+        self.assertEqual(self.workbook.read_bytes(), before_workbook)
 
     def test_validation_failure_leaves_every_module_untouched(self):
         # A later module with an unexpected block count must not leave the
