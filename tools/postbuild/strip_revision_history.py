@@ -4,7 +4,7 @@ Usage: python tools/postbuild/strip_revision_history.py [workbook] [src dir]
 
 This pass starts from the committed ozzit.xlsx and src/ (the post-v3.0.0 input
 recorded in ATTRIBUTION.md). It does not read the earlier workbook and does not
-go through transform_from_earlier.py.
+go through the one-shot v3.0.0 transform.
 
 Three stores hold the same revision text and all 3 are rewritten together:
 src/*.txt, the Advanced Formula Environment store in customXml/item1.xml, and
@@ -15,6 +15,10 @@ Only the REVISIONS heading and the lines under it are cut. A comment that also
 carries a NOTE keeps the NOTE and its closing delimiter, which is what preserves
 the IntOnIntλ maths citation. Comments with no REVISIONS heading are untouched,
 and no formula body is read or rewritten, so verify_sources stays green.
+
+Every module is validated before any module is written, and the writes sit in
+a recovery block that restores every module if one fails: a half-stripped set
+of sources would leave the gates out of sync.
 
 A second run reports "already applied" and writes nothing.
 
@@ -88,8 +92,11 @@ def strip_module(text: str) -> tuple[str, int]:
 
 
 def apply(workbook: Path, src: Path) -> list[str]:
-    changes: list[str] = []
-
+    # Validate every module first, then publish: the strip loop used to write
+    # each module inside the same loop that validated it, so a later module's
+    # unexpected revision-block count left the earlier modules already
+    # stripped on disk.
+    stripped: list[tuple[str, str, str, int]] = []
     for module in MODULES:
         path = src / f"{module}.txt"
         before = read_text(path)
@@ -101,19 +108,50 @@ def apply(workbook: Path, src: Path) -> list[str]:
             raise ValueError(
                 f"{path.name}: expected {expected} REVISIONS blocks, found {blocks}"
             )
-        write_text(path, after)
-        changes.append(f"stripped {blocks} REVISIONS blocks from {path.name}")
+        stripped.append((module, before, after, blocks))
 
-    parts = read_parts(workbook)
+    changes: list[str] = []
+    try:
+        for module, _before, after, blocks in stripped:
+            write_text(src / f"{module}.txt", after)
+            changes.append(f"stripped {blocks} REVISIONS blocks from {module}.txt")
+    except Exception:
+        # A failure part-way through the writes restores every module, so the
+        # stores never hold a half-stripped set.
+        for module, before, _after, _blocks in stripped:
+            write_text(src / f"{module}.txt", before)
+        raise
+
+    # The workbook phase (creator rewrite, then the AFE resynchronisation)
+    # sits in its own recovery block: a failure there must also restore the
+    # sources, or the sources would stay stripped while one or both workbook
+    # stores stayed stale.
+    original_parts = read_parts(workbook)
+    parts = dict(original_parts)
     core = parts["docProps/core.xml"]
-    if core.count(OLD_CREATOR) == 1:
-        parts["docProps/core.xml"] = core.replace(OLD_CREATOR, NEW_CREATOR)
-        write_deterministic(workbook, parts)
-        changes.append("rewrote docProps/core.xml creator")
-    elif NEW_CREATOR not in core:
-        raise ValueError("docProps/core.xml carries neither the old nor the new creator")
-
-    changes.extend(change for change in sync(workbook, src) if "already" not in change)
+    touched = False
+    try:
+        if core.count(OLD_CREATOR) == 1:
+            parts["docProps/core.xml"] = core.replace(OLD_CREATOR, NEW_CREATOR)
+            write_deterministic(workbook, parts)
+            touched = True
+            changes.append("rewrote docProps/core.xml creator")
+        elif NEW_CREATOR not in core:
+            raise ValueError("docProps/core.xml carries neither the old nor the new creator")
+        touched = True
+        changes.extend(change for change in sync(workbook, src) if "already" not in change)
+    except Exception:
+        # Restore the workbook first, the same ordering the help-link pass
+        # uses: a failure restoring one source module must not skip the
+        # workbook rollback, or a republished workbook could stay paired
+        # with stale sources.
+        try:
+            if touched:
+                write_deterministic(workbook, original_parts)
+        finally:
+            for module, before, _after, _blocks in stripped:
+                write_text(src / f"{module}.txt", before)
+        raise
     return changes
 
 

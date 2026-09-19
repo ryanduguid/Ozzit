@@ -77,9 +77,8 @@ def read_text(path: Path) -> str:
 
 
 def write_text(path: Path, text: str) -> None:
-    """Write UTF-8 text with the given line endings left exactly as they are."""
-    with open(path, "w", encoding="utf-8", newline="") as handle:
-        handle.write(text)
+    """Write UTF-8 text atomically, line endings left exactly as they are."""
+    replace_atomically(path, text.encode("utf-8"))
 
 
 def fold_longtext(text: str) -> tuple[str, int]:
