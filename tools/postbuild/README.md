@@ -25,6 +25,7 @@ python tools/postbuild/strip_revision_history.py ozzit.xlsx src
 python tools/postbuild/help_corrections.py ozzit.xlsx src
 python tools/postbuild/aasb16_leases.py ozzit.xlsx src functions.csv
 python tools/postbuild/rate_date_helpers.py ozzit.xlsx src functions.csv
+python tools/postbuild/cover_label.py ozzit.xlsx
 python tools/compile_sources.py ozzit.xlsx src --index=functions.csv
 python tools/postbuild/remove_residue.py ozzit.xlsx
 python tools/sync_afe_store.py ozzit.xlsx src
@@ -82,7 +83,10 @@ feeds, so it rewrites those shared strings too. The rate and date helpers pass r
 after it and is the last text pass: it adds 4 functions (`oz.PeriodRateλ`,
 `oz.AnnualRateλ`, `oz.DayCountRateλ` and `oz.DateDifλ`) on the same pattern as the
 AASB 16 pass, except that it renders the stored forms through `compile_sources.py`
-rather than carrying a renderer of its own.
+rather than carrying a renderer of its own. The cover-label pass is one swap in
+`xl/sharedStrings.xml`: Cover!A3 kept reading 20 August 2026 and 130 functions after
+three cuts, and `tools/verify_cover.py` now keeps that label equal to `functions.csv`
+and the changelog's current cut.
 
 ## What is intentionally not here
 
