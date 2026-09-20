@@ -301,7 +301,7 @@ class RepositoryPolicyTests(unittest.TestCase):
         self.assertIn(f"date-released: {released.isoformat()}\n", citation)
 
         readme = read_utf8(README)
-        self.assertIn(f"releases/tag/v{version})", readme)
+        self.assertIn(f"releases/tag/v{version}", readme)
         self.assertIn(f"dated {written};", readme)
 
         # At a release commit the tag is the last word on which release this is.
@@ -312,6 +312,12 @@ class RepositoryPolicyTests(unittest.TestCase):
         releases = [tag for tag in tags if re.fullmatch(r"v\d+\.\d+\.\d+", tag)]
         for tag in releases:
             self.assertEqual(tag, f"v{version}", "the tagged commit publishes another version")
+
+    def test_readme_links_the_disclaimer(self):
+        # The disclaimer states what the library is not advice about. A reader who
+        # never reaches it is the reader it was written for, so the README links it.
+        self.assertTrue((ROOT / "DISCLAIMER.md").is_file(), "DISCLAIMER.md is required")
+        self.assertIn("[DISCLAIMER.md](DISCLAIMER.md)", read_utf8(README))
 
     def test_readme_publishes_the_tracked_workbook_digest_as_well_as_the_release_asset(self):
         # The release asset and the tracked workbook are different files whenever
