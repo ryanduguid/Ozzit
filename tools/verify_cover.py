@@ -11,10 +11,12 @@ About help tables the README describes separately.
 
 import csv
 import html
+import posixpath
 import re
 import sys
 import zipfile
 from pathlib import Path
+import xml.etree.ElementTree as ET
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -28,9 +30,39 @@ CUT = re.compile(r"^## v\d+\.\d+\.\d+, (?P<date>\d{1,2} [A-Z][a-z]+ \d{4}),", re
 
 
 def cover_label(workbook: Path) -> tuple[str, int]:
+    main = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+    rel = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+    package_rel = "http://schemas.openxmlformats.org/package/2006/relationships"
     with zipfile.ZipFile(workbook) as archive:
-        strings = archive.read("xl/sharedStrings.xml").decode("utf-8")
-    labels = LABEL.findall(strings)
+        workbook_xml = ET.fromstring(archive.read("xl/workbook.xml"))
+        cover = next(
+            sheet for sheet in workbook_xml.findall(f"{{{main}}}sheets/{{{main}}}sheet")
+            if sheet.attrib.get("name") == "Cover"
+        )
+        workbook_rels = ET.fromstring(archive.read("xl/_rels/workbook.xml.rels"))
+        relationship = next(
+            item for item in workbook_rels
+            if item.attrib.get("Id") == cover.attrib[f"{{{rel}}}id"]
+        )
+        target = relationship.attrib["Target"].lstrip("/")
+        sheet_path = posixpath.normpath(
+            target if target.startswith("xl/") else posixpath.join("xl", target)
+        )
+        sheet_xml = ET.fromstring(archive.read(sheet_path))
+        cell = next(
+            cell for cell in sheet_xml.findall(f".//{{{main}}}c")
+            if cell.attrib.get("r") == "A3"
+        )
+        value = cell.find(f"{{{main}}}v")
+        if value is None or cell.attrib.get("t") != "s":
+            raise ValueError("Cover!A3 is not a shared string")
+        shared = ET.fromstring(archive.read("xl/sharedStrings.xml"))
+        items = shared.findall(f"{{{main}}}si")
+        index = int(value.text or "-1")
+        if not 0 <= index < len(items):
+            raise ValueError("Cover!A3 has an invalid shared-string index")
+        text = "".join(item.text or "" for item in items[index].iter(f"{{{main}}}t"))
+    labels = LABEL.findall(text)
     if len(labels) != 1:
         raise ValueError(f"expected one cover version label, found {len(labels)}")
     date, count = labels[0]
@@ -38,7 +70,7 @@ def cover_label(workbook: Path) -> tuple[str, int]:
 
 
 def published_functions(index: Path) -> int:
-    with index.open(encoding="utf-8", newline="") as stream:
+    with index.open(encoding="utf-8-sig", newline="") as stream:
         names = [row["function"] for row in csv.DictReader(stream)]
     if not names:
         raise ValueError("functions.csv lists no functions")
