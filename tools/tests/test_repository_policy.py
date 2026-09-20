@@ -300,7 +300,9 @@ class RepositoryPolicyTests(unittest.TestCase):
         self.assertIn(f"date-released: {released.isoformat()}\n", citation)
 
         readme = read_utf8(README)
-        self.assertIn(f"releases/tag/v{version}", readme)
+        self.assertIn(
+            f"`https://github.com/ryanduguid/Ozzit/releases/tag/v{version}`", readme
+        )
         self.assertIn(f"dated {written};", readme)
 
         # At a release commit the tag is the last word on which release this is.
