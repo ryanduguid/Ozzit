@@ -19,6 +19,11 @@ rather than the first alone. Ratio, lease and `DATEDIF` help is corrected withou
 a calculation. The library is still 133 LAMBDAs and 5 help tables. The Cover sheet's version label,
 which still read 20 August 2026 and 130 functions, now states this cut's date and count,
 and `tools/verify_cover.py` keeps it equal to `functions.csv` and this changelog.
+The workbook is lighter: Excel's Check Performance pass removed 1,500 formatted empty
+cells that sat outside the used range of 18 sheets (the `oz.Amortiseλ` and
+`oz.SumAmortiseλ` sheets each carried over 100 empty formatted columns), and the Cover
+loses 2 blank rows above its Introduction. No formula, cached value or help text changed;
+the residue and sanitise passes then removed what the Excel save added.
 
 - Ratio help limits PPE to assets meeting current classification criteria, requires
   weighted-average ordinary shares for basic EPS and follows the applicable DSCR
