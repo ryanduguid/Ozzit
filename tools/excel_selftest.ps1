@@ -375,6 +375,10 @@ Near 'Amortise: the stated end matches the inferred one' `
      "SUM($am(10000, 0.05, 12, DATE(2026,1,1), $amWkShort, MAX($amWkShort) + 7)) - SUM($amStop)" '0' '0.0000001'
 Same 'Amortise: a final period end inside the timeline is refused' `
      "LEFT(INDEX($am(10000, 0.05, 12, DATE(2026,1,1), $amWkShort, DATE(2026,1,15)),1,1),14)" 'FinalPeriodEnd'
+# The default timeline is monthly, where the boundary moves nothing, so the end is refused
+# without a supplied timeline rather than measured against one this function chose.
+Same 'Amortise: a final period end without a timeline is refused' `
+     "LEFT(INDEX($am(10000, 0.05, 12, DATE(2026,1,1), , DATE(2027,1,1)),1,1),14)" 'FinalPeriodEnd'
 Same 'Amortise: help with no args' "INDEX($am(),1,1)" 'FUNCTION:'
 
 # --- Depreciate. Every period but the last takes its end date from the next period's start.
@@ -464,6 +468,17 @@ Same 'Amortise DV: a negative APR is still refused' `
      "LEFT(INDEX($amDV(10000, -0.05, 12, DATE(2026,1,1), $moTL),1,1),3)" 'APR'
 Same 'Amortise DV: a timeline that does not advance is still refused' `
      "LEFT(INDEX($amDV(10000, 0.05, 12, DATE(2026,1,1), $flatTL),1,1),8)" 'Timeline'
+# The companion has to refuse every FinalPeriodEnd the parent refuses, and accept the one
+# it calculates. An error in it reaches the parent through MAX, so it is an error in an
+# argument like any other rather than a value the shape test can read.
+Near 'Amortise DV: a final period end after the timeline is accepted' `
+     "--($amDV(10000, 0.05, 12, DATE(2026,1,1), $wkTL, MAX($wkTL) + 30))" '1'
+Same 'Amortise DV: a final period end inside the timeline is refused' `
+     "LEFT(INDEX($amDV(10000, 0.05, 12, DATE(2026,1,1), $wkTL, DATE(2026,1,15)),1,1),14)" 'FinalPeriodEnd'
+Same 'Amortise DV: a final period end without a timeline is refused' `
+     "LEFT(INDEX($amDV(10000, 0.05, 12, DATE(2026,1,1), , DATE(2027,1,1)),1,1),14)" 'FinalPeriodEnd'
+Same 'Amortise DV: an error in the final period end is refused' `
+     "LEFT(INDEX($amDV(10000, 0.05, 12, DATE(2026,1,1), $wkTL, NA()),1,1),14)" 'FinalPeriodEnd'
 Near 'Depreciate DV: a weekly timeline is accepted'  "--($dpDV(10000, DATE(2026,1,1), 5, $wkTL))" '1'
 Near 'Depreciate DV: a monthly timeline is accepted' "--($dpDV(10000, DATE(2026,1,1), 5, $moTL))" '1'
 Same 'Depreciate DV: a timeline that does not advance is still refused' `
