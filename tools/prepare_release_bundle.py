@@ -28,6 +28,7 @@ GATE_COMMANDS = (
     "python tools/verify_signatures.py src",
     "python tools/verify_previous_names.py functions.csv",
     "python tools/verify_index.py ozzit.xlsx src functions.csv",
+    "python tools/verify_cover.py ozzit.xlsx functions.csv CHANGELOG.md",
     "python tools/verify_afe.py ozzit.xlsx src",
 )
 LIMITATIONS = (
@@ -204,7 +205,7 @@ def _normalise_gate_output(text: str, root: Path, workbook: Path) -> str:
 
 
 def run_semantic_gates(root: Path, workbook: Path) -> list[GateResult]:
-    """Run the 6 deterministic gates bound to the staged workbook and source views."""
+    """Run the 7 deterministic gates bound to the staged workbook, index and changelog."""
     # Resolve before use. The gates echo the workbook path they are handed, so an
     # unresolved path would both record checkout-specific evidence that a later
     # verify run cannot reproduce and be re-interpreted against cwd=root below.
@@ -236,9 +237,14 @@ def run_semantic_gates(root: Path, workbook: Path) -> list[GateResult]:
             GATE_COMMANDS[4],
         ),
         (
+            "verify_cover.py",
+            (workbook, root / "functions.csv", root / "CHANGELOG.md"),
+            GATE_COMMANDS[5],
+        ),
+        (
             "verify_afe.py",
             (workbook, root / "src"),
-            GATE_COMMANDS[5],
+            GATE_COMMANDS[6],
         ),
     )
     results: list[GateResult] = []
