@@ -80,8 +80,8 @@ suite on one worksheet, and [functions.csv](../functions.csv) indexes all 138 na
 
 Ozzit functions use native Excel dynamic arrays to spill full calculation schedules from a single formula cell:
 
-### 1. Loan amortisation (`=oz.Amortiseλ(Principals, APRs, Terms, StartDates, [Timeline])`)
-Spills a 6-row corkscrew per loan across the model's timeline, one column per period: debt issued, opening balance, interest, payment, closing balance and the principal repaid. Payments are monthly; on a quarterly or annual timeline the months are grouped, and on a weekly or daily one each month lands in the period holding its start. `oz.LabelAmortiseλ` labels the rows and `oz.SumAmortiseλ` totals them. For a single 100,000 loan at 5% over 60 months from 1 July 2026, with the timeline omitted, the block runs:
+### 1. Loan amortisation (`=oz.Amortiseλ(Principals, APRs, Terms, StartDates, [Timeline], [FinalPeriodEnd])`)
+Spills a 6-row corkscrew per loan across the model's timeline, one column per period: debt issued, opening balance, interest, payment, closing balance and the principal repaid. Payments are monthly; on a quarterly or annual timeline the months are grouped, and on a weekly or daily one each month lands in the period holding its start. For short timelines, `FinalPeriodEnd` is the exclusive day after the final period ends. `oz.LabelAmortiseλ` labels the rows and `oz.SumAmortiseλ` totals them. For a single 100,000 loan at 5% over 60 months from 1 July 2026, with the timeline omitted, the block runs:
 
 | Row | Jul 2026 | Aug 2026 | Sep 2026 | ... |
 | :--- | ---: | ---: | ---: | :---: |
