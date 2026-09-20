@@ -645,11 +645,12 @@ Amortiseλ = LAMBDA(
     [Terms], 
     [StartDates],
     [Timeline],
+    [FinalPeriodEnd],
 
     LET(
     //  Help        
         Help,       TRIM(TEXTSPLIT( 
-                        "FUNCTION:      →Amortiseλ( Principals, APRs, Terms, StartDates, [Timeline])¶" &
+                        "FUNCTION:      →Amortiseλ( Principals, APRs, Terms, StartDates, [Timeline], [FinalPeriodEnd])¶" &
                         "DESCRIPTION:   →Creates an amortisation schedule array for one or more loans.¶" &
                                        "→Payments are assumed monthly. On periods shorter than a month the figures for each month land in the period holding its start, the rest nil.¶" &
                                        "→Use LabelAmortiseλ() to apply labels to this function's results:¶" & 
@@ -662,7 +663,8 @@ Amortiseλ = LAMBDA(
                         "Terms          →(Required) Number of months for loans/debts.¶" & 
                         "StartDates     →(Required) Dates debts are issued.¶" & 
                         "Timeline       →(Optional) An array of dates. If omitted, a row of months starting on start date will be added¶" & 
-                        "EXAMPLES:→¶" & 
+                        "FinalPeriodEnd →(Optional) The day after the last period ends. Needs Timeline, and only moves money where its periods are shorter than a month. If omitted, the last period runs as long as the one before it.¶" &
+                        "EXAMPLES:→¶" &
                         "Result         →Formula (oz is assumed to be the module's name)¶" &
                                        "→=oz.Amortiseλ(10000, 5%, 4 * 12, ""2026-07-01"")", 
                         "→", "¶" )
@@ -682,6 +684,9 @@ Amortiseλ = LAMBDA(
     //  and the default timeline runs from the earliest start to the last month of the
     //  longest-running loan, whichever loan that is.
         CvtStarts,          IF( ISNUMBER( StartDates), StartDates, DATEVALUE( StartDates)),
+    //  Read before the default replaces it, because FinalPeriodEnd describes a supplied
+    //  timeline and the default is monthly, where it would do nothing.
+        TimelineGiven?,     NOT( ISOMITTED( Timeline)),
         Timeline,           IF( ISOMITTED( Timeline), 
                                 LET(LastMonths, EDATE( CvtStarts, Terms - 1),
                                     MinDate,    MIN( CvtStarts),
@@ -710,7 +715,24 @@ Amortiseλ = LAMBDA(
                             & "after the one before it. A repeated or out-of-order date puts one period's "
                             & "money in another period.",
         DpP,                SecondPeriod - FirstPeriod,                 //Days Per Period
-        LastGap,            IF( Single?, DpP, MAX( Timeline) - INDEX( Timeline, COUNTA( Timeline) - 1)),
+    //  The last period has no successor to measure, so it runs as long as the one before
+    //  it. FinalPeriodEnd states that boundary instead: it is the day after the period
+    //  ends, so it has to fall after the last period start. It describes a timeline the
+    //  caller supplied, so it is refused without one rather than measured against a
+    //  default this function chose. COUNT rejects text and a range of more than one cell
+    //  without reading an omitted argument.
+        FinalEnd?,          NOT( ISOMITTED( FinalPeriodEnd)),
+        FinalEndDate,       IF( FinalEnd?, MAX( FinalPeriodEnd), 0),
+        BadFinalEnd?,       IF( FinalEnd?,
+                                OR( NOT( TimelineGiven?),
+                                    COUNT( FinalPeriodEnd) <> 1,
+                                    FinalEndDate <= MAX( Timeline)),
+                                FALSE),
+        FinalEndMessage,    "FinalPeriodEnd needs a Timeline, and must be one date after the last "
+                            & "date in it. It is the day after the final period ends.",
+        LastGap,            IF( FinalEnd?,
+                                FinalEndDate - MAX( Timeline),
+                                IF( Single?, DpP, MAX( Timeline) - INDEX( Timeline, COUNTA( Timeline) - 1))),
         SubMonthly?,        DpP < 28,                                   //No month is shorter
         MpP,                MAX( @ROUND( DpP / ADpM, 0), 1),            //Months Per Period, never nought
 
@@ -810,8 +832,8 @@ Amortiseλ = LAMBDA(
                         )
                     ),
     //  Return Result, Help, or the message
-        Return,     IF( Help?, 2, IF( BadTimeline?, 3, 1)),
-        CHOOSE( Return, Result, Help, TimelineMessage)
+        Return,     IF( Help?, 2, IF( BadTimeline?, 3, IF( BadFinalEnd?, 4, 1))),
+        CHOOSE( Return, Result, Help, TimelineMessage, FinalEndMessage)
     ) 
 );
 
@@ -1026,8 +1048,16 @@ Depreciateλ = LAMBDA(
     //  The last period has no successor to take its end date from, so it ends one period
     //  on from its own start: a whole number of months where the timeline is monthly or
     //  longer, the same number of days as every other period where it is shorter.
+    //  A month-end start steps forward through EOMONTH, because EDATE(28 Feb, 1) is
+    //  28 Mar, not 31 Mar, and the three days between fall out of the schedule. This is
+    //  the step DayCountRateλ() already takes for its own last period.
         LastGap,        MAX( Timeline) - INDEX( Timeline, TimelineCols - 1),
-        LastEnd,        IF( SubMonthly?, MAX( Timeline) + LastGap, EDATE( MAX( Timeline), MpP)) - 1,
+        LastDate,       MAX( Timeline),
+        LastEnd,        IF( SubMonthly?,
+                            LastDate + LastGap,
+                            IF( DAY( LastDate + 1) = 1,
+                                EOMONTH( LastDate, MpP),
+                                EDATE( LastDate, MpP))) - 1,
         EndDates,       HSTACK( MAP(  SEQUENCE(, TimelineCols - 1), LAMBDA( n, INDEX( Timeline, n + 1) - 1)), LastEnd),
     //  Process each asset
         Result,         REDUCE( 0, SEQUENCE( ROWS( InitialValues)), 
@@ -1548,6 +1578,7 @@ AmortiseλDV = LAMBDA(
     [Term], 
     [StartDate],
     [Timeline], 
+    [FinalPeriodEnd],
 
     LET(
     //  Check inputs - Errors in argument values
@@ -1556,7 +1587,11 @@ AmortiseλDV = LAMBDA(
                             OR( ISERROR( APR)),
                             OR( ISERROR( Term)),
                             OR( ISERROR( StartDate)),
-                            OR( ISERROR( Timeline))
+                            OR( ISERROR( Timeline)),
+                        //  Amortiseλ reads this one through MAX, so an error in it stops a
+                        //  schedule and has to stop the validator too. An omitted argument
+                        //  is not an error, and ISERROR cannot be asked about one.
+                            IF( ISOMITTED( FinalPeriodEnd), FALSE, OR( ISERROR( FinalPeriodEnd)))
                         ),
 
     //  Check inputs - Data validation errors
@@ -1587,7 +1622,19 @@ AmortiseλDV = LAMBDA(
                             FALSE, 
                             LET( Dates, TOROW( Timeline),
                                  MIN( DROP( Dates, , 1) - DROP( Dates, , -1)) < 1)),
-        DVErrors,       VSTACK( DVArg1, DVArg2, DVArg3, DVArg4, DVArg5, DVArg6, DVArg7),
+    //  FinalPeriodEnd is the day after the last period ends, so it falls after the last
+    //  date in the timeline. COUNT is 1 for one date, 0 for text and more than 1 for a
+    //  range, which covers the shape and the type in one test. Amortiseλ refuses it
+    //  without a timeline rather than measure it against the default it chose for itself,
+    //  so this refuses the same call rather than passing one its parent will not answer.
+        DVArg8,         IF( OR( ISOMITTED( FinalPeriodEnd), ISERROR( FinalPeriodEnd)),
+                            FALSE,
+                            OR( ISOMITTED( Timeline),
+                                COUNT( FinalPeriodEnd) <> 1,
+                                IF( OR( ISERROR( Timeline), DVArg5),
+                                    FALSE,
+                                    MAX( FinalPeriodEnd) <= MAX( Timeline)))),
+        DVErrors,       VSTACK( DVArg1, DVArg2, DVArg3, DVArg4, DVArg5, DVArg6, DVArg7, DVArg8),
         
     //  Any input errors detected?
         AnyErrors?,     OR(ErrorsInArgs, DVErrors),
@@ -1601,7 +1648,8 @@ AmortiseλDV = LAMBDA(
                         "Term contains errors in cells. Resolve errors first.";
                         "StartDate contains errors in cells. Resolve errors first.";
                         "Timeline contains errors in cells. Resolve errors first.";
-                    
+                        "FinalPeriodEnd contains errors in cells. Resolve errors first.";
+
                     //  Data validation errors
                         "Amount must be greater than 0";
                         "APR must be a percentage of 0 or more";
@@ -1609,7 +1657,8 @@ AmortiseλDV = LAMBDA(
                         "StartDate must be a valid date.";
                         "Timeline must a row of period start dates.";
                         "Timeline must a row of period start dates with more than 1 entry.";
-                        "Timeline must a row of period start dates that advance by at least a day."},
+                        "Timeline must a row of period start dates that advance by at least a day.";
+                        "FinalPeriodEnd needs a Timeline, and must be one date after the last date in it."},
         Messages,       FILTER(ErrMsgs, Errors2Show, ""),        
 
     //  Handle Error

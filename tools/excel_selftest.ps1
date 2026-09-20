@@ -356,6 +356,29 @@ Same 'Amortise: a repeated timeline date is refused' `
      "LEFT(INDEX($am(10000, 0.05, 12, DATE(2026,1,1), $amRepeat),1,1),8)" 'Timeline'
 Same 'Amortise: an out-of-order timeline date is refused' `
      "LEFT(INDEX($am(10000, 0.05, 12, DATE(2026,1,1), $amBackwards),1,1),8)" 'Timeline'
+# --- FinalPeriodEnd. The last period has no successor to measure, so it runs as long as
+# the one before it, and a sub-monthly timeline that stops before the loan does drops every
+# month past that inferred end. Stating the end keeps them. Ten weekly periods from
+# 1 January 2026 end on 5 March and run to 12 March, so January, February and March are the
+# only months inside them.
+$amWkShort = "DATE(2026,1,1) + SEQUENCE( , 10, 0) * 7"
+$amStop = "$am(10000, 0.05, 12, DATE(2026,1,1), $amWkShort)"
+$amCarry = "$am(10000, 0.05, 12, DATE(2026,1,1), $amWkShort, DATE(2027,1,1))"
+Near 'Amortise: a short weekly timeline stops at the end it infers' `
+     "SUMPRODUCT(--(INDEX($amStop,4,0)<>0)) - 3" '0'
+Near 'Amortise: a stated final period end carries every payment' `
+     "SUM(INDEX($amCarry,4,0)) - SUM(INDEX($amMo,4,0))" '0' '0.0000001'
+Near 'Amortise: a stated final period end carries every month of interest' `
+     "SUM(INDEX($amCarry,3,0)) - SUM(INDEX($amMo,3,0))" '0' '0.0000001'
+# Handed the end it would have inferred, the parameter reproduces the default exactly.
+Near 'Amortise: the stated end matches the inferred one' `
+     "SUM($am(10000, 0.05, 12, DATE(2026,1,1), $amWkShort, MAX($amWkShort) + 7)) - SUM($amStop)" '0' '0.0000001'
+Same 'Amortise: a final period end inside the timeline is refused' `
+     "LEFT(INDEX($am(10000, 0.05, 12, DATE(2026,1,1), $amWkShort, DATE(2026,1,15)),1,1),14)" 'FinalPeriodEnd'
+# The default timeline is monthly, where the boundary moves nothing, so the end is refused
+# without a supplied timeline rather than measured against one this function chose.
+Same 'Amortise: a final period end without a timeline is refused' `
+     "LEFT(INDEX($am(10000, 0.05, 12, DATE(2026,1,1), , DATE(2027,1,1)),1,1),14)" 'FinalPeriodEnd'
 Same 'Amortise: help with no args' "INDEX($am(),1,1)" 'FUNCTION:'
 
 # --- Depreciate. Every period but the last takes its end date from the next period's start.
@@ -373,6 +396,16 @@ Near 'Depreciate: 49 weekly periods agree with 48' `
 Near 'Depreciate: weekly agrees with monthly' `
      "SUM(INDEX($dpW48,3,0)) - SUM(INDEX($dpMo,3,0))" '0' '0.005'
 Near 'Depreciate: no period is counted twice' "SUMPRODUCT(--(INDEX($dpW48,3,0)<>0)) - 12" '0'
+# The last period on a monthly timeline ended EDATE(its own start, 1) - 1, and EDATE steps
+# from 28 February to 28 March, not 31 March, so a month-end timeline closed 3 days early
+# and an asset in service in those days landed in no period at all. EOMONTH is the step
+# DayCountRate already takes. Row 1 is the cost, which appears in the period holding
+# the in-service date and nowhere else.
+$dpME = "EOMONTH(DATE(2025,12,31), SEQUENCE( , 3, 0))"
+Near 'Depreciate: a month-end timeline runs its last period to the month end' `
+     "SUMPRODUCT(--(INDEX($dp(10000, DATE(2026,3,29), 5, $dpME),1,0)<>0)) - 1" '0'
+Near 'Depreciate: a month-end timeline still holds the cost once' `
+     "SUM(INDEX($dp(10000, DATE(2026,3,29), 5, $dpME),1,0)) - 10000" '0' '0.005'
 # Whole-month intervals are unchanged. Two, 4 and 6 months never failed: the SWITCH
 # lookups that only listed 1, 3 and 12 were read by 2 bindings nothing else read, so
 # Excel never evaluated them. They are gone rather than generalised.
@@ -435,6 +468,17 @@ Same 'Amortise DV: a negative APR is still refused' `
      "LEFT(INDEX($amDV(10000, -0.05, 12, DATE(2026,1,1), $moTL),1,1),3)" 'APR'
 Same 'Amortise DV: a timeline that does not advance is still refused' `
      "LEFT(INDEX($amDV(10000, 0.05, 12, DATE(2026,1,1), $flatTL),1,1),8)" 'Timeline'
+# The companion has to refuse every FinalPeriodEnd the parent refuses, and accept the one
+# it calculates. An error in it reaches the parent through MAX, so it is an error in an
+# argument like any other rather than a value the shape test can read.
+Near 'Amortise DV: a final period end after the timeline is accepted' `
+     "--($amDV(10000, 0.05, 12, DATE(2026,1,1), $wkTL, MAX($wkTL) + 30))" '1'
+Same 'Amortise DV: a final period end inside the timeline is refused' `
+     "LEFT(INDEX($amDV(10000, 0.05, 12, DATE(2026,1,1), $wkTL, DATE(2026,1,15)),1,1),14)" 'FinalPeriodEnd'
+Same 'Amortise DV: a final period end without a timeline is refused' `
+     "LEFT(INDEX($amDV(10000, 0.05, 12, DATE(2026,1,1), , DATE(2027,1,1)),1,1),14)" 'FinalPeriodEnd'
+Same 'Amortise DV: an error in the final period end is refused' `
+     "LEFT(INDEX($amDV(10000, 0.05, 12, DATE(2026,1,1), $wkTL, NA()),1,1),14)" 'FinalPeriodEnd'
 Near 'Depreciate DV: a weekly timeline is accepted'  "--($dpDV(10000, DATE(2026,1,1), 5, $wkTL))" '1'
 Near 'Depreciate DV: a monthly timeline is accepted' "--($dpDV(10000, DATE(2026,1,1), 5, $moTL))" '1'
 Same 'Depreciate DV: a timeline that does not advance is still refused' `
