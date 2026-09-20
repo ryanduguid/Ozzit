@@ -2,9 +2,11 @@
 
 One Excel workbook holding 133 native LAMBDA functions and 5 named help tables under
 the `oz.` prefix: amortisation, depreciation, ratios, AASB 16 lessee schedules, and
-Australian GST and financial-year helpers. There is no add-in, macro, VBA or external
-dependency, so a copied function travels inside your own file and a reviewer can read
-the arithmetic. It suits an accountant or analyst modelling in Excel; it is not a
+Australian GST and financial-year helpers. The functions need no add-in, macro, VBA or
+external dependency, so a copied function travels inside your own file and a reviewer
+can read the arithmetic. The file carries a hidden reference to the Advanced Formula
+Environment task pane used to author the functions; the functions do not depend on
+it. It suits an accountant or analyst modelling in Excel; it is not a
 bookkeeping tool and never touches a ledger.
 
 **Needs Microsoft 365 or Excel 2024 or later**, which support `LAMBDA` and dynamic
@@ -25,7 +27,10 @@ Synthetic example. Review aid, not professional advice; the reviewer decides the
 =oz.GSTExtractλ(1100)
 ```
 
-**Output:** $100.00 GST, reproduced in Microsoft 365. The hand calculation is $1,100 / 11.
+**Output:** the cell displays $100.00 GST under currency formatting, reproduced in
+Microsoft 365. The function returns the unrounded binary-float result,
+99.999999999999986, so a caller who needs cent-exact totals wraps it in
+`ROUND(...,2)`. The hand calculation is $1,100 / 11.
 
 **Human decision:** Does the evidence establish that the whole supply is taxable?
 
@@ -58,13 +63,13 @@ The screenshot uses a disposable copy with a synthetic label, an explicit argume
 
 ## Verification and attribution
 
-The prepared cut for [v3.4.2](https://github.com/ryanduguid/Ozzit/releases/tag/v3.4.2), dated 16 September 2026; citation metadata is in [CITATION.cff](CITATION.cff). It awaits the signed tag, native gates and publication [RELEASING.md](RELEASING.md) reserves for a maintainer, so its tag, release page and download do not exist yet. The published release remains [v3.4.1](https://github.com/ryanduguid/Ozzit/releases/tag/v3.4.1).
+The prepared cut for v3.4.2, dated 16 September 2026; citation metadata is in [CITATION.cff](CITATION.cff). It awaits the signed tag, native gates and publication [RELEASING.md](RELEASING.md) reserves for a maintainer, so its tag, release page and download do not exist yet; the address they will use, `https://github.com/ryanduguid/Ozzit/releases/tag/v3.4.2`, stays plain text until the tag is published. The published release remains [v3.4.1](https://github.com/ryanduguid/Ozzit/releases/tag/v3.4.1).
 
 v3.4.2 `ozzit.xlsx` SHA-256: `979017cddc38d524c1a4820ae423558fa9a63dfab24cede46ac49f1a835171bf` (443,681 bytes), the same file as the tracked `ozzit.xlsx` on `main`, whose digest is pinned in [release/workbook-base.json](release/workbook-base.json) and checked by the tool tests. It differs from the file the native gates last ran on (`cc52d7faa43ba672c56cd2f6ff7588f8565d825908cfcca3fc2ead5ce9b6b350`) only in the Cover sheet's version label, a typed string no formula reads. On that prior file, Excel 16.0 build 20430 on 16 September 2026: 1,129 formulas recalculated with 0 in error, 905 self-test assertions with 0 failures, 19,444 cached values equal to what their formulas produce. The release recipe reruns the native gates on the cut it publishes.
 
 - [Repository checks](AGENTS.md) and [release and native verification](RELEASING.md)
 - [Changes](CHANGELOG.md) and [citation](CITATION.cff)
 
-MIT licensed. See [LICENCE](LICENCE) and [ATTRIBUTION.md](ATTRIBUTION.md) for provenance and licence.
+MIT licensed. See [LICENCE](LICENCE) and [ATTRIBUTION.md](ATTRIBUTION.md) for provenance and licence. [DISCLAIMER.md](DISCLAIMER.md) states that this is not advice and names the bodies the project is not affiliated with.
 
 </details>
