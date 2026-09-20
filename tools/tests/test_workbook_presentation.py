@@ -128,9 +128,21 @@ class WorkbookPresentationTests(unittest.TestCase):
 
     def test_cover_describes_brand_neutral_formula_highlights(self):
         cover = ET.fromstring(self.parts[self.sheets["Cover"]])
+        # The 3 rows under the "Accessing the Functions" heading, wherever the
+        # heading sits: the Cover's rows have moved before.
+        heading = next(
+            (
+                int(row.attrib["r"])
+                for row in cover.iterfind(".//m:row", NS)
+                if cell_text(cover, f"A{row.attrib['r']}", self.strings) == "Accessing the Functions"
+            ),
+            None,
+        )
+        self.assertIsNotNone(heading, "the Cover has no 'Accessing the Functions' heading")
         text = " ".join(
-            cell_text(cover, address, self.strings)
-            for address in ("A25", "B25", "A26", "B26", "A27", "B27")
+            cell_text(cover, f"{column}{heading + offset}", self.strings)
+            for offset in (1, 2, 3)
+            for column in "AB"
         )
         self.assertNotRegex(text.lower(), r"\bgreen\s+shaded\b")
         self.assertIn("purple", text.lower())
