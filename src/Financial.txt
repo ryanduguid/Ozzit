@@ -1583,6 +1583,17 @@ AmortiseλDV = LAMBDA(
                             OR( ISERROR( Timeline))
                         ),
 
+    //  Match Amortiseλ's generated timeline when Timeline is omitted.
+        EffectiveTimeline, IF( ISOMITTED( Timeline),
+                                LET( CvtStarts, IF( ISNUMBER( StartDate), StartDate, DATEVALUE( StartDate)),
+                                     LastMonths, EDATE( CvtStarts, Term - 1),
+                                     MinDate, MIN( CvtStarts),
+                                     LastMonth, MAX( LastMonths),
+                                     MaxTerm, ( YEAR( LastMonth) - YEAR( MinDate)) * 12
+                                                + MONTH( LastMonth) - MONTH( MinDate) + 1,
+                                     EDATE( MinDate, SEQUENCE( 1, MaxTerm, 0))),
+                                Timeline),
+
     //  Check inputs - Data validation errors
         DVArg1,         IF( OR( ISOMITTED( Principal), ISERROR( Principal)), 
                             FALSE, 
@@ -1614,12 +1625,13 @@ AmortiseλDV = LAMBDA(
     //  FinalPeriodEnd is the day after the last period ends, so it falls after the last
     //  date in the timeline. COUNT is 1 for one date, 0 for text and more than 1 for a
     //  range, which covers the shape and the type in one test.
-        DVArg8,         IF( OR( ISOMITTED( FinalPeriodEnd), ISERROR( FinalPeriodEnd)),
+        DVArg8,         IF( ISOMITTED( FinalPeriodEnd),
                             FALSE,
-                            OR( COUNT( FinalPeriodEnd) <> 1,
-                                IF( OR( ISOMITTED( Timeline), ISERROR( Timeline), DVArg5),
+                            OR( ISERROR( FinalPeriodEnd),
+                                COUNT( FinalPeriodEnd) <> 1,
+                                IF( OR( ISERROR( Timeline), DVArg5),
                                     FALSE,
-                                    MAX( FinalPeriodEnd) <= MAX( Timeline)))),
+                                    MAX( FinalPeriodEnd) <= MAX( EffectiveTimeline)))),
         DVErrors,       VSTACK( DVArg1, DVArg2, DVArg3, DVArg4, DVArg5, DVArg6, DVArg7, DVArg8),
         
     //  Any input errors detected?
