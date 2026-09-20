@@ -6,7 +6,7 @@ oz.AboutRatiosλ,Ratios,nabla.r.Aboutλ,AboutRatiosλ,Displays this module's rep
 oz.AboutUtilitiesλ,Utilities,nabla.u.Aboutλ,AboutUtilitiesλ,Displays this module's repository URL and function list
 oz.Allocateλ,Financial,nabla.f.Allocateλ,"Allocateλ(Amounts, [FromInterval], [ToInterval])",Divide one or more amounts equally across smaller periods
 oz.AmortiseBλ,Debt,nabla.debt.Amortiseλ,"AmortiseBλ(Principal, APR, Term, ModelPeriods, [StartPeriod], [MonthsPerPeriod])",Creates an amortisation schedule for a debt/loan across a model's periods
-oz.Amortiseλ,Financial,nabla.f.Amortiseλ,"Amortiseλ( Principals, APRs, Terms, StartDates, [Timeline])",Creates a corkscrew amortisation schedule
+oz.Amortiseλ,Financial,nabla.f.Amortiseλ,"Amortiseλ( Principals, APRs, Terms, StartDates, [Timeline], [FinalPeriodEnd])",Creates a corkscrew amortisation schedule
 oz.AmortiseλDV,Financial,nabla.f.AmortiseλDV,AmortiseλDV,Provides extended data validation of arguments for Amortiseλ()
 oz.AnnualRateλ,Financial,,"AnnualRateλ(PeriodRate, [PeriodsPerYear])","Converts a rate per period to the effective annual rate, the inverse of PeriodRateλ"
 oz.AssetTurnoverRatioλ,Ratios,nabla.r.AssetTurnoverRatioλ,"AssetTurnoverRatioλ( NetSales, TotalAssets)",Measures the value of a company's sales or revenues relative to the value of its assets. (Net Sales/Total Assets)
