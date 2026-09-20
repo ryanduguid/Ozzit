@@ -16,7 +16,9 @@ weekly interval in `oz.PeriodDiffλ`, and a substring method name or zero factor
 `oz.DepreciateλDV` passed to its parent. The 2 diagnostic companions accept a zero APR and
 a sub-monthly timeline, which their parents calculate, and measure every timeline gap
 rather than the first alone. Ratio, lease and `DATEDIF` help is corrected without changing
-a calculation. The library is still 133 LAMBDAs and 5 help tables.
+a calculation. The library is still 133 LAMBDAs and 5 help tables. The Cover sheet's version label,
+which still read 20 August 2026 and 130 functions, now states this cut's date and count,
+and `tools/verify_cover.py` keeps it equal to `functions.csv` and this changelog.
 
 - Ratio help limits PPE to assets meeting current classification criteria, requires
   weighted-average ordinary shares for basic EPS and follows the applicable DSCR
