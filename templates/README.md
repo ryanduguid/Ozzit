@@ -1,5 +1,7 @@
 # Ozzit 13-week cash-flow forecast
 
+For a separate contract workpaper, see [Retention reconciliation](RETENTION.md).
+
 `13-week-cash-flow-forecast.xlsx` is a standalone weekly liquidity model for Australian FP&A practitioners, finance operators and small-business owners. It uses native Excel formulas and is intended for Microsoft 365 or Excel 2024 and later.
 
 The workbook opens with illustrative data from an Australian business so that the model, warnings and review views are visible immediately. Replace the sample values before using it for a business decision. Editable cells are marked as inputs in the workbook. Do not overwrite formula or cross-sheet-link cells.
