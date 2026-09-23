@@ -1,8 +1,8 @@
 # Postbuild passes
 
 The v3.0.0 baseline came from a one-shot transform that needed the uncommitted earlier
-workbook and stopped at v3.0.0; git history keeps the
-script. Later passes start from the
+workbook and stopped at v3.0.0; commit 96b9939 keeps the
+script and the byte length and SHA-256 of the input it expects. Later passes start from the
 committed `ozzit.xlsx` and `src/`. This directory holds
 the ones that are deterministic and safe to re-run.
 
