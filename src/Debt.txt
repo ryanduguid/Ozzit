@@ -151,7 +151,9 @@ DebtSculptFixedλ = LAMBDA(
     //  Negative CFADS means no cash for debt service, so the payment is floored at
     //  zero. Without the floor it went negative, which raised the closing balance and
     //  reported the negated amount as positive debt service. The rows below floor with
-    //  IF rather than MAX: MAX would aggregate the whole row to one number.
+    //  IF rather than MAX: MAX would aggregate the whole row to one number. They floor
+    //  the amount owed too, so a negative opening balance repays nothing in the rows
+    //  exactly as it does in the SCAN, and each closing balance opens the next period.
         Rate,           APR / 12 * MonthsPerPeriod,
         Periods,        SEQUENCE( 1, COLUMNS( Debt)),
         NewDebt,        INDEX( Debt, 1, Periods),
@@ -169,7 +171,7 @@ DebtSculptFixedλ = LAMBDA(
         Opening,        Carried + NewDebt,
         Interest,       Opening * Rate,
         Service,        IF( Cash / DSCR < 0, 0, Cash / DSCR),
-        Payment,        IF( Service < Opening + Interest, Service, Opening + Interest),
+        Payment,        IF( Opening + Interest < 0, 0, IF( Service < Opening + Interest, Service, Opening + Interest)),
         Closing,        Opening + Interest - Payment,
         Result,         VSTACK( Opening, Interest, -Payment, Closing),
     //  Return Result, Help or the messages
@@ -353,7 +355,9 @@ DebtSculptVariableλ = LAMBDA(
     //  Negative CFADS means no cash for debt service, so the payment is floored at
     //  zero. Without the floor it went negative, which raised the closing balance and
     //  reported the negated amount as positive debt service. The rows below floor with
-    //  IF rather than MAX: MAX would aggregate the whole row to one number.
+    //  IF rather than MAX: MAX would aggregate the whole row to one number. They floor
+    //  the amount owed too, so a negative opening balance repays nothing in the rows
+    //  exactly as it does in the SCAN, and each closing balance opens the next period.
         Periods,        SEQUENCE( 1, COLUMNS( Debt)),
     //  A row of rates per period, from a day count convention, replaces the flat twelfth of APR
         Rates,          IF( UseRates,
@@ -376,7 +380,7 @@ DebtSculptVariableλ = LAMBDA(
         Opening,        Carried + NewDebt,
         Interest,       Opening * Rates,
         Service,        IF( Cash / Cover < 0, 0, Cash / Cover),
-        Payment,        IF( Service < Opening + Interest, Service, Opening + Interest),
+        Payment,        IF( Opening + Interest < 0, 0, IF( Service < Opening + Interest, Service, Opening + Interest)),
         Closing,        Opening + Interest - Payment,
         Result,         VSTACK( Opening, Interest, -Payment, Closing),
     //  Return Result, Help or the messages

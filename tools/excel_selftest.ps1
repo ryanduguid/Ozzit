@@ -186,6 +186,14 @@ foreach ($fn in $dsf, $dsv) {
     Near "Debt: negative CFADS repays nothing in $fn"            "INDEX($s3,3,1)" '0' '0.0000001'
     Near "Debt: negative CFADS capitalises interest once in $fn" `
          "INDEX($s3,4,1) - INDEX($s3,1,1) - INDEX($s3,2,1)" '0' '0.0000001'
+
+    # A negative amount owed repays nothing in the returned rows exactly as in the SCAN,
+    # so period 1's closing balance is period 2's opening. Before the rows were floored
+    # too, they paid the negative amount and closed at zero while the SCAN carried it.
+    $s4 = "$fn(-100, {0,0}, {300,300}, $arg2, 12)"
+    Near "Debt: a negative amount owed repays nothing in $fn"        "INDEX($s4,3,1)" '0' '0.0000001'
+    Near "Debt: a negative balance rolls into the next period in $fn" `
+         "INDEX($s4,4,1) - INDEX($s4,1,2)" '0' '0.0000001'
 }
 
 # The row a reader is told to label. Only the LRV function reports a principal repayment.
