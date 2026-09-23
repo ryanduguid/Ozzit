@@ -186,6 +186,13 @@ foreach ($fn in $dsf, $dsv) {
     Near "Debt: negative CFADS repays nothing in $fn"            "INDEX($s3,3,1)" '0' '0.0000001'
     Near "Debt: negative CFADS capitalises interest once in $fn" `
          "INDEX($s3,4,1) - INDEX($s3,1,1) - INDEX($s3,2,1)" '0' '0.0000001'
+
+    # A negative carried balance must not produce a negative payment, and its
+    # closing balance must be the next period's opening balance.
+    $s4 = "$fn(-100, {0,0}, {300,300}, $arg2)"
+    Near "Debt: negative balance pays nothing in $fn"            "INDEX($s4,3,1)" '0' '0.0000001'
+    Near "Debt: negative balance rolls into next opening in $fn" `
+         "INDEX($s4,4,1) - INDEX($s4,1,2)" '0' '0.0000001'
 }
 
 # The row a reader is told to label. Only the LRV function reports a principal repayment.

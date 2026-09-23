@@ -169,7 +169,7 @@ DebtSculptFixedλ = LAMBDA(
         Opening,        Carried + NewDebt,
         Interest,       Opening * Rate,
         Service,        IF( Cash / DSCR < 0, 0, Cash / DSCR),
-        Payment,        IF( Service < Opening + Interest, Service, Opening + Interest),
+        Payment,        IF( Opening + Interest < 0, 0, IF( Service < Opening + Interest, Service, Opening + Interest)),
         Closing,        Opening + Interest - Payment,
         Result,         VSTACK( Opening, Interest, -Payment, Closing),
     //  Return Result, Help or the messages
@@ -376,7 +376,7 @@ DebtSculptVariableλ = LAMBDA(
         Opening,        Carried + NewDebt,
         Interest,       Opening * Rates,
         Service,        IF( Cash / Cover < 0, 0, Cash / Cover),
-        Payment,        IF( Service < Opening + Interest, Service, Opening + Interest),
+        Payment,        IF( Opening + Interest < 0, 0, IF( Service < Opening + Interest, Service, Opening + Interest)),
         Closing,        Opening + Interest - Payment,
         Result,         VSTACK( Opening, Interest, -Payment, Closing),
     //  Return Result, Help or the messages
