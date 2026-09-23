@@ -23,8 +23,10 @@ the compiled defined names and every publication view together through a
 documented source-owning change process.
 
 The v3.0.0 tracked builder starts from its disclosed earlier input, which
-is not committed, and stops at the v3.0.0 artefacts. Post-v3.0.0 passes start
-from the committed `ozzit.xlsx` and `src/`. They
+is not committed, and stops at the v3.0.0 artefacts. Its date, byte length,
+SHA-256 and part-count fingerprint are recorded in the
+[v3.0.0 baseline input](tools/postbuild/README.md#v300-baseline-input) record.
+Post-v3.0.0 passes start from the committed `ozzit.xlsx` and `src/`. They
 do not regenerate the current workbook from the earlier workbook. The current result also
 includes a one-off Excel-state-dependent date shift. The consistency checks do not prove
 byte-for-byte regeneration of the current workbook. The v3.0.0

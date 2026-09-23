@@ -6,6 +6,18 @@ script. Later passes start from the
 committed `ozzit.xlsx` and `src/`. This directory holds
 the ones that are deterministic and safe to re-run.
 
+## v3.0.0 baseline input
+
+The v3.0.0 `ozzit.xlsx` was built by a one-shot transform,
+`transform_from_earlier.py`, from Ryan Duguid's earlier workbook of 6 July
+2024, which is not committed to this repository. The build was last run
+against a file of 1,478,643 bytes, SHA-256
+`f38dbc83b4a18fc7d71d0f4bcf39680d74694b9aa129f5b3deb39b014e0bbb67`, holding
+224 parts. A rebuild that starts from that file reproduces the v3.0.0 `src/`
+and `functions.csv`; anything else is a different input and the build's own
+assertions will say so. The transform does not take `ozzit.xlsx` as a
+substitute for that earlier file.
+
 FY27 help text and the workbook palette are the tracked successors of the one-off
 session scripts that produced v3.1.0. Later passes, including GST help text, start
 from the committed `ozzit.xlsx` and `src/`. They do not read the earlier workbook.
