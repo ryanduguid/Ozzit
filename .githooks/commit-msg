@@ -103,6 +103,18 @@ PATTERNS = [
 ]
 RX = [(name, re.compile(p, re.I)) for name, p in PATTERNS]
 
+# Prose credits are intentionally separate from the anchored trailer/footer
+# rules above.  The shared policy also refuses ordinary sentences such as
+# "Claude fixed this bug"; keeping this matcher separate means the anchored
+# rules retain their exact line-oriented behaviour while prose is searched
+# wherever it occurs in a commit message.  Product references (for example,
+# "Claude Code plugin") do not contain a credit verb and remain allowed.
+PROSE_PATTERNS = [
+    ("prose vendor credit", r"\b" + VENDOR + r"\b(?:\s+(?:agent|assistant|ai))?\s+" + CREDIT_VERB + r"\b"),
+    ("prose credited vendor", r"\b" + CREDIT_VERB + r"\b\s+(?:by|with|from)\s+" + VENDOR + r"\b"),
+]
+PROSE_RX = [(name, re.compile(p, re.I)) for name, p in PROSE_PATTERNS]
+
 FENCE = re.compile(r"^(?P<indent> {0,3})(?P<fence>`{3,}|~{3,})(?P<info>.*)$")
 
 # A trailer key, so an indented line following one can be read as its
@@ -231,6 +243,13 @@ for number, line in enumerate(lines, 1):
                 if rx.match(reading):
                     hit = "line %d: %s (%s)" % (at, text.strip()[:120], name)
                     break
+            # Unlike trailers and footers, prose credits can occur anywhere
+            # in the message, so use search only after the anchored checks.
+            if not hit:
+                for name, rx in PROSE_RX:
+                    if rx.search(reading):
+                        hit = "line %d: %s (%s)" % (at, text.strip()[:120], name)
+                        break
             if hit:
                 break
         if hit:
