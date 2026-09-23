@@ -22,18 +22,19 @@ changes to `src/` or `functions.csv` in isolation. A formula change must update
 the compiled defined names and every publication view together through a
 documented source-owning change process.
 
-The v3.0.0 tracked builder starts from its disclosed earlier input, which
-is not committed, and stops at the v3.0.0 artefacts. Post-v3.0.0 passes start
-from the committed `ozzit.xlsx` and `src/` recorded in `ATTRIBUTION.md`. They
+The v3.0.0 tracked builder starts from an earlier input that is not committed,
+and stops at the v3.0.0 artefacts. Commit 96b9939 holds that builder and the
+input's byte length and SHA-256. Post-v3.0.0 passes start
+from the committed `ozzit.xlsx` and `src/`. They
 do not regenerate the current workbook from the earlier workbook. The current result also
 includes a one-off Excel-state-dependent date shift. The consistency checks do not prove
 byte-for-byte regeneration of the current workbook. The v3.0.0
 builder, the postbuild limits and any future one-off transformation remain
-disclosed in `ATTRIBUTION.md` and `CHANGELOG.md`. Do not broaden a
+disclosed in `tools/postbuild/README.md` and `CHANGELOG.md`. Do not broaden a
 reproducibility claim without a complete regenerator and a byte comparison.
 
 MIT covers the whole repository, `ozzit.xlsx`, `src/` and `functions.csv` included.
-Every source archive must still include `ATTRIBUTION.md` and `LICENCE`.
+Every source archive must still include `LICENCE`.
 
 ## Approval and tag
 

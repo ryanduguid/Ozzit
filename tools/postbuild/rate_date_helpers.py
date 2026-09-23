@@ -2,8 +2,8 @@
 
 Usage: python tools/postbuild/rate_date_helpers.py [workbook] [src dir] [functions.csv]
 
-This pass starts from the committed ozzit.xlsx and src/ (the post-v3.0.0 input
-recorded in ATTRIBUTION.md). It adds oz.PeriodRateλ, oz.AnnualRateλ and
+This pass starts from the committed ozzit.xlsx and src/ (the post-v3.0.0
+input). It adds oz.PeriodRateλ, oz.AnnualRateλ and
 oz.DayCountRateλ to the Financial group and oz.DateDifλ to the Dates group, in
 every store at once: the src module, its About table, the defined names in
 xl/workbook.xml and functions.csv. The Advanced Formula Environment store is not
