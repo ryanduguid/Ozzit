@@ -4,7 +4,7 @@
 ## Package overview
 - **Repository**: https://github.com/ryanduguid/Ozzit
 - **Domain**: Library of 133 native Excel `LAMBDA` functions plus 5 help tables for dynamic-array financial modelling. Australian additions are GST add/extract, a 1 July financial-year label, 2 modelling depreciation schedules and 4 AASB 16 lessee schedules. General additions since v3.3.0 are 2 effective-rate converters, a day count convention rate row (30/360, Actual/360, Actual/365, Actual/Actual) and a DATEDIF replacement.
-- **Provenance**: Built from scratch by Ryan Duguid. See ATTRIBUTION.md. The 138 named formulas comprise 133 LAMBDAs and 5 help tables. Describe only the helpers the workbook ships.
+- **Provenance**: Built from scratch by Ryan Duguid. See ATTRIBUTION.md. The 138 named formulas comprise 133 functions and 5 help tables. Two help tables, oz.AboutDatesλ and oz.AboutRatiosλ, are LAMBDA formulas too, so a count of LAMBDA names in the workbook finds 135. Describe only the helpers the workbook ships.
 - **Source Context**: Native Excel financial-modelling conventions (amortisation, corkscrews, ratios, debt sculpting) plus the 5 Australian helpers listed below.
 
 ## Functional categories
