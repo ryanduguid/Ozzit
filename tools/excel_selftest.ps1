@@ -176,6 +176,16 @@ foreach ($fn in $dsf, $dsv) {
     $s2 = "$fn(, {1000,0,0}, {300,300,300}, $arg, 12)"
     Near "Debt: roll-forward holds for $fn" `
          "SUMPRODUCT(ABS(INDEX($s2,4,0) - INDEX($s2,1,0) - INDEX($s2,2,0) - INDEX($s2,3,0)))" '0' '0.0000001'
+
+    # Negative CFADS leaves no cash for debt service, so the period must repay nothing and
+    # roll the balance forward with one period of interest. Until this change the payment
+    # went negative, which lifted the closing balance above opening plus interest and
+    # printed row 3, the negated repayment, as a positive receipt.
+    $arg2 = if ($fn -eq $dsf) { '1.2, 0.06' } else { '{1.2,1.2}, {0.06,0.06}' }
+    $s3 = "$fn(, {1000,0}, {-300,-300}, $arg2, 12)"
+    Near "Debt: negative CFADS repays nothing in $fn"            "INDEX($s3,3,1)" '0' '0.0000001'
+    Near "Debt: negative CFADS capitalises interest once in $fn" `
+         "INDEX($s3,4,1) - INDEX($s3,1,1) - INDEX($s3,2,1)" '0' '0.0000001'
 }
 
 # The row a reader is told to label. Only the LRV function reports a principal repayment.
