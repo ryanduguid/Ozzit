@@ -2,8 +2,8 @@
 
 Usage: python tools/postbuild/strip_revision_history.py [workbook] [src dir]
 
-This pass starts from the committed ozzit.xlsx and src/ (the post-v3.0.0 input
-recorded in ATTRIBUTION.md). It does not read the earlier workbook and does not
+This pass starts from the committed ozzit.xlsx and src/ (the post-v3.0.0
+input). It does not read the earlier workbook and does not
 go through the one-shot v3.0.0 transform.
 
 Three stores hold the same revision text and all 3 are rewritten together:

@@ -1,9 +1,9 @@
 # Postbuild passes
 
 The v3.0.0 baseline came from a one-shot transform that needed the uncommitted earlier
-workbook and stopped at v3.0.0; ATTRIBUTION.md records it and git history keeps the
+workbook and stopped at v3.0.0; git history keeps the
 script. Later passes start from the
-committed `ozzit.xlsx` and `src/` recorded in ATTRIBUTION.md. This directory holds
+committed `ozzit.xlsx` and `src/`. This directory holds
 the ones that are deterministic and safe to re-run.
 
 FY27 help text and the workbook palette are the tracked successors of the one-off
@@ -94,8 +94,8 @@ and the changelog's current cut.
 not re-runnable and is not ported. It computed each sheet's month offset from the sheet's
 *current* earliest date and rewrote cells through Excel COM, so its result depends on the
 workbook's state at the moment it ran. Two runs from different starting states give
-different bytes. That is why ATTRIBUTION.md scopes the reproducible baseline to v3.0.0 and
-states that byte-for-byte reproduction of the current workbook is not claimed.
+different bytes. That is why the reproducible baseline stops at v3.0.0 and
+why byte-for-byte reproduction of the current workbook is not claimed.
 
 The one-off scripts that produced v3.1.0 remain in the session record; the FY27 and
 palette passes here are the parts of that work that are deterministic. The GST help pass

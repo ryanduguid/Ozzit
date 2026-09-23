@@ -17,7 +17,7 @@ The library is Australian-only: the foreign tax regimes and references the earli
 
 The 10% default and one-eleventh extraction reflect the basic rule for a taxable supply in [*A New Tax System (Goods and Services Tax) Act 1999*](https://www.legislation.gov.au/C2004A00446/latest/text) ss 9-70 and 9-75 (source checked 20 August 2026). Recheck the current Act and any applicable special rule at the time of use. These helpers apply arithmetic only: they do not decide whether a supply is taxable, GST-free, input taxed, outside the GST system or subject to a special rule.
 
-The same scope note is embedded as NOTES! rows in the `oz.GSTAddλ` and `oz.GSTExtractλ` inline help. The About table and Name Manager comments keep the one-line descriptions. `tools/postbuild/gst_help_text.py` applies it to the committed `ozzit.xlsx` and `src/`; the one-shot v3.0.0 transform recorded in ATTRIBUTION.md predates it and is no longer in the tree.
+The same scope note is embedded as NOTES! rows in the `oz.GSTAddλ` and `oz.GSTExtractλ` inline help. The About table and Name Manager comments keep the one-line descriptions. `tools/postbuild/gst_help_text.py` applies it to the committed `ozzit.xlsx` and `src/`; the one-shot v3.0.0 transform predates it and is no longer in the tree.
 
 `oz.Depreciateλ` accepts the method codes `SLN`, `SYD`, `DB`, `DDB`, `VDB`, `DV` (diminishing value) and `PC` (prime cost).
 
