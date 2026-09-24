@@ -169,6 +169,21 @@ def excel_values(case: dict[str, Any], grid: list[list[Any]]) -> list[float]:
     return [float(grid[r][c]) for c in range(case["columns"]) for r in range(len(grid))]
 
 
+def stop_recorded_excel(pid_file: Path) -> None:
+    """Stop the automation Excel whose PID the evaluator recorded, and no other."""
+    if not pid_file.is_file():
+        return
+    pid = pid_file.read_text(encoding="utf-8").strip()
+    if not pid.isdigit():
+        return
+    script = (f"$p = Get-CimInstance Win32_Process -Filter \"ProcessId={pid} AND "
+              f"Name='EXCEL.EXE'\"; if ($p -and $p.CommandLine -match '/automation') "
+              f"{{ Stop-Process -Id {pid} -Force; Wait-Process -Id {pid} -Timeout 30 "
+              f"-ErrorAction SilentlyContinue }}")
+    subprocess.run(["powershell.exe", "-NoProfile", "-Command", script], check=False,
+                   timeout=60)
+
+
 def evaluate() -> dict[str, Any]:
     with tempfile.TemporaryDirectory() as tmp:
         cases = Path(tmp) / "cases.json"
@@ -180,11 +195,11 @@ def evaluate() -> dict[str, Any]:
                             "-File", str(ROOT / "tools" / "excel_eval_formulas.ps1"),
                             "-Cases", str(cases), "-Out", str(out)], check=True, timeout=600)
         except subprocess.TimeoutExpired:
-            # Killing PowerShell skips its finally block, so the automation Excel it started
-            # can outlive it. It is the EXCEL.EXE whose command line carries /automation.
+            # Killing PowerShell skips its finally block, so the Excel it started outlives
+            # it. Stop that process only: the PID it recorded, still an /automation instance.
+            stop_recorded_excel(Path(f"{out}.pid"))
             raise SystemExit("FAIL: the Excel evaluation did not finish within 600s. Check "
-                             "for a modal dialog, then close the hidden EXCEL.EXE started "
-                             "with /automation before retrying.") from None
+                             "for a modal dialog before retrying.") from None
         result: dict[str, Any] = json.loads(out.read_text(encoding="utf-8"))
         return result
 

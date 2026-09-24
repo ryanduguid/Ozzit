@@ -37,6 +37,10 @@ $xl = $wb = $ws = $cell = $range = $null
 $parts = @()
 try {
     $xl = New-Object -ComObject Excel.Application
+    # No Excel was running before this line, so the only EXCEL.EXE now is this one. Record
+    # its PID beside the output so a caller that times out can stop exactly this process.
+    $excelPid = @(Get-Process EXCEL -ErrorAction SilentlyContinue)[0].Id
+    [IO.File]::WriteAllText("$Out.pid", [string]$excelPid)
     $xl.Visible = $false
     $xl.DisplayAlerts = $false
     $xl.EnableEvents = $false
