@@ -44,14 +44,15 @@ Captured in Microsoft 365 using Ozzit v3.2.0, Australian tax!A19:B19; the review
 
 ## Start with three tasks
 
-You do not need all 133 functions. Most models start with one of these three,
-and each guide shows the spilled result for a synthetic input you can check by hand.
+You do not need all 133 functions. Most models start with one of these three.
+The loan and depreciation guides show the spilled result for a synthetic input
+you can check by hand; the lease guide explains the four lessee functions.
 
-| Task | Formula | Worked example |
+| Task | Formula | Guide |
 | --- | --- | --- |
 | Loan schedule | `=oz.Amortiseλ(Principals, APRs, Terms, StartDates)` | [100,000 at 5% over 60 months](docs/function-guide.md#dynamic-array-formula-walkthrough) |
 | Depreciation | `=oz.DiminishingValueλ(Cost, Life)` | [1,000 over 5 years](docs/function-guide.md#dynamic-array-formula-walkthrough) |
-| AASB 16 lease | `=oz.LeaseScheduleλ(Payments, Rate, [InAdvance])` | [Lessee liability and right-of-use asset](docs/australian-modelling.md#aasb-16-leases) |
+| AASB 16 lease | `=oz.LeaseScheduleλ(Payments, Rate, [InAdvance])` for the liability, `=oz.ROUScheduleλ(Cost, Periods)` for the right-of-use asset | [Lessee functions and rate conversion](docs/australian-modelling.md#aasb-16-leases) |
 
 [Open, copy functions and use modern Excel](docs/workbook-use.md) shows how to
 copy a function into your own workbook.
