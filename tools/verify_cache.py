@@ -33,6 +33,8 @@ from sanitise_workbook import column_number  # noqa: E402
 
 # Below this the run proved nothing and the pass would be vacuous.
 FLOOR = 15000
+# Reading every value takes seconds; 10 minutes is a hang, not a slow run.
+DUMP_TIMEOUT_SECONDS = 600
 
 # Excel hands an error cell back over COM as its error code, not its text.
 ERRORS = {-2146826288: "#NULL!", -2146826281: "#DIV/0!", -2146826273: "#VALUE!",
@@ -132,11 +134,22 @@ def main() -> int:
     handle, dump = tempfile.mkstemp(suffix=".tsv", prefix="ozzit-cache-")
     os.close(handle)
     try:
-        proc = subprocess.run(
-            ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass",
-             "-File", os.path.join(HERE, "dump_values.ps1"),
-             "-Path", os.path.abspath(WORKBOOK), "-Out", dump],
-            capture_output=True, text=True)
+        # Same boundary as refresh_cache.py: a modal dialog would otherwise hang the
+        # gate forever, and a host with no powershell.exe would raise, not FAIL.
+        try:
+            proc = subprocess.run(
+                ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass",
+                 "-File", os.path.join(HERE, "dump_values.ps1"),
+                 "-Path", os.path.abspath(WORKBOOK), "-Out", dump],
+                capture_output=True, text=True, timeout=DUMP_TIMEOUT_SECONDS)
+        except FileNotFoundError:
+            print("FAIL: powershell.exe was not found, so Excel could not be driven")
+            return 1
+        except subprocess.TimeoutExpired:
+            print(f"FAIL: Excel did not finish reading the workbook within "
+                  f"{DUMP_TIMEOUT_SECONDS}s; check for a modal dialog and close any "
+                  "Excel process before retrying")
+            return 1
         if proc.returncode != 0:
             print("FAIL: could not read the workbook in Excel (exit %d)" % proc.returncode)
             print((proc.stdout or proc.stderr or "").strip()[:2000])

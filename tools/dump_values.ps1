@@ -26,9 +26,10 @@ if (@(Get-Process EXCEL -ErrorAction SilentlyContinue).Count -gt 0) {
 $xl = New-Object -ComObject Excel.Application
 # msoAutomationSecurityForceDisable (3), not Low (1): reading values needs no macros.
 $xl.Visible = $false; $xl.DisplayAlerts = $false; $xl.AutomationSecurity = 3
-$wb = $null; $exit = 0
-$sw = [System.IO.StreamWriter]::new($Out, $false, (New-Object System.Text.UTF8Encoding $false))
+$wb = $null; $sw = $null; $exit = 0
 try {
+    # Inside the try: a bad -Out path must still reach the finally that quits Excel.
+    $sw = [System.IO.StreamWriter]::new($Out, $false, (New-Object System.Text.UTF8Encoding $false))
     $wb = Invoke-Excel { $xl.Workbooks.Open($Path, 0, $false) }
     Invoke-Excel { $xl.CalculateFullRebuild() }
     # CalculationState comes back over COM as the enum's NAME, "xlDone", not as 0, so a
@@ -71,7 +72,7 @@ try {
 }
 catch { Write-Output ('FAIL: ' + $_.Exception.Message); $exit = 1 }
 finally {
-    $sw.Close()
+    if ($sw) { $sw.Close() }
     if ($wb) { try { $wb.Close($false) } catch {} }
     try { $xl.Quit() } catch {}
     [void][Runtime.InteropServices.Marshal]::ReleaseComObject($xl)

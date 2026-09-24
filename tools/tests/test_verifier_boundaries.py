@@ -172,6 +172,29 @@ class WorkbookFixtureTests(unittest.TestCase):
                     self.assertIn("row 4 col 4", output.getvalue())
 
 
+    def test_cache_gate_fails_cleanly_when_excel_cannot_be_driven(self):
+        workbook = self.write_archive("cache.xlsx", self.cache_parts())
+        for label, error, expected in (
+            ("hung Excel", subprocess.TimeoutExpired("powershell.exe", 600), "did not finish"),
+            ("no PowerShell", FileNotFoundError("powershell.exe"), "was not found"),
+        ):
+            with self.subTest(label=label):
+                output = io.StringIO()
+                with patch.object(verify_cache, "WORKBOOK", str(workbook)), \
+                     patch.object(verify_cache.subprocess, "run", side_effect=error) as run, \
+                     contextlib.redirect_stdout(output):
+                    result = verify_cache.main()
+                self.assertEqual(result, 1)
+                self.assertIn(expected, output.getvalue())
+                self.assertEqual(run.call_args.kwargs["timeout"], verify_cache.DUMP_TIMEOUT_SECONDS)
+
+    def test_value_dump_opens_its_output_inside_the_excel_cleanup(self):
+        text = (TOOLS / "dump_values.ps1").read_text(encoding="utf-8")
+        # a bad -Out path thrown before the try would skip Quit() and leave Excel running
+        cleanup = text.index("try {", text.index("New-Object -ComObject Excel.Application"))
+        self.assertLess(cleanup, text.index("[System.IO.StreamWriter]::new("))
+
+
 class CacheComparisonTests(unittest.TestCase):
     def test_column_converts_a1_letters_to_one_based_numbers(self):
         self.assertEqual(verify_cache.column_number("A"), 1)

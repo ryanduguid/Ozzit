@@ -167,6 +167,31 @@ class AfeGateTests(unittest.TestCase):
         self.assertIn("oz.CountDOWλ", utf8.stdout)
         self.assertNotIn(r"\u03bb", utf8.stdout)
 
+    def test_gate_rejects_duplicate_records_even_when_the_last_copy_is_current(self):
+        target = self.directory / "duplicates.xlsx"
+        store, encoded = afe_parts(WORKBOOK)
+        current = next(item for item in store["files"] if item["path"] == "/projects/Dates")
+        # stale copy first: a last-wins lookup would compare only the current one
+        store["files"].insert(0, {"path": "/projects/Dates", "text": "stale"})
+        store["files"].remove(current)
+        store["files"].append(current)
+        store["projectNames"].append("oz.CountDOWλ")
+        replacement = base64.b64encode(
+            json.dumps(store, ensure_ascii=False, separators=(",", ":")).encode("utf-16-le")
+        )
+        with zipfile.ZipFile(WORKBOOK) as source, zipfile.ZipFile(
+            target, "w", zipfile.ZIP_DEFLATED
+        ) as output:
+            for info in source.infolist():
+                data = source.read(info.filename)
+                if info.filename == "customXml/item1.xml":
+                    data = data.replace(encoded, replacement)
+                output.writestr(info, data)
+        utf8 = self._run(target, "utf-8")
+        self._assert_controlled_failure(utf8, 2)
+        self.assertIn("AFE file path /projects/Dates appears 2 times", utf8.stdout)
+        self.assertIn("AFE projectNames entry oz.CountDOWλ appears 2 times", utf8.stdout)
+
     def test_gate_reports_success_in_supported_encodings(self):
         target = self.directory / "valid-λ→.xlsx"
         shutil.copyfile(WORKBOOK, target)

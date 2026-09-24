@@ -14,6 +14,7 @@ import json
 import re
 import sys
 import zipfile
+from collections import Counter
 from pathlib import Path
 from typing import TextIO, TypedDict, cast
 
@@ -103,6 +104,16 @@ def check(workbook: Path, src: Path) -> list[str]:
 
     if store["schema"] != SCHEMA:
         fail(failures, f"AFE schema is {store['schema']!r}")
+
+    # The lookups below keep one record per path or name, so a stale duplicate would
+    # never be compared. Reject duplicates before collapsing.
+    for label, values in (
+        ("file path", [item["path"] for item in store["files"]]),
+        ("projectNames entry", store["projectNames"]),
+    ):
+        for value, count in sorted(Counter(values).items()):
+            if count > 1:
+                fail(failures, f"AFE {label} {value} appears {count} times")
 
     files = {item["path"]: item["text"] for item in store["files"]}
     for module in MODULES:
