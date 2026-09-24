@@ -175,9 +175,16 @@ def evaluate() -> dict[str, Any]:
         out = Path(tmp) / "out.json"
         cases.write_text(json.dumps([{"id": c["id"], "formula": c["formula"]} for c in CASES],
                                     ensure_ascii=False), encoding="utf-8")
-        subprocess.run(["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
-                        str(ROOT / "tools" / "excel_eval_formulas.ps1"), "-Cases", str(cases),
-                        "-Out", str(out)], check=True, timeout=600)
+        try:
+            subprocess.run(["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass",
+                            "-File", str(ROOT / "tools" / "excel_eval_formulas.ps1"),
+                            "-Cases", str(cases), "-Out", str(out)], check=True, timeout=600)
+        except subprocess.TimeoutExpired:
+            # Killing PowerShell skips its finally block, so the automation Excel it started
+            # can outlive it. It is the EXCEL.EXE whose command line carries /automation.
+            raise SystemExit("FAIL: the Excel evaluation did not finish within 600s. Check "
+                             "for a modal dialog, then close the hidden EXCEL.EXE started "
+                             "with /automation before retrying.") from None
         result: dict[str, Any] = json.loads(out.read_text(encoding="utf-8"))
         return result
 

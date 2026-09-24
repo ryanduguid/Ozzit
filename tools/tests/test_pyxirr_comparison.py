@@ -8,6 +8,7 @@ and that the table in docs/pyxirr-comparison.md is the one that record renders.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import sys
@@ -33,6 +34,10 @@ class PyxirrComparisonTests(unittest.TestCase):
     def test_record_identifies_what_was_compared(self) -> None:
         self.assertRegex(self.evidence["workbook_sha256"], r"^[0-9a-f]{64}$")
         self.assertRegex(self.evidence["commit"], r"^[0-9a-f]{40}$")
+        current = hashlib.sha256((ROOT / self.evidence["workbook"]).read_bytes()).hexdigest()
+        self.assertEqual(self.evidence["workbook_sha256"], current,
+                         "the workbook changed since the recorded comparison; rerun "
+                         "tools/pyxirr_comparison.py in desktop Excel")
         self.assertEqual(self.evidence["pyxirr"], comparison.PYXIRR)
         self.assertTrue(self.evidence["excel"])
 
