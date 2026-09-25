@@ -122,6 +122,26 @@ class NativeEvidenceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "duplicate"):
             evidence.verify(self.root)
 
+    def test_the_retained_two_root_exception_cannot_be_relabelled_as_agreement(self):
+        trial = evidence.read_record(self.root / evidence.COMPARISON)
+        trial["cases"][2].update(agrees=True, ozzit=0.1, pyxirr=0.1,
+                                  max_abs_diff=0, tolerance=evidence.comparison.MONEY_TOLERANCE,
+                                  note=None)
+        self.write(evidence.COMPARISON, trial)
+        with self.assertRaises(ValueError):
+            evidence.verify(self.root)
+
+    def test_doubled_installation_values_must_still_match_the_fixture(self):
+        install = evidence.read_record(self.root / evidence.INSTALLATION)
+        for index in (0, 1):
+            changed = copy.deepcopy(install)
+            for key in ("reopened", "changed_input"):
+                grid = changed["cases"][index][key]
+                grid["values"] = [value * 3 for value in grid["values"]]
+            self.write(evidence.INSTALLATION, changed)
+            with self.subTest(installation=index), self.assertRaises(ValueError):
+                evidence.verify(self.root)
+
 
 if __name__ == "__main__":
     unittest.main()

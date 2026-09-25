@@ -62,6 +62,22 @@ def check_grid(grid: dict[str, Any]) -> None:
             and all(finite(value) for value in values), "invalid installation spill values")
 
 
+def installation_values(case_id: str) -> list[float]:
+    """Recompute the two fixed installation fixtures in row-major order."""
+    if case_id == "rolling-sum":
+        return [1, 3, 5, 7]
+    balance, rate, periods = 1000.0, 0.06 / 12, 4
+    payment = balance * rate / (1 - (1 + rate) ** -periods)
+    opening, interest, closing, principal = [], [], [], []
+    for _ in range(periods):
+        opening.append(balance)
+        interest.append(balance * rate)
+        principal.append(payment - interest[-1])
+        balance -= principal[-1]
+        closing.append(balance)
+    return [1000, 0, 0, 0] + opening + interest + [-payment] * periods + closing + principal
+
+
 def verify(root: Path = ROOT, *, workbook: Path | None = None,
            destination: Path | None = None) -> list[str]:
     trial = read_record(root / COMPARISON)
@@ -90,21 +106,22 @@ def verify(root: Path = ROOT, *, workbook: Path | None = None,
                 "invalid comparison value count")
         require(type(case["agrees"]) is bool, "comparison agreement must be boolean")
         tolerance = comparison.RATE_TOLERANCE if defined["kind"] == "rate" else comparison.MONEY_TOLERANCE
-        if case["agrees"]:
-            require(finite(case["max_abs_diff"]) and 0 <= case["max_abs_diff"] <= tolerance
+        if defined["id"] == "irr-two-roots":
+            require(case["agrees"] is False and case["ozzit"] == "#NUM!"
+                    and finite(case["pyxirr"]) and finite(case["pyxirr_npv"])
+                    and abs(case["pyxirr_npv"]) <= comparison.MONEY_TOLERANCE
+                    and case["max_abs_diff"] is None
+                    and case["note"] == defined["expected_difference"],
+                    "comparison has an unsupported difference")
+        else:
+            require(case["agrees"] and finite(case["max_abs_diff"])
+                    and 0 <= case["max_abs_diff"] <= tolerance
                     and case["tolerance"] == tolerance and case["note"] is None,
                     "comparison difference exceeds its declared tolerance")
             if case["values"] == 1:
                 require(finite(case["ozzit"]) and finite(case["pyxirr"]), "non-numeric comparison result")
                 require(abs(abs(case["ozzit"] - case["pyxirr"]) - case["max_abs_diff"]) <= 1e-15,
                         "comparison difference contradicts its results")
-        else:
-            require(defined["id"] == "irr-two-roots" and case["ozzit"] == "#NUM!"
-                    and finite(case["pyxirr"]) and finite(case["pyxirr_npv"])
-                    and abs(case["pyxirr_npv"]) <= comparison.MONEY_TOLERANCE
-                    and case["max_abs_diff"] is None
-                    and case["note"] == defined["expected_difference"],
-                    "comparison has an unsupported difference")
 
     require(install["passed"] is True and install["source_unchanged"] is True
             and type(install["external_links"]) is int and install["external_links"] == 0,
@@ -126,10 +143,11 @@ def verify(root: Path = ROOT, *, workbook: Path | None = None,
         check_grid(after)
         require((before["rows"], before["columns"]) == (after["rows"], after["columns"])
                 == (rows, columns), "installation spill shape changed")
-        require(any(value != 0 for value in before["values"])
-                and all(abs(changed - 2 * original) <= comparison.MONEY_TOLERANCE
-                        for original, changed in zip(before["values"], after["values"])),
-                "installation changed-input values contradict the doubled inputs")
+        expected = installation_values(case["id"])
+        for grid, scale in ((before, 1), (after, 2)):
+            require(all(abs(value - scale * target) <= comparison.MONEY_TOLERANCE
+                        for value, target in zip(grid["values"], expected, strict=True)),
+                    "installation values contradict the fixture inputs")
 
     messages = ["Retained v3.4.2 evidence: 8 comparison cases and 2 installation cases checked; runners match."]
     current = sha256(root / "ozzit.xlsx")
