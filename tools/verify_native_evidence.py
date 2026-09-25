@@ -109,7 +109,7 @@ def verify(root: Path = ROOT, *, workbook: Path | None = None,
         if defined["id"] == "irr-two-roots":
             require(case["agrees"] is False and case["ozzit"] == "#NUM!"
                     and finite(case["pyxirr"]) and finite(case["pyxirr_npv"])
-                    and abs(case["pyxirr_npv"]) <= comparison.MONEY_TOLERANCE
+                    and 0 <= case["pyxirr_npv"] <= comparison.MONEY_TOLERANCE
                     and case["max_abs_diff"] is None
                     and case["note"] == defined["expected_difference"],
                     "comparison has an unsupported difference")
@@ -119,7 +119,7 @@ def verify(root: Path = ROOT, *, workbook: Path | None = None,
             npv = abs(math.fsum(amount / (1 + rate) ** ((when - first_date).days / 365)
                                 for amount, when in zip(defined["values"], defined["dates"], strict=True)))
             require(npv <= comparison.MONEY_TOLERANCE
-                    and abs(npv - abs(case["pyxirr_npv"])) <= comparison.MONEY_TOLERANCE,
+                    and abs(npv - case["pyxirr_npv"]) <= comparison.MONEY_TOLERANCE,
                     "reference rate does not reproduce the recorded near-zero NPV")
         else:
             require(case["agrees"] and finite(case["max_abs_diff"])

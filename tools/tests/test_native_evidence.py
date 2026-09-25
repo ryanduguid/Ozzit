@@ -151,6 +151,13 @@ class NativeEvidenceTests(unittest.TestCase):
             with self.subTest(rate=rate), self.assertRaises(ValueError):
                 evidence.verify(self.root)
 
+    def test_the_recorded_npv_must_be_a_non_negative_magnitude(self):
+        trial = evidence.read_record(self.root / evidence.COMPARISON)
+        trial["cases"][2]["pyxirr_npv"] *= -1
+        self.write(evidence.COMPARISON, trial)
+        with self.assertRaises(ValueError):
+            evidence.verify(self.root)
+
 
 if __name__ == "__main__":
     unittest.main()
