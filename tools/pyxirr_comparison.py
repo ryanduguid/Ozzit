@@ -7,8 +7,9 @@ Run from the repository root on a Windows host with desktop Excel and no Excel o
 Excel evaluates each case's formula against ozzit.xlsx through excel_eval_formulas.ps1,
 which opens the workbook read-only and checks its hash is unchanged. pyxirr computes the
 same quantity from the same inputs. The script writes docs/pyxirr-comparison.json and the
-results table in docs/pyxirr-comparison.md. CI does not run Excel or pyxirr: the unit test
-checks that the recorded evidence covers exactly these cases and that the table matches it.
+results table in docs/pyxirr-comparison.md. To check a downloaded release, pass --workbook,
+--expected-sha256 and a fresh --output JSON path; this preserves the tracked evidence.
+CI does not run Excel or pyxirr: the unit test checks the recorded cases and table.
 
 A second implementation is not the truth. A disagreement is recorded with its cause, not
 tuned away; a case whose two answers are both valid (two roots of one cash flow) is shown as
@@ -17,6 +18,8 @@ a convention difference and checked by the net present value at each answer inst
 
 from __future__ import annotations
 
+import argparse
+import hashlib
 import importlib
 import importlib.metadata
 import json
@@ -184,7 +187,7 @@ def stop_recorded_excel(pid_file: Path) -> None:
                    timeout=60)
 
 
-def evaluate() -> dict[str, Any]:
+def evaluate(workbook: Path) -> dict[str, Any]:
     with tempfile.TemporaryDirectory() as tmp:
         cases = Path(tmp) / "cases.json"
         out = Path(tmp) / "out.json"
@@ -193,7 +196,8 @@ def evaluate() -> dict[str, Any]:
         try:
             subprocess.run(["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass",
                             "-File", str(ROOT / "tools" / "excel_eval_formulas.ps1"),
-                            "-Cases", str(cases), "-Out", str(out)], check=True, timeout=600)
+                            "-Path", str(workbook), "-Cases", str(cases), "-Out", str(out)],
+                           check=True, timeout=600)
         except subprocess.TimeoutExpired:
             # Killing PowerShell skips its finally block, so the Excel it started outlives
             # it. Stop that process only: the PID it recorded, still an /automation instance.
@@ -216,9 +220,10 @@ def compare(excel: dict[str, Any], px: Any) -> list[dict[str, Any]]:
             # No number to compare. For a roots case, still prove pyxirr's answer is a root.
             npv = (abs(float(px.xnpv(reference[0], case["dates"], case["values"])))
                    if case["kind"] == "roots" else None)
+            expected = error == "#NUM!" and npv is not None and npv <= MONEY_TOLERANCE
             record.update(values=1, ozzit=error, pyxirr=reference[0], max_abs_diff=None,
                           pyxirr_npv=npv, measure="rate", agrees=False,
-                          note=case.get("expected_difference"))
+                          note=case.get("expected_difference") if expected else None)
             records.append(record)
             continue
         ozzit = excel_values(case, grid)
@@ -240,7 +245,7 @@ def compare(excel: dict[str, Any], px: Any) -> list[dict[str, Any]]:
                           max_abs_diff=diff, tolerance=tolerance,
                           measure="rate" if case["kind"] == "rate" else "amount")
         record["agrees"] = record["max_abs_diff"] <= record["tolerance"]
-        record["note"] = None if record["agrees"] else case.get("expected_difference")
+        record["note"] = None
         records.append(record)
     return records
 
@@ -271,22 +276,53 @@ def write_table(evidence: dict[str, Any]) -> None:
                         encoding="utf-8", newline="\n")
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--workbook", type=Path, help="downloaded workbook to evaluate")
+    parser.add_argument("--output", type=Path, help="new JSON evidence file; never overwritten")
+    parser.add_argument("--expected-sha256", help="expected SHA-256 of the workbook bytes")
+    args = parser.parse_args(argv)
+    if args.workbook and (not args.output or not args.expected_sha256):
+        parser.error("--workbook requires --output and --expected-sha256")
+    workbook = (args.workbook or ROOT / "ozzit.xlsx").resolve()
+    if not workbook.is_file():
+        parser.error(f"workbook not found: {workbook}")
+    output = args.output.resolve() if args.output else EVIDENCE
+    if args.output and (output.exists() or output in (EVIDENCE, DOCUMENT)):
+        parser.error("--output must be a new file outside the tracked comparison evidence")
+    if not output.parent.is_dir():
+        parser.error("the output directory must already exist")
+    before = hashlib.sha256(workbook.read_bytes()).hexdigest()
+    expected = args.expected_sha256.lower() if args.expected_sha256 else None
+    if expected is not None and expected != before:
+        parser.error(f"workbook SHA-256 mismatch: observed {before}")
+
     px = importlib.import_module("pyxirr")
     installed = importlib.metadata.version("pyxirr")
     if installed != PYXIRR:
         print(f"FAIL: pyxirr {installed} installed; this comparison pins {PYXIRR}")
         return 1
-    excel = evaluate()
+    excel = evaluate(workbook)
+    after = hashlib.sha256(workbook.read_bytes()).hexdigest()
+    if after != before or excel["workbook_sha256"] != before:
+        raise SystemExit("FAIL: the evaluated workbook hash does not match the input bytes")
     commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True,
                             text=True, check=True).stdout.strip()
     evidence = {"recorded": date.today().isoformat(), "excel": excel["excel"],
-                "workbook": "ozzit.xlsx", "commit": commit,
+                "workbook": workbook.name,
                 "workbook_sha256": excel["workbook_sha256"], "pyxirr": PYXIRR,
                 "cases": compare(excel, px)}
-    EVIDENCE.write_text(json.dumps(evidence, indent=2, ensure_ascii=False) + "\n",
-                        encoding="utf-8", newline="\n")
-    write_table(evidence)
+    if args.output:
+        evidence.update(expected_sha256=expected, runner_commit=commit, runner_files={
+            relative: hashlib.sha256((ROOT / relative).read_bytes()).hexdigest()
+            for relative in ("tools/pyxirr_comparison.py", "tools/excel_eval_formulas.ps1")
+        })
+    else:
+        evidence["commit"] = commit
+    with output.open("x" if args.output else "w", encoding="utf-8", newline="\n") as stream:
+        stream.write(json.dumps(evidence, indent=2, ensure_ascii=False) + "\n")
+    if not args.output:
+        write_table(evidence)
     print(table(evidence))
     # A difference fails the run unless the case documents why it is expected.
     return 0 if all(r["agrees"] or r["note"] for r in evidence["cases"]) else 1

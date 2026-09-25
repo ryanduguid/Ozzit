@@ -9,6 +9,9 @@
 param([string]$Cases, [string]$Out, [string]$Path = "$PSScriptRoot\..\ozzit.xlsx")
 
 $ErrorActionPreference = 'Stop'
+# A Python process launched by PowerShell 7 can inherit its module path. Load the
+# module belonging to this PowerShell host so Get-FileHash remains available in 5.1.
+Import-Module "$PSHOME\Modules\Microsoft.PowerShell.Utility\Microsoft.PowerShell.Utility.psd1" -ErrorAction Stop
 $Path = (Resolve-Path -LiteralPath $Path).Path
 if (@(Get-Process EXCEL -ErrorAction SilentlyContinue).Count) {
     throw 'Excel is already running. Close it before running this gate.'

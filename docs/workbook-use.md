@@ -35,6 +35,47 @@ The workbook opens showing the numbers its own formulas produce, so nothing has 
 
 Functions with a data-validation companion (named with a `DV` suffix, such as `oz.AmortiseλDV`) diagnose argument problems when the parent function returns something unexpected.
 
+### Check installation in a fresh workbook
+
+The desktop Excel check below copies existing result cells for `oz.RollingSumλ`
+and `oz.Amortiseλ` into a new workbook. It replaces their example references
+with self-contained inputs, closes the source, checks the required names and
+helpers, then saves and reopens the destination. A second set of inputs checks
+that the reopened formulas recalculate. No external workbook link may remain.
+
+Close Excel first. Use the SHA-256 of the exact workbook being tested and an
+unused output directory outside this checkout, with an existing parent:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\excel_install_selftest.ps1 -Path C:\downloads\ozzit.xlsx -ExpectedSha256 <verified-sha256> -OutDirectory C:\checks\ozzit-install
+```
+
+The source opens read-only and must retain its original bytes. The output
+contains `installed.xlsx`, `evidence.json` and the automation process ID.
+The saved workbook uses the initial test inputs; the changed inputs are tested
+in memory. Existing output directories are refused.
+
+On 25 September 2026, both cases passed for the released v3.4.2 workbook
+(`0306793a7e473ce70e78149fea1e107fc0f714d61ab50960c16f6fd528878f6f`)
+in Windows desktop Excel 16.0 build 20430. The [installation record](install-v3.4.2.json)
+retains the runner and workbook hashes, names, spill shapes and values.
+This checks the copy-cell route and
+those examples only. It does not test Excel for Mac, Excel for the web, the AFE
+import route or every function. Numerical agreement with another engine is
+recorded separately in the [pyxirr comparison](pyxirr-comparison.md).
+
+The normal verification sequence runs `python tools/verify_native_evidence.py`.
+It checks the retained v3.4.2 records, runner byte hashes, case inventories,
+reported differences and installation values. It fails on runner drift or
+contradictory evidence. If the checkout workbook differs from v3.4.2, it labels
+the records as historical; they do not validate the changed workbook.
+
+To bind the records to locally retained files, add `--workbook` with the exact
+release workbook and `--destination` with the installed workbook. Supplied
+files must match their recorded hashes. CI has neither file and verifies only
+the retained records and runners. This check does not run Excel, recalculate
+the workbook or replace the native gates required for a workbook change.
+
 ## Modern Excel
 
 Excel 365 has gained functions since the earlier workbook of July 2024. Several helpers point to native options in their inline help's `SEE ALSO` line. Native functions can have different inputs and behaviour, so compare their contracts before replacing a helper. The table also includes a newer Beta preview:
