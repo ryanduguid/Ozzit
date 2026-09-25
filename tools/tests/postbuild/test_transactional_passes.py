@@ -11,6 +11,7 @@ import shutil
 import sys
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 from unittest import mock
 
@@ -57,6 +58,9 @@ class HelpLinkRecoveryTests(unittest.TestCase):
         self.src = self.directory / "src"
         shutil.copytree(SRC, self.src)
         revert_links(self.workbook, self.src)
+        # Rollback must preserve archive bytes, even when they are not canonical.
+        with zipfile.ZipFile(self.workbook, "a") as archive:
+            archive.comment = b"original archive"
         self.ratios_path = self.src / "Ratios.txt"
 
     def tearDown(self):
@@ -124,6 +128,8 @@ class StripRecoveryTests(unittest.TestCase):
         self.directory = Path(tempfile.mkdtemp(prefix="ozzit-strip-"))
         self.workbook = self.directory / "ozzit.xlsx"
         shutil.copy2(WORKBOOK, self.workbook)
+        with zipfile.ZipFile(self.workbook, "a") as archive:
+            archive.comment = b"original archive"
         self.src = self.directory / "src"
         shutil.copytree(SRC, self.src)
         for module in MODULES:
@@ -221,6 +227,16 @@ class StripRecoveryTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "Essentials.txt: expected 2"):
                 strip.apply(self.workbook, self.src)
         self.assertEqual(self._before(), before)
+
+    def test_unreadable_workbook_leaves_every_module_untouched(self):
+        before = self._before()
+        before_workbook = self.workbook.read_bytes()
+        with mock.patch.dict(strip.EXPECTED_BLOCKS, self.expected):
+            with mock.patch.object(strip, "read_parts", side_effect=ValueError("invalid archive")):
+                with self.assertRaisesRegex(ValueError, "invalid archive"):
+                    strip.apply(self.workbook, self.src)
+        self.assertEqual(self._before(), before)
+        self.assertEqual(self.workbook.read_bytes(), before_workbook)
 
 
 if __name__ == "__main__":

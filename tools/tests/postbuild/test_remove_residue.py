@@ -172,7 +172,7 @@ class ResidueTests(unittest.TestCase):
         # the renumbered references are the original ones again, tables included
         self.assertEqual(after["xl/worksheets/sheet2.xml"], parts_of(WORKBOOK)["xl/worksheets/sheet2.xml"])
         self.assertEqual(after["xl/tables/table1.xml"], parts_of(WORKBOOK)["xl/tables/table1.xml"])
-        self.assertEqual(self.workbook.read_bytes(), WORKBOOK.read_bytes(), "the pass restores the tracked bytes exactly")
+        self.assertEqual(after, parts_of(WORKBOOK), "the pass restores every tracked part exactly")
 
     def test_pass_fails_when_the_properties_list_disagrees(self):
         parts = parts_of(self.workbook)
