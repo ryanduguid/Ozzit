@@ -36,6 +36,7 @@ python tools/verify_previous_names.py functions.csv
 python tools/verify_index.py ozzit.xlsx src functions.csv
 python tools/verify_cover.py ozzit.xlsx functions.csv CHANGELOG.md
 python tools/verify_afe.py ozzit.xlsx src
+python tools/verify_native_evidence.py
 python -m unittest discover -s tools/tests -v
 ```
 

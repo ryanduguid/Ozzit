@@ -67,5 +67,7 @@ jobs:
         run: python tools/verify_cover.py ozzit.xlsx functions.csv CHANGELOG.md
       - name: Check the Advanced Formula Environment store matches src/
         run: python tools/verify_afe.py ozzit.xlsx src
+      - name: Check retained native evidence and its provenance
+        run: python tools/verify_native_evidence.py
       - name: Run tool regression tests
         run: python -m unittest discover -s tools/tests -v

@@ -33,6 +33,30 @@ CI has neither Excel nor pyxirr. `tools/tests/test_pyxirr_comparison.py` checks 
 recorded evidence covers exactly the cases in the script, with the same formulas, and that
 the table below matches it.
 
+### Check a downloaded release
+
+Keep the downloaded workbook outside the checkout and obtain its expected SHA-256
+from the release's `SHA256SUMS` or asset digest. Close Excel before running this command.
+Replace the example paths and hash with the release you are checking:
+
+```powershell
+uv run --no-project --with pyxirr==0.10.8 python tools/pyxirr_comparison.py --workbook ../release/ozzit.xlsx --expected-sha256 "64-character-release-sha256" --output ../release/comparison.json
+```
+
+The output directory must exist and the JSON file must be new. An explicit workbook
+requires both the expected hash and a separate output. A wrong hash fails before Excel
+starts. The evaluator opens the workbook read-only, checks the same bytes before and
+after evaluation, and leaves the tracked comparison JSON and table unchanged.
+
+The separate record identifies the workbook bytes, Excel build, pyxirr version, runner
+commit and hashes of both runner files. The runner commit identifies the verification
+code, not the downloaded workbook's source commit. Retain the release URL and its
+checksum evidence alongside the record. This comparison does not publish or certify a release.
+
+Only the two-root case's `#NUM!` result is an expected difference, and only when pyxirr's
+rate has a net present value within the amount tolerance. Other Excel errors and rates
+that fail the root check fail the run.
+
 ### What each case tests
 
 - **IRR, investment in period 3.** `oz.IRRλ` drops zero values before calling XIRR, so a
@@ -78,9 +102,21 @@ largest across all of them.
 
 ### Limits
 
-- The comparison covers these fabricated cases only, on the tracked `ozzit.xlsx` at the
-  commit and SHA-256 in the JSON record. The released v3.4.2 file is a different artefact
-  with its own hash, so this is not a check of the release download. A later workbook
+The separate [v3.4.2 release comparison](pyxirr-release-v3.4.2.json) was run on
+25 September 2026 in Excel 16.0 build 20430 with pyxirr 0.10.8. The
+[released workbook](https://github.com/ryanduguid/Ozzit/releases/tag/v3.4.2) was
+439,097 bytes and matched GitHub's published asset digest:
+`0306793a7e473ce70e78149fea1e107fc0f714d61ab50960c16f6fd528878f6f`.
+All eight cases passed the comparison gate: seven agreed within tolerance, and
+the two-root case retained the documented `#NUM!` difference with a verified
+pyxirr root. The file hash was unchanged afterwards. The record includes hashes
+of the runner's working files; those changes were not committed at run time.
+This verifies the downloaded file for these cases. It is not a fresh-workbook
+installation test or a rerun of every release gate.
+
+- The original table and `docs/pyxirr-comparison.json` cover the tracked `ozzit.xlsx`
+  at the commit and SHA-256 in that record. The separate v3.4.2 record above covers
+  the release download. Both cover only these fabricated cases; a later workbook
   needs a fresh run.
 - pyxirr is a second implementation, not an authority. Where the two differ the record
   says so; neither is adjusted to match the other.
