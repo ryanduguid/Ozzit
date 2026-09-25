@@ -33,14 +33,27 @@ Synthetic example. Review aid, not professional advice; the reviewer decides the
 ```
 
 **Output:** the cell displays $100.00 GST under currency formatting, reproduced in
-Microsoft 365. The function returns the unrounded binary-float result,
+Excel 16.0 build 20430 against the exact v3.4.2 release on 25 September 2026.
+[Inputs, raw results and unchanged workbook hash](docs/reference-examples-v3.4.2.json).
+The function returns the unrounded binary-float result,
 99.999999999999986, so a caller who needs cent-exact totals wraps it in
 `ROUND(...,2)`. The hand calculation is $1,100 / 11.
 
 **Human decision:** Does the evidence establish that the whole supply is taxable?
 
+[Browse ten worked formulas](https://duguid.com.au/tools/ozzit/#functions),
+including arguments, expected results and limits for v3.4.2.
+
+<details>
+<summary>Historical v3.2.0 screenshot</summary>
+
 ![Synthetic GST example in Excel: $1,100 input and oz.GSTExtractλ(1100) returning $100.00](assets/ozzit-gst-extract-synthetic.png)
 Captured in Microsoft 365 using Ozzit v3.2.0, Australian tax!A19:B19; the reviewer still decides whether the supply is taxable.
+
+This earlier image is retained as historical evidence. The current numerical
+check above used a different workbook file.
+
+</details>
 
 ## Start with three tasks
 
