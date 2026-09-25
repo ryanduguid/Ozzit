@@ -1,0 +1,127 @@
+{
+  "excel": "16.0 build 20430",
+  "workbook_sha256": "0306793a7e473ce70e78149fea1e107fc0f714d61ab50960c16f6fd528878f6f",
+  "results": {
+    "gstextract": [
+      [
+        99.99999999999999
+      ]
+    ],
+    "gstadd": [
+      [
+        1100
+      ]
+    ],
+    "financialyear": [
+      [
+        "FY2027"
+      ]
+    ],
+    "primecost": [
+      [
+        200,
+        200,
+        200,
+        200,
+        200
+      ]
+    ],
+    "diminishingvalue": [
+      [
+        400,
+        240,
+        144,
+        86.4,
+        129.6
+      ]
+    ],
+    "amortise": [
+      [
+        100000
+      ],
+      [
+        100000
+      ],
+      [
+        416.6666666666667
+      ],
+      [
+        -1887.1233644010936
+      ],
+      [
+        98529.54330226558
+      ],
+      [
+        1470.4566977344268
+      ]
+    ],
+    "leaseliability": [
+      [
+        272.3248029370478
+      ]
+    ],
+    "periodrate": [
+      [
+        0.0040741237836483535
+      ]
+    ],
+    "daycountrate": [
+      [
+        0.0062,
+        0.0062,
+        0.005999999999999999
+      ]
+    ],
+    "irr": [
+      [
+        0.09999999403953552
+      ]
+    ]
+  },
+  "evaluated_on": "2026-09-25",
+  "release": "v3.4.2",
+  "workbook_unchanged": true,
+  "cases": [
+    {
+      "id": "gstextract",
+      "formula": "=oz.GSTExtractλ(1100)"
+    },
+    {
+      "id": "gstadd",
+      "formula": "=oz.GSTAddλ(1000)"
+    },
+    {
+      "id": "financialyear",
+      "formula": "=oz.FinancialYearλ(DATE(2026,8,15))"
+    },
+    {
+      "id": "primecost",
+      "formula": "=oz.PrimeCostλ(1000,5)"
+    },
+    {
+      "id": "diminishingvalue",
+      "formula": "=oz.DiminishingValueλ(1000,5)"
+    },
+    {
+      "id": "amortise",
+      "formula": "=TAKE(oz.Amortiseλ(100000,0.05,60,DATE(2026,7,1)),,1)"
+    },
+    {
+      "id": "leaseliability",
+      "formula": "=oz.LeaseLiabilityλ({100,100,100},0.05)"
+    },
+    {
+      "id": "periodrate",
+      "formula": "=oz.PeriodRateλ(0.05,12)"
+    },
+    {
+      "id": "daycountrate",
+      "formula": "=oz.DayCountRateλ(EDATE(DATE(2026,7,1),{0,1,2}),0.073)"
+    },
+    {
+      "id": "irr",
+      "formula": "=oz.IRRλ({-1000,1100},HSTACK(DATE(2026,7,1),DATE(2027,7,1)))"
+    }
+  ],
+  "method": "Ozzit tools/excel_eval_formulas.ps1; read-only workbook, Formula2 on an in-memory scratch sheet, close without saving, SHA-256 checked before and after."
+}
