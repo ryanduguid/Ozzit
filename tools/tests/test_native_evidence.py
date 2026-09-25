@@ -142,6 +142,15 @@ class NativeEvidenceTests(unittest.TestCase):
             with self.subTest(installation=index), self.assertRaises(ValueError):
                 evidence.verify(self.root)
 
+    def test_the_recorded_reference_rate_must_produce_the_reported_npv(self):
+        trial = evidence.read_record(self.root / evidence.COMPARISON)
+        for rate in (0.0, 0.5, -1.0, -2.0):
+            changed = copy.deepcopy(trial)
+            changed["cases"][2]["pyxirr"] = rate
+            self.write(evidence.COMPARISON, changed)
+            with self.subTest(rate=rate), self.assertRaises(ValueError):
+                evidence.verify(self.root)
+
 
 if __name__ == "__main__":
     unittest.main()

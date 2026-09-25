@@ -113,6 +113,14 @@ def verify(root: Path = ROOT, *, workbook: Path | None = None,
                     and case["max_abs_diff"] is None
                     and case["note"] == defined["expected_difference"],
                     "comparison has an unsupported difference")
+            rate = case["pyxirr"]
+            require(rate > -1, "reference rate is outside the real-valued XNPV domain")
+            first_date = defined["dates"][0]
+            npv = abs(math.fsum(amount / (1 + rate) ** ((when - first_date).days / 365)
+                                for amount, when in zip(defined["values"], defined["dates"], strict=True)))
+            require(npv <= comparison.MONEY_TOLERANCE
+                    and abs(npv - abs(case["pyxirr_npv"])) <= comparison.MONEY_TOLERANCE,
+                    "reference rate does not reproduce the recorded near-zero NPV")
         else:
             require(case["agrees"] and finite(case["max_abs_diff"])
                     and 0 <= case["max_abs_diff"] <= tolerance
