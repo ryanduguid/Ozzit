@@ -33,7 +33,7 @@ import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from sanitise_workbook import read_text, write_deterministic, write_text
+from sanitise_workbook import read_text, replace_atomically, write_deterministic, write_text
 from sync_afe_store import sync
 from workbook import read_parts
 
@@ -110,6 +110,9 @@ def apply(workbook: Path, src: Path) -> list[str]:
             )
         stripped.append((module, before, after, blocks))
 
+    original_bytes = workbook.read_bytes()
+    parts = read_parts(workbook)
+    core = parts["docProps/core.xml"]
     changes: list[str] = []
     try:
         for module, _before, after, blocks in stripped:
@@ -126,9 +129,6 @@ def apply(workbook: Path, src: Path) -> list[str]:
     # sits in its own recovery block: a failure there must also restore the
     # sources, or the sources would stay stripped while one or both workbook
     # stores stayed stale.
-    original_parts = read_parts(workbook)
-    parts = dict(original_parts)
-    core = parts["docProps/core.xml"]
     touched = False
     try:
         if core.count(OLD_CREATOR) == 1:
@@ -147,7 +147,7 @@ def apply(workbook: Path, src: Path) -> list[str]:
         # with stale sources.
         try:
             if touched:
-                write_deterministic(workbook, original_parts)
+                replace_atomically(workbook, original_bytes)
         finally:
             for module, before, _after, _blocks in stripped:
                 write_text(src / f"{module}.txt", before)

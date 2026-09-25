@@ -23,7 +23,7 @@ import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from sanitise_workbook import read_text, write_deterministic, write_text
+from sanitise_workbook import read_text, replace_atomically, write_deterministic, write_text
 from workbook import BOOK, apply_swaps, read_book, read_parts
 
 # (context prefix, old URL, new URL). The prefix is the row before WEBPAGE plus
@@ -89,6 +89,7 @@ def run(workbook: Path, src_dir: Path) -> list[str]:
     # gates out of sync.
     new_book = apply_swaps(book, _forms("workbook"))
     new_ratios = apply_swaps(ratios, _forms("src"))
+    original_bytes = workbook.read_bytes()
     try:
         if new_book != book:
             parts[BOOK] = new_book.encode("utf-8")
@@ -102,9 +103,8 @@ def run(workbook: Path, src_dir: Path) -> list[str]:
         # depend on the source write succeeding. The source restore is
         # belt-and-braces, because write_text is atomic and a failed write
         # left the original bytes in place.
-        parts[BOOK] = book.encode("utf-8")
         try:
-            write_deterministic(workbook, parts)
+            replace_atomically(workbook, original_bytes)
         finally:
             write_text(ratios_path, ratios)
         raise

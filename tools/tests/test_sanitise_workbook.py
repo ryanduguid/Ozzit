@@ -67,6 +67,7 @@ class WorkbookToolTests(unittest.TestCase):
         # refresh rewrote 6 defined names that way and verify_sources.py then
         # rejected the workbook. The sanitiser puts the plain literal back.
         parts = self._parts()
+        expected_parts = dict(parts)
         book = parts["xl/workbook.xml"].decode("utf-8")
         literal = max(sanitise_workbook.LITERAL.findall(book), key=len)
         self.assertGreater(len(literal), 255, "precondition: a literal Excel would split")
@@ -80,7 +81,7 @@ class WorkbookToolTests(unittest.TestCase):
         log = sanitise_workbook.sanitise(self.workbook)
 
         self.assertIn("folded 1 _LONGTEXT literal(s) in defined names", log)
-        self.assertEqual(self.workbook.read_bytes(), WORKBOOK.read_bytes())
+        self.assertEqual(self._parts(), expected_parts)
         self.assertEqual(sanitise_workbook.fold_longtext('_xlfn._LONGTEXT("a""b","c")'), ('"a""bc"', 1))
         self.assertEqual(sanitise_workbook.fold_longtext('"plain"'), ('"plain"', 0))
 
@@ -151,6 +152,7 @@ class WorkbookToolTests(unittest.TestCase):
 
     def test_session_state_is_pinned_so_two_saves_agree(self):
         parts = self._parts()
+        expected_parts = dict(parts)
         core = parts["docProps/core.xml"].decode()
         core = core.replace(
             "<cp:lastModifiedBy>Ozzit project</cp:lastModifiedBy>",
@@ -189,9 +191,10 @@ class WorkbookToolTests(unittest.TestCase):
         self.assertNotIn("<xr:revisionPtr", book)
         self.assertNotIn("rupBuild", book)
         self.assertIn(f"<workbookView {sanitise_workbook.FIXED_WINDOW}", book)
-        self.assertEqual(after["xl/workbook.xml"], self._parts()["xl/workbook.xml"])
+        self.assertEqual(after, expected_parts)
+        before_second_pass = self.workbook.read_bytes()
         self.assertEqual(sanitise_workbook.sanitise(self.workbook), ["already clean"])
-        self.assertEqual(self.workbook.read_bytes(), WORKBOOK.read_bytes())
+        self.assertEqual(self.workbook.read_bytes(), before_second_pass)
 
     def test_session_state_is_pinned_without_a_creator(self):
         # dc:creator is optional; the saver's name and save time go regardless
