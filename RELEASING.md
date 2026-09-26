@@ -33,6 +33,13 @@ builder, the postbuild limits and any future one-off transformation remain
 disclosed in `tools/postbuild/README.md` and `CHANGELOG.md`. Do not broaden a
 reproducibility claim without a complete regenerator and a byte comparison.
 
+A pull request that changes `ozzit.xlsx` realigns `release/workbook-base.json`
+(the SHA-256, byte length, Git blob and last workbook-changing commit) and the
+README digest in a separate commit after the workbook commit. Merge that pull
+request with a merge commit, never a squash: the manifest names the workbook
+commit, and `tools/tests/test_release_bundle.py` fails unless it is the last
+commit on the branch to change the workbook. A squash replaces it. Pull requests that change only documentation may be squashed.
+
 MIT covers the whole repository, `ozzit.xlsx`, `src/` and `functions.csv` included.
 Every source archive must still include `LICENCE`.
 
