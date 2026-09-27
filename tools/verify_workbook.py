@@ -43,11 +43,38 @@ FORBIDDEN_PARTS = (
     "xl/dialogsheets/",
 )
 
+# The one add-in the workbook may carry: the Advanced Formula Environment, whose web
+# extension anchors the module store, in a hidden task pane. The README promises exactly
+# that, and nothing checked it, so a second or different add-in could ship unnoticed.
+AFE_ADDIN_ID = "wa200003696"
+WEB_EXTENSION_RE = re.compile(r"xl/webextensions/webextension\d+\.xml")
+
 failures: list[str] = []
 
 
 def fail(msg: str) -> None:
     failures.append(msg)
+
+
+def check_web_extensions(parts: list[str], xml_parts: Mapping[str, str]) -> None:
+    extensions = [name for name in parts if WEB_EXTENSION_RE.fullmatch(name)]
+    if len(extensions) != 1:
+        fail(f"expected one web extension, the Advanced Formula Environment, found {len(extensions)}")
+    for name in extensions:
+        text = xml_parts.get(name)
+        references = [] if text is None else [
+            element for element in ET.fromstring(text).iter() if element.tag.endswith("}reference")]
+        if not references or any(
+                ref.get("id") != AFE_ADDIN_ID or ref.get("storeType") != "OMEX" for ref in references):
+            fail(f"{name} references an add-in other than the Advanced Formula Environment")
+    panes = xml_parts.get("xl/webextensions/taskpanes.xml")
+    tasks = [] if panes is None else [
+        element for element in ET.fromstring(panes).iter() if element.tag.endswith("}taskpane")]
+    if len(tasks) != 1 or tasks[0].get("visibility") != "0":
+        fail("expected one hidden task pane for the Advanced Formula Environment")
+    for name, text in xml_parts.items():
+        if "containsCustomFunctions" in text:
+            fail(f"containsCustomFunctions declared in {name}")
 
 
 def check_xml_part(name: str, data: bytes) -> str | None:
@@ -90,6 +117,7 @@ def main() -> None:
             fail(f"forbidden workbook part {name}")
 
     xml_parts = load_xml_parts(z)
+    check_web_extensions(parts, xml_parts)
 
     for name in parts:
         if name.endswith((".xml", ".rels")) and name != "customXml/item1.xml":

@@ -52,6 +52,28 @@ class ReviewRegressionTests(unittest.TestCase):
                 self.assertIn('invalid AFE project store', result.stdout)
                 self.assertNotIn('Traceback', result.stderr)
 
+    def test_only_the_hidden_formula_environment_add_in_passes(self):
+        self.assertEqual(self.verify().returncode, 0)
+        extension = self.parts['xl/webextensions/webextension1.xml']
+        panes = self.parts['xl/webextensions/taskpanes.xml']
+        cases = {
+            'a second add-in': ({'xl/webextensions/webextension2.xml': extension}, 'expected one web extension'),
+            'a different add-in': ({'xl/webextensions/webextension1.xml': extension.replace(
+                b'wa200003696', b'wa104379999')}, 'an add-in other than'),
+            'a visible task pane': ({'xl/webextensions/taskpanes.xml': panes.replace(
+                b'visibility="0"', b'visibility="1"')}, 'one hidden task pane'),
+            'custom functions': ({'xl/webextensions/webextension1.xml': extension.replace(
+                b'<we:bindings/>', b'<we:bindings/><we:containsCustomFunctions/>')},
+                'containsCustomFunctions'),
+        }
+        original = dict(self.parts)
+        for label, (changes, message) in cases.items():
+            with self.subTest(label):
+                self.parts = {**original, **changes}
+                result = self.verify()
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(message, result.stdout)
+
     def test_each_sheet_scoped_name_is_checked(self):
         book = self.parts['xl/workbook.xml'].decode()
         names = '<definedName name="fixture" localSheetId="0">(</definedName>'
