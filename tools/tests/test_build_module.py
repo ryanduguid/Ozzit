@@ -75,6 +75,10 @@ class BuildModuleTests(unittest.TestCase):
         self.assertTrue(any(name in f and "does not declare" in f for f in findings), findings)
         self.assertTrue(any("\r" in f or "carriage return" in f
                             for f in check(text.replace("\n", "\r\n", 1), WORKBOOK, INDEX)))
+        # A stray top-level statement that is not a declaration must fail the
+        # check even though the name inventory is untouched.
+        stray = check(text + "BROKEN;\n", WORKBOOK, INDEX)
+        self.assertTrue(any("not a declaration" in f and "BROKEN" in f for f in stray), stray)
 
     def test_cli_check_reports_a_stale_tracked_file(self):
         stale = self.directory / "oz.txt"

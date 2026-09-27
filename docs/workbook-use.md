@@ -38,8 +38,11 @@ The workbook tracked in this repository is the candidate the gates below run aga
    the same single-module way. The workbook is the authority for the `oz.` names.
    `src/` is for reading, diffing, and pasting a single definition into Name
    Manager, where the name is yours to choose. To change a function, edit its
-   definition in `src/`, run `tools/compile_sources.py`, which renders it into the
-   stored form and writes it over the defined name that ships, and rebuild `oz.txt`.
+   definition in `src/` and follow the run order in `tools/postbuild/README.md`:
+   `tools/compile_sources.py` renders it into the stored form and writes it over the
+   defined name that ships, `tools/build_module.py` rebuilds `oz.txt`,
+   `tools/sync_afe_store.py` copies the source into the workbook's AFE store, and
+   `tools/sanitise_workbook.py` runs last.
 
    Imported names can collide with names a workbook already holds, and a module
    import brings every function at once. Try the import in a blank workbook first,

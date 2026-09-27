@@ -11,9 +11,9 @@ source verbatim, the same bytes verify_afe.py holds the AFE store to, so the
 join is bound to the workbook commit it ships with. --check reports whether
 the tracked output is current without writing.
 
-The checks prove that the join declares each shipped name exactly once and
-nothing else, keeps case-insensitively distinct names, and is LF-only with a
-final newline. They do not exercise the import route; RELEASING.md and
+The checks prove that every statement in the join is a declaration, that the
+join declares each shipped name exactly once and nothing else, keeps
+case-insensitively distinct names, and is LF-only with a final newline. They do not exercise the import route; RELEASING.md and
 docs/workbook-use.md say what native evidence that needs.
 """
 
@@ -71,6 +71,12 @@ def check(text: str, workbook: Path, index: Path) -> list[str]:
     if DOUBLE_PREFIX.search(text):
         failures.append(f"module text contains a doubled {NAMESPACE}. prefix")
     declared = declared_names(text)
+    # A statement that is not a declaration would be copied into the published
+    # module and fail on import; verify_sources.py rejects it too, but this
+    # tool must not report success on its own for text it cannot vouch for.
+    for statement in statements(text):
+        if statement.strip() and not NAME.match(statement):
+            failures.append(f"statement is not a declaration: {statement.strip()[:60]!r}")
     folded: dict[str, str] = {}
     for name in declared:
         earlier = folded.setdefault(name.casefold(), name)
