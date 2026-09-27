@@ -53,7 +53,14 @@ from xml.sax.saxutils import escape as xml_escape
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from sanitise_workbook import read_text, write_deterministic  # noqa: E402
 from verify_index import index_fields  # noqa: E402
-from verify_sources import NAME, canonical, qualify, read_string, statements  # noqa: E402
+from verify_sources import (  # noqa: E402
+    NAME,
+    canonical,
+    qualify,
+    read_string,
+    split_literals,
+    statements,
+)
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -142,26 +149,6 @@ def header_comments(text: str) -> dict[str, str]:
 # --------------------------------------------------------------------------- #
 # Reading the typed form
 # --------------------------------------------------------------------------- #
-
-
-def split_literals(text: str) -> list[tuple[bool, str]]:
-    """Alternating (is_string, chunk) pairs, honouring the "" escape."""
-    out: list[tuple[bool, str]] = []
-    buf: list[str] = []
-    i, n = 0, len(text)
-    while i < n:
-        if text[i] == '"':
-            if buf:
-                out.append((False, "".join(buf)))
-                buf = []
-            lit, i = read_string(text, i)
-            out.append((True, lit))
-            continue
-        buf.append(text[i])
-        i += 1
-    if buf:
-        out.append((False, "".join(buf)))
-    return out
 
 
 def strip_comments(text: str) -> str:
