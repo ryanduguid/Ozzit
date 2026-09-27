@@ -27,6 +27,7 @@ python tools/postbuild/aasb16_leases.py ozzit.xlsx src functions.csv
 python tools/postbuild/rate_date_helpers.py ozzit.xlsx src functions.csv
 python tools/postbuild/cover_label.py ozzit.xlsx
 python tools/compile_sources.py ozzit.xlsx src --index=functions.csv
+python tools/build_module.py src oz.txt
 python tools/postbuild/remove_residue.py ozzit.xlsx
 python tools/sync_afe_store.py ozzit.xlsx src
 python tools/generate_selftest_examples.py src
