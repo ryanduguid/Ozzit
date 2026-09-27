@@ -35,6 +35,7 @@ $dv = "oz.DiminishingValue$L"
 $pc = "oz.PrimeCost$L"
 $ga = "oz.GSTAdd$L"
 $ge = "oz.GSTExtract$L"
+$mv = "oz.Movement$L"
 $fy = "oz.FinancialYear$L"
 
 # --- Depreciation: a schedule must always sum to cost, whatever the effective life.
@@ -58,6 +59,9 @@ Near 'DV declines over time' "SUMPRODUCT(--(INDEX($dv(1000,10),1,SEQUENCE(,8))<I
 Near 'DV residual is the tail' "INDEX($dv(1000,5),1,5)-129.6" '0'
 Same 'DV help with no args'  "INDEX($dv(),1,1)" 'FUNCTION:'
 Same 'PC help with no args'  "INDEX($pc(),1,1)" 'FUNCTION:'
+# A negative life wrote the whole cost off in one period and a zero life divided by zero.
+Same 'DV refuses a negative life' "IF(ISTEXT(INDEX($dv(1000,-5),1,1)),`"diagnostic`",`"number`")" 'diagnostic'
+Same 'PC refuses a zero life'     "IF(ISTEXT(INDEX($pc(1000,0),1,1)),`"diagnostic`",`"number`")" 'diagnostic'
 
 # --- GST
 Near 'GST add, default rate'      "$ga(100)"          '110'
@@ -74,6 +78,16 @@ Same 'GST add keeps blanks blank'     "`"[`"&$ga(Z1)&`"]`"" '[]'
 Same 'GST extract keeps blanks blank' "`"[`"&$ge(Z1)&`"]`"" '[]'
 Same 'GST add help with no args'      "INDEX($ga(),1,1)" 'FUNCTION:'
 Same 'GST extract help with no args'  "INDEX($ge(),1,1)" 'FUNCTION:'
+# A column of rates is read row by row: one blank rate defaults its own row, and a
+# zero-rated row stays zero. OR() once gave every row the default.
+Near 'GST extract, per-row zero rate'  "INDEX($ge({110;110;110},{0.1;0;`"`"}),2,1)" '0'
+Near 'GST extract, per-row blank rate' "INDEX($ge({110;110;110},{0.1;0;`"`"}),3,1)" '10'
+Near 'GST add, per-row zero rate'      "INDEX($ga({100;100},{0;`"`"}),1,1)" '100'
+
+# --- Movement. Each row's opening is its own: a blank one defaults only that row.
+Near 'Movement, per-row opening'       "INDEX($mv({100;`"`";50},{110,120;5,6;60,70}),1,1)" '10'
+Near 'Movement, blank opening row'     "INDEX($mv({100;`"`";50},{110,120;5,6;60,70}),2,1)" '5'
+Near 'Movement, default opening'       "INDEX($mv(,{100,110,130,100}),1,4)" '-30'
 
 # --- Financial year. The headline use is labelling a COLUMN of dates, so the array
 # path matters more than the scalar one.
