@@ -7,6 +7,7 @@ Exits non-zero and prints every failure. Run by CI on each push.
 import base64
 import html
 import json
+import posixpath
 import re
 import sys
 import xml.etree.ElementTree as ET
@@ -43,11 +44,59 @@ FORBIDDEN_PARTS = (
     "xl/dialogsheets/",
 )
 
+# The one add-in the workbook may carry: the Advanced Formula Environment, whose web
+# extension anchors the module store, in a hidden task pane. The README promises exactly
+# that, and nothing checked it, so a second or different add-in could ship unnoticed.
+AFE_ADDIN_ID = "wa200003696"
+WEB_EXTENSIONS = "xl/webextensions/"
+TASK_PANES = WEB_EXTENSIONS + "taskpanes.xml"
+TASK_PANE_RELS = WEB_EXTENSIONS + "_rels/taskpanes.xml.rels"
+
 failures: list[str] = []
 
 
 def fail(msg: str) -> None:
     failures.append(msg)
+
+
+def local_name(name: str) -> str:
+    return name.rsplit("}", 1)[-1]
+
+
+def elements(xml_parts: Mapping[str, str], name: str) -> list[ET.Element]:
+    text = xml_parts.get(name)
+    return [] if text is None else list(ET.fromstring(text).iter())
+
+
+def check_web_extensions(parts: list[str], xml_parts: Mapping[str, str]) -> None:
+    # Every part in the folder other than the pane and its relationships is an extension,
+    # whatever it is called, and the pane must resolve to that one part: a correctly named
+    # decoy beside a pane that targets another add-in does not pass.
+    extensions = sorted(name for name in parts if name.startswith(WEB_EXTENSIONS)
+                        and name not in (TASK_PANES, TASK_PANE_RELS))
+    if len(extensions) != 1:
+        fail(f"expected one web extension, the Advanced Formula Environment, found {len(extensions)}")
+    targets = sorted(
+        posixpath.normpath(posixpath.join(WEB_EXTENSIONS, element.get("Target", "")))
+        if not element.get("Target", "").startswith("/") else element.get("Target", "").lstrip("/")
+        for element in elements(xml_parts, TASK_PANE_RELS) if local_name(element.tag) == "Relationship")
+    if targets != extensions:
+        fail("the task pane does not resolve to the one web extension part")
+    for name in extensions:
+        references = [element for element in elements(xml_parts, name)
+                      if local_name(element.tag) == "reference"]
+        if not references or any(
+                ref.get("id") != AFE_ADDIN_ID or ref.get("storeType") != "OMEX" for ref in references):
+            fail(f"{name} references an add-in other than the Advanced Formula Environment")
+    tasks = [element for element in elements(xml_parts, TASK_PANES) if local_name(element.tag) == "taskpane"]
+    if len(tasks) != 1 or tasks[0].get("visibility") != "0":
+        fail("expected one hidden task pane for the Advanced Formula Environment")
+    # A declaration is an element, attribute or named property, not the words in a cell.
+    for name in [*extensions, TASK_PANES]:
+        for element in elements(xml_parts, name):
+            declared = {local_name(element.tag), *map(local_name, element.attrib), element.get("name", "")}
+            if "containsCustomFunctions" in declared:
+                fail(f"containsCustomFunctions declared in {name}")
 
 
 def check_xml_part(name: str, data: bytes) -> str | None:
@@ -90,6 +139,7 @@ def main() -> None:
             fail(f"forbidden workbook part {name}")
 
     xml_parts = load_xml_parts(z)
+    check_web_extensions(parts, xml_parts)
 
     for name in parts:
         if name.endswith((".xml", ".rels")) and name != "customXml/item1.xml":
