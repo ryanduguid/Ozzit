@@ -18,18 +18,34 @@ The workbook tracked in this repository is the candidate the gates below run aga
 2. Cell A1 of every visible worksheet links back to the table of contents; every name in the TOC links to its worksheet.
 3. For inline help, type a function name with no arguments in an empty cell, for example `=oz.Amortiseλ()`. The help block spills syntax, parameters and worked examples.
 4. Grey-shaded cells on each worksheet are inputs. Change them and watch the function respond.
-5. To use the functions in your own workbook, copy a green-shaded cell across (Excel brings the named LAMBDA with it), or import the plain-text source from `src/` with the Advanced Formula Environment in the Excel Labs add-in.
+5. To use the functions in your own workbook, copy a green-shaded cell across (Excel brings the named LAMBDA with it), or import the plain-text source with the Advanced Formula Environment in the Excel Labs add-in: `oz.txt` at the repository root is the whole library as one module.
 
    The repository also includes an [Ozzit 13-week cash-flow forecast template](../templates/README.md) for Australian FP&A planning; see the [template overview](cash-flow-template.md).
 
-   Importing `src/` that way recreates the functions under the module container's own
-   name, so `Dates.txt` produces `Dates.CountDOWλ` rather than `oz.CountDOWλ`: the
-   Advanced Formula Environment takes the prefix from the container, and one flat
-   namespace cannot be 6 containers. The workbook is the authority for the `oz.`
-   names. `src/` is for reading, diffing, and pasting a single definition into Name
+   The Advanced Formula Environment takes a function's prefix from the module
+   container it is imported into, so importing one `src/` file as a module named
+   after it produces `Dates.CountDOWλ` rather than `oz.CountDOWλ`, and a call from
+   one module into another does not resolve. `oz.txt` joins the 6 module texts,
+   verbatim and in build order, so that one import into a new module named `oz`
+   recreates every shipped `oz.` name with its cross-module calls intact.
+   `tools/build_module.py` writes it from `src/`, and `tools/tests/test_build_module.py`
+   holds the tracked file to the current `src/`, to every `oz.` name the workbook
+   ships (the 5 help tables included) and to `functions.csv`. Those checks bind the
+   file to the workbook commit it ships with; they do not exercise the add-in's
+   import route, which has not yet been run against `oz.txt` as a native gate, so
+   import into a disposable workbook first and check the names it creates against
+   `functions.csv`. Vertex42's LAMBDA Library and BigSpill publish their libraries
+   the same single-module way. The workbook is the authority for the `oz.` names.
+   `src/` is for reading, diffing, and pasting a single definition into Name
    Manager, where the name is yours to choose. To change a function, edit its
-   definition in `src/` and run `tools/compile_sources.py`, which renders it into the
-   stored form and writes it over the defined name that ships.
+   definition in `src/`, run `tools/compile_sources.py`, which renders it into the
+   stored form and writes it over the defined name that ships, and rebuild `oz.txt`.
+
+   Imported names can collide with names a workbook already holds, and a module
+   import brings every function at once. Try the import in a blank workbook first,
+   then read Name Manager. To remove the library from a workbook, delete the `oz.`
+   names in Name Manager, or delete the `oz` module in the add-in and save; both
+   leave formulas that used the functions showing `#NAME?` until they are replaced.
 
 The workbook opens showing the numbers its own formulas produce, so nothing has to recalculate before it reads correctly and Excel does not ask you to save a file you never edited. That is a property the build cannot give it: the build edits the workbook as XML with no formula engine, so `tools/refresh_cache.py` recalculates it in Excel afterwards and `tools/verify_cache.py` proves every cached value matches.
 

@@ -2,7 +2,7 @@
 
 ## Authority and scope
 
-`ozzit.xlsx` is the shipped authority. `src/*.txt`, the AFE store and
+`ozzit.xlsx` is the shipped authority. `src/*.txt`, the AFE store, `oz.txt` and
 `functions.csv` are bound publication views: do not edit or approve them in
 isolation. The library has 133 native Excel LAMBDA functions and 5 named help
 tables. Retain the ordinary `.xlsx` and no macros. Do not make tax classifications,
