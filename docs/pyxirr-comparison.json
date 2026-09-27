@@ -1,9 +1,8 @@
 {
-  "recorded": "2026-09-25",
+  "recorded": "2026-09-27",
   "excel": "16.0 build 20430",
   "workbook": "ozzit.xlsx",
-  "commit": "92a6c51a37c507cdb3e04b1068d5b8ea5abf848b",
-  "workbook_sha256": "72949c61c31bb760f6533e49744f9f30944d93caf7afb1190e8b25f536695a4f",
+  "workbook_sha256": "87363ad4ab03e82884de35f6f544aca5b3f5796718c0cf9252b563171a505a4f",
   "pyxirr": "0.10.8",
   "cases": [
     {
@@ -110,5 +109,6 @@
       "agrees": true,
       "note": null
     }
-  ]
+  ],
+  "commit": "532bbc96c944f840c67309d8add3e459df2f1f89"
 }

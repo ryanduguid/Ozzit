@@ -298,7 +298,9 @@ Movementλ = LAMBDA(
     //  Check inputs - Omitted required arguments
         Help?,          ISOMITTED( Values),
     //  Set Defaults
-        BeginningValues, IF(OR(ISOMITTED(BeginningValues), BeginningValues=""), 0, BeginningValues),
+    //  Element-wise, so one blank opening defaults its own row and not every row
+        BeginningValues, IF(ISOMITTED(BeginningValues), 0,
+                            IF(TRIM(BeginningValues & "")="", 0, BeginningValues)),
     //  Procedure
         Rows,           ROWS( Values),
         Cols,           COLUMNS( Values),
@@ -2143,6 +2145,9 @@ DiminishingValueλ = LAMBDA(
                         )),
     //  Check inputs - Omitted required arguments
         Help?,          OR(ISOMITTED(Cost), ISOMITTED(Life)),
+    //  Refuse a life that cannot make a schedule: a negative one wrote the whole cost off
+    //  in one period and zero divided by zero
+        Valid?,         AND(ISNUMBER(Life), Life > 0),
     //  Rate is capped: a life under two years would otherwise exceed 100%
         Rate,           MIN(2/Life, 1),
     //  Whole periods, so a part-year effective life still gets its final period
@@ -2152,7 +2157,8 @@ DiminishingValueλ = LAMBDA(
     //  The Periods=1 guard avoids 0^0, which Excel returns as #NUM! once Rate reaches 1
         Raw,            Cost * Rate * IF(Periods = 1, 1, (1-Rate)^(Periods-1)),
     //  Write the undeducted residual off in the final period
-        Result,         Raw + (Periods = Count) * (Cost - SUM(Raw)),
+        Result,         IF(Valid?, Raw + (Periods = Count) * (Cost - SUM(Raw)),
+                            "DiminishingValueλ needs a Life greater than 0"),
     //  Return Result or Help
         CHOOSE( Help? + 1, Result, Help)
     )
@@ -2186,12 +2192,16 @@ PrimeCostλ = LAMBDA(
                         )),
     //  Check inputs - Omitted required arguments
         Help?,          OR(ISOMITTED(Cost), ISOMITTED(Life)),
+    //  Refuse a life that cannot make a schedule: a negative one wrote the whole cost off
+    //  in one period and zero divided by zero
+        Valid?,         AND(ISNUMBER(Life), Life > 0),
     //  Set Constants
         Annual,         Cost/Life,
     //  Whole periods, so a part-year effective life still gets its final period
         Count,          MAX(1, ROUNDUP(Life, 0)),
     //  The final period carries the part-year remainder, so the schedule sums to cost
-        Result,         IF(SEQUENCE(, Count) = Count, Cost - Annual * (Count - 1), Annual),
+        Result,         IF(Valid?, IF(SEQUENCE(, Count) = Count, Cost - Annual * (Count - 1), Annual),
+                            "PrimeCostλ needs a Life greater than 0"),
     //  Return Result or Help
         CHOOSE( Help? + 1, Result, Help)
     )
@@ -2225,8 +2235,10 @@ GSTAddλ = LAMBDA(
                         )),
     //  Check inputs - Omitted required arguments
         Help?,          ISOMITTED(Amounts),
-    //  A blank Rate cell is not an omitted argument, so test for both
-        GSTRate,        IF(OR(ISOMITTED(Rate), TRIM(Rate & "")=""), 0.1, Rate),
+    //  A blank Rate cell is not an omitted argument, so test for both. The blank test
+    //  stays element-wise: OR() reduced a column of rates to one TRUE, so a single blank
+    //  gave every row the default, zero-rated lines included.
+        GSTRate,        IF(ISOMITTED(Rate), 0.1, IF(TRIM(Rate & "")="", 0.1, Rate)),
     //  Blanks stay blank, so a part-filled column of amounts does not fill with zeros
         Result,         IF(TRIM(Amounts & "")="", "", Amounts * (1 + GSTRate)),
     //  Return Result or Help
@@ -2262,8 +2274,10 @@ GSTExtractλ = LAMBDA(
                         )),
     //  Check inputs - Omitted required arguments
         Help?,          ISOMITTED(Amounts),
-    //  A blank Rate cell is not an omitted argument, so test for both
-        GSTRate,        IF(OR(ISOMITTED(Rate), TRIM(Rate & "")=""), 0.1, Rate),
+    //  A blank Rate cell is not an omitted argument, so test for both. The blank test
+    //  stays element-wise: OR() reduced a column of rates to one TRUE, so a single blank
+    //  gave every row the default, zero-rated lines included.
+        GSTRate,        IF(ISOMITTED(Rate), 0.1, IF(TRIM(Rate & "")="", 0.1, Rate)),
     //  Blanks stay blank, so a part-filled column of amounts does not fill with zeros
         Result,         IF(TRIM(Amounts & "")="", "", Amounts * GSTRate / (1 + GSTRate)),
     //  Return Result or Help
