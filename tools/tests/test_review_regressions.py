@@ -65,8 +65,25 @@ class ReviewRegressionTests(unittest.TestCase):
             'custom functions': ({'xl/webextensions/webextension1.xml': extension.replace(
                 b'<we:bindings/>', b'<we:bindings/><we:containsCustomFunctions/>')},
                 'containsCustomFunctions'),
+            'a custom-functions property': ({'xl/webextensions/webextension1.xml': extension.replace(
+                b'<we:properties>', b'<we:properties><we:property name="containsCustomFunctions" value="true"/>')},
+                'containsCustomFunctions'),
+            # The AFE part stays as a decoy while the pane targets a differently named add-in.
+            'a decoy beside a redirected pane': ({
+                'xl/webextensions/other.xml': extension.replace(b'wa200003696', b'wa104379999'),
+                'xl/webextensions/_rels/taskpanes.xml.rels': self.parts[
+                    'xl/webextensions/_rels/taskpanes.xml.rels'].replace(b'webextension1.xml', b'other.xml'),
+            }, 'expected one web extension'),
+            'a pane resolving elsewhere': ({'xl/webextensions/_rels/taskpanes.xml.rels': self.parts[
+                'xl/webextensions/_rels/taskpanes.xml.rels'].replace(b'webextension1.xml', b'missing.xml')},
+                'does not resolve'),
         }
         original = dict(self.parts)
+        # The words alone, in a cell's text, are not a declaration.
+        strings = self.parts['xl/sharedStrings.xml']
+        self.parts = {**original, 'xl/sharedStrings.xml': strings.replace(
+            b'</sst>', b'<si><t>containsCustomFunctions</t></si></sst>')}
+        self.assertNotIn('containsCustomFunctions', self.verify().stdout)
         for label, (changes, message) in cases.items():
             with self.subTest(label):
                 self.parts = {**original, **changes}
