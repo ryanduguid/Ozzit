@@ -1,3 +1,4 @@
+import io
 import re
 import shutil
 import subprocess
@@ -5,6 +6,7 @@ import sys
 import tempfile
 import unittest
 import zipfile
+from contextlib import redirect_stdout
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
@@ -292,6 +294,7 @@ class WorkbookToolTests(unittest.TestCase):
 
     def test_refresh_cache_delegates_all_cleanup_to_shared_sanitiser(self):
         completed = SimpleNamespace(returncode=0, stdout="refreshed", stderr="")
+        printed = io.StringIO()
         with (
             mock.patch.object(refresh_cache, "WORKBOOK", str(self.workbook)),
             mock.patch.object(refresh_cache.subprocess, "run", return_value=completed),
@@ -300,10 +303,14 @@ class WorkbookToolTests(unittest.TestCase):
                 "sanitise",
                 return_value=["removed 1 x15ac:absPath"],
             ) as shared,
+            redirect_stdout(printed),
         ):
             self.assertEqual(refresh_cache.main(), 0)
 
         shared.assert_called_once_with(Path(self.workbook))
+        # The Excel run's own output and each sanitiser line are passed through.
+        self.assertIn("refreshed", printed.getvalue())
+        self.assertIn("removed 1 x15ac:absPath", printed.getvalue())
 
 
 if __name__ == "__main__":

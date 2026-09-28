@@ -43,27 +43,30 @@ class PostbuildIdempotencyTests(unittest.TestCase):
         shutil.rmtree(self.directory, ignore_errors=True)
 
     def test_each_xml_pass_is_a_byte_noop(self):
+        # Compared with the committed bytes, not with the result of a first run: a pass
+        # that rewrote the committed workbook once and then held still would otherwise
+        # pass as a no-op.
+        committed = WORKBOOK.read_bytes()
+        src_committed = {p.name: p.read_bytes() for p in (ROOT / "src").glob("*.txt")}
         for script, takes_src in XML_PASSES:
             with self.subTest(script=script.name):
                 command = [sys.executable, str(script), str(self.workbook)]
                 if takes_src:
                     command.append(str(self.src))
-                first = subprocess.run(command, capture_output=True, text=True, check=False)
-                self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
-                before = self.workbook.read_bytes()
-                src_before = {p.name: p.read_bytes() for p in self.src.glob("*.txt")}
-
-                second = subprocess.run(command, capture_output=True, text=True, check=False)
-                self.assertEqual(second.returncode, 0, second.stdout + second.stderr)
-                self.assertIn("already", second.stdout.lower())
-                self.assertEqual(
-                    self.workbook.read_bytes(), before, f"{script.name} mutated the workbook"
-                )
-                self.assertEqual(
-                    {p.name: p.read_bytes() for p in self.src.glob("*.txt")},
-                    src_before,
-                    f"{script.name} mutated src/",
-                )
+                for run in ("first", "second"):
+                    result = subprocess.run(command, capture_output=True, text=True, check=False)
+                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                    self.assertIn("already", result.stdout.lower())
+                    self.assertEqual(
+                        self.workbook.read_bytes(),
+                        committed,
+                        f"{script.name} mutated the workbook on its {run} run",
+                    )
+                    self.assertEqual(
+                        {p.name: p.read_bytes() for p in self.src.glob("*.txt")},
+                        src_committed,
+                        f"{script.name} mutated src/ on its {run} run",
+                    )
 
 
 if __name__ == "__main__":

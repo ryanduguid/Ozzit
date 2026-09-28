@@ -10,6 +10,7 @@ store whose anchors do not match must fail rather than write a partial result.
 
 import importlib.util
 import shutil
+import sys
 import unittest
 import zipfile
 from pathlib import Path
@@ -23,6 +24,9 @@ WORKBOOK = ROOT / "ozzit.xlsx"
 PASS_SCRIPT = TOOLS / "postbuild" / "help_corrections.py"
 POSTBUILD_README = TOOLS / "postbuild" / "README.md"
 
+# The pass imports its sibling workbook.py, which is only on the path when it runs
+# as a script. Run alone, this module would otherwise depend on an earlier test.
+sys.path.insert(0, str(TOOLS / "postbuild"))
 _spec = importlib.util.spec_from_file_location("help_corrections", PASS_SCRIPT)
 _mod = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_mod)
