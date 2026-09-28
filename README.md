@@ -24,6 +24,13 @@ published 20 September 2026 from the cut dated 16 September 2026.
 [Download ozzit.xlsx](https://github.com/ryanduguid/Ozzit/releases/download/v3.4.2/ozzit.xlsx)
 (439,097 bytes, SHA-256 `0306793a7e473ce70e78149fea1e107fc0f714d61ab50960c16f6fd528878f6f`).
 
+**Known issues in v3.4.2.** One blank cell in a column of GST rates gives every row
+10%, zero-rated rows included; one blank opening in `oz.Movementλ` sets every row's
+opening to 0; and negative CFADS raises the balance in `oz.DebtSculptFixedλ` and
+`oz.DebtSculptVariableλ`. All three are fixed on `main` for the next release. Defects
+found in review and not yet fixed are listed, each with a way to avoid it, under
+[Unreleased in the changelog](CHANGELOG.md#unreleased).
+
 Synthetic example. Review aid, not professional advice; the reviewer decides the GST treatment.
 
 **Input:** $1,100, assumed wholly taxable and GST-inclusive at 10%.
