@@ -47,6 +47,29 @@ class CollapsedDefaultTests(unittest.TestCase):
             ["Unit"],
         )
 
+    def test_a_default_passed_through_a_let_is_reported(self):
+        # A branch that binds a copy of the argument still passes the column through.
+        self.assertEqual(
+            found('LAMBDA([Rate], IF(OR(ISOMITTED(Rate), Rate=""), 0.1, '
+                  'LET(RawRate, Rate, RawRate)))'),
+            ["Rate"],
+        )
+        self.assertEqual(
+            found('LAMBDA([Rate], IF(OR(ISOMITTED(Rate), Rate=""), 0.1, '
+                  'ROUND(LET(Raw, Rate, Scaled, Raw * 1, Scaled), 4)))'),
+            ["Rate"],
+        )
+        self.assertEqual(
+            found('LAMBDA([Rate], IF(OR(ISOMITTED(Rate), Rate=""), 0.1, LET(Unused, 1, Rate)))'),
+            ["Rate"],
+        )
+
+    def test_a_let_whose_result_reads_no_copy_passes(self):
+        self.assertEqual(
+            found('LAMBDA([Rate], IF(OR(ISOMITTED(Rate), Rate=""), 0.1, LET(RawRate, Rate, 0.1)))'),
+            [],
+        )
+
     def test_a_default_tested_row_by_row_passes(self):
         # The form the fix for GST and Movementλ took.
         self.assertEqual(

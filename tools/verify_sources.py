@@ -74,11 +74,12 @@ KNOWN_COLLAPSED_DEFAULTS = {
 }
 # Calls that reduce what they are given to one value, and calls that bind names this check
 # does not follow. A parameter read inside either is not being passed through row by row.
+# LET binds names too, but the check follows it: see passed_through.
 SCALAR_CALLS = frozenset({
     "AND", "AREAS", "AVERAGE", "COLUMNS", "COUNT", "COUNTA", "COUNTBLANK", "ISOMITTED",
     "ISREF", "MAX", "MIN", "OR", "ROWS", "SUM", "SUMPRODUCT", "XOR",
 })
-OPAQUE_CALLS = frozenset({"BYCOL", "BYROW", "LAMBDA", "LET", "MAKEARRAY", "MAP", "REDUCE", "SCAN"})
+OPAQUE_CALLS = frozenset({"BYCOL", "BYROW", "LAMBDA", "MAKEARRAY", "MAP", "REDUCE", "SCAN"})
 IF_CALL = re.compile(r"(?<![A-Za-z0-9_.?λ])IF\s*\(", re.IGNORECASE)
 COMBINED = re.compile(r"\s*(?:NOT\s*\(\s*)?(?:AND|OR)\s*\(", re.IGNORECASE)
 TOKEN = re.compile(r"(?P<call>[A-Za-z_][A-Za-z0-9_.?λ]*)\s*\(|(?P<name>[A-Za-z_][A-Za-z0-9_.?λ]*)"
@@ -278,19 +279,49 @@ def call_arguments(code: str, opening: int) -> list[str]:
 
 
 def passed_through(code: str, name: str, stop: frozenset[str]) -> bool:
-    """True when name is read somewhere in code outside every call listed in stop."""
+    """True when name is read somewhere in code outside every call listed in stop.
+
+    A LET is followed binding by binding: a name bound to a value that passes name
+    through is a copy of it, so LET(Copy, Rate, Copy) passes Rate through.
+    """
+    return reads_any(code, {name.upper()}, stop)
+
+
+def reads_any(code: str, names: set[str], stop: frozenset[str]) -> bool:
+    """True when one of names (upper-cased) is read in code outside every call in stop."""
     calls: list[str] = []
+    resume = 0
     for match in TOKEN.finditer(code):
-        if match.group("call"):
-            calls.append(match.group("call").upper())
+        if match.start() < resume:
+            continue
+        call = (match.group("call") or "").upper()
+        if call == "LET" and not stop.intersection(calls):
+            arguments = call_arguments(code, match.end() - 1)
+            if len(arguments) >= 3 and len(arguments) % 2:
+                if let_reads_any(arguments, names, stop):
+                    return True
+                resume = match.end() + len(",".join(arguments)) + 1   # just past its ")"
+                continue
+        if call:
+            calls.append(call)
         elif match.group("open"):
             calls.append(match.group("open"))
         elif match.group("close"):
             if calls:
                 calls.pop()
-        elif match.group("name").upper() == name.upper() and not stop.intersection(calls):
+        elif match.group("name").upper() in names and not stop.intersection(calls):
             return True
     return False
+
+
+def let_reads_any(arguments: list[str], names: set[str], stop: frozenset[str]) -> bool:
+    """True when the result of LET(name1, value1, ..., result) reads one of names or a copy."""
+    live = set(names)
+    *bindings, result = arguments
+    for bound, value in zip(bindings[::2], bindings[1::2]):
+        if reads_any(value, live, stop):
+            live.add(bound.strip().upper())
+    return reads_any(result, live, stop)
 
 
 def collapsed_defaults(body: str) -> list[str]:
@@ -298,9 +329,9 @@ def collapsed_defaults(body: str) -> list[str]:
 
     OR and AND reduce a column of inputs to one TRUE or FALSE, so in
     IF(OR(ISOMITTED(x), x=""), d, x) one blank cell gives every row d. A parameter
-    counts when the test reads it row by row and a branch passes it through row by row.
-    A validator that reduces its answer to one flag on purpose, as the λDV companions
-    do, passes nothing through and is not reported.
+    counts when the test reads it row by row and a branch passes it through row by row,
+    itself or as a copy a LET binds. A validator that reduces its answer to one flag on
+    purpose, as the λDV companions do, passes nothing through and is not reported.
     """
     code = "".join('""' if is_string else chunk for is_string, chunk in split_literals(body))
     head = re.match(r"\s*LAMBDA\s*\(", code, re.IGNORECASE)
