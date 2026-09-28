@@ -169,6 +169,10 @@ def main() -> None:
         stale, anchors = run(workbook)
     except (OSError, ValueError, KeyError, zipfile.BadZipFile) as exc:
         sys.exit(f"FAIL: {exc}")
+    # A layout the anchor pattern no longer recognises, such as reordered attributes on
+    # the <f> element, finds nothing to compare. Nothing checked is not a pass.
+    if anchors == 0:
+        sys.exit(f"FAIL: no help anchor found in {workbook}, so no cached help was checked")
     for line in stale:
         print(line)
     if stale:

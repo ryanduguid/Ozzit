@@ -12,9 +12,11 @@ on:
 permissions:
   contents: read
 
+# A superseded pull request run is cancelled. Every other run is keyed on its commit, so
+# a later push to main cannot cancel or replace the analysis of an earlier one.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   analyze:

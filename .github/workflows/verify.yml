@@ -6,10 +6,13 @@ on:
   pull_request:
   workflow_dispatch:
 
-# A push that supersedes an earlier one cancels it rather than paying for both.
+# On a pull request, a push that supersedes an earlier one cancels it rather than
+# paying for both. Every other run is keyed on its commit, as the attribution workflow's
+# are: a shared group would let a later push to main replace a pending run, and that
+# merged commit would never be verified.
 concurrency:
-  group: verify-${{ github.ref }}
-  cancel-in-progress: true
+  group: verify-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # The gates only read files. Nothing here needs write access to the repository.
 permissions:
@@ -67,6 +70,8 @@ jobs:
         run: python tools/verify_cover.py ozzit.xlsx functions.csv CHANGELOG.md
       - name: Check the Advanced Formula Environment store matches src/
         run: python tools/verify_afe.py ozzit.xlsx src
+      - name: Check each cached help spill matches its definition
+        run: python tools/verify_help_spills.py ozzit.xlsx
       - name: Check retained native evidence and its provenance
         run: python tools/verify_native_evidence.py
       - name: Run tool regression tests

@@ -145,6 +145,14 @@ class HelpSpillCheckTests(unittest.TestCase):
         self.assertIn("OK: every cached help", result.stdout)
         self.assertIn("1 anchors", result.stdout)
 
+    def test_cli_refuses_a_workbook_with_no_anchor_to_check(self):
+        tool = TOOLS / "verify_help_spills.py"
+        empty = self.write("empty.xlsx", parts_for(CURRENT.replace("oz.Fλ()", "SUM(1)")))
+        self.assertEqual(spills.run(empty)[1], 0)
+        result = subprocess.run([sys.executable, str(tool), str(empty)], capture_output=True, text=True, encoding="utf-8", check=False)
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("FAIL: no help anchor found", result.stderr)
+
     def test_tracked_workbook_matches_the_model_except_the_helps_this_release_changed(self):
         stale, anchors = spills.run(WORKBOOK)
         self.assertGreaterEqual(anchors, 40)
