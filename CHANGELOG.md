@@ -1,5 +1,113 @@
 # Changelog
 
+## Unreleased
+
+Changes on `main` since v3.4.2. They reach the published workbook in the next
+release; until then v3.4.2 behaves as it did, including the defects fixed here.
+
+### Calculation changes
+
+- `oz.GSTAddλ` and `oz.GSTExtractλ` default a blank Rate cell to 10% for its own row.
+  v3.4.2 tested the whole column of rates with `OR()`, so one blank cell gave every row
+  10%, zero-rated rows included.
+- `oz.Movementλ` defaults a blank BeginningValues cell to 0 for its own row. In v3.4.2
+  one blank cell set every row's opening to 0.
+- `oz.PeriodRateλ` and `oz.AnnualRateλ` default a blank PeriodsPerYear cell to 12, and
+  `oz.DateDifλ` a blank Unit cell to days, for its own row. `oz.IsOccurrenceDateλ` reads
+  Repeats and LastOccurrence row by row too: a blank Repeats cell makes only its own row
+  a one-off, and a text last date is read as a date whatever the other rows hold. v3.4.2
+  tested each of these columns with `OR()`, as it did GST rates, so one blank cell gave
+  every row the default, and one blank or date in a LastOccurrence column left text
+  dates in the other rows unread. A column that is all blank now gives one default per
+  row. `tools/excel_selftest.ps1` gains 12 assertions for these; they have not yet been
+  run in Excel.
+- `oz.DiminishingValueλ` and `oz.PrimeCostλ` refuse a Life that is not greater than 0
+  with a message. A negative life wrote the whole cost off in one period, and a zero
+  life divided by zero.
+- `oz.DebtSculptFixedλ` and `oz.DebtSculptVariableλ` floor each period's debt service at
+  zero. In v3.4.2 negative CFADS produced a negative payment, so the closing balance
+  rose and row 3 showed the amount as a positive receipt: with CFADS of -300 against a
+  DSCR of 1.2 it read 250 rather than 0. The rows also floor the amount owed, so a
+  negative opening balance repays nothing, as in the balance calculation.
+- `oz.Amortiseλ` takes an optional `FinalPeriodEnd`, the day after the last timeline
+  period ends, for a sub-monthly timeline that stops before the loan does. It needs a
+  supplied timeline and must fall after its last date, and `oz.AmortiseλDV` checks it
+  the same way. Omitted, every schedule is unchanged.
+- `oz.Depreciateλ` ends a month-end timeline's last period at the month end. It used
+  `EDATE`, which steps from 28 February to 28 March, so the period closed three days
+  early and an asset brought into service in those days fell into no period.
+- `oz.Amortiseλ` opens a period that holds several months on its first month's balance
+  and closes it on its last month's, as `oz.Depreciateλ` already does for its opening
+  row. A period of a sub-monthly timeline holds several months when `FinalPeriodEnd`
+  extends it, or when a longer period follows shorter ones, and the balance rows added
+  those months up: 10 weekly periods from 1 January 2026 with a final period ending on
+  1 January 2027 opened the last at 37,942.09 rather than 7,546.58 and closed a loan
+  repaid in December at 30,395.51 rather than 0. Interest and payment rows were right,
+  and a period holding one month is unchanged. `tools/excel_selftest.ps1` gains 5
+  assertions for this; they have not yet been run in Excel.
+
+### Found in review, not yet fixed
+
+A review of the library on 28 September 2026 found these defects. Each needs a
+formula change and a native Excel round, so each stays listed here, with a way to
+avoid it, until a change fixes it and moves it to the calculation changes above. They
+were traced in the formula text and recalculated by hand or in Python; none has yet
+been reproduced in Excel.
+
+- `oz.Amortiseλ` on a timeline of a month or longer groups a loan's months from the
+  loan's own start, not by the timeline's dates. A loan that starts part-way through a
+  period has its interest and payments shifted between periods; lifetime totals are
+  unaffected. On a 1 July financial-year timeline, 100,000 at 6% over 24 months from
+  1 January 2027 books 53,184.73 of payments in FY27 rather than 26,592.37, and none in
+  FY29 rather than 26,592.37. Until fixed, start each loan on a period start, or use a
+  monthly timeline.
+- `oz.LeaseRemeasureλ` with InAdvance TRUE excludes the payment due at the
+  remeasurement date from the revised liability, but compares it with the liability
+  carried immediately before the remeasurement, which still includes that payment. An
+  in-advance lease of {100,100,100} at 5% revised to {110,110} at its first anniversary
+  shows an adjustment of -90.48 rather than +19.52. Until fixed, pass as
+  CarryingLiability the amount carried before the remeasurement less the revised
+  payment made that day.
+- `oz.DebtSculptVariableLRVλ` still takes negative CFADS through: with no floor, the
+  period's debt service is negative and the balance grows by it as well as by the
+  period's interest. From a nil balance, CFADS of -300 at a DSCR of 1.2 creates 257.73
+  of debt. Capitalising interest when there is no cash is deliberate; a negative CFADS
+  goes further. Until fixed, pass `IF(CFADS < 0, 0, CFADS)`.
+- `oz.FinancialYearλ` reads a blank StartMonth cell as a calendar year: 15 August 2026
+  gives FY2026 rather than FY2027. Until fixed, omit the argument or enter 7.
+- `oz.DBλ` and `oz.DDBλ` put the whole remaining depreciable amount in the final year,
+  which Excel's DB and DDB do not: DDB on 10,000 with 500 salvage over 10 years ends at
+  842.18 rather than 268.44. `oz.DBλ`'s Months argument returns Life columns where
+  Excel's DB adds a partial final year. Their help does not say so yet.
+- The `oz.FinancialRatios` sheet shows a retention ratio of 189.9% in A61, which passes
+  net income and dividends where `oz.RetentionRatioλ` expects retained earnings and net
+  income. On the same figures the ratio is 47.3%.
+
+### Tools, checks and documentation
+
+- `tools/verify_sources.py` fails an argument default that tests a parameter inside
+  `OR()` or `AND()`. It would have caught the GST and `oz.Movementλ` defects above,
+  and it found the five defaults fixed after them. The occurrences still in `src/`, all
+  scalar by design, are listed with their reasons, and an entry that no longer occurs
+  fails too. It also runs about four times faster: module-local calls
+  are qualified with one precompiled pattern rather than a pass per name.
+- CI runs `tools/verify_help_spills.py`, which reports a demonstration sheet whose
+  cached help no longer matches its function, and which now fails when it finds no
+  help anchor to check. Verify and CodeQL runs outside pull requests are keyed on their
+  commit, so a later push to `main` can no longer cancel or replace an earlier one's.
+- Four test modules that passed only after other tests had run now pass alone, and
+  the tests capture what the tools print. The postbuild idempotency test compares
+  each pass with the committed workbook rather than with its own first run.
+- `RELEASING.md` lists the 12 static gates CI runs. `llms.txt` no longer says two help
+  tables are LAMBDAs or that the GST helpers work at 10% only.
+- mypy checks the tools against Python 3.10, the oldest version CI runs, and the unused
+  `uv.lock` stub is gone. `oz.txt` is marked as generated.
+- Earlier on `main`, among other changes: the whole library as one Advanced Formula
+  Environment module in `oz.txt`, a reconciled retention movement template, an
+  Excel-versus-pyxirr comparison of the cash-flow functions, retained native evidence
+  for the v3.4.2 examples and its verifier, a gate on the workbook's web extension, and
+  CI on Python 3.14.
+
 ## v3.4.2, 16 September 2026, Amortisation timelines, depreciation lives and inputs that spilled an error
 
 ### Corrections to the v3.4.1 workbook; no functions added

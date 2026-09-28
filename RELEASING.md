@@ -45,7 +45,7 @@ Every source archive must still include `LICENCE`.
 
 ## Approval and tag
 
-A human maintainer explicitly approves the exact candidate commit and release version after all 11 gates pass.
+A human maintainer explicitly approves the exact candidate commit and release version after all 14 gates pass.
 Create an annotated, cryptographically signed tag for that exact commit. Run
 `git verify-tag` and record the tag object SHA, peeled commit SHA and
 verification result.
@@ -63,7 +63,7 @@ The uploaded bundle contains exactly 3 files:
 
 The signed tag and GitHub's generated source archive remain the source distribution. Inspect that archive as the equivalent of `git archive` for the exact tag; do not upload a redundant custom source archive. The standalone workbook and tagged workbook must have the same SHA-256.
 
-After all 11 gates pass in a clean candidate, stage and independently verify the bundle in 2 fresh directories outside the repository:
+After all 14 gates pass in a clean candidate, stage and independently verify the bundle in 2 fresh directories outside the repository:
 
 ```powershell
 python tools/prepare_release_bundle.py create --version X.Y.Z --source-commit <full-commit-sha> --output <first-new-directory>
@@ -85,7 +85,7 @@ python -m pip install "ruff==0.16.6"
 python -m pip install "mypy==2.3.1"
 ```
 
-Then run the following 9 static and repository gates:
+Then run the following 12 static and repository gates, the same commands CI runs:
 
 ```powershell
 python -m ruff check .
@@ -97,18 +97,20 @@ python tools/verify_previous_names.py functions.csv
 python tools/verify_index.py ozzit.xlsx src functions.csv
 python tools/verify_cover.py ozzit.xlsx functions.csv CHANGELOG.md
 python tools/verify_afe.py ozzit.xlsx src
+python tools/verify_help_spills.py ozzit.xlsx
+python tools/verify_native_evidence.py
 python -m unittest discover -s tools/tests -v
 ```
 
-All 9 gate commands must exit zero. Record the lint result and substantive type-check, function,
+All 12 gate commands must exit zero. Record the lint result and substantive type-check, function,
 signature, table, example, index, module and test counts rather than only their
 exit status.
 
-Before opening Excel, `python tools/verify_help_spills.py ozzit.xlsx` lists, without
-Excel, the cached helps that a source change has left stale. It only reads. A stale
-help means the cached-value gate will fail until `tools/refresh_cache.py` has run in
-Excel and `tools/sanitise_workbook.py` after it; a clean report does not replace the
-gate.
+`tools/verify_help_spills.py` is the one static gate that predicts an Excel result: it
+lists, without Excel, the cached helps that a source change has left stale. It only
+reads. A stale help means the cached-value gate will fail until `tools/refresh_cache.py`
+has run in Excel and `tools/sanitise_workbook.py` after it; a clean report does not
+replace the cached-value gate.
 
 Before either native gate, prove that no user Excel process is running. Do not
 close or attach to a user's Excel session. Then run:
@@ -118,7 +120,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\excel_selftest.p
 python tools/verify_cache.py ozzit.xlsx
 ```
 
-The current acceptance baseline is 1,129 formulas recalculated with zero error cells and 933 assertions run with zero failures: the 631 hand-written assertions, 23 of them randomised checks that draw fresh inputs on every run and name the inputs behind any miss, and the 302 that `tools/generate_selftest_examples.py` derives from the help. The generated count is a static count of the fragment; record the number the script prints.
+The current acceptance baseline is 1,129 formulas recalculated with zero error cells and 950 assertions run with zero failures: the 648 hand-written assertions, 23 of them randomised checks that draw fresh inputs on every run and name the inputs behind any miss, and the 302 that `tools/generate_selftest_examples.py` derives from the help. The generated count is a static count of the fragment; record the number the script prints.
 The cached-value gate must pass and report its actual comparison count. Record
 the Excel version and build. Hash the workbook immediately before and after
 both native gates and require the bytes to be byte-identical.

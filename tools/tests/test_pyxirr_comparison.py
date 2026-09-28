@@ -9,11 +9,13 @@ and that the table in docs/pyxirr-comparison.md is the one that record renders.
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import re
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -114,21 +116,27 @@ class ReleasedWorkbookTests(unittest.TestCase):
         self.args = ["--workbook", str(self.workbook), "--output", str(self.output),
                      "--expected-sha256", self.digest]
 
+    def refusal(self, args: list[str]) -> str:
+        """Run main() on arguments argparse must refuse, and return what it printed."""
+        printed = io.StringIO()
+        with redirect_stderr(printed), self.assertRaises(SystemExit):
+            comparison.main(args)
+        return printed.getvalue()
+
     def test_external_input_requires_separate_output_and_expected_hash(self) -> None:
         for args in [["--workbook", str(self.workbook)],
                      ["--workbook", str(self.workbook), "--output", str(self.output)]]:
             with self.subTest(args=args), patch.object(comparison, "evaluate") as evaluate:
-                with self.assertRaises(SystemExit):
-                    comparison.main(args)
+                self.assertIn("--workbook requires --output and --expected-sha256",
+                              self.refusal(args))
                 evaluate.assert_not_called()
 
     def test_wrong_hash_and_existing_output_refuse_before_excel(self) -> None:
         with patch.object(comparison, "evaluate") as evaluate:
-            with self.assertRaises(SystemExit):
-                comparison.main(self.args[:-1] + ["0" * 64])
+            self.assertIn("workbook SHA-256 mismatch",
+                          self.refusal(self.args[:-1] + ["0" * 64]))
             self.output.write_text("previous evidence", encoding="utf-8")
-            with self.assertRaises(SystemExit):
-                comparison.main(self.args)
+            self.assertIn("--output must be a new file", self.refusal(self.args))
             evaluate.assert_not_called()
         self.assertEqual(self.output.read_text(encoding="utf-8"), "previous evidence")
 
@@ -140,10 +148,14 @@ class ReleasedWorkbookTests(unittest.TestCase):
               patch.object(comparison.importlib.metadata, "version", return_value=comparison.PYXIRR),
               patch.object(comparison.subprocess, "run", return_value=Mock(stdout="a" * 40)),
               patch.object(comparison, "compare", return_value=[]),
-              patch.object(comparison, "write_table") as write_table):
+              patch.object(comparison, "write_table") as write_table,
+              redirect_stdout(io.StringIO()) as printed):
             result = comparison.main(self.args)
             evaluate.assert_called_once_with(self.workbook.resolve())
             write_table.assert_not_called()
+            if result == 0:
+                # A completed run ends by printing the comparison table.
+                self.assertIn("| Case | Compared |", printed.getvalue())
             return result
 
     def test_evidence_identifies_downloaded_bytes_without_rewriting_history(self) -> None:

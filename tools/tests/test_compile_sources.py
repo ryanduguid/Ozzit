@@ -19,6 +19,9 @@ from pathlib import Path
 
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
+# The lease builder test runs a postbuild pass, which imports its sibling workbook.py.
+# Run alone, nothing else has put that directory on the path.
+sys.path.insert(0, str(TOOLS / "postbuild"))
 
 import compile_sources  # noqa: E402
 from verify_sources import canonical  # noqa: E402

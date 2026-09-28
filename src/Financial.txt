@@ -807,9 +807,6 @@ Amortiseλ = LAMBDA(
                     Offset,             TimelineOffsetλ(StartDate, Timeline),
                 //  A sub-monthly period is a fixed number of days, so each month lands in
                 //  the one period that contains its start and the periods between are nil.
-                //  Rows 2 and 5 are balances rather than flows; a balance is carried into
-                //  the period it is dated in and nowhere else, which is the same treatment
-                //  Depreciateλ gives its own opening balance row.
                     MonthStarts,        EDATE( StartDate, SEQUENCE( , Periods, 0)),
                 //  The period each month opens in is the last period start on or before it. A
                 //  period ends where the next one opens; only the last has no successor to ask,
@@ -817,7 +814,23 @@ Amortiseλ = LAMBDA(
                 //  period or after that end belongs to no period and lands nowhere.
                     Buckets,            IFERROR( MATCH( MonthStarts, Timeline, 1), 0)
                                         * ( MonthStarts < MAX( Timeline) + LastGap),
-                    ByDate,             MMULT( AmortisationSched, ( TOCOL( Buckets) = SEQUENCE( 1, COUNTA( Timeline))) * 1),
+                    InPeriod,           ( TOCOL( Buckets) = SEQUENCE( 1, COUNTA( Timeline))) * 1,
+                //  Rows 2 and 5 are balances rather than flows. A period can hold several
+                //  months, as the last one does when FinalPeriodEnd extends it, or a longer
+                //  period after shorter ones: the flows of its months add up, but it opens on
+                //  its first month's balance and closes on its last month's, which is how
+                //  Depreciateλ reads its own opening balance row. Summed with the flows, a loan
+                //  repaid inside such a period closed it on the total of its monthly balances.
+                    Earlier,            IF( Periods = 1, 0, HSTACK( 0, DROP( Buckets, , -1))),
+                    Later,              IF( Periods = 1, 0, HSTACK( DROP( Buckets, , 1), 0)),
+                    FirstInPeriod,      ( Buckets <> Earlier) * ( Buckets > 0),
+                    LastInPeriod,       ( Buckets <> Later) * ( Buckets > 0),
+                    Flows,              MMULT( AmortisationSched, InPeriod),
+                    ByDate,             VSTACK( TAKE( Flows, 1),
+                                                MMULT( CHOOSEROWS( AmortisationSched, 2) * FirstInPeriod, InPeriod),
+                                                CHOOSEROWS( Flows, 3, 4),
+                                                MMULT( CHOOSEROWS( AmortisationSched, 5) * LastInPeriod, InPeriod),
+                                                TAKE( Flows, -1)),
                     IF( SubMonthly?,
                         ByDate,
                         TimelinePositionλ(AmortisationSched, Timeline, Offset))
@@ -2507,8 +2520,11 @@ PeriodRateλ = LAMBDA(
                         )),
     //  Check inputs - Omitted required arguments
         Help?,          ISOMITTED(AnnualRate),
-    //  A blank PeriodsPerYear cell is not an omitted argument, so test for both
-        Periods,        IF(OR(ISOMITTED(PeriodsPerYear), NOT(ISNUMBER(PeriodsPerYear))), 12, PeriodsPerYear),
+    //  A blank PeriodsPerYear cell is not an omitted argument, so test for both. The
+    //  blank test stays element-wise: OR() reduced a column of frequencies to one TRUE,
+    //  so a single blank gave every row 12.
+        Periods,        IF(ISOMITTED(PeriodsPerYear), 12,
+                            IF(ISNUMBER(PeriodsPerYear), PeriodsPerYear, 12)),
         Result,         (1 + AnnualRate) ^ (1 / Periods) - 1,
     //  Return Result or Help
         CHOOSE( Help? + 1, Result, Help)
@@ -2542,8 +2558,11 @@ AnnualRateλ = LAMBDA(
                         )),
     //  Check inputs - Omitted required arguments
         Help?,          ISOMITTED(PeriodRate),
-    //  A blank PeriodsPerYear cell is not an omitted argument, so test for both
-        Periods,        IF(OR(ISOMITTED(PeriodsPerYear), NOT(ISNUMBER(PeriodsPerYear))), 12, PeriodsPerYear),
+    //  A blank PeriodsPerYear cell is not an omitted argument, so test for both. The
+    //  blank test stays element-wise: OR() reduced a column of frequencies to one TRUE,
+    //  so a single blank gave every row 12.
+        Periods,        IF(ISOMITTED(PeriodsPerYear), 12,
+                            IF(ISNUMBER(PeriodsPerYear), PeriodsPerYear, 12)),
         Result,         (1 + PeriodRate) ^ Periods - 1,
     //  Return Result or Help
         CHOOSE( Help? + 1, Result, Help)

@@ -1,12 +1,16 @@
 """Lease definitions exercise the same compiler seam as the postbuild pass."""
 
 import runpy
+import sys
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[3]
 SCRIPT = ROOT / "tools" / "postbuild" / "aasb16_leases.py"
+# The pass imports its sibling workbook.py, which is only on the path when it runs
+# as a script. Run alone, this module would otherwise depend on an earlier test.
+sys.path.insert(0, str(SCRIPT.parent))
 
 
 class Aasb16ParserTests(unittest.TestCase):

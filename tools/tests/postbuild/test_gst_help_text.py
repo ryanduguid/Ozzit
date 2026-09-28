@@ -24,6 +24,9 @@ POSTBUILD_README = TOOLS / "postbuild" / "README.md"
 SYNC_AFE_SCRIPT = TOOLS / "sync_afe_store.py"
 VERIFY_AFE_SCRIPT = TOOLS / "verify_afe.py"
 
+# The pass imports its sibling workbook.py, which is only on the path when it runs
+# as a script. Run alone, this module would otherwise depend on an earlier test.
+sys.path.insert(0, str(TOOLS / "postbuild"))
 _spec = importlib.util.spec_from_file_location("gst_help_text", PASS_SCRIPT)
 _mod = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_mod)

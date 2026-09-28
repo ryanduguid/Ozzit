@@ -3,13 +3,10 @@
 The tool models TRIM(TEXTSPLIT(literal, "→", "¶")) and compares the result with
 the cells a help anchor spills into. It only reads: a stale help is reported for
 tools/refresh_cache.py to refresh in Excel, never rewritten here. The model is
-proven against the workbook itself: every help cache Excel wrote for a function
-whose help has not changed must equal what the model computes, and the only
-helps allowed to differ are the ones this release changed and Excel has not yet
-refreshed.
+proven against the workbook itself: every help cache Excel wrote must equal
+what the model computes, as CI requires.
 """
 
-import re
 import subprocess
 import sys
 import tempfile
@@ -24,13 +21,6 @@ sys.path.insert(0, str(TOOLS))
 import verify_help_spills as spills  # noqa: E402
 
 WORKBOOK = ROOT / "ozzit.xlsx"
-# The helps this release changed. Until tools/refresh_cache.py has run in Excel their
-# caches show the previous table; once it has, this set may be emptied.
-CHANGED_HELPS = {
-    "oz.Depreciateλ", "oz.IsOccurrenceDateλ", "oz.MinColsλ", "oz.Movementλ", "oz.OverLapDaysλ",
-    "oz.Periodsλ", "oz.RollingSumλ", "oz.ScheduleRatesByItemsλ", "oz.ScheduleValuesλ",
-    "oz.ScheduleValuesByItemsλ",
-}
 
 BOOK = (
     "<workbook><definedNames>"
@@ -145,14 +135,20 @@ class HelpSpillCheckTests(unittest.TestCase):
         self.assertIn("OK: every cached help", result.stdout)
         self.assertIn("1 anchors", result.stdout)
 
-    def test_tracked_workbook_matches_the_model_except_the_helps_this_release_changed(self):
+    def test_cli_refuses_a_workbook_with_no_anchor_to_check(self):
+        tool = TOOLS / "verify_help_spills.py"
+        empty = self.write("empty.xlsx", parts_for(CURRENT.replace("oz.Fλ()", "SUM(1)")))
+        self.assertEqual(spills.run(empty)[1], 0)
+        result = subprocess.run([sys.executable, str(tool), str(empty)], capture_output=True, text=True, encoding="utf-8", check=False)
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("FAIL: no help anchor found", result.stderr)
+
+    def test_tracked_workbook_matches_the_model(self):
+        # A help change leaves its cache stale until tools/refresh_cache.py runs in Excel,
+        # and CI fails on it until then, so the tracked workbook holds none.
         stale, anchors = spills.run(WORKBOOK)
         self.assertGreaterEqual(anchors, 40)
-        names = {re.search(r" the (oz\.\S+) help is stale", line).group(1) for line in stale}
-        self.assertLessEqual(
-            names, CHANGED_HELPS,
-            "a help Excel cached for an unchanged function does not match the model: " + ", ".join(sorted(names)),
-        )
+        self.assertEqual(stale, [], "cached helps that no longer match their definitions")
 
 
 if __name__ == "__main__":
