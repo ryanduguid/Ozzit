@@ -64,6 +64,27 @@ class CollapsedDefaultTests(unittest.TestCase):
             ["Rate"],
         )
 
+    def test_an_aggregate_test_of_the_values_is_reported(self):
+        # SUM and COUNTBLANK read every value, so one blank still defaults every row.
+        self.assertEqual(
+            found('LAMBDA([Rates], IF(OR(ISOMITTED(Rates), SUM(--(Rates=""))>0), 0, Rates))'),
+            ["Rates"],
+        )
+        self.assertEqual(
+            found("LAMBDA([x], IF(OR(ISOMITTED(x), COUNTBLANK(x) > 0), 0, x))"), ["x"]
+        )
+
+    def test_a_let_that_shadows_the_parameter_passes_only_its_own_value(self):
+        # IsOccurrenceDateλ rebinds Repeats this way. A constant in the argument's name
+        # passes nothing through; a copy under that name still does.
+        self.assertEqual(
+            found('LAMBDA([Rate], IF(OR(ISOMITTED(Rate), Rate=""), 0, LET(Rate, 0, Rate)))'), []
+        )
+        self.assertEqual(
+            found('LAMBDA([Rate], IF(OR(ISOMITTED(Rate), Rate=""), 0, LET(Rate, Rate * 1, Rate)))'),
+            ["Rate"],
+        )
+
     def test_a_let_whose_result_reads_no_copy_passes(self):
         self.assertEqual(
             found('LAMBDA([Rate], IF(OR(ISOMITTED(Rate), Rate=""), 0.1, LET(RawRate, Rate, 0.1)))'),

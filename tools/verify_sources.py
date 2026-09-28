@@ -75,6 +75,9 @@ SCALAR_CALLS = frozenset({
     "ISREF", "MAX", "MIN", "OR", "ROWS", "SUM", "SUMPRODUCT", "XOR",
 })
 OPAQUE_CALLS = frozenset({"BYCOL", "BYROW", "LAMBDA", "MAKEARRAY", "MAP", "REDUCE", "SCAN"})
+# Calls that answer from an argument's shape or presence, not its values. A test may read a
+# parameter inside them without deciding every row from its contents; SUM(--(x="")) may not.
+SHAPE_CALLS = frozenset({"AREAS", "COLUMNS", "ISOMITTED", "ISREF", "ROWS"})
 IF_CALL = re.compile(r"(?<![A-Za-z0-9_.?λ])IF\s*\(", re.IGNORECASE)
 COMBINED = re.compile(r"\s*(?:NOT\s*\(\s*)?(?:AND|OR)\s*\(", re.IGNORECASE)
 TOKEN = re.compile(r"(?P<call>[A-Za-z_][A-Za-z0-9_.?λ]*)\s*\(|(?P<name>[A-Za-z_][A-Za-z0-9_.?λ]*)"
@@ -314,8 +317,11 @@ def let_reads_any(arguments: list[str], names: set[str], stop: frozenset[str]) -
     live = set(names)
     *bindings, result = arguments
     for bound, value in zip(bindings[::2], bindings[1::2]):
+        bound = bound.strip().upper()
         if reads_any(value, live, stop):
-            live.add(bound.strip().upper())
+            live.add(bound)
+        else:
+            live.discard(bound)          # a binding may shadow the name, as Repeats does
     return reads_any(result, live, stop)
 
 
@@ -324,9 +330,11 @@ def collapsed_defaults(body: str) -> list[str]:
 
     OR and AND reduce a column of inputs to one TRUE or FALSE, so in
     IF(OR(ISOMITTED(x), x=""), d, x) one blank cell gives every row d. A parameter
-    counts when the test reads it row by row and a branch passes it through row by row,
-    itself or as a copy a LET binds. A validator that reduces its answer to one flag on
-    purpose, as the λDV companions do, passes nothing through and is not reported.
+    counts when the test reads its values, directly or through an aggregate such as
+    SUM(--(x="")), and a branch passes it through row by row, itself or as a copy a LET
+    binds. A test of its shape or presence alone, ROWS(x) or ISOMITTED(x), does not count.
+    A validator that reduces its answer to one flag on purpose, as the λDV companions do,
+    passes nothing through and is not reported.
     """
     code = "".join('""' if is_string else chunk for is_string, chunk in split_literals(body))
     head = re.match(r"\s*LAMBDA\s*\(", code, re.IGNORECASE)
@@ -341,7 +349,7 @@ def collapsed_defaults(body: str) -> list[str]:
             continue
         tested = call_arguments(arguments[0], test.end() - 1)
         for name in parameters:
-            if (any(passed_through(part, name, SCALAR_CALLS) for part in tested)
+            if (any(passed_through(part, name, SHAPE_CALLS) for part in tested)
                     and any(passed_through(branch, name, SCALAR_CALLS | OPAQUE_CALLS)
                             for branch in arguments[1:])):
                 found.add(name)
