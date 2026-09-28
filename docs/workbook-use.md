@@ -18,7 +18,7 @@ The workbook tracked in this repository is the candidate the gates below run aga
 2. Cell A1 of every visible worksheet links back to the table of contents; every name in the TOC links to its worksheet.
 3. For inline help, type a function name with no arguments in an empty cell, for example `=oz.Amortiseλ()`. The help block spills syntax, parameters and worked examples.
 4. Grey-shaded cells on each worksheet are inputs. Change them and watch the function respond.
-5. To use the functions in your own workbook, copy a green-shaded cell across (Excel brings the named LAMBDA with it), or import the plain-text source with the Advanced Formula Environment in the Excel Labs add-in: `oz.txt` at the repository root is the whole library as one module.
+5. To use the functions in your own workbook, copy a pale purple shaded cell across (Excel brings the named LAMBDA with it), or import the plain-text source with the Advanced Formula Environment in the Excel Labs add-in: `oz.txt` at the repository root is the whole library as one module.
 
    The repository also includes an [Ozzit 13-week cash-flow forecast template](../templates/README.md) for Australian FP&A planning; see the [template overview](cash-flow-template.md).
 

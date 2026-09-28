@@ -1,2 +1,4 @@
 * text=auto eol=lf
 *.xlsx binary
+# oz.txt is built from src/ by tools/build_module.py, so review diffs collapse it.
+oz.txt linguist-generated=true
