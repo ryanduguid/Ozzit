@@ -168,7 +168,7 @@ class WorkbookTests(unittest.TestCase):
     def test_a_changed_header_rewrites_the_name_manager_comment(self):
         module = self.src / "Ratios.txt"
         text = module.read_text(encoding="utf-8")
-        old = "/**Measures the extent of a company’s leverage */"
+        old = "/**Measures the extent of a company’s gearing */"
         self.assertEqual(text.count(old), 1)
         module.write_text(text.replace(old, "/**Leverage, the short way*/"), encoding="utf-8")
         changed = compile_sources.run(self.workbook, self.src, False, self.index)

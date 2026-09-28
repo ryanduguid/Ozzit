@@ -4373,7 +4373,7 @@ WorkingCapitalTurnoverRatioλ = LAMBDA(
 
 
 /*  FUNCTION NAME:  DebtRatioλ
-    DESCRIPTION:*//**Measures the extent of a company’s leverage */
+    DESCRIPTION:*//**Measures the extent of a company’s gearing */
 DebtRatioλ = LAMBDA(
 //  Parameter DeclaRations
         [TotalDebt],  
@@ -4553,7 +4553,7 @@ DebtToEquityRatioλ = LAMBDA(
 
  
 /*  FUNCTION NAME:  DebtToAssetRatioλ
-    DESCRIPTION:*//**Analysts can compare one company's leverage with that of other 
+    DESCRIPTION:*//**Analysts can compare one company's gearing with that of other 
 companies in the same industry. (Total Debt/Total Assets) */
 DebtToAssetRatioλ = LAMBDA(
 //  Parameter DeclaRations
