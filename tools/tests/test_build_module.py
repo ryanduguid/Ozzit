@@ -25,9 +25,10 @@ class BuildModuleTests(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.directory, ignore_errors=True)
 
-    def _run(self, *args):
+    def _run(self, *args, cwd=None):
         return subprocess.run(
             [sys.executable, str(TOOLS / "build_module.py"), *map(str, args)],
+            cwd=cwd,
             capture_output=True,
             text=True,
             check=False,
@@ -86,12 +87,59 @@ class BuildModuleTests(unittest.TestCase):
         result = self._run(SRC, stale, WORKBOOK, INDEX, "--check")
         self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
         self.assertIn("stale", result.stdout)
+        self.assertEqual(stale.read_bytes(), b"/* stale */\n")
         result = self._run(SRC, stale, WORKBOOK, INDEX)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(stale.read_bytes(), MODULE.read_bytes())
         result = self._run(SRC, stale, WORKBOOK, INDEX, "--check")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("OK", result.stdout)
+
+    def test_cli_rejects_unknown_options_and_extra_paths_without_writing(self):
+        output = self.directory / "oz.txt"
+        sentinel = b"/* keep this output */\n"
+        for extra in ("--chek", "--chec", "--unknown", "extra.txt"):
+            with self.subTest(argument=extra):
+                output.write_bytes(sentinel)
+                result = self._run(SRC, output, WORKBOOK, INDEX, extra)
+                self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+                self.assertIn("unrecognized arguments", result.stderr)
+                self.assertEqual(output.read_bytes(), sentinel)
+
+    def test_cli_help_does_not_read_inputs_or_write_output(self):
+        output = self.directory / "oz.txt"
+        sentinel = b"/* keep this output */\n"
+        output.write_bytes(sentinel)
+        result = self._run(self.directory / "missing-src", output,
+                           self.directory / "missing.xlsx", self.directory / "missing.csv", "--help")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        for argument in ("src", "output", "workbook", "index", "--check"):
+            self.assertIn(argument, result.stdout)
+        self.assertEqual(output.read_bytes(), sentinel)
+
+    def test_cli_check_preserves_optional_path_defaults(self):
+        shutil.copytree(SRC, self.directory / "src")
+        for path in (MODULE, WORKBOOK, INDEX):
+            shutil.copyfile(path, self.directory / path.name)
+        paths = ("src", "oz.txt", "ozzit.xlsx", "functions.csv")
+        for count in range(5):
+            with self.subTest(path_count=count):
+                result = self._run(*paths[:count], "--check", cwd=self.directory)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertIn("OK", result.stdout)
+                self.assertEqual((self.directory / "oz.txt").read_bytes(), MODULE.read_bytes())
+
+    def test_cli_check_accepts_options_between_paths_without_writing(self):
+        output = self.directory / "oz.txt"
+        sentinel = b"/* keep this output */\n"
+        output.write_bytes(sentinel)
+        paths = [SRC, output, WORKBOOK, INDEX]
+        for position in range(len(paths) + 1):
+            with self.subTest(option_position=position):
+                result = self._run(*paths[:position], "--check", *paths[position:])
+                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+                self.assertIn("stale", result.stdout)
+                self.assertEqual(output.read_bytes(), sentinel)
 
 
 if __name__ == "__main__":

@@ -1,7 +1,5 @@
 """Publish src/ as one Advanced Formula Environment module.
 
-Usage: python tools/build_module.py [src dir] [output] [--check]
-
 Importing one src/ module into the Advanced Formula Environment recreates its
 functions under the container's own name (Dates.CountDOWλ), and one library
 cannot be six containers. This tool joins the six module texts, in the order
@@ -19,6 +17,7 @@ docs/workbook-use.md say what native evidence that needs.
 
 from __future__ import annotations
 
+import argparse
 import csv
 import re
 import sys
@@ -94,18 +93,27 @@ def check(text: str, workbook: Path, index: Path) -> list[str]:
 
 
 def main(argv: list[str]) -> int:
-    args = [arg for arg in argv if not arg.startswith("--")]
-    src = Path(args[0] if args else "src")
-    output = Path(args[1] if len(args) > 1 else "oz.txt")
-    workbook = Path(args[2] if len(args) > 2 else "ozzit.xlsx")
-    index = Path(args[3] if len(args) > 3 else "functions.csv")
-    text = build(src)
-    failures = check(text, workbook, index)
+    parser = argparse.ArgumentParser(
+        description="Publish src/ as one Advanced Formula Environment module.",
+        allow_abbrev=False,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument("src", nargs="?", type=Path, default=Path("src"), help="source directory")
+    parser.add_argument("output", nargs="?", type=Path, default=Path("oz.txt"), help="output module")
+    parser.add_argument("workbook", nargs="?", type=Path, default=Path("ozzit.xlsx"),
+                        help="authoritative workbook")
+    parser.add_argument("index", nargs="?", type=Path, default=Path("functions.csv"),
+                        help="function index")
+    parser.add_argument("--check", action="store_true", help="check the output without writing")
+    args = parser.parse_intermixed_args(argv)
+    output = args.output
+    text = build(args.src)
+    failures = check(text, args.workbook, args.index)
     for failure in failures:
         print(f"FAIL: {failure}")
     if failures:
         return 1
-    if "--check" in argv:
+    if args.check:
         current = output.read_bytes() if output.is_file() else b""
         if current != text.encode("utf-8"):
             print(f"FAIL: {output} is stale; run python tools/build_module.py")
