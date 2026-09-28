@@ -27,6 +27,15 @@ release; until then v3.4.2 behaves as it did, including the defects fixed here.
 - `oz.Depreciateλ` ends a month-end timeline's last period at the month end. It used
   `EDATE`, which steps from 28 February to 28 March, so the period closed three days
   early and an asset brought into service in those days fell into no period.
+- `oz.Amortiseλ` opens a period that holds several months on its first month's balance
+  and closes it on its last month's, as `oz.Depreciateλ` already does for its opening
+  row. A period of a sub-monthly timeline holds several months when `FinalPeriodEnd`
+  extends it, or when a longer period follows shorter ones, and the balance rows added
+  those months up: 10 weekly periods from 1 January 2026 with a final period ending on
+  1 January 2027 opened the last at 37,942.09 rather than 7,546.58 and closed a loan
+  repaid in December at 30,395.51 rather than 0. Interest and payment rows were right,
+  and a period holding one month is unchanged. `tools/excel_selftest.ps1` gains 5
+  assertions for this, 938 in all; they have not yet been run in Excel.
 
 ### Found in review, not yet fixed
 
@@ -42,10 +51,6 @@ recalculated by hand or in Python; none has yet been reproduced in Excel.
   1 January 2027 books 53,184.73 of payments in FY27 rather than 26,592.37, and none in
   FY29 rather than 26,592.37. Until fixed, start each loan on a period start, or use a
   monthly timeline.
-- `oz.Amortiseλ` adds balances together when one period of a sub-monthly timeline holds
-  more than one month, as a later `FinalPeriodEnd` allows. That period's interest and
-  payment rows are right; its opening and closing balance rows are sums of monthly
-  balances. Fix this before `FinalPeriodEnd` is released.
 - `oz.LeaseRemeasureλ` with InAdvance TRUE excludes the payment due at the
   remeasurement date from the revised liability, but compares it with the liability
   carried immediately before the remeasurement, which still includes that payment. An

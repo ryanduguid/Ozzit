@@ -405,6 +405,23 @@ Near 'Amortise: a stated final period end carries every month of interest' `
 # Handed the end it would have inferred, the parameter reproduces the default exactly.
 Near 'Amortise: the stated end matches the inferred one' `
      "SUM($am(10000, 0.05, 12, DATE(2026,1,1), $amWkShort, MAX($amWkShort) + 7)) - SUM($amStop)" '0' '0.0000001'
+# A period that holds several months adds their flows, but rows 2 and 5 are balances: it
+# opens on its first month's balance and closes on its last month's. The last of these 10
+# weekly periods holds April to December, and adding its balances opened it at 37,942.09
+# and closed a loan repaid in December at 30,395.51. The row sums above cannot see that.
+Near 'Amortise: a period holding several months opens on its first month' `
+     "INDEX($amCarry,2,10) - INDEX($amMo,2,4)" '0' '0.0000001'
+Near 'Amortise: a period holding several months closes on its last month' `
+     "INDEX($amCarry,5,10) - INDEX($amMo,5,12)" '0' '0.0000001'
+Near 'Amortise: a period holding one month keeps its balance' `
+     "INDEX($amCarry,5,9) - INDEX($amMo,5,3)" '0' '0.0000001'
+# A longer period after shorter ones holds several months too: 4 weekly periods, then
+# quarters from 1 February, so the fifth period holds February to April.
+$amMixed = "$am(10000, 0.05, 12, DATE(2026,1,1), HSTACK(DATE(2026,1,1) + SEQUENCE( , 4, 0) * 7, EDATE(DATE(2026,2,1), SEQUENCE( , 3, 0) * 3)))"
+Near 'Amortise: a quarter after weekly periods opens on its first month' `
+     "INDEX($amMixed,2,5) - INDEX($amMo,2,2)" '0' '0.0000001'
+Near 'Amortise: a quarter after weekly periods closes on its last month' `
+     "INDEX($amMixed,5,5) - INDEX($amMo,5,4)" '0' '0.0000001'
 Same 'Amortise: a final period end inside the timeline is refused' `
      "LEFT(INDEX($am(10000, 0.05, 12, DATE(2026,1,1), $amWkShort, DATE(2026,1,15)),1,1),14)" 'FinalPeriodEnd'
 # The default timeline is monthly, where the boundary moves nothing, so the end is refused
