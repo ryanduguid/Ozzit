@@ -27,9 +27,13 @@ published 20 September 2026 from the cut dated 16 September 2026.
 **Known issues in v3.4.2.** One blank cell in a column of GST rates gives every row
 10%, zero-rated rows included; one blank opening in `oz.Movementλ` sets every row's
 opening to 0; and negative CFADS raises the balance in `oz.DebtSculptFixedλ` and
-`oz.DebtSculptVariableλ`. All three are fixed on `main` for the next release. Defects
-found in review and not yet fixed are listed, each with a way to avoid it, under
-[Unreleased in the changelog](CHANGELOG.md#unreleased).
+`oz.DebtSculptVariableλ`. One blank cell likewise gives every row the default in a
+column of PeriodsPerYear for `oz.PeriodRateλ` and `oz.AnnualRateλ`, of Unit for
+`oz.DateDifλ` and of Repeats for `oz.IsOccurrenceDateλ`, whose LastOccurrence column
+reads no text date once another row holds a date or a blank. In v3.4.2, fill every such
+cell and enter last occurrences as dates. All of these are fixed on `main` for the next
+release. Defects found in review and not yet fixed are listed, each with a way to avoid
+it, under [Unreleased in the changelog](CHANGELOG.md#unreleased).
 
 Synthetic example. Review aid, not professional advice; the reviewer decides the GST treatment.
 

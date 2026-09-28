@@ -123,7 +123,7 @@ class CollapsedDefaultTests(unittest.TestCase):
 
     def test_the_gate_reports_a_new_occurrence_and_a_stale_entry(self):
         known = dict(verify_sources.KNOWN_COLLAPSED_DEFAULTS)
-        del known[("DateDifλ", "Unit")]
+        del known[("DayCountRateλ", "Convention")]
         known[("Fixtureλ", "Rate")] = "an entry whose occurrence has gone"
         verify_sources.failures.clear()
         output = io.StringIO()
@@ -138,7 +138,7 @@ class CollapsedDefaultTests(unittest.TestCase):
         finally:
             verify_sources.failures.clear()
         self.assertEqual(result, 1)
-        self.assertIn("DateDifλ defaults Unit with an IF that tests it inside OR() or AND()",
+        self.assertIn("DayCountRateλ defaults Convention with an IF that tests it inside OR() or AND()",
                       output.getvalue())
         self.assertIn("Fixtureλ no longer defaults Rate", output.getvalue())
 

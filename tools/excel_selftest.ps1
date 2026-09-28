@@ -736,6 +736,12 @@ Near 'PeriodRate: a row of rates'               "SUM($pr({0.05,0.05}))" '0.00814
 Near 'AnnualRate: 1% a month is 12.68% a year'  "$ar(0.01)"       '0.12682503' '0.000000005'
 Near 'AnnualRate: quarterly'                    "$ar(0.01, 4)"    '0.04060401' '0.000000005'
 Near 'AnnualRate: agrees with EFFECT()'         "$ar(0.06/12) - EFFECT(0.06, 12)" '0' '0.0000000001'
+# A column of PeriodsPerYear is read row by row: one blank defaults its own row to 12.
+# OR() once gave every row 12 as soon as one cell was blank.
+Near 'PeriodRate: per-row periods'              "INDEX($pr({0.05;0.05},{1;`"`"}),1,1)" '0.05' '0.0000000001'
+Near 'PeriodRate: blank periods row = 12'       "INDEX($pr({0.05;0.05},{1;`"`"}),2,1)" '0.00407412' '0.000000005'
+Near 'AnnualRate: per-row periods'              "INDEX($ar({0.01;0.01},{4;`"`"}),1,1)" '0.04060401' '0.000000005'
+Near 'AnnualRate: blank periods row = 12'       "INDEX($ar({0.01;0.01},{4;`"`"}),2,1)" '0.12682503' '0.000000005'
 
 # --- Day count conventions. July 2026 has 31 days, September 30, and the year 365.
 $dc = "oz.DayCountRate$L"
@@ -783,6 +789,21 @@ Near 'DateDif: same day is nought'     "$dd(DATE(2026,1,1), DATE(2026,1,1), `"M`
 Near 'DateDif: reversed range errors'  "--ISERROR($dd(DATE(2026,3,1), DATE(2026,1,1)))" '1'
 Near 'DateDif: unknown unit errors'    "--ISERROR($dd(DATE(2026,1,1), DATE(2026,3,1), `"X`"))" '1'
 Same 'DateDif: help with no args'      "INDEX($dd(),1,1)" 'FUNCTION:'
+# A column of units is read row by row: one blank defaults its own row to days.
+Near 'DateDif: per-row unit'           "INDEX($dd(DATE(2026,1,31), DATE(2026,3,1), {`"MD`";`"`"}),1,1)" '1'
+Near 'DateDif: blank unit row is days' "INDEX($dd(DATE(2026,1,31), DATE(2026,3,1), {`"MD`";`"`"}),2,1)" '29'
+
+# --- IsOccurrenceDate. Repeats and LastOccurrence are table columns, so each row is read
+# on its own: a blank Repeats row is one-off, a text last date is read as a date, and a
+# blank last date means no end. OR() once let one row decide how every row was read.
+# 46211 is 8 July 2026, the date tested; the items start on 1 July.
+$io = "oz.IsOccurrenceDate$L"
+Near 'IsOccurrenceDate: per-row repeats'         "--INDEX($io(DATE(2026,7,8), DATE(2026,7,1), , {`"W`";`"`"}),1,1)" '1'
+Near 'IsOccurrenceDate: blank repeats is one-off' "--INDEX($io(DATE(2026,7,8), DATE(2026,7,1), , {`"W`";`"`"}),2,1)" '0'
+Near 'IsOccurrenceDate: text last date is read'  "--INDEX($io(DATE(2026,7,8), DATE(2026,7,1), {`"2026-07-05`";46211;`"`"}, `"D`"),1,1)" '0'
+Near 'IsOccurrenceDate: date last date row'      "--INDEX($io(DATE(2026,7,8), DATE(2026,7,1), {`"2026-07-05`";46211;`"`"}, `"D`"),2,1)" '1'
+Near 'IsOccurrenceDate: blank last date row'     "--INDEX($io(DATE(2026,7,8), DATE(2026,7,1), {`"2026-07-05`";46211;`"`"}, `"D`"),3,1)" '1'
+Near 'IsOccurrenceDate: blank last date cells'   "SUM(--$io(DATE(2026,7,8), DATE(2026,7,1), Z1:Z2, `"D`"))" '2'
 
 # --- Debt sculpting on period rates. A row of rates from a day count convention replaces
 # the flat twelfth of APR, and APR may then be left out altogether.

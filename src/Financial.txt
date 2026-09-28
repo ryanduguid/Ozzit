@@ -2520,8 +2520,11 @@ PeriodRateλ = LAMBDA(
                         )),
     //  Check inputs - Omitted required arguments
         Help?,          ISOMITTED(AnnualRate),
-    //  A blank PeriodsPerYear cell is not an omitted argument, so test for both
-        Periods,        IF(OR(ISOMITTED(PeriodsPerYear), NOT(ISNUMBER(PeriodsPerYear))), 12, PeriodsPerYear),
+    //  A blank PeriodsPerYear cell is not an omitted argument, so test for both. The
+    //  blank test stays element-wise: OR() reduced a column of frequencies to one TRUE,
+    //  so a single blank gave every row 12.
+        Periods,        IF(ISOMITTED(PeriodsPerYear), 12,
+                            IF(ISNUMBER(PeriodsPerYear), PeriodsPerYear, 12)),
         Result,         (1 + AnnualRate) ^ (1 / Periods) - 1,
     //  Return Result or Help
         CHOOSE( Help? + 1, Result, Help)
@@ -2555,8 +2558,11 @@ AnnualRateλ = LAMBDA(
                         )),
     //  Check inputs - Omitted required arguments
         Help?,          ISOMITTED(PeriodRate),
-    //  A blank PeriodsPerYear cell is not an omitted argument, so test for both
-        Periods,        IF(OR(ISOMITTED(PeriodsPerYear), NOT(ISNUMBER(PeriodsPerYear))), 12, PeriodsPerYear),
+    //  A blank PeriodsPerYear cell is not an omitted argument, so test for both. The
+    //  blank test stays element-wise: OR() reduced a column of frequencies to one TRUE,
+    //  so a single blank gave every row 12.
+        Periods,        IF(ISOMITTED(PeriodsPerYear), 12,
+                            IF(ISNUMBER(PeriodsPerYear), PeriodsPerYear, 12)),
         Result,         (1 + PeriodRate) ^ Periods - 1,
     //  Return Result or Help
         CHOOSE( Help? + 1, Result, Help)

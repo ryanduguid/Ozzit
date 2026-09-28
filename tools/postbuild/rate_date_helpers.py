@@ -71,8 +71,11 @@ PeriodRateλ = LAMBDA(
                         )),
     //  Check inputs - Omitted required arguments
         Help?,          ISOMITTED(AnnualRate),
-    //  A blank PeriodsPerYear cell is not an omitted argument, so test for both
-        Periods,        IF(OR(ISOMITTED(PeriodsPerYear), NOT(ISNUMBER(PeriodsPerYear))), 12, PeriodsPerYear),
+    //  A blank PeriodsPerYear cell is not an omitted argument, so test for both. The
+    //  blank test stays element-wise: OR() reduced a column of frequencies to one TRUE,
+    //  so a single blank gave every row 12.
+        Periods,        IF(ISOMITTED(PeriodsPerYear), 12,
+                            IF(ISNUMBER(PeriodsPerYear), PeriodsPerYear, 12)),
         Result,         (1 + AnnualRate) ^ (1 / Periods) - 1,
     //  Return Result or Help
         CHOOSE( Help? + 1, Result, Help)
@@ -106,8 +109,11 @@ AnnualRateλ = LAMBDA(
                         )),
     //  Check inputs - Omitted required arguments
         Help?,          ISOMITTED(PeriodRate),
-    //  A blank PeriodsPerYear cell is not an omitted argument, so test for both
-        Periods,        IF(OR(ISOMITTED(PeriodsPerYear), NOT(ISNUMBER(PeriodsPerYear))), 12, PeriodsPerYear),
+    //  A blank PeriodsPerYear cell is not an omitted argument, so test for both. The
+    //  blank test stays element-wise: OR() reduced a column of frequencies to one TRUE,
+    //  so a single blank gave every row 12.
+        Periods,        IF(ISOMITTED(PeriodsPerYear), 12,
+                            IF(ISNUMBER(PeriodsPerYear), PeriodsPerYear, 12)),
         Result,         (1 + PeriodRate) ^ Periods - 1,
     //  Return Result or Help
         CHOOSE( Help? + 1, Result, Help)
@@ -235,7 +241,8 @@ DateDifλ = LAMBDA(
     //  Text dates are read; a blank Unit cell is not an omitted argument, so test for both
         Start,          IF(ISNUMBER(StartDate), StartDate, DATEVALUE(StartDate)),
         Finish,         IF(ISNUMBER(EndDate), EndDate, DATEVALUE(EndDate)),
-        Code,           IF(OR(ISOMITTED(Unit), Unit = ""), "D", UPPER(Unit)),
+    //  Element-wise, so one blank Unit in a column defaults its own row and not every row
+        Code,           IF(ISOMITTED(Unit), "D", IF(Unit = "", "D", UPPER(Unit))),
     //  Calendar months crossed, less one when the last has not yet completed
         RawMonths,      12 * (YEAR(Finish) - YEAR(Start)) + MONTH(Finish) - MONTH(Start),
         Months,         RawMonths - (EDATE(Start, RawMonths) > Finish),

@@ -66,11 +66,6 @@ KNOWN_COLLAPSED_DEFAULTS = {
     ("LeaseLiabilityλ", "InAdvance"): "scalar: one lease at a time, so one TRUE or FALSE",
     ("LeaseRemeasureλ", "InAdvance"): "scalar: one lease at a time, so one TRUE or FALSE",
     ("LeaseScheduleλ", "InAdvance"): "scalar: one lease at a time, so one TRUE or FALSE",
-    ("AnnualRateλ", "PeriodsPerYear"): "defect: a column of frequencies; fix in a native round",
-    ("DateDifλ", "Unit"): "defect: a column of units; fix in a native round",
-    ("IsOccurrenceDateλ", "LastOccurrence"): "defect: a table column; fix in a native round",
-    ("IsOccurrenceDateλ", "Repeats"): "defect: a table column; fix in a native round",
-    ("PeriodRateλ", "PeriodsPerYear"): "defect: a column of frequencies; fix in a native round",
 }
 # Calls that reduce what they are given to one value, and calls that bind names this check
 # does not follow. A parameter read inside either is not being passed through row by row.

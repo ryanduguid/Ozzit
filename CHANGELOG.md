@@ -12,6 +12,15 @@ release; until then v3.4.2 behaves as it did, including the defects fixed here.
   10%, zero-rated rows included.
 - `oz.Movementλ` defaults a blank BeginningValues cell to 0 for its own row. In v3.4.2
   one blank cell set every row's opening to 0.
+- `oz.PeriodRateλ` and `oz.AnnualRateλ` default a blank PeriodsPerYear cell to 12, and
+  `oz.DateDifλ` a blank Unit cell to days, for its own row. `oz.IsOccurrenceDateλ` reads
+  Repeats and LastOccurrence row by row too: a blank Repeats cell makes only its own row
+  a one-off, and a text last date is read as a date whatever the other rows hold. v3.4.2
+  tested each of these columns with `OR()`, as it did GST rates, so one blank cell gave
+  every row the default, and one blank or date in a LastOccurrence column left text
+  dates in the other rows unread. A column that is all blank now gives one default per
+  row. `tools/excel_selftest.ps1` gains 12 assertions for these; they have not yet been
+  run in Excel.
 - `oz.DiminishingValueλ` and `oz.PrimeCostλ` refuse a Life that is not greater than 0
   with a message. A negative life wrote the whole cost off in one period, and a zero
   life divided by zero.
@@ -35,14 +44,15 @@ release; until then v3.4.2 behaves as it did, including the defects fixed here.
   1 January 2027 opened the last at 37,942.09 rather than 7,546.58 and closed a loan
   repaid in December at 30,395.51 rather than 0. Interest and payment rows were right,
   and a period holding one month is unchanged. `tools/excel_selftest.ps1` gains 5
-  assertions for this, 938 in all; they have not yet been run in Excel.
+  assertions for this; they have not yet been run in Excel.
 
 ### Found in review, not yet fixed
 
 A review of the library on 28 September 2026 found these defects. Each needs a
 formula change and a native Excel round, so each stays listed here, with a way to
-avoid it, until a release fixes it. They were traced in the formula text and
-recalculated by hand or in Python; none has yet been reproduced in Excel.
+avoid it, until a change fixes it and moves it to the calculation changes above. They
+were traced in the formula text and recalculated by hand or in Python; none has yet
+been reproduced in Excel.
 
 - `oz.Amortiseλ` on a timeline of a month or longer groups a loan's months from the
   loan's own start, not by the timeline's dates. A loan that starts part-way through a
@@ -63,14 +73,6 @@ recalculated by hand or in Python; none has yet been reproduced in Excel.
   period's interest. From a nil balance, CFADS of -300 at a DSCR of 1.2 creates 257.73
   of debt. Capitalising interest when there is no cash is deliberate; a negative CFADS
   goes further. Until fixed, pass `IF(CFADS < 0, 0, CFADS)`.
-- `oz.IsOccurrenceDateλ` tests Repeats and LastOccurrence with `OR()`, the same defect
-  the GST fix above removes. One blank Repeats cell in a column makes every row a
-  one-time occurrence, and one blank or date in a LastOccurrence column stops text
-  dates in the other rows from being read. Until fixed, fill every Repeats cell (O for
-  one-off) and enter LastOccurrence as dates rather than text.
-- `oz.DateDifλ`, `oz.PeriodRateλ` and `oz.AnnualRateλ` default Unit and PeriodsPerYear
-  the same way, so one blank cell in a column gives every row the default. Until fixed,
-  fill every cell.
 - `oz.FinancialYearλ` reads a blank StartMonth cell as a calendar year: 15 August 2026
   gives FY2026 rather than FY2027. Until fixed, omit the argument or enter 7.
 - `oz.DBλ` and `oz.DDBλ` put the whole remaining depreciable amount in the final year,
@@ -84,9 +86,10 @@ recalculated by hand or in Python; none has yet been reproduced in Excel.
 ### Tools, checks and documentation
 
 - `tools/verify_sources.py` fails an argument default that tests a parameter inside
-  `OR()` or `AND()`. It would have caught the GST and `oz.Movementλ` defects above, and
-  it lists the occurrences still in `src/`, each with its reason; an entry that no
-  longer occurs fails too. It also runs about four times faster: module-local calls
+  `OR()` or `AND()`. It would have caught the GST and `oz.Movementλ` defects above,
+  and it found the five defaults fixed after them. The occurrences still in `src/`, all
+  scalar by design, are listed with their reasons, and an entry that no longer occurs
+  fails too. It also runs about four times faster: module-local calls
   are qualified with one precompiled pattern rather than a pass per name.
 - CI runs `tools/verify_help_spills.py`, which reports a demonstration sheet whose
   cached help no longer matches its function, and which now fails when it finds no
