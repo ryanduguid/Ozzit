@@ -7,6 +7,16 @@ release; until then v3.4.2 behaves as it did, including the defects fixed here.
 
 ### Calculation changes
 
+- `oz.Amortiseλ` allocates each loan month by the reporting period's dates.
+  A 24-month loan starting in January on a July financial-year timeline now puts
+  6, 12 and 6 payments in those years, instead of 12, 12 and none. Uneven periods
+  follow their actual dates too. Each period opens on its first monthly balance
+  and closes on its last. Multiple-loan inputs now retain every monthly payment.
+  Calendar cut-offs preserve February clipping and single-date timelines;
+  `FinalPeriodEnd` still affects only sub-monthly timelines. All 1,002 native
+  assertions and 19,446 cache comparisons pass in Excel 16.0 build 20430 on
+  29 September 2026. The 24 added assertions include independently calculated
+  annual, quarterly and multiple-loan vectors and unchanged-behaviour controls.
 - `oz.LeaseRemeasureλ` compares liabilities before the payment due at the
   remeasurement date. With InAdvance TRUE, the adjustment includes that payment;
   the returned unpaid liability still excludes it. Unchanged payments no longer
@@ -73,13 +83,6 @@ avoid it, until a change fixes it and moves it to the calculation changes above.
 initial review traced these cases in the formula text and recalculated them by hand
 or in Python, without native Excel reproduction.
 
-- `oz.Amortiseλ` on a timeline of a month or longer groups a loan's months from the
-  loan's own start, not by the timeline's dates. A loan that starts part-way through a
-  period has its interest and payments shifted between periods; lifetime totals are
-  unaffected. On a 1 July financial-year timeline, 100,000 at 6% over 24 months from
-  1 January 2027 books 53,184.73 of payments in FY27 rather than 26,592.37, and none in
-  FY29 rather than 26,592.37. Until fixed, start each loan on a period start, or use a
-  monthly timeline.
 - `oz.DBλ` and `oz.DDBλ` put the whole remaining depreciable amount in the final year,
   which Excel's DB and DDB do not: DDB on 10,000 with 500 salvage over 10 years ends at
   842.18 rather than 268.44. `oz.DBλ`'s Months argument returns Life columns where

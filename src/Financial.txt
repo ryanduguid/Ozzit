@@ -654,7 +654,7 @@ Amortiseλ = LAMBDA(
         Help,       TRIM(TEXTSPLIT( 
                         "FUNCTION:      →Amortiseλ( Principals, APRs, Terms, StartDates, [Timeline], [FinalPeriodEnd])¶" &
                         "DESCRIPTION:   →Creates an amortisation schedule array for one or more loans.¶" &
-                                       "→Payments are assumed monthly. On periods shorter than a month the figures for each month land in the period holding its start, the rest nil.¶" &
+                                       "→Payments are assumed monthly. Each month lands in the period holding its start. Flows add up; balances show the first opening and last closing. Periods without a loan month are nil.¶" &
                                        "→Use LabelAmortiseλ() to apply labels to this function's results:¶" & 
                                        "→Use SumAmortiseλ() to apply totals to this function's results:¶" & 
                         "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
@@ -664,8 +664,8 @@ Amortiseλ = LAMBDA(
                         "APRs           →(Required) Annual Percentage Rates for interest.¶" & 
                         "Terms          →(Required) Number of months for loans/debts.¶" & 
                         "StartDates     →(Required) Dates debts are issued.¶" & 
-                        "Timeline       →(Optional) An array of dates. If omitted, a row of months starting on start date will be added¶" & 
-                        "FinalPeriodEnd →(Optional) The day after the last period ends. Needs Timeline, and only moves money where its periods are shorter than a month. If omitted, the last period runs as long as the one before it.¶" &
+                        "Timeline       →(Optional) A row of period start dates. If omitted, a monthly timeline is added¶" &
+                        "FinalPeriodEnd →(Optional) The day after the last period ends. Needs Timeline, and only moves money where its periods are shorter than a month. Otherwise, the last period follows the preceding interval, using calendar months for monthly or longer intervals.¶" &
                         "EXAMPLES:→¶" &
                         "Result         →Formula (oz is assumed to be the module's name)¶" &
                                        "→=oz.Amortiseλ(10000, 5%, 4 * 12, ""2026-07-01"")", 
@@ -687,7 +687,7 @@ Amortiseλ = LAMBDA(
     //  longest-running loan, whichever loan that is.
         CvtStarts,          IF( ISNUMBER( StartDates), StartDates, DATEVALUE( StartDates)),
     //  Read before the default replaces it, because FinalPeriodEnd describes a supplied
-    //  timeline and the default is monthly, where it would do nothing.
+    //  timeline and does not apply to the default monthly timeline.
         TimelineGiven?,     NOT( ISOMITTED( Timeline)),
         Timeline,           IF( ISOMITTED( Timeline), 
                                 LET(LastMonths, EDATE( CvtStarts, Terms - 1),
@@ -732,26 +732,32 @@ Amortiseλ = LAMBDA(
                                 FALSE),
         FinalEndMessage,    "FinalPeriodEnd needs a Timeline, and must be one date after the last "
                             & "date in it. It is the day after the final period ends.",
-        LastGap,            IF( FinalEnd?,
-                                FinalEndDate - MAX( Timeline),
-                                IF( Single?, DpP, MAX( Timeline) - INDEX( Timeline, COUNTA( Timeline) - 1))),
-        SubMonthly?,        DpP < 28,                                   //No month is shorter
-        MpP,                MAX( @ROUND( DpP / ADpM, 0), 1),            //Months Per Period, never nought
+        SubMonthly?,        DpP < 28,
+        LastDate,           MAX( Timeline),
+        PriorDate,          IF( Single?, FirstPeriod, INDEX( Timeline, COUNTA( Timeline) - 1)),
+        LastGap,            IF( Single?, DpP, LastDate - PriorDate),
+        LastMonths,         MAX( ROUND( LastGap / ADpM, 0), 1),
+    //  Preserve the calendar anchor when February clips it: Jan 30, Feb 28
+    //  continues to Mar 30. A sole start advances one month from its own date.
+        CalendarEnd,        IF( Single?, EDATE( LastDate, 1),
+                                IF( EDATE( PriorDate, LastMonths) = LastDate,
+                                    EDATE( PriorDate, 2 * LastMonths),
+                                    IF( DAY( LastDate + 1) = 1,
+                                        EOMONTH( LastDate, LastMonths),
+                                        EDATE( LastDate, LastMonths)))),
+    //  Keep the existing day-gap and explicit-end rules for sub-monthly timelines.
+        InferredEnd,        IF( OR( SubMonthly?, LastGap < 28), LastDate + LastGap, CalendarEnd),
+        BucketEnd,          IF( AND( FinalEnd?, SubMonthly?), FinalEndDate, InferredEnd),
 
     //  One loan's schedule, laid onto the timeline
         Schedule, 
             LAMBDA( Asset,
                 LET(
-                //  Create individual Values from array
-                    Principal,          INDEX( Principals, Asset), 
-                    APR,                INDEX( APRs, Asset), 
-                    Term,               INDEX( Terms, Asset),  
-                    StartDate,          INDEX( CvtStarts, Asset), 
-
-                //  Adjust inputs to match timeline
-                    Periods,            ROUNDUP(Term / MpP, 0),
-                    Rows,               1,
-                    Cols,               Periods,
+                //  Scalar inputs keep Excel from lifting each loan's schedule into nested arrays.
+                    Principal,          @INDEX( Principals, Asset),
+                    APR,                @INDEX( APRs, Asset),
+                    Term,               @INDEX( Terms, Asset),
+                    StartDate,          @INDEX( CvtStarts, Asset),
 
                 //  Calculate for each month
                     Rate,               APR / MpY,
@@ -759,41 +765,11 @@ Amortiseλ = LAMBDA(
                     MonthlyPrincipal,   -FV(Rate, SEQUENCE( 1, Term, 0), MonthlyPayment, Principal),
                     MonthlyInterest,    MonthlyPrincipal * Rate,
 
-                //  Convert to Timeline Periods
-                    DebtIssueArray,     EXPAND(Principal, 1, Periods, 0),
-                    PrincipalArray,     IF( MpP = 1, 
-                                            MonthlyPrincipal, 
-                                            MAKEARRAY( 1, Periods, 
-                                                LAMBDA(R, C, 
-                                                    LET(Idx, (C - 1) * MpP + 1, 
-                                                        INDEX( MonthlyPrincipal, Idx)
-                                                    )
-                                                )
-                                            )
-                                        ),    
-                    InterestArray,      IF( MpP = 1, 
-                                            MonthlyInterest,
-                                            LET( 
-                                                MoInt,  EXPAND( MonthlyInterest, 1, ROUNDUP( Term/ Mpp, 0) * Mpp, 0), 
-                                                MAKEARRAY( 1, Periods, 
-                                                    LAMBDA(R, C, 
-                                                            LET(Idx, (C - 1) * MpP + 1,
-                                                                SUM( CHOOSECOLS(MoInt, SEQUENCE(1, MpP, Idx)))
-                                                            )
-                                                    )
-                                                )
-                                            )
-                                        ),    
-                    PaymentArray,       LET(MoPmt,  EXPAND( SEQUENCE(1, Term, MonthlyPayment, 0), 1, ROUNDUP( Term/ Mpp, 0) * Mpp, 0), 
-                                            MAKEARRAY( 1, Periods, 
-                                                LAMBDA(R, C, 
-                                                        LET(Idx, (C - 1) * MpP + 1,
-                                                            SUM( CHOOSECOLS(MoPmt, SEQUENCE(1, MpP, Idx)))
-                                                        )
-                                                )
-                                            )
-
-                                        ), 
+                //  Keep every loan month separate until its timeline period is known.
+                    DebtIssueArray,     EXPAND( Principal, 1, Term, 0),
+                    PrincipalArray,     MonthlyPrincipal,
+                    InterestArray,      MonthlyInterest,
+                    PaymentArray,       SEQUENCE( 1, Term, MonthlyPayment, 0),
                     ClosingArray,       PrincipalArray + InterestArray + PaymentArray,
                     PortionArray,       -PaymentArray - InterestArray,    
                     AmortisationSched,  VSTACK(
@@ -803,17 +779,10 @@ Amortiseλ = LAMBDA(
                                             PaymentArray, 
                                             ClosingArray, 
                                             PortionArray),
-                //  Position in timeline
-                    Offset,             TimelineOffsetλ(StartDate, Timeline),
-                //  A sub-monthly period is a fixed number of days, so each month lands in
-                //  the one period that contains its start and the periods between are nil.
-                    MonthStarts,        EDATE( StartDate, SEQUENCE( , Periods, 0)),
-                //  The period each month opens in is the last period start on or before it. A
-                //  period ends where the next one opens; only the last has no successor to ask,
-                //  so it runs on as far as the period before it did. A month before the first
-                //  period or after that end belongs to no period and lands nowhere.
-                    Buckets,            IFERROR( MATCH( MonthStarts, Timeline, 1), 0)
-                                        * ( MonthStarts < MAX( Timeline) + LastGap),
+                //  Allocate monthly values to actual period dates, excluding the final end.
+                    MonthStarts,        EDATE( StartDate, SEQUENCE( , Term, 0)),
+                    Buckets,            IFERROR( MATCH( MonthStarts, TOROW( Timeline), 1), 0)
+                                        * ( MonthStarts < BucketEnd),
                     InPeriod,           ( TOCOL( Buckets) = SEQUENCE( 1, COUNTA( Timeline))) * 1,
                 //  Rows 2 and 5 are balances rather than flows. A period can hold several
                 //  months, as the last one does when FinalPeriodEnd extends it, or a longer
@@ -821,8 +790,8 @@ Amortiseλ = LAMBDA(
                 //  its first month's balance and closes on its last month's, which is how
                 //  Depreciateλ reads its own opening balance row. Summed with the flows, a loan
                 //  repaid inside such a period closed it on the total of its monthly balances.
-                    Earlier,            IF( Periods = 1, 0, HSTACK( 0, DROP( Buckets, , -1))),
-                    Later,              IF( Periods = 1, 0, HSTACK( DROP( Buckets, , 1), 0)),
+                    Earlier,            IF( Term = 1, 0, HSTACK( 0, DROP( Buckets, , -1))),
+                    Later,              IF( Term = 1, 0, HSTACK( DROP( Buckets, , 1), 0)),
                     FirstInPeriod,      ( Buckets <> Earlier) * ( Buckets > 0),
                     LastInPeriod,       ( Buckets <> Later) * ( Buckets > 0),
                     Flows,              MMULT( AmortisationSched, InPeriod),
@@ -831,9 +800,7 @@ Amortiseλ = LAMBDA(
                                                 CHOOSEROWS( Flows, 3, 4),
                                                 MMULT( CHOOSEROWS( AmortisationSched, 5) * LastInPeriod, InPeriod),
                                                 TAKE( Flows, -1)),
-                    IF( SubMonthly?,
-                        ByDate,
-                        TimelinePositionλ(AmortisationSched, Timeline, Offset))
+                    ByDate
                 )   
             ),    
     //  Every loan in turn, a blank row between one block and the next
