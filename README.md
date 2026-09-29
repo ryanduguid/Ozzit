@@ -6,7 +6,7 @@
 [![licence: MIT](https://img.shields.io/badge/licence-MIT-5C2D91.svg?labelColor=04001F)](LICENCE)
 ![Excel: 365 or 2024+](https://img.shields.io/badge/Excel-365%20or%202024%2B-5C2D91.svg?labelColor=04001F)
 
-One Excel workbook holding 133 native LAMBDA functions and 5 named help tables under
+One Excel workbook holding 137 native LAMBDA functions and 5 named help tables under
 the `oz.` prefix: amortisation, depreciation, ratios, AASB 16 lessee schedules, and
 Australian GST and financial-year helpers. The functions need no add-in, macro, VBA or
 external dependency, so a copied function travels inside your own file and a reviewer
@@ -68,7 +68,7 @@ check above used a different workbook file.
 
 ## Start with three tasks
 
-You do not need all 133 functions. Most models start with one of these three.
+You do not need all 137 functions. Most models start with one of these three.
 The loan and depreciation guides show the spilled result for a synthetic input
 you can check by hand; the lease guide explains the four lessee functions.
 
@@ -84,7 +84,7 @@ copy a function into your own workbook.
 <details>
 <summary>Setup, function catalogue, workbook examples and reference</summary>
 
-A library of 133 native Excel LAMBDA functions plus 5 named help tables for dynamic-array financial models, with inline help and editable demonstration worksheets under the `oz.` prefix. LibreOffice and older Excel versions cannot evaluate the functions.
+A library of 137 native Excel LAMBDA functions plus 5 named help tables for dynamic-array financial models, with inline help and editable demonstration worksheets under the `oz.` prefix. LibreOffice and older Excel versions cannot evaluate the functions.
 
 ## Capture evidence
 
@@ -111,7 +111,7 @@ The screenshot uses a disposable copy with a synthetic label, an explicit argume
 
 The current release is v3.4.2, dated 16 September 2026; citation metadata is in [CITATION.cff](CITATION.cff). It was published on 20 September 2026 from the signed tag `v3.4.2` on commit `621af0e265306f00a83e17c4d27dca09031c5ccd`, after the native gates [RELEASING.md](RELEASING.md) requires ran on the exact file it ships. The [release page](https://github.com/ryanduguid/Ozzit/releases/tag/v3.4.2) carries `ozzit.xlsx`, `provenance.json` and `SHA256SUMS`, and GitHub reports the release immutable.
 
-v3.4.2 `ozzit.xlsx` SHA-256: `0306793a7e473ce70e78149fea1e107fc0f714d61ab50960c16f6fd528878f6f` (439,097 bytes), the same bytes as the release asset. `main` is ahead of that tag, so the file you clone is not the file the release ships: the tracked `ozzit.xlsx` is SHA-256 `109373250bcfde4665443081ca2456f0a347a46547aef0eee89c3bd13613c2bf` (446,128 bytes), pinned in [release/workbook-base.json](release/workbook-base.json) and checked by the tool tests. On 29 September 2026, Excel 16.0 build 20430 recalculated 1,129 formulas with 0 in error, ran 1,004 self-test assertions with 0 failures and found 19,446 cached values equal to what their formulas produce. The workbook was byte-identical before and after both native gates.
+v3.4.2 `ozzit.xlsx` SHA-256: `0306793a7e473ce70e78149fea1e107fc0f714d61ab50960c16f6fd528878f6f` (439,097 bytes), the same bytes as the release asset. `main` is ahead of that tag, so the file you clone is not the file the release ships: the tracked `ozzit.xlsx` is SHA-256 `8c42e2278de61bdacfb090b940e684bb12a7636a256816aa20f81360b71bb760` (452,439 bytes), pinned in [release/workbook-base.json](release/workbook-base.json) and checked by the tool tests. On 29 September 2026, Excel 16.0 build 20430 recalculated 1,129 formulas with 0 in error, ran 1,033 self-test assertions with 0 failures and found 19,446 cached values equal to what their formulas produce. The workbook was byte-identical before and after both native gates.
 
 - [Repository checks](AGENTS.md) and [release and native verification](RELEASING.md)
 - [Changes](CHANGELOG.md) and [citation](CITATION.cff)

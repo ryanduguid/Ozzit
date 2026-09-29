@@ -43,18 +43,18 @@ class VerifyCoverTests(unittest.TestCase):
     def test_the_committed_cover_matches_the_index_and_the_changelog(self):
         result = self.run_gate()
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn("133 functions", result.stdout)
+        self.assertIn("137 functions", result.stdout)
 
     def test_a_stale_function_count_fails(self):
-        rewrite_label(self.workbook, "133 functions", "130 functions")
+        rewrite_label(self.workbook, "137 functions", "133 functions")
         result = self.run_gate()
         self.assertEqual(result.returncode, 1)
-        self.assertIn("cover says 130 functions", result.stdout)
+        self.assertIn("cover says 133 functions", result.stdout)
 
     def test_the_cell_is_resolved_not_the_first_matching_string(self):
         # A current-looking label stored elsewhere must not rescue a stale cell.
-        current = "Version 16 September 2026    -    133 functions    -    Microsoft 365 or Excel 2024 and later"
-        stale = current.replace("16 September 2026", "20 August 2026").replace("133", "130")
+        current = "Version 16 September 2026    -    137 functions    -    Microsoft 365 or Excel 2024 and later"
+        stale = current.replace("16 September 2026", "20 August 2026").replace("137", "133")
         rewrite_label(self.workbook, f"<t>{current}</t>", f"<t>{stale}</t>")
         with zipfile.ZipFile(self.workbook) as archive:
             parts = {name: archive.read(name) for name in archive.namelist()}
@@ -67,7 +67,7 @@ class VerifyCoverTests(unittest.TestCase):
                 archive.writestr(name, data)
         result = self.run_gate()
         self.assertEqual(result.returncode, 1)
-        self.assertIn("cover says 130 functions", result.stdout)
+        self.assertIn("cover says 133 functions", result.stdout)
 
     def test_a_byte_order_marked_index_is_read(self):
         index = self.directory / "functions.csv"

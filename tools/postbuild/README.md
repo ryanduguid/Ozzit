@@ -25,6 +25,7 @@ python tools/postbuild/strip_revision_history.py ozzit.xlsx src
 python tools/postbuild/help_corrections.py ozzit.xlsx src
 python tools/postbuild/aasb16_leases.py ozzit.xlsx src functions.csv
 python tools/postbuild/rate_date_helpers.py ozzit.xlsx src functions.csv
+python tools/postbuild/working_capital_days.py ozzit.xlsx src functions.csv
 python tools/postbuild/cover_label.py ozzit.xlsx
 python tools/compile_sources.py ozzit.xlsx src --index=functions.csv
 python tools/build_module.py src oz.txt
@@ -83,13 +84,17 @@ corrects the retention-ratio demonstration formula in `oz.FinancialRatios!A61`,
 leaving its value and B61's formula-text cache for native Excel to refresh. Five of the
 corrected statements are also typed into label and description cells that no formula
 feeds, so it rewrites those shared strings too. The rate and date helpers pass runs
-after it and is the last text pass: it adds 4 functions (`oz.PeriodRateλ`,
-`oz.AnnualRateλ`, `oz.DayCountRateλ` and `oz.DateDifλ`) on the same pattern as the
-AASB 16 pass, except that it renders the stored forms through `compile_sources.py`
-rather than carrying a renderer of its own. The cover-label pass is one swap in
-`xl/sharedStrings.xml`: Cover!A3 kept reading 20 August 2026 and 130 functions after
-three cuts, and `tools/verify_cover.py` now keeps that label equal to `functions.csv`
-and the changelog's current cut.
+after it: it adds 4 functions (`oz.PeriodRateλ`, `oz.AnnualRateλ`,
+`oz.DayCountRateλ` and `oz.DateDifλ`) on the same pattern as the AASB 16 pass, except
+that it renders the stored forms through `compile_sources.py` rather than carrying a
+renderer of its own. The working-capital days pass follows it on the same pattern
+and is the last text pass: it adds 4 ratio functions (`oz.ReceivableDaysλ`,
+`oz.PayableDaysλ`, `oz.WIPDaysλ` and `oz.CashConversionCycleλ`) and their rows in the
+Ratios About table. The cover-label pass is one swap in `xl/sharedStrings.xml`:
+Cover!A3 kept reading 20 August 2026 and 130 functions after three cuts, and
+`tools/verify_cover.py` now keeps that label equal to `functions.csv` and the
+changelog's current cut. The pass accepts any earlier label it records, so it also
+carries the count from 133 to 137 for the working-capital functions.
 
 ## What is intentionally not here
 
