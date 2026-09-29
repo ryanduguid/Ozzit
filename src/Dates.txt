@@ -738,7 +738,7 @@ FinancialYearλ = LAMBDA(
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Dates          →(Required) One or more dates, numeric or text. A blank cell returns a blank.¶" &
-                            "StartMonth     →(Optional: Default = 7) Month the financial year starts.¶" &
+                            "StartMonth     →(Optional: Default = 7) Month the financial year starts. Blank cells and empty text use 7.¶" &
                             "EXAMPLES:      →¶" &
                             "→Formula (oz is assumed to be the module's name)¶" &
                             "→=oz.FinancialYearλ(DATE(2026,8,15))¶" &
@@ -749,7 +749,7 @@ FinancialYearλ = LAMBDA(
     //  Check inputs - Omitted required arguments
         Help?,          ISOMITTED(Dates),
     //  Set defaults
-        FYStart,        IF(ISOMITTED(StartMonth), 7, StartMonth),
+        FYStart,        IF(ISOMITTED(StartMonth), 7, IF(StartMonth = "", 7, StartMonth)),
     //  Check inputs - apply convenience conversions. A blank cell stays blank, a text date is read
         CvtDates,       IF( ISOMITTED( Dates),
                             FALSE,
