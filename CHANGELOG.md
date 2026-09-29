@@ -93,10 +93,11 @@ been reproduced in Excel.
   conversion cycle as gaps, and a help-text slip in `oz.CurrentRatioλ`; neither is
   changed in the workbook.
 - `docs/modelling-conventions.md` reads the library against the FAST Standard 02c
-  (CC BY 4.0) and the ICAEW Financial Modelling Code (2024): named LAMBDA functions,
-  nested `IF`s, dynamic arrays, `OFFSET` in the three `RangeToDA` functions, the
-  embedded 30.5 days a month, rounding and merged cells, each marked as followed,
-  departed from or not applicable, with the reason. It claims no compliance.
+  (CC BY 4.0) and the ICAEW Financial Modelling Code (2024): named LAMBDA functions
+  called from cells, nested `IF`s, dynamic arrays, `OFFSET` in the three `RangeToDA`
+  functions, the GST functions' 0.1 fallback rate, the embedded 30.5 days a month,
+  rounding and merged cells, each marked as followed, departed from or not
+  applicable, with the reason. It claims no compliance.
   `tools/tests/test_modelling_conventions.py` fails when a figure it states changes.
 - `tools/verify_sources.py` fails an argument default that tests a parameter inside
   `OR()` or `AND()`. It would have caught the GST and `oz.Movementλ` defects above,
