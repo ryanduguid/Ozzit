@@ -217,7 +217,7 @@ LeaseRemeasureλ = LAMBDA(
                             "PARAMETERS:    →¶" &
                             "RevisedPayments→(Required) Revised lease payments for the remaining term, one per period, positive. Include a payment made at the remeasurement date first when InAdvance is TRUE.¶" &
                             "Rate           →(Required) Discount rate per period. Unchanged, unless a floating rate moved.¶" &
-                            "CarryingLiability→(Required) Lease liability carried immediately before the remeasurement.¶" &
+                            "CarryingLiability→(Required) Lease liability before remeasurement and before any payment due that day. Do not deduct the first revised payment.¶" &
                             "CarryingROU    →(Required) Right-of-use asset carried immediately before the remeasurement.¶" &
                             "InAdvance      →(Optional: Default = FALSE) TRUE when the first revised payment is paid at the remeasurement date.¶" &
                             "EXAMPLES:      →¶" &
@@ -236,7 +236,9 @@ LeaseRemeasureλ = LAMBDA(
     //  A blank InAdvance cell is not an omitted argument, so test for both
         Advance?,       IF(OR(ISOMITTED(InAdvance), TRIM(InAdvance & "")=""), FALSE, InAdvance),
         Revised,        LeaseLiabilityλ(RevisedPayments, Rate, Advance?),
-        Adjustment,     Revised - CarryingLiability,
+    //  Compare liabilities before the payment at the remeasurement date
+        PaidNow,        IF(Advance?, INDEX(RevisedPayments, 1, 1), 0),
+        Adjustment,     Revised + PaidNow - CarryingLiability,
     //  The asset absorbs the adjustment until it is exhausted, and no further
         RawAsset,       CarryingROU + Adjustment,
         Result,         VSTACK(Revised, Adjustment, MAX(RawAsset, 0), MIN(RawAsset, 0)),
