@@ -23,7 +23,9 @@ Tolerances are 0.0000001 for a rate and 0.000001 for an amount. Excel's XIRR sto
 iterating at a small tolerance of its own, so rates are not expected to agree to the last
 digit.
 
-Rerun it on a Windows host with desktop Excel and no Excel window open:
+Commit any workbook changes first, then rerun it on a Windows host with desktop Excel
+and no Excel window open. Tracked evidence refuses workbook bytes that differ from HEAD
+before loading pyxirr or starting Excel:
 
 ```powershell
 uv run --no-project --with pyxirr==0.10.8 python tools/pyxirr_comparison.py
@@ -31,7 +33,8 @@ uv run --no-project --with pyxirr==0.10.8 python tools/pyxirr_comparison.py
 
 CI has neither Excel nor pyxirr. `tools/tests/test_pyxirr_comparison.py` checks that the
 recorded evidence covers exactly the cases in the script, with the same formulas, and that
-the table below matches it.
+the table below matches it. It also checks that the recorded commit contains the compared
+workbook bytes.
 
 ### Check a downloaded release
 
