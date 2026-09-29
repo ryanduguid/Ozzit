@@ -14,6 +14,12 @@ updates:
       codeql-action:
         patterns:
           - "github/codeql-action*"
+    ignore:
+      # The release-policy pin is an immutable full commit SHA, advanced only
+      # by a reviewed re-pin of its workflow family. A Dependabot bump adds an
+      # unapproved SHA to the portfolio audit without changing the workflow,
+      # so re-pin by hand instead.
+      - dependency-name: "ryanduguid/release-policy/.github/workflows/*"
 
   # pyproject.toml is the Python manifest, and pip is how the verify workflow
   # installs. Grouped into one pull request a week, as the sibling repositories
