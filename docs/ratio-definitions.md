@@ -90,10 +90,3 @@ Annualising a short period, and a variance with a stated rule for zero, negative
 sign-changing comparisons, are also absent. Adding any of them needs a workbook
 release with the native gates in `RELEASING.md`, so this page records the gaps
 rather than filling them.
-
-### Help text found while reading
-
-The help for `oz.CurrentRatioλ` lists "Marketable securities" and "Assets expected to
-liquidated in the current year" twice, and the second should read "expected to be
-liquidated". Changing help text changes the workbook's cached help, so the fix waits
-for the next workbook release.

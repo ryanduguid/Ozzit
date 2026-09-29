@@ -89,11 +89,9 @@ CurrentRatioλ = LAMBDA(
                                        "→Accounts receivable ¶" & 
                                        "→Inventory ¶" & 
                                        "→Vendor non-trade receivables ¶" & 
-                                       "→Assets expected to liquidated in the current year ¶" & 
+                                       "→Assets expected to be liquidated in the current year ¶" &
                                        "→Marketable securities ¶" & 
                                        "→PPE only when it meets current-asset classification criteria ¶" & 
-                                       "→Marketable securities ¶" & 
-                                       "→Assets expected to liquidated in the current year ¶" & 
                         "Liabilities     →(Required) Current Liabilities. Includes: ¶" & 
                                        "→Accounts payable ¶" & 
                                        "→Wages ¶" & 

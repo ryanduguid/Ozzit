@@ -32,8 +32,8 @@ column of PeriodsPerYear for `oz.PeriodRateλ` and `oz.AnnualRateλ`, of Unit fo
 `oz.DateDifλ` and of Repeats for `oz.IsOccurrenceDateλ`, whose LastOccurrence column
 reads no text date once another row holds a date or a blank. In v3.4.2, fill every such
 cell and enter last occurrences as dates. All of these are fixed on `main` for the next
-release. Defects found in review and not yet fixed are listed, each with a way to avoid
-it, under [Unreleased in the changelog](CHANGELOG.md#unreleased).
+release. Further changes and the DB/DDB compatibility limitations are recorded
+under [Unreleased in the changelog](CHANGELOG.md#unreleased).
 
 Synthetic example. Review aid, not professional advice; the reviewer decides the GST treatment.
 
@@ -111,7 +111,7 @@ The screenshot uses a disposable copy with a synthetic label, an explicit argume
 
 The current release is v3.4.2, dated 16 September 2026; citation metadata is in [CITATION.cff](CITATION.cff). It was published on 20 September 2026 from the signed tag `v3.4.2` on commit `621af0e265306f00a83e17c4d27dca09031c5ccd`, after the native gates [RELEASING.md](RELEASING.md) requires ran on the exact file it ships. The [release page](https://github.com/ryanduguid/Ozzit/releases/tag/v3.4.2) carries `ozzit.xlsx`, `provenance.json` and `SHA256SUMS`, and GitHub reports the release immutable.
 
-v3.4.2 `ozzit.xlsx` SHA-256: `0306793a7e473ce70e78149fea1e107fc0f714d61ab50960c16f6fd528878f6f` (439,097 bytes), the same bytes as the release asset. `main` is ahead of that tag, so the file you clone is not the file the release ships: the tracked `ozzit.xlsx` is SHA-256 `f2847ae80d9b2768d9f6bd257de9afa2fb6f19bd69ca37d1ec969842e58e2621` (445,811 bytes), pinned in [release/workbook-base.json](release/workbook-base.json) and checked by the tool tests. On 29 September 2026, Excel 16.0 build 20430 recalculated 1,129 formulas with 0 in error, ran 1,004 self-test assertions with 0 failures and found 19,446 cached values equal to what their formulas produce. The workbook was byte-identical before and after both native gates.
+v3.4.2 `ozzit.xlsx` SHA-256: `0306793a7e473ce70e78149fea1e107fc0f714d61ab50960c16f6fd528878f6f` (439,097 bytes), the same bytes as the release asset. `main` is ahead of that tag, so the file you clone is not the file the release ships: the tracked `ozzit.xlsx` is SHA-256 `109373250bcfde4665443081ca2456f0a347a46547aef0eee89c3bd13613c2bf` (446,128 bytes), pinned in [release/workbook-base.json](release/workbook-base.json) and checked by the tool tests. On 29 September 2026, Excel 16.0 build 20430 recalculated 1,129 formulas with 0 in error, ran 1,004 self-test assertions with 0 failures and found 19,446 cached values equal to what their formulas produce. The workbook was byte-identical before and after both native gates.
 
 - [Repository checks](AGENTS.md) and [release and native verification](RELEASING.md)
 - [Changes](CHANGELOG.md) and [citation](CITATION.cff)
