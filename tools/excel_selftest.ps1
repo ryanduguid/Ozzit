@@ -188,6 +188,30 @@ Near 'Debt: surplus cash clears the balance' `
 Near 'Debt: no cash capitalises interest once' `
      "LET(s, $lrv(, {1000,0}, {0,0}, {1.2,1.2}, {0.06,0.06}, 12), INDEX(s,4,1) - 1000 - INDEX(s,2,1))" '0' '0.0000001'
 
+# A cash deficit supplies no debt service. Unpaid interest still capitalises.
+Near 'Debt LRV: a deficit cannot create debt from nil' `
+     "SUM(ABS($lrv(, {0,0}, {-300,-50}, {1.2,1.2}, {0.06,0.06}, 12)))" '0' '0.0000001'
+Near 'Debt LRV: deficits capitalise only unpaid interest' `
+     "MAX(ABS($lrv(, {1000,0}, {-300,-50}, {1.2,1.2}, {0.06,0.06}, 12)-$lrv(, {1000,0}, {0,0}, {1.2,1.2}, {0.06,0.06}, 12)))" '0' '0.0000001'
+Near 'Debt LRV: a deficit cannot reopen repaid debt' `
+     "SUM(ABS(DROP($lrv(, {1000,0,0}, {1800,-300,300}, {1.2,1.2,1.2}, {0.06,0.06,0.06}, 12),,1)))" '0' '0.0000001'
+# Uncapped balances solve closing = opening + rate*(opening+closing)/2 - MAX(cash,0)/DSCR.
+# When cash clears the balance, principal repayment is capped at opening debt.
+$lrvMixedExpected = "VSTACK(HSTACK(1000,103000/97,101075/97,5154825/4753),HSTACK(6000/97,7775/97,202150/4753,1030965/38024),HSTACK(6000/97,-11625/97,202150/4753,-5154825/4753),HSTACK(103000/97,91375/97,5154825/4753,0))"
+Near 'Debt LRV: mixed cash uses each period and carries its closing' `
+     "MAX(ABS($lrv(500,{500,0,100,0},{-300,300,-50,1800},{1.2,1.5,1.1,1.2},{0.06,0.08,0.04,0.05},12)-$lrvMixedExpected))" '0' '0.0000001'
+Near 'Debt LRV: explicit rates preserve mixed-cash balances' `
+     "MAX(ABS($lrv(500,{500,0,100,0},{-300,300,-50,1800},{1.2,1.5,1.1,1.2},,,{0.06,0.08,0.04,0.05})-$lrvMixedExpected))" '0' '0.0000001'
+Near 'Debt LRV: a zero-rate deficit cannot increase debt' `
+     "MAX(ABS($lrv(,{1000,0},{-300,300},{1.2,1.2},{0,0},12)-{1000,1000;0,0;0,-250;1000,750}))" '0' '0.0000001'
+
+# Required cash inputs must be numeric, including each cell in a supplied range.
+foreach ($rawCash in 'Z1:AA1', 'Y1:Z1', '{"300","0"}', '{FALSE,TRUE}', '{0,""}', '{0,#N/A}') {
+    Same "Debt LRV: rejects non-numeric cash $rawCash" `
+         "INDEX($lrv(,{1000,0},$rawCash,{1.2,1.2},{0.06,0.06},12),1,1)" `
+         'CFADS must be one row of numbers with the same number of periods as Debt'
+}
+
 # The other 2 sculpting functions pay the whole debt service, so their balances differ,
 # but the same roll-forward has to hold: closing = opening + interest - debt service.
 foreach ($fn in $dsf, $dsv) {
@@ -1004,6 +1028,7 @@ try {
     $tmp = Invoke-Excel { $wb.Worksheets.Add() }
     Invoke-Excel { $tmp.Name = 'zz_selftest' }
     Invoke-Excel { $tmp.Range('Z1:Z3').ClearContents() }   # the deliberate blank cells
+    Invoke-Excel { $tmp.Range('Y1').Value2 = 0 }          # numeric cash beside a real blank
 
     $grid = New-Object 'object[,]' $checks.Count, 1
     for ($i = 0; $i -lt $checks.Count; $i++) { $grid[$i, 0] = $checks[$i].f }

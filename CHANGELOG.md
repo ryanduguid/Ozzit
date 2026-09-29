@@ -7,6 +7,13 @@ release; until then v3.4.2 behaves as it did, including the defects fixed here.
 
 ### Calculation changes
 
+- `oz.DebtSculptVariableLRVλ` treats each negative CFADS value as zero cash for
+  debt service. A deficit no longer creates debt from a nil balance or reopens a
+  repaid loan. Existing debt still capitalises unpaid interest. CFADS must be a
+  numeric row; blanks, text and logical values now return a diagnostic instead of
+  a downstream error matrix. Twelve new native assertions cover the cash floor
+  and validation. All 967 assertions pass in Excel 16.0 build 20430 on
+  29 September 2026, and all 19,446 cached values match.
 - `oz.FinancialYearλ` defaults a blank StartMonth cell or empty text to July for
   its own row. With a blank month, 15 August 2026 now gives FY2027 instead of FY2026.
   Five native assertions cover blanks, mixed rows, the June/July boundary and the
@@ -54,9 +61,9 @@ release; until then v3.4.2 behaves as it did, including the defects fixed here.
 
 A review of the library on 28 September 2026 found these defects. Each needs a
 formula change and a native Excel round, so each stays listed here, with a way to
-avoid it, until a change fixes it and moves it to the calculation changes above. They
-were traced in the formula text and recalculated by hand or in Python; none has yet
-been reproduced in Excel.
+avoid it, until a change fixes it and moves it to the calculation changes above. The
+initial review traced these cases in the formula text and recalculated them by hand
+or in Python, without native Excel reproduction.
 
 - `oz.Amortiseλ` on a timeline of a month or longer groups a loan's months from the
   loan's own start, not by the timeline's dates. A loan that starts part-way through a
@@ -72,11 +79,6 @@ been reproduced in Excel.
   shows an adjustment of -90.48 rather than +19.52. Until fixed, pass as
   CarryingLiability the amount carried before the remeasurement less the revised
   payment made that day.
-- `oz.DebtSculptVariableLRVλ` still takes negative CFADS through: with no floor, the
-  period's debt service is negative and the balance grows by it as well as by the
-  period's interest. From a nil balance, CFADS of -300 at a DSCR of 1.2 creates 257.73
-  of debt. Capitalising interest when there is no cash is deliberate; a negative CFADS
-  goes further. Until fixed, pass `IF(CFADS < 0, 0, CFADS)`.
 - `oz.DBλ` and `oz.DDBλ` put the whole remaining depreciable amount in the final year,
   which Excel's DB and DDB do not: DDB on 10,000 with 500 salvage over 10 years ends at
   842.18 rather than 268.44. `oz.DBλ`'s Months argument returns Life columns where
