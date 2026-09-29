@@ -1,8 +1,8 @@
 {
-  "git_blob_sha1": "132fb9cc5adefccaa00809b4d651412b2142d83e",
-  "last_workbook_commit": "08ffb6047f287b6a4c5fbcf3888ce20583577d26",
+  "git_blob_sha1": "0ad39b95167344f434de2c28170c2286988426c5",
+  "last_workbook_commit": "7bbe890807cd9da03fcfccbaf52dabb0042acdad",
   "path": "ozzit.xlsx",
   "schema": 1,
-  "sha256": "fa458ddf31380dc69a5b363e0b871828f94b79726187726cc63834c7246ac8af",
-  "size": 446137
+  "sha256": "0a21e21a5f10308e9d11101097348145e88e16bf42e475d9c3a8857bf9de9af4",
+  "size": 445808
 }
