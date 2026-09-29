@@ -5,6 +5,35 @@
 Changes on `main` since v3.4.2. They reach the published workbook in the next
 release; until then v3.4.2 behaves as it did, including the defects fixed here.
 
+### Four working-capital functions added
+
+Four LAMBDA functions join the Ratios group, taking the library from 133 to 137
+LAMBDAs (138 to 142 named formulas, including 5 help tables). They fill the gaps
+`docs/ratio-definitions.md` recorded. No worksheet was added; the Ratios About table
+lists them under Efficiency Ratios.
+
+- `oz.ReceivableDaysλ(Receivables, Sales, [Days])`: receivable days, or days sales
+  outstanding, as receivables divided by sales, multiplied by Days. Days is the number
+  of days the sales figure covers and defaults to 365, so one function gives a year's
+  figure, a month's, or a rolling three months'.
+- `oz.PayableDaysλ(Payables, Purchases, [Days])`: payable days on the same pattern.
+  Credit purchases are the matching flow; cost of sales is the common substitute.
+- `oz.WIPDaysλ(WIP, RelatedFlow, [Days])`: work in progress days, with WIP and its
+  flow on one valuation basis: fee revenue with WIP at charge-out value, or cost of
+  sales with WIP at cost.
+- `oz.CashConversionCycleλ(InventoryDays, ReceivableDays, PayableDays, [WIPDays])`:
+  inventory days plus WIP days plus receivable days, less payable days. Pass WIP days
+  only where WIP is not already in the inventory behind the inventory days.
+
+A zero flow returns `#DIV/0!`, as every ratio does, and Days of 0 or less returns
+`#NUM!`. A blank Days or WIPDays cell, or an empty string, takes the default for its
+own row; any other Days that is not a number, numeric text such as "0" included,
+returns `#VALUE!`. None of the four adjusts for GST, so put each balance and its flow
+on the same basis first. Twenty native assertions cover those edges, rows of inputs
+and the cycle composed from `oz.DSIλ` and the new functions. With the 9 generated
+assertions their help adds, all 1,033 assertions pass and all 19,446 cached values
+match in Excel 16.0 build 20430 on 29 September 2026.
+
 ### Calculation changes
 
 - The retention-ratio example in `oz.FinancialRatios!A61` now passes retained
@@ -81,6 +110,13 @@ release; until then v3.4.2 behaves as it did, including the defects fixed here.
 
 ### Tools, checks and documentation
 
+- `tools/postbuild/working_capital_days.py` adds the four working-capital functions
+  to every store at once, on the pattern of the rate and date helpers pass. Its
+  contract tests restore every store after a failed source, compile or workbook
+  write, and refuse a store holding part of the change. `tools/postbuild/cover_label.py`
+  accepts either earlier Cover label and writes 137 functions.
+  `docs/ratio-definitions.md` gives the four functions' arithmetic and states the GST
+  and period conventions.
 - `oz.DBλ` and `oz.DDBλ` help now explains their fixed-length schedules for
   positive whole-number lives. Their final value brings total depreciation to
   cost less salvage. With cost 10,000, salvage 500 and life 10, DDB ends at 842.18;

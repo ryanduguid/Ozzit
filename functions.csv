@@ -16,6 +16,7 @@ oz.AvgRowsUλ,Utilities,nabla.u.AvgRowsλ,AvgRowsUλ( Array),Get the average for
 oz.AvgRowsλ,Essentials,nabla.e.AvgRowsλ,AvgRowsλ( Array),Get the average for each row
 oz.BVPSλ,Ratios,nabla.r.BVPSλ,"BVPSλ( ShareholdersEquity, PreferredStock, AverageSharesOutstanding )",Book value per share ratio is an indicator of the value of a company’s stock (Shareholders' Equity - Preferred Stock)/Average Shares Outstanding)
 oz.CAPERatioλ,Ratios,nabla.r.CAPERatioλ,"CAPERatioλ( SharePrice, TenYearAverageEarningsInflationAdjusted )",CAPE Ratio is a valuation measure that uses real earnings per share (EPS) over a 10-year period to smooth out fluctuations in corporate profits that occur over different periods of a business cycle (aka Shiller PE Ratio) (Share Price/Ten Year Average Earn
+oz.CashConversionCycleλ,Ratios,,"CashConversionCycleλ(InventoryDays, ReceivableDays, PayableDays, [WIPDays])",Cash conversion cycle in days: inventory days + WIP days + receivable days - payable days
 oz.CashFlowMarginλ,Ratios,nabla.r.CashFlowMarginλ,"CashFlowMarginλ( CashFlowFromOperatingActivities, Revenue)",Cash Flow Margin is a trusted metric of a company’s profitability and efficiency and its earnings quality (Cash Flow From Operating Activities/Revenue).
 oz.CashRatioλ,Ratios,nabla.r.CashRatioλ,"CashRatioλ( Cash, Liabilities)",Evaluates ability to repay short-term debt w/cash or near-cash resources (Cash and Cash Equivalents / Current Liabilities)
 oz.CorkScrewReversalλ,Financial,nabla.f.CorkScrewReversalλ,"CorkScrewReversalλ( Opening, ReversalFlags, Flow1, [Flow2], [Flow3], [Flow4])",Create a corkscrew where the opening balance is reversed in the next period based on a timing parameter.
@@ -91,6 +92,7 @@ oz.OperatingCashFlowRatioλ,Ratios,nabla.r.OperatingCashFlowRatioλ,"OperatingCa
 oz.OperatingMarginλ,Ratios,nabla.r.OperatingMarginλ,"OperatingMarginλ( OperatingEarnings, Revenue)","Measures how much profit a company makes on a dollar of sales after paying for variable costs of production, such as wages and raw materials, but before paying interest or tax (Operating Earnings/Revenue)."
 oz.OperatingRatioλ,Ratios,nabla.r.OperatingRatioλ,"OperatingRatioλ( OperatingExpenses, CostOfGoodsSold, NetSales)",Shows how efficient management is at keeping costs low while generating revenue (Operating Expenses + Cost Of Goods Sold)/Net Sales)
 oz.OverLapDaysλ,Dates,nabla.d.OverLapDaysλ,"OverLapDaysλ(Period1Start, Period1End, Period2Start, Period2End)",Return how many days overlap two period ranges.
+oz.PayableDaysλ,Ratios,,"PayableDaysλ(Payables, Purchases, [Days])","Payable days, or days payable outstanding (DPO): Payables / Purchases x Days"
 oz.PeriodDiffλ,Financial,nabla.f.PeriodDiffλ,"PeriodDiffλ(StartDate, EndDate, Interval)",Determine the number of periods between two dates.
 oz.PeriodLabelλ,Dates,nabla.d.PeriodLabelλ,"PeriodLabelλ(Date, [Interval])",Creates a label for a date based on period interval
 oz.PeriodRateλ,Financial,,"PeriodRateλ(AnnualRate, [PeriodsPerYear])","Converts an effective annual rate to the equivalent rate per period, the rate the lease functions take"
@@ -111,6 +113,7 @@ oz.ROUScheduleλ,Financial,,"ROUScheduleλ(Cost, Periods)","Straight-line right-
 oz.RangeToDAEλ,Essentials,nabla.e.RangeToDAλ,"RangeToDAEλ(Range, [Rows], [Columns])",Convert a range reference to a dynamic array reference
 oz.RangeToDAUλ,Utilities,nabla.u.RangeToDAλ,"RangeToDAUλ(Range, [Rows], [Columns])",Convert a range reference to a dynamic array reference
 oz.RangeToDAλ,Financial,nabla.f.RangeToDAλ,"RangeToDAλ( Cell, [Rows], [Columns])",Create a dynamic array from a static range
+oz.ReceivableDaysλ,Ratios,,"ReceivableDaysλ(Receivables, Sales, [Days])","Receivable days, or days sales outstanding (DSO): Receivables / Sales x Days"
 oz.ReceivablesTurnoverRatioλ,Ratios,nabla.r.ReceivablesTurnoverRatioλ,"ReceivablesTurnoverRatioλ( NetCreditSales, AverageAccountsReceivable)",Indicates effectiveness in collecting outstanding balances from clients and managing line of credit process (Net Credit Sales/Average Accounts Receivable)
 oz.RetentionRatioλ,Ratios,nabla.r.RetentionRatioλ,"RetentionRatioλ( RetainedEarnings, NetIncome )",Retention Ratio is the proportion of earnings kept back in the business as retained earnings (Retained Earnings/Net Income).
 oz.Reversalλ,Financial,nabla.f.Reversalλ,"Reversalλ( [OpeningValue], RowToReverse)",Create a row that reverses input values in the next period.
@@ -136,4 +139,5 @@ oz.TimelineOffsetλ,Financial,nabla.f.TimelineOffsetλ,"TimelineOffsetλ(Date, T
 oz.TimelinePositionλ,Financial,nabla.f.TimelinePositionλ,"TimelinePositionλ(Array, Timeline, Offset)",Crops an array based on a model's timeline
 oz.Timelineλ,Dates,nabla.d.Timelineλ,"Timelineλ(StartDate, Periods, Interval, PeriodStarts?)",Create a horizontal list of period dates
 oz.VDBλ,Financial,nabla.f.VDBλ,"VDBλ(Cost, Salvage, Life, [Factor], [No_Switch])",Variable declining balance depreciation method for one asset or asset class.
+oz.WIPDaysλ,Ratios,,"WIPDaysλ(WIP, RelatedFlow, [Days])","Work in progress days: WIP / RelatedFlow x Days, with both on one valuation basis"
 oz.WorkingCapitalTurnoverRatioλ,Ratios,nabla.r.WorkingCapitalTurnoverRatioλ,"WorkingCapitalTurnoverRatioλ( NetAnnualSales, WorkingCapital)",Working Capital Turnover Ratio measures how efficiently a company is using its working capital to support sales and growth (Net Annual Sales/Average Working Capital).
