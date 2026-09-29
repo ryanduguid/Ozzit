@@ -44,10 +44,13 @@ def source_formulas() -> dict[str, str]:
 
 class RatioDefinitionsTest(unittest.TestCase):
     def test_the_page_lists_every_ratio_function_with_its_source_arithmetic(self) -> None:
-        documented = {name: compact(formula) for name, formula in ROW.findall(DOCUMENT.read_text(encoding="utf-8"))}
+        rows = ROW.findall(DOCUMENT.read_text(encoding="utf-8"))
         source = source_formulas()
         # A floor, so a parser that finds nothing cannot pass by comparing two empty sets.
         self.assertEqual(len(source), 38)
+        # Counted before the rows become a mapping, so a duplicated row cannot hide.
+        self.assertEqual(len(rows), len(source))
+        documented = {name: compact(formula) for name, formula in rows}
         self.assertEqual(sorted(documented), sorted(source))
         for name, formula in source.items():
             with self.subTest(function=name):
