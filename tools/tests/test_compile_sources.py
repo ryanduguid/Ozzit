@@ -116,15 +116,14 @@ class WorkbookTests(unittest.TestCase):
     def test_tracked_sources_reproduce_every_shipped_definition(self):
         self.assertEqual(compile_sources.run(self.workbook, self.src, True, None), [])
 
-    def test_lease_builder_preserves_the_shipped_rate_guidance(self):
+    def test_lease_builder_preserves_shipped_rate_guidance_and_remeasurement(self):
         shipped = compile_sources.shipped_names(self._book())
         library = {name.removeprefix("oz.") for name in shipped}
         builder = runpy.run_path(str(TOOLS / "postbuild" / "aasb16_leases.py"))
         rebuilt = builder["build_definitions"](library)
-        self.assertEqual(
-            canonical(rebuilt["oz.LeaseLiabilityλ"][1]),
-            canonical(shipped["oz.LeaseLiabilityλ"][1]),
-        )
+        for name in ("oz.LeaseLiabilityλ", "oz.LeaseRemeasureλ"):
+            with self.subTest(name=name):
+                self.assertEqual(canonical(rebuilt[name][1]), canonical(shipped[name][1]))
 
     def test_only_a_changed_definition_is_rewritten(self):
         before = self._book()
