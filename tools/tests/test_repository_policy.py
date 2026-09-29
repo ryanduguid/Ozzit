@@ -59,6 +59,12 @@ updates:
       codeql-action:
         patterns:
           - "github/codeql-action*"
+    ignore:
+      # The release-policy pin is an immutable full commit SHA, advanced only
+      # by a reviewed re-pin of its workflow family. A Dependabot bump adds an
+      # unapproved SHA to the portfolio audit without changing the workflow,
+      # so re-pin by hand instead.
+      - dependency-name: "ryanduguid/release-policy/.github/workflows/*"
 
   # pyproject.toml is the Python manifest, and pip is how the verify workflow
   # installs. Grouped into one pull request a week, as the sibling repositories
@@ -89,6 +95,9 @@ def read_utf8(path: Path) -> str:
 
 def workflow_commands(workflow: str) -> tuple[str, ...]:
     """Read every scalar and block ``run`` gate without a YAML dependency."""
+    # The trailing aggregate job checks job results, not the repository, so its
+    # scripts are not contributor commands.
+    workflow = re.split(r"(?m)^  [\w-]+-gates:$", workflow, maxsplit=1)[0]
     lines = workflow.splitlines()
     commands: list[str] = []
     index = 0
