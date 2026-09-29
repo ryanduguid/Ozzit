@@ -930,6 +930,35 @@ Near 'Debt: blank PeriodRates cell is not given'  "SUMPRODUCT(ABS($dsv(, {1000,0
 Near 'Debt: blank PeriodRates range is not given' "SUMPRODUCT(ABS($dsv(, {1000,0,0}, {300,300,300}, {1.2,1.2,1.2}, {0.06,0.06,0.06}, 12, Z1:Z3) - $dsv(, {1000,0,0}, {300,300,300}, {1.2,1.2,1.2}, {0.06,0.06,0.06}, 12)))" '0' '0.0000001'
 Near 'Debt: LRV on PeriodRates ends at zero'      "INDEX($lrv(, {1000,0,0}, {1800,1800,1800}, {1.2,1.2,1.2}, , , $rates),4,1)" '0' '0.0000001'
 
+# --- Working-capital days. A zero flow is Excel's #DIV/0!, as for every ratio; Days of 0
+# or less is #NUM!; a blank Days or WIPDays cell, or an empty string, takes the default
+# for its own row; any other Days that is not a number is #VALUE!, numeric text included,
+# since "0" once slipped past the Days check. ERROR.TYPE: 2 is #DIV/0!, 3 #VALUE!, 6 #NUM!.
+$rd = "oz.ReceivableDays$L"
+$pd = "oz.PayableDays$L"
+$wd = "oz.WIPDays$L"
+$cc = "oz.CashConversionCycle$L"
+Near 'ReceivableDays: nothing owed is 0 days'       "$rd(0, 1200000)"                          '0'
+Near 'ReceivableDays: zero sales is #DIV/0!'        "ERROR.TYPE($rd(125000, 0))"               '2' '0.1'
+Near 'ReceivableDays: negative sales flip the sign' "$rd(125000, -1200000)"                    '-38.0208333333' '0.0000001'
+Near 'ReceivableDays: zero Days is #NUM!'           "ERROR.TYPE($rd(125000, 1200000, 0))"      '6' '0.1'
+Near 'ReceivableDays: negative Days is #NUM!'       "ERROR.TYPE($rd(125000, 1200000, -90))"    '6' '0.1'
+Near 'ReceivableDays: blank Days cell is 365'       "$rd(125000, 1200000, Z1)"                 '38.0208333333' '0.0000001'
+Near 'ReceivableDays: numeric text Days is #VALUE!' "ERROR.TYPE($rd(125000, 1200000, `"0`"))"  '3' '0.1'
+Near 'ReceivableDays: row by row'                   "SUMPRODUCT(ABS($rd({100,200},{1000,4000},{365,90}) - {36.5,4.5}))" '0' '0.0000001'
+Near 'ReceivableDays: blank Days row is 365'        "INDEX($rd({100;100},{1000;1000},{90;`"`"}),2,1)" '36.5' '0.0000001'
+Near 'ReceivableDays: 365 over the turnover ratio'  "$rd(125000, 1200000) - 365/oz.ReceivablesTurnoverRatio$L(1200000, 125000)" '0' '0.0000001'
+Near 'PayableDays: blank Days cell is 365'          "$pd(64000, 780000, Z1)"                   '29.9487179487' '0.0000001'
+Near 'PayableDays: zero Days is #NUM!'              "ERROR.TYPE($pd(64000, 780000, 0))"        '6' '0.1'
+Near 'WIPDays: a month of fees'                     "$wd(42000, 45000, 30)"                    '28' '0.0000001'
+Near 'WIPDays: zero flow is #DIV/0!'                "ERROR.TYPE($wd(42000, 0))"                '2' '0.1'
+Near 'CashConversionCycle: without WIP'             "$cc(40, 30, 25)"                          '45'
+Near 'CashConversionCycle: with WIP'                "$cc(40, 30, 25, 10)"                      '55'
+Near 'CashConversionCycle: blank WIPDays cell is 0' "$cc(40, 30, 25, Z1)"                      '45'
+Near 'CashConversionCycle: suppliers paid last'     "$cc(10, 5, 30)"                           '-15'
+Near 'CashConversionCycle: an error propagates'     "--ISERROR($cc(NA(), 30, 25))"             '1'
+Near 'CashConversionCycle: composes the parts'      "$cc(oz.DSI$L(54.9, 490), $rd(125000, 1200000), $pd(64000, 780000))" '48.9670133438' '0.0000001'
+
 # --- Randomised checks. Each trial draws fresh inputs, compares the function with an
 # independent Excel formula and, on a miss, reports the inputs that produced it so the
 # case can be reproduced by hand. A run with no failing trial reads OK. Excel has no

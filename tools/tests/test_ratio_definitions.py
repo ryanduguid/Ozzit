@@ -53,7 +53,7 @@ class RatioDefinitionsTest(unittest.TestCase):
         rows = ROW.findall(DOCUMENT.read_text(encoding="utf-8"))
         source = source_formulas()
         # A floor, so a parser that finds nothing cannot pass by comparing two empty sets.
-        self.assertEqual(len(source), 38)
+        self.assertEqual(len(source), 42)
         # Counted before the rows become a mapping, so a duplicated row cannot hide.
         self.assertEqual(len(rows), len(source))
         documented = {name: compact(formula) for name, formula in rows}
@@ -64,8 +64,8 @@ class RatioDefinitionsTest(unittest.TestCase):
 
     def test_the_page_states_the_count_it_documents(self) -> None:
         text = DOCUMENT.read_text(encoding="utf-8")
-        self.assertIn("Each of the 38 ratio functions", " ".join(text.split()))
-        self.assertIn("### The 38 functions", text)
+        self.assertIn("Each of the 42 ratio functions", " ".join(text.split()))
+        self.assertIn("### The 42 functions", text)
 
 
 if __name__ == "__main__":

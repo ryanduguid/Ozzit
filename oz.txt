@@ -4035,6 +4035,10 @@ AboutRatiosλ = TRIM(
         "AssetTurnoverRatioλ        →Measures the value of a company's sales or revenues relative to the value of its assets.¶" &
         "DSIλ                       →Days Sales in Inventory Ratio (aka Average age of inventory indicates the average time in days that a company takes to turn its inventory¶" &
         "OperatingRatioλ            →Shows how efficient management is at keeping costs low while generating revenue¶" &
+        "ReceivableDaysλ            →Receivable days (DSO): receivables as days of sales¶" &
+        "PayableDaysλ               →Payable days (DPO): payables as days of purchases¶" &
+        "WIPDaysλ                   →Work in progress days: WIP as days of related revenue or cost¶" &
+        "CashConversionCycleλ       →Cash conversion cycle: inventory, WIP and receivable days less payable days¶" &
         "→¶" & 
         "Profitability Margins & Ratios→¶" &
         "GrossMarginλ               →Shows how much profit a company makes after paying off its Cost of Goods Sold¶" &
@@ -5494,6 +5498,167 @@ RetentionRatioλ = LAMBDA(
         Result,         RetainedEarnings/NetIncome,
     //  Return Result
         CHOOSE(Help? + 1, Result, Help)        
+    )
+);
+
+
+/*  FUNCTION NAME:  ReceivableDaysλ
+    DESCRIPTION:*//**Receivable days, or days sales outstanding (DSO): Receivables / Sales x Days*/
+
+ReceivableDaysλ = LAMBDA(
+//  Parameter Declaration
+    [Receivables],
+    [Sales],
+    [Days],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →ReceivableDaysλ(Receivables, Sales, [Days])¶" &
+                            "DESCRIPTION:   →Receivable days, or days sales outstanding (DSO): the days of sales not yet collected.¶NOTES!         →Receivables / Sales * Days. Days is the number of days the Sales figure¶               →covers: 365 with a year's sales, 90 with the last three months' sales for¶               →a rolling figure, or a month's days with that month's sales. Pass closing¶               →receivables, or the average of opening and closing for an average-balance¶               →figure. Put the balance and the sales on the same basis: where one includes¶               →GST and the other does not, adjust the inputs first, because this function¶               →makes no GST adjustment. Sales of 0 returns #DIV/0!, and Days of 0 or less¶               →returns #NUM!.¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/ratio-definitions.md¶" &
+                            "VERSION:       →29 Sep 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "Receivables    →(Required) Trade receivables: the closing balance, or the average of opening and closing.¶" &
+                            "Sales          →(Required) Credit sales over the same Days.¶" &
+                            "Days           →(Optional: Default = 365) Days the Sales figure covers.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.ReceivableDaysλ(125000, 1200000)¶" &
+                            "→Result¶" &
+                            "→38.0208¶" &
+                            "→=oz.ReceivableDaysλ(125000, 330000, 90)¶" &
+                            "→Result¶" &
+                            "→34.0909",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR(ISOMITTED(Receivables), ISOMITTED(Sales)),
+    //  Procedure
+    //  An omitted Days, a blank cell or an empty string is 365, row by row. Anything else
+    //  that is not a number is #VALUE!: text compares greater than every number, so "0"
+    //  would pass the check below and arithmetic would then read it as 0.
+        Period,         IF(ISOMITTED(Days), 365, IF(Days = "", 365, IF(ISNUMBER(Days), Days, #VALUE!))),
+        Result,         IF(Period <= 0, #NUM!, Receivables / Sales * Period),
+    //  Return Result or Help
+        CHOOSE( Help? + 1, Result, Help)
+    )
+);
+
+
+/*  FUNCTION NAME:  PayableDaysλ
+    DESCRIPTION:*//**Payable days, or days payable outstanding (DPO): Payables / Purchases x Days*/
+
+PayableDaysλ = LAMBDA(
+//  Parameter Declaration
+    [Payables],
+    [Purchases],
+    [Days],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →PayableDaysλ(Payables, Purchases, [Days])¶" &
+                            "DESCRIPTION:   →Payable days, or days payable outstanding (DPO): the days of purchases not yet paid.¶NOTES!         →Payables / Purchases * Days. Days is the number of days the Purchases¶               →figure covers, as for ReceivableDaysλ(). Credit purchases are the matching¶               →flow; cost of sales is the common substitute where purchases are not¶               →reported. Pass closing payables, or the average of opening and closing. Put¶               →the balance and the purchases on the same basis: where one includes GST and¶               →the other does not, adjust the inputs first, because this function makes¶               →no GST adjustment. Purchases of 0 returns #DIV/0!, and Days of 0 or less¶               →returns #NUM!.¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/ratio-definitions.md¶" &
+                            "VERSION:       →29 Sep 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "Payables       →(Required) Trade payables: the closing balance, or the average of opening and closing.¶" &
+                            "Purchases      →(Required) Credit purchases, or cost of sales, over the same Days.¶" &
+                            "Days           →(Optional: Default = 365) Days the Purchases figure covers.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.PayableDaysλ(64000, 780000)¶" &
+                            "→Result¶" &
+                            "→29.9487",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR(ISOMITTED(Payables), ISOMITTED(Purchases)),
+    //  Procedure
+    //  An omitted Days, a blank cell or an empty string is 365, row by row; anything else
+    //  that is not a number is #VALUE!, as in ReceivableDaysλ()
+        Period,         IF(ISOMITTED(Days), 365, IF(Days = "", 365, IF(ISNUMBER(Days), Days, #VALUE!))),
+        Result,         IF(Period <= 0, #NUM!, Payables / Purchases * Period),
+    //  Return Result or Help
+        CHOOSE( Help? + 1, Result, Help)
+    )
+);
+
+
+/*  FUNCTION NAME:  WIPDaysλ
+    DESCRIPTION:*//**Work in progress days: WIP / RelatedFlow x Days, with both on one valuation basis*/
+
+WIPDaysλ = LAMBDA(
+//  Parameter Declaration
+    [WIP],
+    [RelatedFlow],
+    [Days],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →WIPDaysλ(WIP, RelatedFlow, [Days])¶" &
+                            "DESCRIPTION:   →Work in progress days: the days of work done but not yet billed or completed.¶NOTES!         →WIP / RelatedFlow * Days. WIP and RelatedFlow must use the same valuation¶               →basis: fee revenue with WIP at charge-out value, as a professional services¶               →firm records it, or cost of sales with WIP at cost. Days is the number of¶               →days the RelatedFlow figure covers. WIP days plus ReceivableDaysλ() gives¶               →the lock-up days a services firm tracks. RelatedFlow of 0 returns #DIV/0!,¶               →and Days of 0 or less returns #NUM!.¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/ratio-definitions.md¶" &
+                            "VERSION:       →29 Sep 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "WIP            →(Required) Work in progress: the closing balance, or the average of opening and closing.¶" &
+                            "RelatedFlow    →(Required) Fee revenue or cost of sales over the same Days, on the valuation basis of WIP.¶" &
+                            "Days           →(Optional: Default = 365) Days the RelatedFlow figure covers.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.WIPDaysλ(42000, 510000)¶" &
+                            "→Result¶" &
+                            "→30.0588",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR(ISOMITTED(WIP), ISOMITTED(RelatedFlow)),
+    //  Procedure
+    //  An omitted Days, a blank cell or an empty string is 365, row by row; anything else
+    //  that is not a number is #VALUE!, as in ReceivableDaysλ()
+        Period,         IF(ISOMITTED(Days), 365, IF(Days = "", 365, IF(ISNUMBER(Days), Days, #VALUE!))),
+        Result,         IF(Period <= 0, #NUM!, WIP / RelatedFlow * Period),
+    //  Return Result or Help
+        CHOOSE( Help? + 1, Result, Help)
+    )
+);
+
+
+/*  FUNCTION NAME:  CashConversionCycleλ
+    DESCRIPTION:*//**Cash conversion cycle in days: inventory days + WIP days + receivable days - payable days*/
+
+CashConversionCycleλ = LAMBDA(
+//  Parameter Declaration
+    [InventoryDays],
+    [ReceivableDays],
+    [PayableDays],
+    [WIPDays],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →CashConversionCycleλ(InventoryDays, ReceivableDays, PayableDays, [WIPDays])¶" &
+                            "DESCRIPTION:   →Cash conversion cycle: the days between paying suppliers and collecting from customers.¶NOTES!         →InventoryDays + WIPDays + ReceivableDays - PayableDays. Pass day counts,¶               →for example from DSIλ(), ReceivableDaysλ(), PayableDaysλ() and WIPDaysλ(),¶               →with every component on the same period basis. DSIλ() multiplies by 365¶               →and expects a full year's cost of goods sold, so for a shorter window¶               →annualise that window's cost of goods sold before passing it. A negative¶               →result means suppliers are paid after customers pay. An omitted or blank¶               →WIPDays counts as 0. Pass WIPDays only where WIP is not already in the¶               →inventory behind InventoryDays, or it is counted twice.¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/ratio-definitions.md¶" &
+                            "VERSION:       →29 Sep 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "InventoryDays  →(Required) Inventory days, for example from DSIλ().¶" &
+                            "ReceivableDays →(Required) Receivable days, for example from ReceivableDaysλ().¶" &
+                            "PayableDays    →(Required) Payable days, for example from PayableDaysλ().¶" &
+                            "WIPDays        →(Optional: Default = 0) Work in progress days, for example from WIPDaysλ().¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.CashConversionCycleλ(40.8949, 38.0208, 29.9487)¶" &
+                            "→Result¶" &
+                            "→48.967",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR(ISOMITTED(InventoryDays), ISOMITTED(ReceivableDays), ISOMITTED(PayableDays)),
+    //  Procedure
+    //  An omitted WIPDays, a blank cell or an empty string is 0, row by row
+        WIPPart,        IF(ISOMITTED(WIPDays), 0, IF(WIPDays = "", 0, WIPDays)),
+        Result,         InventoryDays + WIPPart + ReceivableDays - PayableDays,
+    //  Return Result or Help
+        CHOOSE( Help? + 1, Result, Help)
     )
 );
 

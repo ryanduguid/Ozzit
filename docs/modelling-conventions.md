@@ -10,7 +10,7 @@ the rules against the source at the commit that adds this page, not a claim that
 Ozzit complies with either guide, and neither body has reviewed it.
 
 Both guides were written for models: workbooks with inputs, a time axis,
-calculations and outputs. Ozzit is a library of 133 LAMBDA functions and 5 help
+calculations and outputs. Ozzit is a library of 137 LAMBDA functions and 5 help
 tables that models call. FAST 02c mentions neither LAMBDA nor dynamic arrays, and
 the ICAEW Code does not mention LAMBDA, so each rule is read for its purpose.
 Rules about workbook and worksheet layout still apply to any model built with
@@ -49,8 +49,8 @@ still keep its own formulas short and labelled.
 | Sections 1 and 2: workbook and worksheet design | Does not apply | They govern models. The library workbook holds help and example sheets, not a model. |
 | 3.02-01 Consistent formulas along the series | Depends on the calling model | The rule is about a model's rows. A function that returns a whole series, such as a schedule, lets a row hold one formula rather than copies, but a scalar function such as `oz.CashRatioλ` is copied like any formula, and whether those copies are consistent is the calling model's matter. |
 | 3.03-01 to 3.03-03 Formula length and multi-line formulas | Departs in definitions | See [Named LAMBDA functions](#named-lambda-functions). |
-| 3.03-05 Use flags to limit IF | Not assessed | FAST accepts simple `IF` use and aims this rule at timing tests that a flag can replace. 59 functions call `IF`, mostly to test inputs and set defaults; the count alone does not decide the rule. |
-| 3.03-07 Never nest IFs | Departs | At least 18 functions nest one `IF` inside another, mostly to set a default: `IF(ISOMITTED(Rows), 1, IF(Rows = 0, 1, Rows))` in `oz.RangeToDAλ`. Each nest sits in one named `LET` step. |
+| 3.03-05 Use flags to limit IF | Not assessed | FAST accepts simple `IF` use and aims this rule at timing tests that a flag can replace. 63 functions call `IF`, mostly to test inputs and set defaults; the count alone does not decide the rule. |
+| 3.03-07 Never nest IFs | Departs | At least 22 functions nest one `IF` inside another, mostly to set a default: `IF(ISOMITTED(Rows), 1, IF(Rows = 0, 1, Rows))` in `oz.RangeToDAλ`. Each nest sits in one named `LET` step. |
 | 3.03-08 Do not use Excel Names | Departs | Every function is a name; that is how Excel delivers a LAMBDA library. See [Named LAMBDA functions](#named-lambda-functions). |
 | 3.03-09 Do not construct array formulas | Departs | The functions return dynamic arrays by design. FAST's exceptions cover a calculation that cannot be done without arrays (3.03-09.2) and one where avoiding arrays is harder to review than the array form (3.03-09.3); a schedule that returns one row of periods from one call rests on the second. |
 | 3.04-01 No embedded constants | Departs in part | `oz.GSTAddλ` and `oz.GSTExtractλ` fall back to a rate of 0.1 written into the formula, `IF(ISOMITTED(Rate), 0.1, …)`. A caller can pass a rate and the help gives the source, but the fallback is still a tax rate embedded in a formula: commercial information of the kind FAST says never to embed (its example is an inflation rate), and the kind of hardcoding the ICAEW Code gives as its example. `oz.DayCountRateλ`, `oz.Depreciateλ` and `oz.TimelineOffsetλ` embed 30.5 days a month to turn day counts into whole months; FAST allows universal constants such as 12 months a year, and 30.5 is an approximation, not a universal constant. `oz.DSIλ` names its 365 days a year in a `LET` step, a stated convention. |
@@ -77,7 +77,7 @@ The Code's text is reserved, so this page quotes its section headings only.
 | Don't hide things | Departs, with copies | The logic sits in Name Manager, not on a sheet; `src/`, `oz.txt` and the help tables are the visible copies, and CI checks them against the workbook. |
 | Use consistent formulas | Depends on the calling model | As FAST 3.02-01. |
 | Use clear and meaningful labels; use clear range names | Follows | Function names say what they return, the `λ` suffix marks a function, and the `oz.` prefix marks the module. |
-| Document VBA code clearly (user-defined functions in cells) | Departs | Under this heading the Code advises against user-defined functions in workbook cells. It has VBA in view and does not mention LAMBDA, but read for its purpose, logic a reader cannot see in the cell, it applies: Ozzit's 133 functions exist to be called from cells. The mitigations are those under [Named LAMBDA functions](#named-lambda-functions). |
+| Document VBA code clearly (user-defined functions in cells) | Departs | Under this heading the Code advises against user-defined functions in workbook cells. It has VBA in view and does not mention LAMBDA, but read for its purpose, logic a reader cannot see in the cell, it applies: Ozzit's 137 functions exist to be called from cells. The mitigations are those under [Named LAMBDA functions](#named-lambda-functions). |
 | Review and test your models | Follows in part | Testing is evidenced: CI runs the verification gates in [CONTRIBUTING.md](../CONTRIBUTING.md), and releases need the native Excel self-test and cached-value evidence in [RELEASING.md](../RELEASING.md), where a maintainer approves each release candidate. No separate review of formula changes is documented. |
 | Minimise calculation complexity | Departs in definitions | As FAST 3.03-01 to 3.03-03; the Code allows it where breaking a hard rule is easier to follow. |
 | Build traceable references (no array formulas) | Departs | As FAST 3.03-09. |
