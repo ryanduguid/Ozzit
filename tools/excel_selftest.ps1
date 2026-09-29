@@ -195,7 +195,8 @@ Near 'Debt LRV: deficits capitalise only unpaid interest' `
      "MAX(ABS($lrv(, {1000,0}, {-300,-50}, {1.2,1.2}, {0.06,0.06}, 12)-$lrv(, {1000,0}, {0,0}, {1.2,1.2}, {0.06,0.06}, 12)))" '0' '0.0000001'
 Near 'Debt LRV: a deficit cannot reopen repaid debt' `
      "SUM(ABS(DROP($lrv(, {1000,0,0}, {1800,-300,300}, {1.2,1.2,1.2}, {0.06,0.06,0.06}, 12),,1)))" '0' '0.0000001'
-# Independent balances solve closing = opening + rate*(opening+closing)/2 - cash/DSCR.
+# Uncapped balances solve closing = opening + rate*(opening+closing)/2 - MAX(cash,0)/DSCR.
+# When cash clears the balance, principal repayment is capped at opening debt.
 $lrvMixedExpected = "VSTACK(HSTACK(1000,103000/97,101075/97,5154825/4753),HSTACK(6000/97,7775/97,202150/4753,1030965/38024),HSTACK(6000/97,-11625/97,202150/4753,-5154825/4753),HSTACK(103000/97,91375/97,5154825/4753,0))"
 Near 'Debt LRV: mixed cash uses each period and carries its closing' `
      "MAX(ABS($lrv(500,{500,0,100,0},{-300,300,-50,1800},{1.2,1.5,1.1,1.2},{0.06,0.08,0.04,0.05},12)-$lrvMixedExpected))" '0' '0.0000001'
