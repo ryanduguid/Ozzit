@@ -1,9 +1,9 @@
 """Contract for tools/postbuild/help_corrections.py.
 
 The pass repairs the functions that shipped disagreeing with their own inline
-help: in the defined names, in src/, in the 2 cells caching a corrected example
-and in the 5 shared strings that are the whole content of a static literal
-cell. On the current workbook it must be a byte no-op; on a workbook reverted to
+help: in the defined names, in src/, in 2 cells caching a corrected example,
+in the retention-ratio demonstration formula and in 5 static shared strings.
+On the current workbook it must be a byte no-op; on a workbook reverted to
 any one of the pre-correction texts it must apply that swap exactly once; and a
 store whose anchors do not match must fail rather than write a partial result.
 """
@@ -139,7 +139,7 @@ class HelpCorrectionsTests(PassContractMixin, unittest.TestCase):
                     shutil.rmtree(self.directory, ignore_errors=True)
                     self.directory.mkdir()
 
-    def test_pass_refreshes_the_cached_spill_on_the_demonstration_sheets(self):
+    def test_pass_corrects_the_examples_on_the_demonstration_sheets(self):
         workbook, src = self._copy_tree()
         with zipfile.ZipFile(workbook) as archive:
             parts = {n: archive.read(n) for n in archive.namelist()}
@@ -151,7 +151,7 @@ class HelpCorrectionsTests(PassContractMixin, unittest.TestCase):
                 text = data.decode("utf-8")
                 hits += text.count(new)
                 parts[name] = text.replace(new, old).encode("utf-8")
-            self.assertEqual(hits, 1, f"precondition: {_what} is cached once")
+            self.assertEqual(hits, 1, f"precondition: {_what} occurs once")
         self._rewrite_workbook(workbook, parts)
 
         result = self._run(workbook, src)

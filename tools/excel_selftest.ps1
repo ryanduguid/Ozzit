@@ -399,7 +399,7 @@ Near 'Amortise: twenty-day periods hold the same money as monthly' `
 $uneven = "DATE(2026,1,1) + SCAN(0, SEQUENCE( , 27, 0), LAMBDA(a,k, IF(k = 0, 0, a + IF(MOD(k,2) = 1, 5, 20))))"
 Near 'Amortise: an uneven timeline still counts each month once' `
      "SUM($am(10000, 0.05, 12, DATE(2026,1,1), $uneven)) - SUM($amMo)" '0' '0.0000001'
-# The month path is untouched. These 3 totals are what v2.5.0 produced.
+# These aligned monthly, quarterly and six-monthly totals match v2.5.0.
 $amL = "10000, 0.05, 48, DATE(2026,1,1)"
 Near 'Amortise: monthly unchanged'    "SUM($am($amL, EDATE(DATE(2026,1,1), SEQUENCE( , 24, 0))))"     '377875.31' '0.005'
 Near 'Amortise: quarterly unchanged'  "SUM($am($amL, EDATE(DATE(2026,1,1), SEQUENCE( , 8, 0) * 3)))" '132616.32' '0.005'
@@ -458,6 +458,60 @@ Same 'Amortise: a final period end inside the timeline is refused' `
 Same 'Amortise: a final period end without a timeline is refused' `
      "LEFT(INDEX($am(10000, 0.05, 12, DATE(2026,1,1), , DATE(2027,1,1)),1,1),14)" 'FinalPeriodEnd'
 Same 'Amortise: help with no args' "INDEX($am(),1,1)" 'FUNCTION:'
+
+# Monthly cash flows follow the supplied period dates. Expected vectors use a
+# 60-digit recurrence and explicit month counts; controls retain prior results.
+Near 'Amortise dates: annual_offset_zero' `
+     "MAX(ABS(oz.Amortise${L}(2400,0,24,DATE(2027,1,1),EDATE(DATE(2026,7,1),{0,12,24}))-{2400,0,0;2400,1800,600;0,0,0;-600,-1200,-600;1800,600,0;600,1200,600}))" '0' '0.0000001'
+Near 'Amortise dates: annual_offset_interest' `
+     "MAX(ABS(oz.Amortise${L}(100000,0.06,24,DATE(2027,1,1),EDATE(DATE(2026,7,1),{0,12,24}))-{100000,0,0;100000,76110.755853565599,26133.13551617966;2703.1220052197464,3207.1119659223432,459.23063547448169;-26592.366151654143,-53184.732303308287,-26592.366151654143;76110.755853565599,26133.13551617966,-1.22e-54;23889.244146434397,49977.620337385939,26133.13551617966}))" '0' '0.0000001'
+Near 'Amortise dates: quarter_offset_zero' `
+     "MAX(ABS(oz.Amortise${L}(600,0,6,DATE(2027,2,1),EDATE(DATE(2027,1,1),{0,3,6}))-{600,0,0;600,400,100;0,0,0;-200,-300,-100;400,100,0;200,300,100}))" '0' '0.0000001'
+Near 'Amortise dates: uneven_long' `
+     "MAX(ABS(oz.Amortise${L}(1200,0,12,DATE(2027,1,1),EDATE(DATE(2027,1,1),{0,1,4,6}))-{1200,0,0,0;1200,1100,800,600;0,0,0,0;-100,-300,-200,-200;1100,800,600,400;100,300,200,200}))" '0' '0.0000001'
+Near 'Amortise dates: annual_exact_boundary' `
+     "MAX(ABS(oz.Amortise${L}(2400,0,24,DATE(2027,7,1),EDATE(DATE(2026,7,1),{0,12,24}))-{0,2400,0;0,2400,1200;0,0,0;0,-1200,-1200;0,1200,0;0,1200,1200}))" '0' '0.0000001'
+Near 'Amortise dates: annual_short_loan' `
+     "MAX(ABS(oz.Amortise${L}(100,0,1,DATE(2027,1,1),EDATE(DATE(2026,7,1),{0,12,24}))-{100,0,0;100,0,0;0,0,0;-100,0,0;0,0,0;100,0,0}))" '0' '0.0000001'
+Near 'Amortise dates: quarter_before_window' `
+     "MAX(ABS(oz.Amortise${L}(600,0,6,DATE(2026,12,1),EDATE(DATE(2027,1,1),{0,3,6}))-{0,0,0;500,200,0;0,0,0;-300,-200,0;200,0,0;300,200,0}))" '0' '0.0000001'
+Near 'Amortise dates: annual_leap_boundary' `
+     "MAX(ABS(oz.Amortise${L}(2400,0,24,DATE(2027,3,1),EDATE(DATE(2027,1,1),{0,12,24}))-{2400,0,0;2400,1400,200;0,0,0;-1000,-1200,-200;1400,200,0;1000,1200,200}))" '0' '0.0000001'
+Near 'Amortise dates: monthly_offset_zero' `
+     "MAX(ABS(oz.Amortise${L}(600,0,6,DATE(2027,1,15),EDATE(DATE(2027,1,1),{0,1,2,3,4,5}))-{600,0,0,0,0,0;600,500,400,300,200,100;0,0,0,0,0,0;-100,-100,-100,-100,-100,-100;500,400,300,200,100,0;100,100,100,100,100,100}))" '0' '0.0000001'
+Near 'Amortise dates: monthly_aligned' `
+     "MAX(ABS(oz.Amortise${L}(1200,0.12,12,DATE(2027,1,1),EDATE(DATE(2027,1,1),{0,1,2,3,4,5}))-{1200,0,0,0,0,0;1200,1105.3814535859899,1009.8167217078399,913.29634251090897,815.81075952200695,717.35032070321813;12,11.0538145358599,10.098167217078398,9.1329634251090894,8.1581075952200699,7.1735032070321818;-106.61854641401001,-106.61854641401001,-106.61854641401001,-106.61854641401001,-106.61854641401001,-106.61854641401001;1105.3814535859899,1009.8167217078397,913.29634251090829,815.81075952200808,717.35032070321699,617.90527749624027;94.618546414010012,95.564731878150113,96.520379196931614,97.485582988900916,98.460438818789939,99.445043206977829}))" '0' '0.0000001'
+Near 'Amortise dates: quarter_aligned' `
+     "MAX(ABS(oz.Amortise${L}(1200,0.12,12,DATE(2027,1,1),EDATE(DATE(2027,1,1),{0,3,6,9}))-{1200,0,0,0;1200,913.29634251090897,617.90527749623834,313.56356782055946;33.151981752938298,24.464574227361339,15.513929566351846,6.292071421469088;-319.85563924203007,-319.85563924203007,-319.85563924203007,-319.85563924203007;913.29634251090829,617.90527749624027,313.56356782056014,-1.5347723092418164e-12;286.70365748909177,295.3910650146687,304.3417096756782,313.56356782056099}))" '0' '0.0000001'
+Near 'Amortise dates: sixmonth_aligned' `
+     "MAX(ABS(oz.Amortise${L}(1200,0.12,12,DATE(2027,1,1),EDATE(DATE(2027,1,1),{0,6}))-{1200,0;1200,617.90527749623834;57.616555980299637,21.806000987820934;-639.71127848406002,-639.71127848406002;617.90527749623959,-7.9580786405131221e-13;582.09472250376041,617.90527749623914}))" '0' '0.0000001'
+Near 'Amortise dates: monthend_truncated' `
+     "MAX(ABS(oz.Amortise${L}(600,0,6,DATE(2027,1,31),EDATE(DATE(2027,1,31),{0,1,2}))-{600,0,0;600,500,400;0,0,0;-100,-100,-100;500,400,300;100,100,100}))" '0' '0.0000001'
+Near 'Amortise dates: monthend_february' `
+     "MAX(ABS(oz.Amortise${L}(600,0,6,DATE(2027,1,31),EDATE(DATE(2027,1,31),{0,1}))-{600,0;600,500;0,0;-100,-100;500,400;100,100}))" '0' '0.0000001'
+Near 'Amortise dates: one_date_timeline' `
+     "MAX(ABS(oz.Amortise${L}(600,0,6,DATE(2027,1,1),DATE(2027,1,1))-{600;600;0;-100;500;100}))" '0' '0.0000001'
+Near 'Amortise dates: two_loans' `
+     "MAX(ABS(CHOOSEROWS(oz.Amortise${L}({600;1800},{0;0},{6;9},VSTACK(DATE(2027,2,1),DATE(2027,3,1)),EDATE(DATE(2027,1,1),{0,3,6,9})),{1,2,3,4,5,6,8,9,10,11,12,13})-{600,0,0,0;600,400,100,0;0,0,0,0;-200,-300,-100,0;400,100,0,0;200,300,100,0;1800,0,0,0;1800,1600,1000,400;0,0,0,0;-200,-600,-600,-400;1600,1000,400,0;200,600,600,400}))" '0' '0.0000001'
+Near 'Amortise dates: multiple loans keep their blank separator' `
+     "SUM(--(CHOOSEROWS($am({600;1800},{0;0},{6;9},VSTACK(DATE(2027,2,1),DATE(2027,3,1)),EDATE(DATE(2027,1,1),{0,3,6,9})),7)="" ""))" '4'
+Near 'Amortise dates: monthly final end retains its existing effect' `
+     "MAX(ABS($am(1200,0,12,DATE(2027,1,1),EDATE(DATE(2027,1,1),{0,1,2}),DATE(2027,7,1))-$am(1200,0,12,DATE(2027,1,1),EDATE(DATE(2027,1,1),{0,1,2}))))" '0' '0.0000001'
+Near 'Amortise dates: quarterly final end retains its existing effect' `
+     "MAX(ABS($am(1200,0,12,DATE(2027,1,1),EDATE(DATE(2027,1,1),{0,3}),DATE(2028,1,1))-$am(1200,0,12,DATE(2027,1,1),EDATE(DATE(2027,1,1),{0,3}))))" '0' '0.0000001'
+
+# February clipping must retain the timeline calendar anchor.
+Near 'Amortise dates: one_february_start' `
+     "MAX(ABS(oz.Amortise${L}(600,0,6,DATE(2027,2,28),DATE(2027,2,28))-{600;600;0;-100;500;100}))" '0' '0.0000001'
+Near 'Amortise dates: day28_truncation' `
+     "MAX(ABS(oz.Amortise${L}(600,0,6,DATE(2027,1,28),EDATE(DATE(2027,1,28),{0,1}))-{600,0;600,500;0,0;-100,-100;500,400;100,100}))" '0' '0.0000001'
+Near 'Amortise dates: day30_truncation' `
+     "MAX(ABS(oz.Amortise${L}(600,0,6,DATE(2027,1,30),EDATE(DATE(2027,1,30),{0,1}))-{600,0;600,500;0,0;-100,-100;500,400;100,100}))" '0' '0.0000001'
+Near 'Amortise dates: day30_late_start' `
+     "MAX(ABS(oz.Amortise${L}(600,0,6,DATE(2027,3,29),EDATE(DATE(2027,1,30),{0,1}))-{0,600;0,600;0,0;0,-100;0,500;0,100}))" '0' '0.0000001'
+
+Near 'Amortise dates: default multiple-loan timeline' `
+     "MAX(ABS(CHOOSEROWS(oz.Amortise${L}({600;1800},{0;0},{6;9},VSTACK(DATE(2027,2,1),DATE(2027,3,1))),{1,2,3,4,5,6,8,9,10,11,12,13})-{600,0,0,0,0,0,0,0,0,0;600,500,400,300,200,100,0,0,0,0;0,0,0,0,0,0,0,0,0,0;-100,-100,-100,-100,-100,-100,0,0,0,0;500,400,300,200,100,0,0,0,0,0;100,100,100,100,100,100,0,0,0,0;0,1800,0,0,0,0,0,0,0,0;0,1800,1600,1400,1200,1000,800,600,400,200;0,0,0,0,0,0,0,0,0,0;0,-200,-200,-200,-200,-200,-200,-200,-200,-200;0,1600,1400,1200,1000,800,600,400,200,0;0,200,200,200,200,200,200,200,200,200}))" '0' '0.0000001'
 
 # --- Depreciate. Every period but the last takes its end date from the next period's start.
 # The last had EDATE(its own start, months per period) - 1, which on a sub-monthly timeline
@@ -775,6 +829,10 @@ Near 'ROE: opening equity averages in' "$roe(59.972, 256.144, 251.635)"         
 Near 'ROE: blank opening cell = closing' "$roe(59.972, 253.8895, Z1)"            '0.236213' '0.0000005'
 Near 'ROE: rows of periods'            "SUM($roe({10,20}, {100,200}, {100,200}))" '0.2' '0.0000001'
 Near 'Sheet: ratios ROE unchanged'     "'oz.FinancialRatios'!A47"                 '0.236213' '0.0000005'
+
+# Retention uses current-period earnings left after dividends, divided by net income.
+Near 'Sheet: retention is one less the payout ratio' "'oz.FinancialRatios'!A61-(1-22.112/41.981)" '0' '0.000000000001'
+Same 'Sheet: retention formula display' "'oz.FinancialRatios'!B61" "=oz.RetentionRatio$L( 19.869, 41.981)"
 
 # --- Effective rate conversion, the rate per period the lease functions take.
 $pr = "oz.PeriodRate$L"

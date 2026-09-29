@@ -23,7 +23,9 @@ Tolerances are 0.0000001 for a rate and 0.000001 for an amount. Excel's XIRR sto
 iterating at a small tolerance of its own, so rates are not expected to agree to the last
 digit.
 
-Rerun it on a Windows host with desktop Excel and no Excel window open:
+Commit any workbook changes first, then rerun it on a Windows host with desktop Excel
+and no Excel window open. Tracked evidence refuses workbook bytes that differ from HEAD
+before loading pyxirr or starting Excel:
 
 ```powershell
 uv run --no-project --with pyxirr==0.10.8 python tools/pyxirr_comparison.py
@@ -31,7 +33,8 @@ uv run --no-project --with pyxirr==0.10.8 python tools/pyxirr_comparison.py
 
 CI has neither Excel nor pyxirr. `tools/tests/test_pyxirr_comparison.py` checks that the
 recorded evidence covers exactly the cases in the script, with the same formulas, and that
-the table below matches it.
+the table below matches it. It also checks that the recorded commit contains the compared
+workbook bytes.
 
 ### Check a downloaded release
 
@@ -102,15 +105,15 @@ largest across all of them.
 
 ### Limits
 
-The separate [v3.4.2 release comparison](pyxirr-release-v3.4.2.json) was run on
-25 September 2026 in Excel 16.0 build 20430 with pyxirr 0.10.8. The
+The separate [v3.4.2 release comparison](pyxirr-release-v3.4.2.json) was refreshed on
+29 September 2026 in Excel 16.0 build 20430 with pyxirr 0.10.8. The
 [released workbook](https://github.com/ryanduguid/Ozzit/releases/tag/v3.4.2) was
 439,097 bytes and matched GitHub's published asset digest:
 `0306793a7e473ce70e78149fea1e107fc0f714d61ab50960c16f6fd528878f6f`.
 All eight cases passed the comparison gate: seven agreed within tolerance, and
 the two-root case retained the documented `#NUM!` difference with a verified
-pyxirr root. The file hash was unchanged afterwards. The record includes hashes
-of the runner's working files; those changes were not committed at run time.
+pyxirr root. The file hash was unchanged afterwards. The record identifies the
+committed runner and includes hashes of both runner files.
 This verifies the downloaded file for these cases. It is not a fresh-workbook
 installation test or a rerun of every release gate.
 

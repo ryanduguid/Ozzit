@@ -7,7 +7,8 @@ Run from the repository root on a Windows host with desktop Excel and no Excel o
 Excel evaluates each case's formula against ozzit.xlsx through excel_eval_formulas.ps1,
 which opens the workbook read-only and checks its hash is unchanged. pyxirr computes the
 same quantity from the same inputs. The script writes docs/pyxirr-comparison.json and the
-results table in docs/pyxirr-comparison.md. To check a downloaded release, pass --workbook,
+results table in docs/pyxirr-comparison.md. Commit the workbook before refreshing tracked
+evidence: its bytes must match the recorded commit. To check a downloaded release, pass --workbook,
 --expected-sha256 and a fresh --output JSON path; this preserves the tracked evidence.
 CI does not run Excel or pyxirr: the unit test checks the recorded cases and table.
 
@@ -297,6 +298,20 @@ def main(argv: list[str] | None = None) -> int:
     if expected is not None and expected != before:
         parser.error(f"workbook SHA-256 mismatch: observed {before}")
 
+    tracked_commit = None
+    if not args.output:
+        try:
+            tracked_commit = subprocess.run(
+                ["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True,
+                text=True, check=True).stdout.strip()
+            committed = subprocess.run(
+                ["git", "show", f"{tracked_commit}:ozzit.xlsx"], cwd=ROOT,
+                capture_output=True, check=True).stdout
+        except (OSError, subprocess.CalledProcessError):
+            parser.error("cannot verify the committed workbook; tracked evidence was not changed")
+        if hashlib.sha256(committed).hexdigest() != before:
+            parser.error("commit ozzit.xlsx before refreshing tracked evidence")
+
     px = importlib.import_module("pyxirr")
     installed = importlib.metadata.version("pyxirr")
     if installed != PYXIRR:
@@ -306,19 +321,19 @@ def main(argv: list[str] | None = None) -> int:
     after = hashlib.sha256(workbook.read_bytes()).hexdigest()
     if after != before or excel["workbook_sha256"] != before:
         raise SystemExit("FAIL: the evaluated workbook hash does not match the input bytes")
-    commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True,
-                            text=True, check=True).stdout.strip()
     evidence = {"recorded": date.today().isoformat(), "excel": excel["excel"],
                 "workbook": workbook.name,
                 "workbook_sha256": excel["workbook_sha256"], "pyxirr": PYXIRR,
                 "cases": compare(excel, px)}
     if args.output:
+        commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True,
+                                text=True, check=True).stdout.strip()
         evidence.update(expected_sha256=expected, runner_commit=commit, runner_files={
             relative: hashlib.sha256((ROOT / relative).read_bytes()).hexdigest()
             for relative in ("tools/pyxirr_comparison.py", "tools/excel_eval_formulas.ps1")
         })
     else:
-        evidence["commit"] = commit
+        evidence["commit"] = tracked_commit
     with output.open("x" if args.output else "w", encoding="utf-8", newline="\n") as stream:
         stream.write(json.dumps(evidence, indent=2, ensure_ascii=False) + "\n")
     if not args.output:

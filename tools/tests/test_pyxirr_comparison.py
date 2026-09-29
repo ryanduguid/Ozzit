@@ -12,6 +12,7 @@ import hashlib
 import io
 import json
 import re
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -42,6 +43,11 @@ class PyxirrComparisonTests(unittest.TestCase):
         self.assertEqual(self.evidence["workbook_sha256"], current,
                          "the workbook changed since the recorded comparison; rerun "
                          "tools/pyxirr_comparison.py in desktop Excel")
+        committed = subprocess.run(
+            ["git", "show", f"{self.evidence['commit']}:{self.evidence['workbook']}"],
+            cwd=ROOT, capture_output=True, check=True).stdout
+        self.assertEqual(self.evidence["workbook_sha256"], hashlib.sha256(committed).hexdigest(),
+                         "the recorded commit does not contain the compared workbook")
         self.assertEqual(self.evidence["pyxirr"], comparison.PYXIRR)
         self.assertTrue(self.evidence["excel"])
 
@@ -102,6 +108,82 @@ class ComparisonFailureTests(unittest.TestCase):
             record, = comparison.compare({"results": {case["id"]: [[0.2]]}}, px)
         self.assertFalse(record["agrees"])
         self.assertIsNone(record["note"])
+
+
+class TrackedWorkbookTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.workbook = self.root / "ozzit.xlsx"
+        self.content = b"synthetic workbook\x00\xff\r\n"
+        self.workbook.write_bytes(self.content)
+        self.digest = hashlib.sha256(self.content).hexdigest()
+        self.evidence = self.root / "comparison.json"
+        self.evidence.write_text("previous evidence", encoding="utf-8")
+        self.document = self.root / "comparison.md"
+        self.document.write_text("previous table", encoding="utf-8")
+        for name, value in [("ROOT", self.root), ("EVIDENCE", self.evidence),
+                            ("DOCUMENT", self.document)]:
+            patcher = patch.object(comparison, name, value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def assert_refused(self, git_results, message: str) -> None:
+        with (patch.object(comparison.subprocess, "run", side_effect=git_results),
+              patch.object(comparison.importlib, "import_module") as load,
+              patch.object(comparison.importlib.metadata, "version", return_value=comparison.PYXIRR),
+              patch.object(comparison, "evaluate", return_value={
+                  "excel": "test Excel", "workbook_sha256": self.digest}) as evaluate,
+              patch.object(comparison, "compare", return_value=[]),
+              patch.object(comparison, "write_table"), redirect_stdout(io.StringIO()),
+              redirect_stderr(io.StringIO()) as printed,
+              self.assertRaises(SystemExit) as failure):
+            comparison.main([])
+        self.assertEqual(failure.exception.code, 2)
+        self.assertIn(message, printed.getvalue())
+        load.assert_not_called()
+        evaluate.assert_not_called()
+        self.assertEqual(self.evidence.read_text(encoding="utf-8"), "previous evidence")
+        self.assertEqual(self.document.read_text(encoding="utf-8"), "previous table")
+
+    def test_uncommitted_workbook_refuses_before_dependencies_or_excel(self) -> None:
+        self.assert_refused([Mock(stdout="a" * 40), Mock(stdout=b"older workbook")],
+                            "commit ozzit.xlsx before refreshing tracked evidence")
+
+    def test_unavailable_commit_or_blob_refuses_without_overwriting_evidence(self) -> None:
+        error = subprocess.CalledProcessError(128, ["git", "show"])
+        for results in [[OSError("git unavailable")], [error], [Mock(stdout="a" * 40), error]]:
+            with self.subTest(results=results):
+                self.assert_refused(results, "cannot verify the committed workbook")
+
+    def test_tracked_record_uses_the_commit_checked_before_excel(self) -> None:
+        original = "a" * 40
+        later = "b" * 40
+        evaluated = False
+
+        def evaluate(_):
+            nonlocal evaluated
+            evaluated = True
+            return {"excel": "test Excel", "workbook_sha256": self.digest}
+
+        def git_result(command, **_):
+            if command == ["git", "rev-parse", "HEAD"]:
+                return Mock(stdout=later if evaluated else original)
+            self.assertEqual(command, ["git", "show", original + ":ozzit.xlsx"])
+            return Mock(stdout=self.content)
+
+        with (patch.object(comparison.subprocess, "run", side_effect=git_result) as git,
+              patch.object(comparison.importlib, "import_module"),
+              patch.object(comparison.importlib.metadata, "version", return_value=comparison.PYXIRR),
+              patch.object(comparison, "evaluate", side_effect=evaluate),
+              patch.object(comparison, "compare", return_value=[]),
+              patch.object(comparison, "write_table"), redirect_stdout(io.StringIO())):
+            self.assertEqual(comparison.main([]), 0)
+        self.assertEqual(json.loads(self.evidence.read_text(encoding="utf-8"))["commit"], original)
+        self.assertEqual(git.call_count, 2, "tracked evidence must not read a later HEAD")
+        self.assertEqual(git.call_args_list[1].args[0], ["git", "show", original + ":ozzit.xlsx"])
+        self.assertFalse(git.call_args_list[1].kwargs.get("text", False))
 
 
 class ReleasedWorkbookTests(unittest.TestCase):

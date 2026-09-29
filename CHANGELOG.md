@@ -7,6 +7,20 @@ release; until then v3.4.2 behaves as it did, including the defects fixed here.
 
 ### Calculation changes
 
+- The retention-ratio example in `oz.FinancialRatios!A61` now passes retained
+  earnings and net income, showing 47.3% instead of 189.9%. The function and its
+  help were already correct. Native Excel refreshes both the result and the
+  formula displayed beside it.
+- `oz.Amortiseλ` allocates each loan month by the reporting period's dates.
+  A 24-month loan starting in January on a July financial-year timeline now puts
+  6, 12 and 6 payments in those years, instead of 12, 12 and none. Uneven periods
+  follow their actual dates too. Each period opens on its first monthly balance
+  and closes on its last. Multiple-loan inputs now retain every monthly payment.
+  Calendar cut-offs preserve February clipping and single-date timelines;
+  `FinalPeriodEnd` still affects only sub-monthly timelines. All 1,002 native
+  assertions and 19,446 cache comparisons pass in Excel 16.0 build 20430 on
+  29 September 2026. The 24 added assertions include independently calculated
+  annual, quarterly and multiple-loan vectors and unchanged-behaviour controls.
 - `oz.LeaseRemeasureλ` compares liabilities before the payment due at the
   remeasurement date. With InAdvance TRUE, the adjustment includes that payment;
   the returned unpaid liability still excludes it. Unchanged payments no longer
@@ -65,38 +79,25 @@ release; until then v3.4.2 behaves as it did, including the defects fixed here.
   and a period holding one month is unchanged. All 5 added assertions pass in the
   29 September 2026 native Excel run.
 
-### Found in review, not yet fixed
-
-A review of the library on 28 September 2026 found these defects. Each needs a
-formula change and a native Excel round, so each stays listed here, with a way to
-avoid it, until a change fixes it and moves it to the calculation changes above. The
-initial review traced these cases in the formula text and recalculated them by hand
-or in Python, without native Excel reproduction.
-
-- `oz.Amortiseλ` on a timeline of a month or longer groups a loan's months from the
-  loan's own start, not by the timeline's dates. A loan that starts part-way through a
-  period has its interest and payments shifted between periods; lifetime totals are
-  unaffected. On a 1 July financial-year timeline, 100,000 at 6% over 24 months from
-  1 January 2027 books 53,184.73 of payments in FY27 rather than 26,592.37, and none in
-  FY29 rather than 26,592.37. Until fixed, start each loan on a period start, or use a
-  monthly timeline.
-- `oz.DBλ` and `oz.DDBλ` put the whole remaining depreciable amount in the final year,
-  which Excel's DB and DDB do not: DDB on 10,000 with 500 salvage over 10 years ends at
-  842.18 rather than 268.44. `oz.DBλ`'s Months argument returns Life columns where
-  Excel's DB adds a partial final year. Their help does not say so yet.
-- The `oz.FinancialRatios` sheet shows a retention ratio of 189.9% in A61, which passes
-  net income and dividends where `oz.RetentionRatioλ` expects retained earnings and net
-  income. On the same figures the ratio is 47.3%.
-
 ### Tools, checks and documentation
 
+- `oz.DBλ` and `oz.DDBλ` help now explains their fixed-length schedules for
+  positive whole-number lives. Their final value brings total depreciation to
+  cost less salvage. With cost 10,000, salvage 500 and life 10, DDB ends at 842.18;
+  Excel's DDB gives 268.44 for that period. DB with a partial first year returns
+  Life values, without Excel DB's extra final period. Native Excel confirmed
+  these differences; calculations remain unchanged. The earlier review item
+  is now recorded as a compatibility limitation, rather than a pending formula
+  repair. Use Excel's built-ins when their per-period convention is required.
+- DB, DDB and VDB help now permits zero salvage, which all three functions
+  already accept. `oz.CurrentRatioλ` help removes two repeated asset entries
+  and corrects 'expected to be liquidated'.
 - `docs/ratio-definitions.md` records the arithmetic of the 38 ratio functions, the
   balance and period each argument should carry, and where a definition differs from
   the usual one: earnings per share, retention ratio, debt to equity, equity ratio,
   book value per share and price to book (the help asks for tangible book value). `tools/tests/test_ratio_definitions.py` holds the page to
   `src/Ratios.txt`. The page lists receivable, payable and WIP days and the cash
-  conversion cycle as gaps, and a help-text slip in `oz.CurrentRatioλ`; neither is
-  changed in the workbook.
+  conversion cycle as gaps; those functions are not added to the workbook.
 - `docs/modelling-conventions.md` reads the library against the FAST Standard 02c
   (CC BY 4.0) and the ICAEW Financial Modelling Code (2024): named LAMBDA functions
   called from cells, nested `IF`s, dynamic arrays, `OFFSET` in the three `RangeToDA`

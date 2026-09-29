@@ -78,7 +78,9 @@ run after any text pass that touches `src/`. A build that starts from the earlie
 workbook still emits those blocks at v3.0.0, so this pass is what removes them. The
 help-corrections pass is the last of the repair passes: it repairs the functions that shipped
 disagreeing with their own inline help. Two of the corrected examples are spilled onto
-demonstration worksheets, so it rewrites the cells caching that spill, and 5 of the
+demonstration worksheets, so it rewrites the cells caching that spill. It also
+corrects the retention-ratio demonstration formula in `oz.FinancialRatios!A61`,
+leaving its value and B61's formula-text cache for native Excel to refresh. Five of the
 corrected statements are also typed into label and description cells that no formula
 feeds, so it rewrites those shared strings too. The rate and date helpers pass runs
 after it and is the last text pass: it adds 4 functions (`oz.PeriodRateλ`,
