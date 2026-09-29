@@ -18,29 +18,32 @@ matches the source.
   returns Excel's `#DIV/0!` error. A negative denominator, such as negative equity
   or negative working capital, returns a ratio whose sign is flipped: read the sign
   before the size.
-- **Units.** Margins and returns come back as fractions (0.25 for 25%), so format
-  them as percentages; `oz.DSIλ` returns days; the rest return a plain ratio such as
-  1.075.
+- **Units.** Margins, returns, the payout and retention ratios and dividend yield
+  come back as fractions (0.25 for 25%), so format them as percentages; `oz.DSIλ`
+  returns days; `oz.EPSλ` and `oz.BVPSλ` return an amount per share; the rest return
+  a plain ratio such as 1.075.
 - **Periods.** No ratio annualises. Where a flow is divided by a balance (the
   turnover ratios, the returns and `oz.DSIλ`), supply a full year's flow, or scale a
   shorter period's flow to a year first. `oz.DSIλ` multiplies by a fixed 365.
-- **Balances.** The argument name says which balance a function expects. Arguments
-  named `Average…` want an average of opening and closing balances, and `oz.ROEλ`
-  averages opening and closing equity itself. The others divide by the balance as
-  supplied; common definitions of return on assets and asset turnover use average
-  total assets.
+- **Balances.** The argument name usually says which balance a function expects.
+  Arguments named `Average…` want an average of opening and closing balances, and
+  `oz.ROEλ` averages opening and closing equity itself. `WorkingCapital` in
+  `oz.WorkingCapitalTurnoverRatioλ` is an average too, as its help says, though its
+  name does not. The others divide by the balance as supplied; common definitions of
+  return on assets and asset turnover use average total assets, and many analysts
+  divide return on invested capital by average invested capital.
 
 ### The 38 functions
 
 | Function | Arithmetic in the source | Notes |
 | --- | --- | --- |
 | `oz.CurrentRatioλ` | `Assets/Liabilities` | Current assets and current liabilities. |
-| `oz.QuickRatioλ` | `QuickAssets/Liabilities` | |
-| `oz.CashRatioλ` | `Cash/Liabilities` | |
-| `oz.OperatingCashFlowRatioλ` | `OperatingCashFlow/Liabilities` | Supply a year's operating cash flow. |
+| `oz.QuickRatioλ` | `QuickAssets/Liabilities` | Quick assets and current liabilities. |
+| `oz.CashRatioλ` | `Cash/Liabilities` | Cash and cash equivalents, and current liabilities. |
+| `oz.OperatingCashFlowRatioλ` | `OperatingCashFlow/Liabilities` | Supply a year's operating cash flow; the denominator is current liabilities. |
 | `oz.ReceivablesTurnoverRatioλ` | `NetCreditSales/AverageAccountsReceivable` | Supply a year's credit sales. |
 | `oz.InventoryTurnoverRatioλ` | `CostOfGoodsSold/AverageInventory` | Supply a year's cost of goods sold. |
-| `oz.WorkingCapitalTurnoverRatioλ` | `NetAnnualSales/WorkingCapital` | Negative working capital gives a negative ratio. |
+| `oz.WorkingCapitalTurnoverRatioλ` | `NetAnnualSales/WorkingCapital` | Supply average working capital, as the help asks. Negative working capital gives a negative ratio. |
 | `oz.DebtRatioλ` | `TotalDebt/TotalAssets` | Same arithmetic as `oz.DebtToAssetRatioλ`; both names are in common use. |
 | `oz.DSCRλ` | `NetOperatingIncome/TotalDebtService` | |
 | `oz.DebtToCapitalRatioλ` | `Debt/(Debt+ShareholdersEquity)` | |
@@ -61,13 +64,13 @@ matches the source.
 | `oz.ROAλ` | `NetIncome/TotalAssets` | Supply a year's net income; common definitions use average total assets. |
 | `oz.ROEλ` | `NetIncome/((ShareholdersEquity + Opening)/2)` | `Opening` is `OpeningEquity`; when it is omitted or not a number, closing equity stands in and the ratio uses closing equity alone. |
 | `oz.ROIλ` | `NetReturnonInvestment/CostofInvestment` | |
-| `oz.ROICλ` | `NetOperatingProfitAfterTax/InvestedCapital` | |
+| `oz.ROICλ` | `NetOperatingProfitAfterTax/InvestedCapital` | Invested capital is debt plus equity as supplied; a common convention divides by average invested capital. |
 | `oz.PriceEarningsRatioλ` | `SharePrice/EarningsPerShare` | |
-| `oz.PriceToBookRatioλ` | `MarketPricePerShare/BookValuePerShare` | |
+| `oz.PriceToBookRatioλ` | `MarketPricePerShare/BookValuePerShare` | The help asks for tangible book value per share, which makes this price to tangible book. For the usual price-to-book ratio, supply book value per share including intangibles, as `oz.BVPSλ` returns. |
 | `oz.PriceToSalesRatioλ` | `MarketPricePerShare/SalesPerShare` | |
 | `oz.PriceToCashRatioλ` | `MarketPricePerShare/OperatingCashFlowPerShare` | |
 | `oz.BVPSλ` | `(ShareholdersEquity - PreferredStock)/AverageSharesOutstanding` | The argument asks for average shares; book value at a date is usually divided by the shares on issue at that date. |
-| `oz.CAPERatioλ` | `SharePrice/TenYearAverageEarningsInflationAdjusted` | |
+| `oz.CAPERatioλ` | `SharePrice/TenYearAverageEarningsInflationAdjusted` | The denominator is ten-year average earnings per share adjusted for inflation. |
 | `oz.DPRλ` | `DividendsPaid/NetIncome` | |
 | `oz.DividendYieldRatioλ` | `AnnualDividendsPerShare/SharePrice` | |
 | `oz.EPSλ` | `(NetIncome-PreferredDividends)/EndOfPeriodCommonSharesOutstanding` | Divides by shares at the end of the period. Basic earnings per share under AASB 133 paragraph 10 uses the weighted average number of ordinary shares outstanding during the period, so pass that average for an AASB 133 figure. |
