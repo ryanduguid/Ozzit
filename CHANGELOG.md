@@ -85,6 +85,13 @@ been reproduced in Excel.
 
 ### Tools, checks and documentation
 
+- `docs/ratio-definitions.md` records the arithmetic of the 38 ratio functions, the
+  balance and period each argument should carry, and where a definition differs from
+  the usual one: earnings per share, retention ratio, debt to equity, equity ratio and
+  book value per share. `tools/tests/test_ratio_definitions.py` holds the page to
+  `src/Ratios.txt`. The page lists receivable, payable and WIP days and the cash
+  conversion cycle as gaps, and a help-text slip in `oz.CurrentRatioλ`; neither is
+  changed in the workbook.
 - `tools/verify_sources.py` fails an argument default that tests a parameter inside
   `OR()` or `AND()`. It would have caught the GST and `oz.Movementλ` defects above,
   and it found the five defaults fixed after them. The occurrences still in `src/`, all

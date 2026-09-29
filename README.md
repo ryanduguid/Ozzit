@@ -103,6 +103,7 @@ The screenshot uses a disposable copy with a synthetic label, an explicit argume
 - [Australian conventions and lease modelling](docs/australian-modelling.md)
 - [Separate 13-week cash-flow template](docs/cash-flow-template.md)
 - [Comparing a modelling schedule with an accounting carrying amount](docs/depreciation-comparison.md)
+- [Ratio definitions: the arithmetic, periods and balances each ratio expects](docs/ratio-definitions.md)
 - [Function index](functions.csv), [source views](src/) and the whole library as one Advanced Formula Environment module, [oz.txt](oz.txt)
 
 ## Verification and attribution
