@@ -104,6 +104,11 @@ Same 'FY April start, 31 Mar'  "$fy(DATE(2026,3,31),4)" 'FY2026'
 Same 'FY April start, 1 Apr'   "$fy(DATE(2026,4,1),4)"  'FY2027'
 Same 'FY December start'       "$fy(DATE(2026,12,1),12)" 'FY2027'
 Same 'FY array, January start' "TEXTJOIN(`"|`",FALSE,$fy(DATE(2026,6,30)+{0;1},1))" 'FY2026|FY2026'
+Same 'FY blank start month'    "$fy(DATE(2026,8,15),Z1)" 'FY2027'
+Same 'FY empty start month'    "$fy(DATE(2026,8,15),`"`")" 'FY2027'
+Same 'FY zero start unchanged' "$fy(DATE(2026,8,15),0)" 'FY2026'
+Same 'FY per-row start month'  "TEXTJOIN(`"|`",FALSE,$fy(DATE(2026,8,15),{`"`";1;7}))" 'FY2027|FY2026|FY2027'
+Same 'FY blank month boundary' "TEXTJOIN(`"|`",FALSE,$fy(DATE(2026,6,30)+{0;1},Z1))" 'FY2026|FY2027'
 Same 'FY help with no args'    "INDEX($fy(),1,1)" 'FUNCTION:'
 
 # Duplicate effective dates use the last matching rate, including item schedules.
