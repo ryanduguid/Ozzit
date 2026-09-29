@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env sh
 # Refuse AI authorship credit before a commit is written.
 #
 # Enable once per clone:
