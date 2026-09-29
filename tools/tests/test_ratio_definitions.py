@@ -19,6 +19,7 @@ SOURCE = ROOT / "src" / "Ratios.txt"
 
 ROW = re.compile(r"^\| `oz\.(\w+λ)` \| `([^`]+)` \|", re.MULTILINE)
 BLOCK = re.compile(r"^/\*\s+FUNCTION NAME:\s*(\S+)", re.MULTILINE)
+ASSIGNMENT = re.compile(r"^(\S+λ)\s*=", re.MULTILINE)
 RESULT = re.compile(r"^\s*Result,\s*(.+?),\s*$", re.MULTILINE)
 
 
@@ -33,6 +34,11 @@ def source_formulas() -> dict[str, str]:
     for index, (start, name) in enumerate(starts):
         end = starts[index + 1][0] if index + 1 < len(starts) else len(text)
         block = text[start:end]
+        # The comment is only a label: the name the module defines is the one
+        # its formula is assigned to, so a renamed function cannot hide behind it.
+        assigned = ASSIGNMENT.search(block)
+        if assigned is None or assigned.group(1) != name:
+            raise AssertionError(f"the FUNCTION NAME comment {name} does not head a definition of that name")
         if "//  Procedure" not in block:
             continue
         procedure = block.split("//  Procedure", 1)[1].split("//  Return Result", 1)[0]
