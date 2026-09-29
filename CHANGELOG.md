@@ -7,6 +7,10 @@ release; until then v3.4.2 behaves as it did, including the defects fixed here.
 
 ### Calculation changes
 
+- The retention-ratio example in `oz.FinancialRatios!A61` now passes retained
+  earnings and net income, showing 47.3% instead of 189.9%. The function and its
+  help were already correct. Native Excel refreshes both the result and the
+  formula displayed beside it.
 - `oz.Amortiseλ` allocates each loan month by the reporting period's dates.
   A 24-month loan starting in January on a July financial-year timeline now puts
   6, 12 and 6 payments in those years, instead of 12, 12 and none. Uneven periods
@@ -87,9 +91,6 @@ or in Python, without native Excel reproduction.
   which Excel's DB and DDB do not: DDB on 10,000 with 500 salvage over 10 years ends at
   842.18 rather than 268.44. `oz.DBλ`'s Months argument returns Life columns where
   Excel's DB adds a partial final year. Their help does not say so yet.
-- The `oz.FinancialRatios` sheet shows a retention ratio of 189.9% in A61, which passes
-  net income and dividends where `oz.RetentionRatioλ` expects retained earnings and net
-  income. On the same figures the ratio is 47.3%.
 
 ### Tools, checks and documentation
 

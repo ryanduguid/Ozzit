@@ -1,4 +1,4 @@
-"""Correction pass: omitted-argument defaults and the help rows that contradict them.
+"""Correction pass: argument defaults, help text and worksheet examples.
 
 Usage: python tools/postbuild/help_corrections.py [workbook] [src dir]
 
@@ -37,14 +37,15 @@ substring of its `new`, so a second run reports "already applied" and writes
 nothing. A store whose anchors do not match fails loudly rather than leaving the
 workbook and source views out of sync.
 
-The workbook shows the same statements a second way, in cells no formula feeds,
-and those copies do not follow the defined names:
+The workbook also holds cached help, a live demonstration formula and static
+labels that need correction:
 
-    CELL_SWAPS     the 2 corrected examples are spilled onto the Reversalλ and
-                   Movementλ demonstration sheets, and the cells caching that
-                   spill hold the old text until Excel next recalculates. Excel
-                   does refresh these, and tools/verify_cache.py is the gate that
-                   proves it.
+    CELL_SWAPS     2 cached help examples on the Reversalλ and Movementλ sheets,
+                   plus the RetentionRatioλ demonstration formula in
+                   oz.FinancialRatios!A61. The latter must pass retained earnings
+                   and net income. Its value and B61's FORMULATEXT cache are left
+                   for native Excel recalculation; tools/verify_cache.py proves
+                   that the caches agree with Excel.
     STRING_SWAPS   5 shared strings are the whole content of a static literal
                    cell: label and description columns typed out beside the
                    demonstrations, with no formula and under no spill anchor.
@@ -250,8 +251,8 @@ SWAPS: tuple[Swap, ...] = (
     ),
 )
 
-# The demonstration sheets cache the help each function spills. Only the 2
-# corrected example rows are cached anywhere, and each is one whole cell value.
+# Two cached help rows and one live demonstration formula. The formula anchor
+# ends at </f>, so it cannot rewrite the dependent FORMULATEXT cache.
 CELL_SWAPS: tuple[tuple[str, str, str], ...] = (
     (
         "oz.Reversalλ's cached example row",
@@ -262,6 +263,11 @@ CELL_SWAPS: tuple[tuple[str, str, str], ...] = (
         "oz.Movementλ's cached example formula",
         "<v>=oz.Movementλ(,{100,110,130,100}, 4)</v>",
         "<v>=oz.Movementλ(,{100,110,130,100})</v>",
+    ),
+    (
+        "oz.FinancialRatios A61 uses retained earnings and net income",
+        "oz.RetentionRatioλ( 41.981, 22.112)</f>",
+        "oz.RetentionRatioλ( 19.869, 41.981)</f>",
     ),
 )
 
@@ -333,7 +339,7 @@ def validate_store(text: str, store: str, failures: list[str]) -> None:
 
 
 def validate_cells(sheets: dict[str, str], failures: list[str]) -> None:
-    """Each cached example row must be present exactly once across the worksheets."""
+    """Each example anchor must be present exactly once across the worksheets."""
     for what, old, new in CELL_SWAPS:
         counts = {
             "before": sum(text.count(old) for text in sheets.values()),
