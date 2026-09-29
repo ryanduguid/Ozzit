@@ -28,10 +28,11 @@ matches the source.
 - **Balances.** The argument name usually says which balance a function expects.
   Arguments named `Average…` want an average of opening and closing balances, and
   `oz.ROEλ` averages opening and closing equity itself. `WorkingCapital` in
-  `oz.WorkingCapitalTurnoverRatioλ` is an average too, as its help says, though its
-  name does not. The others divide by the balance as supplied; common definitions of
-  return on assets and asset turnover use average total assets, and many analysts
-  divide return on invested capital by average invested capital.
+  `oz.WorkingCapitalTurnoverRatioλ` and `TotalAssets` in `oz.AssetTurnoverRatioλ`
+  are averages too, as their help says, though their names do not. The others
+  divide by the balance as supplied; common definitions of return on assets use
+  average total assets, and many analysts divide return on invested capital by
+  average invested capital.
 
 ### The 38 functions
 
@@ -52,7 +53,7 @@ matches the source.
 | `oz.DebtToAssetRatioλ` | `TotalDebt/TotalAssets` | Same arithmetic as `oz.DebtRatioλ`. |
 | `oz.InterestCoverageRatioλ` | `OperatingIncome/InterestExpenses` | Gross interest expense; some definitions deduct interest income first. |
 | `oz.EquityRatioλ` | `ShareholdersEquity/(TotalAssets - IntangibleAssets)` | Deducts intangibles from assets. Pass 0 for equity over total assets, the more common definition. |
-| `oz.AssetTurnoverRatioλ` | `NetSales/TotalAssets` | Supply a year's sales. |
+| `oz.AssetTurnoverRatioλ` | `NetSales/TotalAssets` | Supply a year's sales and average total assets, as the help asks. |
 | `oz.DSIλ` | `AverageInventory/CostOfGoodsSold * DpY` | `DpY` is 365, so supply a year's cost of goods sold. |
 | `oz.OperatingRatioλ` | `(OperatingExpenses+CostOfGoodsSold)/NetSales` | |
 | `oz.GrossMarginλ` | `GrossProfit/NetSales` | |
