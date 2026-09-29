@@ -105,8 +105,8 @@ class ModellingConventionsTest(unittest.TestCase):
                 for parameter in re.findall(r"^\s*\[(\w+)\]", block.split("LET(", 1)[0], re.MULTILINE):
                     with self.subTest(function=name, parameter=parameter):
                         self.assertRegex(block, r'"\s*' + parameter + r"\s*→\s*\((Required|Optional)")
-        self.assertEqual(len(calling(r"\bINDEX\(")), 15)
-        self.assertIn("use `INDEX` (15 functions)", self.page)
+        self.assertEqual(len(calling(r"\bINDEX\(")), 16)
+        self.assertIn("use `INDEX` (16 functions)", self.page)
 
     def test_offset_indirect_and_npv(self) -> None:
         self.assertEqual(calling(r"\bOFFSET\("), {"RangeToDAλ", "RangeToDAEλ", "RangeToDAUλ"})
