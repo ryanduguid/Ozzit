@@ -830,6 +830,10 @@ Near 'ROE: blank opening cell = closing' "$roe(59.972, 253.8895, Z1)"           
 Near 'ROE: rows of periods'            "SUM($roe({10,20}, {100,200}, {100,200}))" '0.2' '0.0000001'
 Near 'Sheet: ratios ROE unchanged'     "'oz.FinancialRatios'!A47"                 '0.236213' '0.0000005'
 
+# Retention uses current-period earnings left after dividends, divided by net income.
+Near 'Sheet: retention is one less the payout ratio' "'oz.FinancialRatios'!A61-(1-22.112/41.981)" '0' '0.000000000001'
+Same 'Sheet: retention formula display' "'oz.FinancialRatios'!B61" "=oz.RetentionRatio$L( 19.869, 41.981)"
+
 # --- Effective rate conversion, the rate per period the lease functions take.
 $pr = "oz.PeriodRate$L"
 $ar = "oz.AnnualRate$L"
