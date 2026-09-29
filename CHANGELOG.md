@@ -7,6 +7,14 @@ release; until then v3.4.2 behaves as it did, including the defects fixed here.
 
 ### Calculation changes
 
+- `oz.LeaseRemeasureλ` compares liabilities before the payment due at the
+  remeasurement date. With InAdvance TRUE, the adjustment includes that payment;
+  the returned unpaid liability still excludes it. Unchanged payments no longer
+  reduce the right-of-use asset. Supply CarryingLiability before paying the amount
+  due that day; stop subtracting the revised payment as the previous workaround
+  advised. Eight advance-payment regressions fail before the repair. Those cases
+  and three arrears controls pass afterwards, with all 978 native assertions and
+  19,446 cache comparisons passing in Excel 16.0 build 20430 on 29 September 2026.
 - `oz.DebtSculptVariableLRVλ` treats each negative CFADS value as zero cash for
   debt service. A deficit no longer creates debt from a nil balance or reopens a
   repaid loan. Existing debt still capitalises unpaid interest. CFADS must be a
@@ -72,13 +80,6 @@ or in Python, without native Excel reproduction.
   1 January 2027 books 53,184.73 of payments in FY27 rather than 26,592.37, and none in
   FY29 rather than 26,592.37. Until fixed, start each loan on a period start, or use a
   monthly timeline.
-- `oz.LeaseRemeasureλ` with InAdvance TRUE excludes the payment due at the
-  remeasurement date from the revised liability, but compares it with the liability
-  carried immediately before the remeasurement, which still includes that payment. An
-  in-advance lease of {100,100,100} at 5% revised to {110,110} at its first anniversary
-  shows an adjustment of -90.48 rather than +19.52. Until fixed, pass as
-  CarryingLiability the amount carried before the remeasurement less the revised
-  payment made that day.
 - `oz.DBλ` and `oz.DDBλ` put the whole remaining depreciable amount in the final year,
   which Excel's DB and DDB do not: DDB on 10,000 with 500 salvage over 10 years ends at
   842.18 rather than 268.44. `oz.DBλ`'s Months argument returns Life columns where

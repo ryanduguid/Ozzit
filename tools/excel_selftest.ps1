@@ -741,6 +741,28 @@ foreach ($rou0 in '0', '5', '50', '400') {
 }
 Near 'Remeasure honours payments in advance' `
      "INDEX($lrem({110,110},0.05,185.94,181.55,TRUE),1,1)-NPV(0.05,110)" '0'
+# Carrying liability includes the payment due now. Remeasure before settling it.
+# The vectors use exact fractions from discounting the remaining payment at 5%.
+Near 'Remeasure advance: unchanged payments leave the asset unchanged' `
+     "MAX(ABS($lrem({100,100},0.05,100+100/1.05,200,TRUE)-VSTACK(2000/21,0,200,0)))" '0' '0.0000001'
+Near 'Remeasure advance: increased payments raise the asset' `
+     "MAX(ABS($lrem({110,110},0.05,100+100/1.05,200,TRUE)-VSTACK(2200/21,410/21,4610/21,0)))" '0' '0.0000001'
+Near 'Remeasure advance: decreased payments reduce the asset' `
+     "MAX(ABS($lrem({90,90},0.05,100+100/1.05,200,TRUE)-VSTACK(600/7,-410/21,3790/21,0)))" '0' '0.0000001'
+Near 'Remeasure advance: only the excess reduction reaches profit or loss' `
+     "MAX(ABS($lrem({10,10},0.05,100+100/1.05,5,TRUE)-VSTACK(200/21,-1230/7,0,-1195/7)))" '0' '0.0000001'
+Near 'Remeasure advance: a column keeps the same payment timing' `
+     "MAX(ABS($lrem({110;110},0.05,100+100/1.05,200,TRUE)-VSTACK(2200/21,410/21,4610/21,0)))" '0' '0.0000001'
+foreach ($payment in '110', '{110}') {
+    Near "Remeasure advance: a sole payment $payment leaves no unpaid liability" `
+         "MAX(ABS($lrem($payment,0.05,100,200,TRUE)-VSTACK(0,10,210,0)))" '0' '0.0000001'
+}
+Near 'Remeasure advance: zero-rate adjustment excludes settlement' `
+     "MAX(ABS($lrem({110,110},0,200,200,TRUE)-VSTACK(110,20,220,0)))" '0' '0.0000001'
+foreach ($timing in 'FALSE', 'Z1', '""') {
+    Near "Remeasure arrears: timing $timing keeps the ordinary result" `
+         "LET(pv,NPV(0.05,110,110),MAX(ABS($lrem({110,110},0.05,185.94,181.55,$timing)-VSTACK(pv,pv-185.94,181.55+pv-185.94,0))))" '0' '0.0000001'
+}
 Same 'Remeasure: help with no args' "INDEX($lrem(),1,1)" 'FUNCTION:'
 
 # --- Return on equity. Net income over AVERAGE shareholders' equity, which is what the
