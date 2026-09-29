@@ -79,28 +79,25 @@ release; until then v3.4.2 behaves as it did, including the defects fixed here.
   and a period holding one month is unchanged. All 5 added assertions pass in the
   29 September 2026 native Excel run.
 
-### Found in review, not yet fixed
-
-A review of the library on 28 September 2026 found these defects. Each needs a
-formula change and a native Excel round, so each stays listed here, with a way to
-avoid it, until a change fixes it and moves it to the calculation changes above. The
-initial review traced these cases in the formula text and recalculated them by hand
-or in Python, without native Excel reproduction.
-
-- `oz.DBλ` and `oz.DDBλ` put the whole remaining depreciable amount in the final year,
-  which Excel's DB and DDB do not: DDB on 10,000 with 500 salvage over 10 years ends at
-  842.18 rather than 268.44. `oz.DBλ`'s Months argument returns Life columns where
-  Excel's DB adds a partial final year. Their help does not say so yet.
-
 ### Tools, checks and documentation
 
+- `oz.DBλ` and `oz.DDBλ` help now explains their fixed-length schedules for
+  positive whole-number lives. Their final value brings total depreciation to
+  cost less salvage. With cost 10,000, salvage 500 and life 10, DDB ends at 842.18;
+  Excel's DDB gives 268.44 for that period. DB with a partial first year returns
+  Life values, without Excel DB's extra final period. Native Excel confirmed
+  these differences; calculations remain unchanged. The earlier review item
+  is now recorded as a compatibility limitation, rather than a pending formula
+  repair. Use Excel's built-ins when their per-period convention is required.
+- DB, DDB and VDB help now permits zero salvage, which all three functions
+  already accept. `oz.CurrentRatioλ` help removes two repeated asset entries
+  and corrects 'expected to be liquidated'.
 - `docs/ratio-definitions.md` records the arithmetic of the 38 ratio functions, the
   balance and period each argument should carry, and where a definition differs from
   the usual one: earnings per share, retention ratio, debt to equity, equity ratio,
   book value per share and price to book (the help asks for tangible book value). `tools/tests/test_ratio_definitions.py` holds the page to
   `src/Ratios.txt`. The page lists receivable, payable and WIP days and the cash
-  conversion cycle as gaps, and a help-text slip in `oz.CurrentRatioλ`; neither is
-  changed in the workbook.
+  conversion cycle as gaps; those functions are not added to the workbook.
 - `docs/modelling-conventions.md` reads the library against the FAST Standard 02c
   (CC BY 4.0) and the ICAEW Financial Modelling Code (2024): named LAMBDA functions
   called from cells, nested `IF`s, dynamic arrays, `OFFSET` in the three `RangeToDA`

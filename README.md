@@ -32,8 +32,8 @@ column of PeriodsPerYear for `oz.PeriodRateλ` and `oz.AnnualRateλ`, of Unit fo
 `oz.DateDifλ` and of Repeats for `oz.IsOccurrenceDateλ`, whose LastOccurrence column
 reads no text date once another row holds a date or a blank. In v3.4.2, fill every such
 cell and enter last occurrences as dates. All of these are fixed on `main` for the next
-release. Defects found in review and not yet fixed are listed, each with a way to avoid
-it, under [Unreleased in the changelog](CHANGELOG.md#unreleased).
+release. Further changes and the DB/DDB compatibility limitations are recorded
+under [Unreleased in the changelog](CHANGELOG.md#unreleased).
 
 Synthetic example. Review aid, not professional advice; the reviewer decides the GST treatment.
 

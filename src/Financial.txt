@@ -1426,9 +1426,14 @@ DBλ = LAMBDA(
                             "DESCRIPTION:   →Fixed declining balance depreciation method for one asset or asset class¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
                             "VERSION:       →20 Aug 2026¶" &
+                            "NOTES:         →For a positive whole-number Life, returns Life schedule values.¶" &
+                            "               →The first Life-1 values use Excel's DB calculation.¶" &
+                            "               →The final value makes total depreciation equal Cost minus Salvage.¶" &
+                            "               →Months applies to the first of those earlier values; no extra final period is added.¶" &
+                            "               →A one-year life returns Cost minus Salvage, regardless of Months.¶" &
                             "PARAMETERS:    →¶" & 
                             "Cost           →(Required) Asset's initial cost.¶" &                   
-                            "Salvage        →(Required) Asset's value and end of life. Salvage cannot be 0.¶" & 
+                            "Salvage        →(Required) Asset's value at the end of its life. May be 0.¶" &
                             "Life           →(Required) Asset's useful life in years.¶" & 
                             "Months         →(Optional) Number of months in the first year to depreciate.¶" & 
                             "EXAMPLES:      →¶" &
@@ -1472,9 +1477,13 @@ DDBλ = LAMBDA(
                             "DESCRIPTION:   →Double-declining balance depreciation method for one asset or asset class.¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
                             "VERSION:       →20 Aug 2026¶" &
+                            "NOTES:         →For a positive whole-number Life, returns Life schedule values.¶" &
+                            "               →The first Life-1 values use Excel's DDB calculation.¶" &
+                            "               →The final value makes total depreciation equal Cost minus Salvage.¶" &
+                            "               →A one-year life returns Cost minus Salvage, regardless of Factor.¶" &
                             "PARAMETERS:    →¶" & 
                             "Cost           →(Required) Asset's initial cost.¶" &                   
-                            "Salvage        →(Required) Asset's value and end of life. Salvage cannot be 0.¶" & 
+                            "Salvage        →(Required) Asset's value at the end of its life. May be 0.¶" &
                             "Life           →(Required) Asset's useful life in years.¶" & 
                             "Factor         →(Optional Default=2) Rate at which the balance declines.¶" & 
                             "EXAMPLES:      →¶" &
@@ -1521,7 +1530,7 @@ VDBλ = LAMBDA(
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Cost           →(Required) Asset's initial cost.¶" &                   
-                            "Salvage        →(Required) Asset's value and end of life. Salvage cannot be 0.¶" & 
+                            "Salvage        →(Required) Asset's value at the end of its life. May be 0.¶" &
                             "Life           →(Required) Asset's useful life in years.¶" & 
                             "Factor         →(Optional Default=2) Rate at which the balance declines.¶" & 
                             "No_Switch      →(Optional Default=FALSE) Switch to straight-line depreciation when¶" & 
