@@ -21,7 +21,7 @@ change requires recalculation or cache validation.
 
 ## Verification
 
-Run the CI sequence exactly. The first 2 commands are the `lint` job; the rest
+Run the CI sequence exactly. The first 4 commands are the `lint` job; the rest
 run on Python 3.10, 3.12, 3.13 and 3.14:
 
 ```powershell
