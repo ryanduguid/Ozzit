@@ -15,6 +15,18 @@ Each pass is a standalone script, run by path and never imported as a package.
 it holds the archive reading, the applied-or-absent check and the swap replacement
 that used to be copied from pass to pass.
 
+The shared writers create a unique temporary file beside each destination and
+close it before replacement. Existing `.tmp` siblings are left alone. On POSIX,
+existing permission bits are preserved and new files start with private permissions.
+An exception cleans up the writer's temporary file, but a hard process stop may
+leave one behind.
+
+The help-correction pass stages all changed files before replacing any of them.
+A staging failure leaves the destinations unchanged. Replacements still happen
+one file at a time, so a later replacement failure can leave earlier changes in
+place. Run postbuild passes one at a time; unique staging does not prevent lost
+updates from concurrent edits.
+
 ## Run order
 
 ```bash

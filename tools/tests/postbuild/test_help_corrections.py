@@ -11,6 +11,7 @@ store whose anchors do not match must fail rather than write a partial result.
 import importlib.util
 import shutil
 import sys
+import tempfile
 import unittest
 import zipfile
 from pathlib import Path
@@ -203,13 +204,22 @@ class HelpCorrectionsTests(PassContractMixin, unittest.TestCase):
         before = workbook.read_bytes()
         src_before = {path.name: path.read_bytes() for path in src.glob("*.txt")}
 
-        def out_of_space(path, text):
-            # A full disk keeps the bytes it managed before the write raises.
-            path.write_text(text[: len(text) // 2], encoding="utf-8", newline="\n")
-            raise OSError("no space left on device")
+        create = tempfile.NamedTemporaryFile
+
+        def out_of_space(*args, **kwargs):
+            handle = create(*args, **kwargs)
+            if Path(kwargs["dir"]) == src:
+                write = handle.write
+
+                def partial_write(data):
+                    write(data[: len(data) // 2])
+                    raise OSError("no space left on device")
+
+                handle.write = partial_write
+            return handle
 
         with (
-            mock.patch.object(_mod, "write_text", side_effect=out_of_space),
+            mock.patch.object(tempfile, "NamedTemporaryFile", side_effect=out_of_space),
             self.assertRaisesRegex(OSError, "no space left on device"),
         ):
             _mod.run(workbook, src)
@@ -219,6 +229,29 @@ class HelpCorrectionsTests(PassContractMixin, unittest.TestCase):
             {path.name: path.read_bytes() for path in src.glob("*.txt")}, src_before
         )
         self.assertEqual(list(self.directory.rglob("*.tmp")), [])
+
+    def test_corrections_preserve_unrelated_temporary_siblings(self):
+        workbook, src = self._copy_tree()
+        self._revert(workbook, src, SWAPS[0])
+        destinations = [workbook, *(src / f"{module}.txt" for module in _mod.MODULES)]
+        sentinels = {
+            path.with_name(path.name + suffix): b"unrelated work"
+            for path in destinations
+            for suffix in (".tmp", ".tmp.tmp")
+        }
+        for path, data in sentinels.items():
+            path.write_bytes(data)
+        original_paths = set(self.directory.rglob("*"))
+
+        changed = _mod.run(workbook, src)
+
+        self.assertIn("workbook", changed)
+        self.assertTrue(any(path.startswith("src/") for path in changed))
+        for path, data in sentinels.items():
+            with self.subTest(path=path.name):
+                self.assertTrue(path.is_file())
+                self.assertEqual(path.read_bytes(), data)
+        self.assertEqual(set(self.directory.rglob("*")), original_paths)
 
     def test_documented_run_order_syncs_afe_after_this_pass(self):
         instructions = POSTBUILD_README.read_text(encoding="utf-8")
