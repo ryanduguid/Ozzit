@@ -43,7 +43,9 @@ from __future__ import annotations
 import io
 import os
 import re
+import stat
 import sys
+import tempfile
 import zipfile
 from pathlib import Path
 
@@ -99,17 +101,36 @@ def deterministic_bytes(parts: dict[str, bytes]) -> bytes:
     return buffer.getvalue()
 
 
+def stage_bytes(destination: Path, data: bytes) -> Path:
+    """Return a closed, unique sibling containing data; the caller owns its cleanup."""
+    handle = tempfile.NamedTemporaryFile(
+        mode="wb", prefix=".ozzit-", suffix=".tmp",
+        dir=destination.parent, delete=False,
+    )
+    temporary = Path(handle.name)
+    try:
+        with handle:
+            handle.write(data)
+        if os.name != "nt":
+            try:
+                mode = destination.stat().st_mode
+            except FileNotFoundError:
+                pass
+            else:
+                temporary.chmod(stat.S_IMODE(mode))
+    except BaseException:
+        temporary.unlink(missing_ok=True)
+        raise
+    return temporary
+
+
 def replace_atomically(workbook: Path, data: bytes) -> None:
     """Replace workbook atomically, retaining the original if replacement fails."""
-    tmp = workbook.with_name(workbook.name + ".tmp")
+    tmp = stage_bytes(workbook, data)
     try:
-        tmp.write_bytes(data)
         os.replace(tmp, workbook)
     finally:
-        try:
-            tmp.unlink()
-        except FileNotFoundError:
-            pass
+        tmp.unlink(missing_ok=True)
 
 
 def write_deterministic(workbook: Path, parts: dict[str, bytes]) -> None:

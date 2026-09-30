@@ -1,6 +1,8 @@
 import io
+import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -226,6 +228,7 @@ class WorkbookToolTests(unittest.TestCase):
 
     def test_atomic_writer_preserves_original_and_cleans_temp_if_replace_fails(self):
         original = self.workbook.read_bytes()
+        original_paths = set(self.directory.iterdir())
         parts = self._parts()
         parts["docProps/core.xml"] += b" "
 
@@ -237,7 +240,111 @@ class WorkbookToolTests(unittest.TestCase):
             writer(self.workbook, parts)
 
         self.assertEqual(self.workbook.read_bytes(), original)
-        self.assertFalse(self.workbook.with_name(self.workbook.name + ".tmp").exists())
+        self.assertEqual(set(self.directory.iterdir()), original_paths)
+
+    def test_atomic_writer_preserves_unrelated_temporary_sibling(self):
+        sibling = self.workbook.with_name(self.workbook.name + ".tmp")
+        sibling.write_bytes(b"unrelated work")
+        original_paths = set(self.directory.iterdir())
+
+        sanitise_workbook.replace_atomically(self.workbook, b"replacement")
+
+        self.assertEqual(self.workbook.read_bytes(), b"replacement")
+        self.assertTrue(sibling.is_file())
+        self.assertEqual(sibling.read_bytes(), b"unrelated work")
+        self.assertEqual(set(self.directory.iterdir()), original_paths)
+
+    def test_failed_atomic_writer_preserves_unrelated_temporary_sibling(self):
+        sibling = self.workbook.with_name(self.workbook.name + ".tmp")
+        sibling.write_bytes(b"unrelated work")
+        original = self.workbook.read_bytes()
+        original_paths = set(self.directory.iterdir())
+
+        with (
+            mock.patch("sanitise_workbook.os.replace", side_effect=OSError("blocked")),
+            self.assertRaisesRegex(OSError, "blocked"),
+        ):
+            sanitise_workbook.replace_atomically(self.workbook, b"replacement")
+
+        self.assertEqual(self.workbook.read_bytes(), original)
+        self.assertTrue(sibling.is_file())
+        self.assertEqual(sibling.read_bytes(), b"unrelated work")
+        self.assertEqual(set(self.directory.iterdir()), original_paths)
+
+    def test_staging_cleans_partial_files_after_write_close_or_interrupt_failure(self):
+        create = sanitise_workbook.tempfile.NamedTemporaryFile
+        original = self.workbook.read_bytes()
+        original_paths = set(self.directory.iterdir())
+        cases = (("write", OSError), ("close", OSError), ("write", KeyboardInterrupt))
+        for phase, error in cases:
+            with self.subTest(phase=phase, error=error.__name__):
+                def fail_stage(*args, **kwargs):
+                    handle = create(*args, **kwargs)
+                    wrapped = mock.MagicMock()
+                    wrapped.name = handle.name
+                    wrapped.__enter__.return_value = wrapped
+
+                    def write(data):
+                        if phase == "write":
+                            handle.write(data[:2])
+                            raise error("injected staging failure")
+                        return handle.write(data)
+
+                    def close(*exc):
+                        handle.__exit__(*exc)
+                        if phase == "close":
+                            raise error("injected staging failure")
+
+                    wrapped.write.side_effect = write
+                    wrapped.__exit__.side_effect = close
+                    return wrapped
+
+                with (
+                    mock.patch.object(sanitise_workbook.tempfile, "NamedTemporaryFile", fail_stage),
+                    self.assertRaisesRegex(error, "injected staging failure"),
+                ):
+                    sanitise_workbook.replace_atomically(self.workbook, b"replacement")
+
+                self.assertEqual(self.workbook.read_bytes(), original)
+                self.assertEqual(set(self.directory.iterdir()), original_paths)
+
+    def test_overlapping_stages_have_distinct_closed_files(self):
+        original = self.workbook.read_bytes()
+        original_paths = set(self.directory.iterdir())
+        first = sanitise_workbook.stage_bytes(self.workbook, b"first")
+        try:
+            second = sanitise_workbook.stage_bytes(self.workbook, b"second")
+            try:
+                self.assertNotEqual(first, second)
+                self.assertEqual(first.parent, self.workbook.parent)
+                self.assertEqual(second.parent, self.workbook.parent)
+                self.assertEqual(self.workbook.read_bytes(), original)
+                self.assertEqual(first.read_bytes(), b"first")
+                self.assertEqual(second.read_bytes(), b"second")
+                os.replace(first, self.workbook)
+                self.assertEqual(self.workbook.read_bytes(), b"first")
+                self.assertEqual(second.read_bytes(), b"second")
+                os.replace(second, self.workbook)
+                self.assertEqual(self.workbook.read_bytes(), b"second")
+            finally:
+                second.unlink(missing_ok=True)
+        finally:
+            first.unlink(missing_ok=True)
+        self.assertEqual(set(self.directory.iterdir()), original_paths)
+
+    def test_atomic_text_writer_preserves_utf8_and_line_endings(self):
+        target = self.directory / "text.txt"
+        text = "one\r\ntwo\nλ\rthree"
+        sanitise_workbook.write_text(target, text)
+        self.assertEqual(target.read_bytes(), text.encode("utf-8"))
+
+    @unittest.skipIf(os.name == "nt", "POSIX permission bits do not apply on Windows")
+    def test_atomic_writer_preserves_existing_posix_permissions(self):
+        for mode in (0o640, 0o664):
+            with self.subTest(mode=oct(mode)):
+                self.workbook.chmod(mode)
+                sanitise_workbook.replace_atomically(self.workbook, b"replacement")
+                self.assertEqual(stat.S_IMODE(self.workbook.stat().st_mode), mode)
 
     def test_deterministic_writer_matches_explicit_level_9_reference(self):
         parts = self._parts()
