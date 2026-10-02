@@ -14,6 +14,9 @@ import subprocess
 import sys
 import tempfile
 import unittest
+
+# Only compiler output generated from the fixed literals below is parsed.
+import xml.etree.ElementTree as ET  # nosec B405  # nosemgrep: python.lang.security.use-defused-xml.use-defused-xml
 import zipfile
 from pathlib import Path
 
@@ -94,6 +97,35 @@ class RenderTests(unittest.TestCase):
         comments = compile_sources.header_comments(text)
         self.assertEqual(comments["Thisλ"], "First line _x000a_    second line")
         self.assertEqual(len(comments["Longλ"]), compile_sources.COMMENT_LIMIT)
+
+
+class InsertNamesTests(unittest.TestCase):
+    def test_new_names_follow_case_insensitive_order_without_rewriting_existing_text(self):
+        book = ('<definedNames><definedName name="oz.Alpha"> 1 </definedName>'
+                '<definedName name="oz.Zeta"> 2 </definedName></definedNames>')
+        additions = [
+            compile_sources.Compiled("oz.charlie", "Utilities", "3", "3", ""),
+            compile_sources.Compiled("oz.Beta", "Utilities", "4", "4", ""),
+        ]
+        result = compile_sources.insert_names(book, additions)
+        self.assertEqual([name.attrib["name"] for name in ET.fromstring(result)],  # nosec B314
+                         ["oz.Alpha", "oz.Beta", "oz.charlie", "oz.Zeta"])
+        self.assertIn('<definedName name="oz.Alpha"> 1 </definedName>', result)
+        self.assertIn('<definedName name="oz.Zeta"> 2 </definedName>', result)
+
+    def test_name_comment_and_formula_remain_xml_text(self):
+        book = '<definedNames><definedName name="oz.Alpha">1</definedName></definedNames>'
+        addition = compile_sources.Compiled('oz.B&<λ', "Utilities", "", '"<&>"', 'A "quote" & <tag>')
+        result = compile_sources.insert_names(book, [addition])
+        inserted = list(ET.fromstring(result))[1]  # nosec B314
+        self.assertEqual(inserted.attrib, {"name": addition.name, "comment": addition.comment})
+        self.assertEqual(inserted.text, addition.stored)
+
+    def test_a_name_before_every_shipped_name_is_rejected(self):
+        book = '<definedNames><definedName name="oz.Anchor">1</definedName></definedNames>'
+        addition = compile_sources.Compiled("oz.Aardvark", "Utilities", "1", "1", "")
+        with self.assertRaisesRegex(ValueError, "sorts before every shipped name"):
+            compile_sources.insert_names(book, [addition])
 
 
 class WorkbookTests(unittest.TestCase):
