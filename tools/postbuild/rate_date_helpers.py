@@ -29,17 +29,16 @@ import csv
 import sys
 import zipfile
 from pathlib import Path
-from xml.sax.saxutils import escape as xml_escape
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from compile_sources import (  # noqa: E402
-    Compiled,
     apply,
     compile_sources,
+    insert_names,
     update_index,
 )
 from sanitise_workbook import read_text, write_deterministic, write_text  # noqa: E402
-from workbook import oz_names, read_book, read_parts  # noqa: E402
+from workbook import read_book, read_parts  # noqa: E402
 from workbook import workbook_state as book_state  # noqa: E402
 
 NAMESPACE = "oz"
@@ -392,25 +391,6 @@ def add_to_src(module: str, text: str) -> str:
         text += "\n"
     return text + blocks
 
-
-def insert_names(book: str, compiled: list[Compiled]) -> str:
-    """Each new defined name after its case-insensitive alphabetical predecessor."""
-    existing = sorted(oz_names(book), key=str.lower)
-    for item in sorted(compiled, key=lambda c: c.name.lower()):
-        comment = xml_escape(item.comment).replace('"', "&quot;")
-        element = (
-            f'<definedName name="{xml_escape(item.name)}" comment="{comment}">'
-            f"{xml_escape(item.stored)}</definedName>"
-        )
-        before = [n for n in existing if n.lower() < item.name.lower()]
-        if not before:
-            raise ValueError(f"{item.name} sorts before every shipped name, which is not expected")
-        marker = f'<definedName name="{xml_escape(before[-1])}"'
-        start = book.index(marker)
-        end = book.index("</definedName>", start) + len("</definedName>")
-        book = book[:end] + element + book[end:]
-        existing = sorted(existing + [item.name], key=str.lower)
-    return book
 
 
 def run(workbook: Path, src: Path, index: Path | None) -> list[str]:

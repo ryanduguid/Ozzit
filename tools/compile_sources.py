@@ -445,6 +445,26 @@ def shipped_names(book: str) -> dict[str, tuple[str, str]]:
     }
 
 
+def insert_names(book: str, compiled: list[Compiled]) -> str:
+    """Each new defined name after its case-insensitive alphabetical predecessor."""
+    existing = sorted(re.findall(r'<definedName name="(oz\.[^"]+)"', book), key=str.lower)
+    for item in sorted(compiled, key=lambda c: c.name.lower()):
+        comment = xml_escape(item.comment).replace('"', "&quot;")
+        element = (
+            f'<definedName name="{xml_escape(item.name)}" comment="{comment}">'
+            f"{xml_escape(item.stored)}</definedName>"
+        )
+        before = [n for n in existing if n.lower() < item.name.lower()]
+        if not before:
+            raise ValueError(f"{item.name} sorts before every shipped name, which is not expected")
+        marker = f'<definedName name="{xml_escape(before[-1])}"'
+        start = book.index(marker)
+        end = book.index("</definedName>", start) + len("</definedName>")
+        book = book[:end] + element + book[end:]
+        existing = sorted(existing + [item.name], key=str.lower)
+    return book
+
+
 def apply(book: str, compiled: list[Compiled]) -> tuple[str, list[str]]:
     """Write each changed rendering over its defined name; report what changed."""
     shipped = shipped_names(book)
