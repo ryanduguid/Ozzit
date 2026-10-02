@@ -14,7 +14,9 @@ import subprocess
 import sys
 import tempfile
 import unittest
-import xml.etree.ElementTree as ET
+
+# Only compiler output generated from the fixed literals below is parsed.
+import xml.etree.ElementTree as ET  # nosec B405  # nosemgrep: python.lang.security.use-defused-xml.use-defused-xml
 import zipfile
 from pathlib import Path
 
@@ -106,7 +108,7 @@ class InsertNamesTests(unittest.TestCase):
             compile_sources.Compiled("oz.Beta", "Utilities", "4", "4", ""),
         ]
         result = compile_sources.insert_names(book, additions)
-        self.assertEqual([name.attrib["name"] for name in ET.fromstring(result)],
+        self.assertEqual([name.attrib["name"] for name in ET.fromstring(result)],  # nosec B314
                          ["oz.Alpha", "oz.Beta", "oz.charlie", "oz.Zeta"])
         self.assertIn('<definedName name="oz.Alpha"> 1 </definedName>', result)
         self.assertIn('<definedName name="oz.Zeta"> 2 </definedName>', result)
@@ -115,7 +117,7 @@ class InsertNamesTests(unittest.TestCase):
         book = '<definedNames><definedName name="oz.Alpha">1</definedName></definedNames>'
         addition = compile_sources.Compiled('oz.B&<λ', "Utilities", "", '"<&>"', 'A "quote" & <tag>')
         result = compile_sources.insert_names(book, [addition])
-        inserted = list(ET.fromstring(result))[1]
+        inserted = list(ET.fromstring(result))[1]  # nosec B314
         self.assertEqual(inserted.attrib, {"name": addition.name, "comment": addition.comment})
         self.assertEqual(inserted.text, addition.stored)
 
