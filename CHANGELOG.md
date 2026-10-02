@@ -156,6 +156,8 @@ match in Excel 16.0 build 20430 on 29 September 2026.
   each pass with the committed workbook rather than with its own first run.
 - `RELEASING.md` lists the 12 static gates CI runs. `llms.txt` no longer says two help
   tables are LAMBDAs or that the GST helpers work at 10% only.
+- `llms.txt` follows the llmstxt.org layout, separates the 133 functions in v3.4.2
+  from the 137 on `main`, and links the guides by absolute URL.
 - mypy checks the tools against Python 3.10, the oldest version CI runs, and the unused
   `uv.lock` stub is gone. `oz.txt` is marked as generated.
 - Earlier on `main`, among other changes: the whole library as one Advanced Formula

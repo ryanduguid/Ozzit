@@ -1,20 +1,32 @@
-# Ozzit - Australian native Excel LAMBDA function library
-> 137 native Excel LAMBDA functions plus 5 help tables for dynamic-array financial modelling, with Australian GST, financial-year, depreciation and AASB 16 lessee helpers. No VBA, add-ins or external dependencies.
+# Ozzit
 
-## Package overview
-- **Repository**: https://github.com/ryanduguid/Ozzit
-- **Domain**: Library of 137 native Excel `LAMBDA` functions plus 5 help tables for dynamic-array financial modelling. Australian additions are GST add/extract, a 1 July financial-year label, 2 modelling depreciation schedules and 4 AASB 16 lessee schedules. General additions since v3.3.0 are 2 effective-rate converters, a day count convention rate row (30/360, Actual/360, Actual/365, Actual/Actual), a DATEDIF replacement, and receivable, payable and WIP days with the cash conversion cycle.
-- **Provenance**: Built from scratch by Ryan Duguid. The 142 named formulas comprise 137 functions and 5 help tables. The help tables are text tables, not LAMBDAs: reference them without parentheses, as `=oz.AboutDatesλ`, while a function called with no arguments, as `=oz.Amortiseλ()`, spills its own help. A search for the word LAMBDA across the names finds 139 because the text of oz.AboutDatesλ and oz.AboutRatiosλ mentions it. Describe only the helpers the workbook ships.
-- **Source Context**: Native Excel financial-modelling conventions (amortisation, corkscrews, ratios, debt sculpting) plus the 5 Australian helpers listed below.
+> Native Excel LAMBDA functions and help tables for dynamic-array financial modelling, with Australian GST, financial-year, depreciation and AASB 16 lessee helpers. An ordinary .xlsx with no VBA, macros, add-ins or external dependencies. Needs Microsoft 365 or Excel 2024 or later; LibreOffice and older Excel versions do not evaluate the functions. MIT licensed.
 
-## Functional categories
-- **Financial and lending**: Dynamic-array loan amortisation, compound interest, IRR, corkscrews, and debt sculpting (`oz.Amortiseλ`, `oz.IRRλ`, `oz.DebtSculptFixedλ`, and related names in functions.csv).
-- **Australian helpers actually shipped**: `oz.GSTAddλ`, `oz.GSTExtractλ`, `oz.FinancialYearλ`, `oz.DiminishingValueλ`, `oz.PrimeCostλ`. GST helpers do arithmetic only, at 10% unless a Rate is supplied; the reviewer decides whether a supply is taxable. The 10% default reflects the basic rule for a taxable supply in [A New Tax System (Goods and Services Tax) Act 1999](https://www.legislation.gov.au/C2004A00446/latest/text) ss 9-70 and 9-75 (source checked 20 August 2026); recheck the current Act at the time of use. The depreciation helpers are modelling schedules, not ATO Division 40 methods, and they do not implement immediate write-off or low-value pools.
-- **AASB 16 leases (lessee)**: `oz.LeaseLiabilityλ`, `oz.LeaseScheduleλ`, `oz.ROUScheduleλ`, `oz.LeaseRemeasureλ`. Present value of unpaid lease payments, the liability corkscrew, straight-line right-of-use depreciation, and remeasurement for an index or rate review at the unchanged discount rate. Arithmetic only: they do not decide the lease term, what is a lease payment, or whether an arrangement contains a lease.
-- **Ratios and array essentials**: Liquidity, leverage, margin and return ratios, plus row/column totals and averages.
-- **Not in this library**: individual marginal income tax, Medicare Levy or Surcharge, Division 7A interest, Stage 3 tax-rate cards, 13-week cash-flow builders (the standalone workbook in `templates/` is a separate template, not a function), DSO/DPO engines, lessor accounting, or the AASB 16 short-term and low-value recognition exemptions.
+Release and main differ. The latest release is listed at https://github.com/ryanduguid/Ozzit/releases/latest; v3.4.2 (20 September 2026) ships 133 functions and 5 help tables. `main` has 137 functions: the 4 working-capital functions (`oz.ReceivableDaysλ`, `oz.PayableDaysλ`, `oz.WIPDaysλ`, `oz.CashConversionCycleλ`) and other fixes listed under Unreleased in the changelog reach the published workbook in the next release. Describe only the functions in the version the reader has.
 
-## Architectural invariants
-1. **Zero External Dependencies**: 100% native Microsoft Excel LAMBDA dynamic-array functions.
-2. **No VBA or Macros**: Contains no VBA code, XLAM add-ins, or binary dependencies.
-3. **Supported Excel Baseline**: Requires Microsoft 365 or Excel 2024 and later with `LAMBDA` and dynamic arrays. LibreOffice and older Excel versions do not evaluate the functions.
+Help tables are text tables, not LAMBDAs: reference them without parentheses, as `=oz.AboutDatesλ`. A function called with no arguments, as `=oz.Amortiseλ()`, spills its own help.
+
+## Scope
+
+- Financial and lending: dynamic-array loan amortisation, compound interest, IRR, corkscrews, effective-rate converters, day count conventions (30/360, Actual/360, Actual/365, Actual/Actual), a DATEDIF replacement and debt sculpting (`oz.Amortiseλ`, `oz.IRRλ`, `oz.DebtSculptFixedλ` and related names in functions.csv).
+- Australian helpers: `oz.GSTAddλ`, `oz.GSTExtractλ`, `oz.FinancialYearλ` (1 July year label), `oz.DiminishingValueλ` and `oz.PrimeCostλ`. GST helpers do arithmetic only, at 10% unless a Rate is supplied; the reviewer decides whether a supply is taxable. The 10% default reflects the basic rule for a taxable supply in the [GST Act 1999](https://www.legislation.gov.au/C2004A00446/latest/text) ss 9-70 and 9-75 (source checked 20 August 2026); recheck the current Act at the time of use. The depreciation helpers are modelling schedules, not ATO Division 40 methods, and do not implement immediate write-off or low-value pools.
+- AASB 16 leases (lessee): `oz.LeaseLiabilityλ`, `oz.LeaseScheduleλ`, `oz.ROUScheduleλ` and `oz.LeaseRemeasureλ`. Present value of unpaid lease payments, the liability corkscrew, straight-line right-of-use depreciation and remeasurement for an index or rate review at the unchanged discount rate. They do not decide the lease term, what is a lease payment or whether an arrangement contains a lease.
+- Ratios and array essentials: liquidity, leverage, margin and return ratios, plus row and column totals and averages.
+- Not in the library: individual marginal income tax, Medicare levy or surcharge, Division 7A interest, tax-rate cards, 13-week cash-flow builders (the workbook in `templates/` is a separate template), lessor accounting, and the AASB 16 short-term and low-value recognition exemptions. Do not make tax classifications on the library's behalf.
+
+## Docs
+
+- [README](https://github.com/ryanduguid/Ozzit/blob/main/README.md): download, checksum, known issues in the current release and three starter tasks.
+- [Function index](https://github.com/ryanduguid/Ozzit/blob/main/functions.csv): every named formula with its module, signature and description.
+- [Function guide](https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md): modules, worksheets and formula walkthroughs.
+- [Australian conventions and lease modelling](https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md)
+- [Ratio definitions](https://github.com/ryanduguid/Ozzit/blob/main/docs/ratio-definitions.md): the arithmetic, periods and balances each ratio expects.
+- [Modelling conventions](https://github.com/ryanduguid/Ozzit/blob/main/docs/modelling-conventions.md): where Ozzit follows or departs from the FAST Standard and the ICAEW Financial Modelling Code.
+- [Changelog](https://github.com/ryanduguid/Ozzit/blob/main/CHANGELOG.md): released versions and Unreleased changes on `main`.
+
+## Optional
+
+- [Website overview](https://duguid.com.au/tools/ozzit/): worked example and requirements.
+- [Whole library as one Advanced Formula Environment module](https://github.com/ryanduguid/Ozzit/blob/main/oz.txt)
+- [Release and native verification](https://github.com/ryanduguid/Ozzit/blob/main/RELEASING.md)
+- [Disclaimer](https://github.com/ryanduguid/Ozzit/blob/main/DISCLAIMER.md): not advice; names the bodies the project is not affiliated with.
