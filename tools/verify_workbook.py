@@ -131,7 +131,11 @@ def load_xml_parts(z: zipfile.ZipFile) -> dict[str, str]:
 
 
 def main() -> None:
-    z = zipfile.ZipFile(WORKBOOK)
+    try:
+        z = zipfile.ZipFile(WORKBOOK)
+    except (OSError, zipfile.BadZipFile) as exc:
+        print(f"FAIL: cannot read {WORKBOOK}: {exc}")
+        sys.exit(1)
     parts = z.namelist()
 
     for name in parts:
@@ -249,8 +253,9 @@ def main() -> None:
     # the Australian tax worksheet to 5 places and not to this one, so the part disagreed
     # with the workbook until Excel rewrote it. A reader's file properties dialogue and any
     # tool that trusts app.xml sees this list, not the real one.
-    if "docProps/app.xml" in parts:
-        app = z.read("docProps/app.xml").decode("utf-8")
+    # A part that failed check_xml_part is already reported and has no text to compare.
+    if "docProps/app.xml" in xml_parts:
+        app = xml_parts["docProps/app.xml"]
         titles = re.search(r"<TitlesOfParts>(.*?)</TitlesOfParts>", app, re.S)
         listed = re.findall(r"<vt:lpstr>([^<]*)</vt:lpstr>", titles.group(1) if titles else "")
         app_sheets = re.findall(r'<sheet name="([^"]+)"', workbook)
@@ -263,7 +268,7 @@ def main() -> None:
     for part in parts:
         if not part.startswith("xl/slicerCaches/"):
             continue
-        for cache in re.findall(r'<slicerCacheDefinition[^>]*name="([^"]+)"', z.read(part).decode("utf-8")):
+        for cache in re.findall(r'<slicerCacheDefinition[^>]*name="([^"]+)"', xml_parts.get(part, "")):
             if f'<definedName name="{cache}">#N/A</definedName>' not in workbook:
                 fail(f"slicer cache {cache} has no backing defined name")
 

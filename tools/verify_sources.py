@@ -397,8 +397,12 @@ def main() -> int:
     parsed = {"%s.%s" % (NAMESPACE, bare): qualify(body, NAMESPACE, every)
               for bare, body in raw.items()}
 
-    z = zipfile.ZipFile(WORKBOOK)
-    wbx = z.read("xl/workbook.xml").decode("utf-8")
+    try:
+        with zipfile.ZipFile(WORKBOOK) as z:
+            wbx = z.read("xl/workbook.xml").decode("utf-8")
+    except (OSError, KeyError, UnicodeDecodeError, zipfile.BadZipFile) as exc:
+        print("FAIL: cannot read %s: %s" % (WORKBOOK, exc))
+        return 1
     shipped = {n: html.unescape(b) for n, b in
                re.findall(r'<definedName name="(%s\.[^"]+)"[^>]*>(.*?)</definedName>' % NAMESPACE,
                           wbx, re.DOTALL)}

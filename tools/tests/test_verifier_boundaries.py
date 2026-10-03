@@ -121,6 +121,51 @@ class WorkbookFixtureTests(unittest.TestCase):
 
         self.assertEqual(verify_afe.workbook_names(workbook), {"oz.A&B"})
 
+    def test_afe_check_reports_a_workbook_part_it_cannot_read(self):
+        store = self.write_afe_store(
+            {"schema": verify_afe.SCHEMA, "files": [], "projectNames": [], "padding": "x" * 80}
+        )
+        undecodable = self.write_archive("undecodable.xlsx", {"xl/workbook.xml": b"<workbook>\xff</workbook>"})
+        for label, workbook in (("missing part", store), ("not UTF-8", undecodable)):
+            with self.subTest(label=label):
+                with self.assertRaisesRegex(ValueError, "cannot read workbook names"):
+                    verify_afe.workbook_names(workbook)
+
+        self.assertTrue(verify_afe.check(store, self.directory)[-1].startswith("cannot read workbook names"))
+
+    def run_tool(self, *args):
+        return subprocess.run(
+            [sys.executable, *map(str, args)],
+            capture_output=True, text=True, encoding="utf-8", errors="replace", check=False, timeout=120,
+        )
+
+    def test_unreadable_workbooks_fail_with_a_message_not_a_traceback(self):
+        not_zip = self.directory / "not-a-zip.xlsx"
+        not_zip.write_bytes(b"not a zip archive")
+        missing = self.directory / "missing.xlsx"
+        no_book = self.write_archive("no-book.xlsx", {"docProps/app.xml": "<Properties/>"})
+        undecodable = self.write_archive("undecodable.xlsx", {"xl/workbook.xml": b"<workbook>\xff</workbook>"})
+        runs = [(TOOLS / "verify_workbook.py", book) for book in (not_zip, missing)]
+        runs += [(TOOLS / "verify_sources.py", book, TOOLS.parent / "src")
+                 for book in (not_zip, missing, no_book, undecodable)]
+        for script, workbook, *rest in runs:
+            with self.subTest(tool=script.name, workbook=workbook.name):
+                result = self.run_tool(script, workbook, *rest)
+                self.assertEqual(result.returncode, 1, result.stderr)
+                self.assertIn(f"FAIL: cannot read {workbook}", result.stdout)
+                self.assertNotIn("Traceback", result.stderr)
+
+    def test_workbook_check_skips_parts_already_reported_as_malformed(self):
+        encoded = base64.b64encode(json.dumps({"padding": "x" * 80}).encode("utf-16-le"))
+        store = b"<store>" + encoded + b"</store>"
+        for part in ("docProps/app.xml", "xl/slicerCaches/slicerCache1.xml"):
+            with self.subTest(part=part):
+                workbook = self.write_archive("parts.xlsx", {"customXml/item1.xml": store, part: b"<p>\xff</p>"})
+                result = self.run_tool(TOOLS / "verify_workbook.py", workbook)
+                self.assertEqual(result.returncode, 1, result.stderr)
+                self.assertIn(f"malformed XML in {part}", result.stdout)
+                self.assertNotIn("Traceback", result.stderr)
+
     def test_cached_values_reads_each_supported_cell_representation(self):
         workbook = self.write_archive("cache.xlsx", self.cache_parts())
 
