@@ -85,8 +85,11 @@ def decode_store(workbook: Path) -> AfeStore:
 
 
 def workbook_names(workbook: Path) -> set[str]:
-    with zipfile.ZipFile(workbook) as archive:
-        text = archive.read("xl/workbook.xml").decode("utf-8")
+    try:
+        with zipfile.ZipFile(workbook) as archive:
+            text = archive.read("xl/workbook.xml").decode("utf-8")
+    except (FileNotFoundError, KeyError, UnicodeDecodeError, zipfile.BadZipFile) as exc:
+        raise ValueError(f"cannot read workbook names: {exc}") from exc
     names = set()
     for raw in re.findall(r'<definedName\b[^>]*\bname="([^"]+)"[^>]*>', text):
         name = html.unescape(raw)
@@ -144,7 +147,10 @@ def check(workbook: Path, src: Path) -> list[str]:
                 f"{actual!r} != {wanted!r}",
             )
 
-    expected_names = workbook_names(workbook)
+    try:
+        expected_names = workbook_names(workbook)
+    except ValueError as exc:
+        return [*failures, str(exc)]
     actual_names = set(store["projectNames"])
     for name in sorted(expected_names - actual_names):
         fail(failures, f"AFE projectNames is missing shipped name {name}")
