@@ -3,6 +3,7 @@
 # mypy.ini, which the documented gate names explicitly.
 
 [tool.ruff]
+target-version = "py314"
 line-length = 100
 # Both roots a pass imports from: tools/ for the shared verifiers and compilers,
 # tools/postbuild/ for workbook.py. Without the second, the import sorter reads
