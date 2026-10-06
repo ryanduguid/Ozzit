@@ -22,8 +22,16 @@ and its hand calculations rather than to edit the pin.
 Dates are period boundaries the way the LAMBDA reads them: `start` is the first
 day of the period and `following` is the first day of the next one, the LAMBDA's
 `Starts` and `Next`. Pure Python: no Excel, no dependencies.
+
+QuantLibComparisonTests also checks frozen compiled QuantLib values and a
+retained native Excel run. Ordinary CI checks that record without starting
+Excel or importing QuantLib; docs/quantlib-day-count-comparison.md defines its
+scope and regeneration procedure.
 """
 
+import hashlib
+import json
+import math
 import re
 import sys
 import unittest
@@ -226,6 +234,135 @@ class PeriodRateTests(unittest.TestCase):
             fraction(date(2026, 7, 1), date(2026, 8, 1), 5)
 
 
+class QuantLibComparisonTests(unittest.TestCase):
+    """Independent compiled values and a retained, hash-bound Excel run.
+
+    CI checks this record and the Python restatement; it does not start Excel.
+    The native run covers the first period at APR=1, with two supplied dates.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        fixture = Path(__file__).with_name("fixtures") / "quantlib-day-counts.json"
+        cls.record = json.loads(fixture.read_text(encoding="utf-8"))
+
+    def test_the_python_restatement_agrees_with_quantlib(self):
+        for case in self.record["cases"]:
+            for method, expected in case["fractions"].items():
+                with self.subTest(case=case["id"], method=method):
+                    self.assertIn(type(expected), (int, float))
+                    self.assertTrue(math.isfinite(expected))
+                    self.assertAlmostEqual(
+                        fraction(date.fromisoformat(case["start"]),
+                                 date.fromisoformat(case["following"]), int(method)),
+                        expected, delta=self.record["absolute_tolerance"],
+                    )
+
+    def test_retained_excel_results_agree_with_quantlib(self):
+        native = self.record["excel"]
+        self.assertTrue(native["excel"])
+        self.assertEqual(
+            native["workbook_sha256"], hashlib.sha256((ROOT / "ozzit.xlsx").read_bytes()).hexdigest()
+        )
+        wanted_ids = {
+            f"{case['id']}_{method}"
+            for case in self.record["cases"] for method in case["fractions"]
+        }
+        self.assertEqual(set(native["results"]), wanted_ids)
+        for case in self.record["cases"]:
+            for method, expected in case["fractions"].items():
+                with self.subTest(case=case["id"], method=method):
+                    actual, = native["results"][f"{case['id']}_{method}"]
+                    self.assertEqual(len(actual), 1)
+                    self.assertIn(type(actual[0]), (float, int))
+                    self.assertTrue(math.isfinite(actual[0]))
+                    self.assertAlmostEqual(
+                        actual[0], expected, delta=self.record["absolute_tolerance"]
+                    )
+
+    def test_the_reference_generator_is_bound_to_the_record(self):
+        generator = Path(__file__).with_name("generate_quantlib_day_count_fixture.py")
+        self.assertEqual(
+            self.record["generator_sha256"], hashlib.sha256(generator.read_bytes()).hexdigest()
+        )
+        self.assertEqual(self.record["interval_semantics"], "[start, following)")
+        self.assertEqual(
+            self.record["constructor_expressions"],
+            {"1": "Thirty360(European)", "2": "Actual360(False)",
+             "3": "Actual365Fixed(Standard)", "4": "ActualActual(ISDA)"},
+        )
+
+    def test_fixture_coverage_and_provenance(self):
+        self.assertEqual(self.record["schema_version"], 1)
+        self.assertEqual(self.record["quantlib_version"], "1.43")
+        self.assertEqual(self.record["wheel"]["version"], "1.43")
+        self.assertEqual(self.record["wheel"]["sha256"],
+                         "35cd2c178aa9a30c3b7a9ca050536037c3185afd6728e6a1cf2085adef54464e")
+        self.assertEqual(self.record["binary_sha256"],
+                         "a2a50e566b2cd6706085c4bb7da15f73419da1f4dd2d9359c51bd91d95aca889")
+        self.assertEqual(self.record["absolute_tolerance"], 1e-12)
+        cases = self.record["cases"]
+        self.assertEqual(len(cases), 18)
+        self.assertEqual(len({case["id"] for case in cases}), 18)
+        for case in cases:
+            self.assertEqual(set(case["fractions"]), {"1", "2", "3", "4"})
+        controls = self.record["variant_controls"]
+        self.assertEqual(len(controls), 8)
+        self.assertEqual(
+            {(c["case_id"], c["method"], c["alternative"]) for c in controls},
+            {("common_february_end", "1", "Thirty360(USA)"),
+             ("common_february_end", "1", "Thirty360(BondBasis)"),
+             ("leap_february_end", "1", "Thirty360(ISDA)"),
+             ("zero_leap_day", "2", "Actual360(True)"),
+             ("full_leap_year", "3", "Actual365Fixed(NoLeap)"),
+             ("full_leap_year", "3", "ActualActual(ISDA)"),
+             ("split_common_leap", "4", "ActualActual(ISMA)"),
+             ("split_common_leap", "4", "ActualActual(AFB)")},
+        )
+        self.assertRegex(self.record["excel"]["excel"], r"^\d+\.\d+ build \d+$")
+        self.assertRegex(self.record["excel"]["evaluated_at_utc"], r"^\d{4}-\d{2}-\d{2}T.*Z$")
+        differences = [
+            abs(self.record["excel"]["results"][f"{case['id']}_{method}"][0][0] - expected)
+            for case in cases for method, expected in case["fractions"].items()
+        ]
+        self.assertEqual(max(differences), self.record["max_abs_difference"])
+
+    def test_native_inputs_are_bound_to_the_evaluated_formulas(self):
+        inputs = Path(__file__).with_name("fixtures") / "quantlib-day-count-formulas.json"
+        self.assertEqual(self.record["excel"]["cases_sha256"],
+                         hashlib.sha256(inputs.read_bytes()).hexdigest())
+        helper = ROOT / "tools" / "excel_eval_formulas.ps1"
+        self.assertEqual(self.record["excel"]["helper_sha256"],
+                         hashlib.sha256(helper.read_bytes()).hexdigest())
+        evidence_helper = ROOT / "tools" / "excel_eval_formulas_verified.ps1"
+        self.assertEqual(self.record["excel"]["evidence_helper_sha256"],
+                         hashlib.sha256(evidence_helper.read_bytes()).hexdigest())
+        wanted = []
+        for case in self.record["cases"]:
+            start = ",".join(str(int(n)) for n in case["start"].split("-"))
+            following = ",".join(str(int(n)) for n in case["following"].split("-"))
+            for method in case["fractions"]:
+                wanted.append({"id": f"{case['id']}_{method}",
+                               "formula": f"=INDEX(oz.DayCountRateλ(HSTACK(DATE({start}),"
+                                          f"DATE({following})),1,{method}),1,1)"})
+        self.assertEqual(json.loads(inputs.read_text(encoding="utf-8")), wanted)
+
+    def test_the_comparison_rejects_recorded_wrong_variants(self):
+        cases = {case["id"]: case for case in self.record["cases"]}
+        self.assertEqual(
+            {control["method"] for control in self.record["variant_controls"]}, {"1", "2", "3", "4"}
+        )
+        for control in self.record["variant_controls"]:
+            case = cases[control["case_id"]]
+            with self.subTest(alternative=control["alternative"]):
+                with self.assertRaises(AssertionError):
+                    self.assertAlmostEqual(
+                        fraction(date.fromisoformat(case["start"]),
+                                 date.fromisoformat(case["following"]), int(control["method"])),
+                        control["fraction"], delta=self.record["absolute_tolerance"],
+                    )
+
+
 def normalised(text: str) -> str:
     return re.sub(r"\s+", " ", text)
 
@@ -266,6 +403,7 @@ class FormulaPinTests(unittest.TestCase):
         self.assertIn("DaysLast, DATE(YearLast + 1, 1, 1) - LastYearStart", self.source)
 
     def test_each_convention_keeps_its_denominator(self):
+        self.assertIn("Next, Ends + 1", self.source)
         self.assertIn(
             "Fraction, SWITCH(Method, 1, Days / 360, 2, Days / 360, "
             "4, (Split - Starts) / DaysOne + IF(YearLast > YearOne, "
