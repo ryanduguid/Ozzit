@@ -1,0 +1,290 @@
+[
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2024,2,29),DATE(2024,2,29)),1,1),1,1)",
+    "id": "zero_leap_day_1"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2024,2,29),DATE(2024,2,29)),1,2),1,1)",
+    "id": "zero_leap_day_2"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2024,2,29),DATE(2024,2,29)),1,3),1,1)",
+    "id": "zero_leap_day_3"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2024,2,29),DATE(2024,2,29)),1,4),1,1)",
+    "id": "zero_leap_day_4"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2026,7,1),DATE(2026,8,1)),1,1),1,1)",
+    "id": "ordinary_month_1"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2026,7,1),DATE(2026,8,1)),1,2),1,1)",
+    "id": "ordinary_month_2"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2026,7,1),DATE(2026,8,1)),1,3),1,1)",
+    "id": "ordinary_month_3"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2026,7,1),DATE(2026,8,1)),1,4),1,1)",
+    "id": "ordinary_month_4"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2023,2,1),DATE(2023,3,1)),1,1),1,1)",
+    "id": "february_common_1"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2023,2,1),DATE(2023,3,1)),1,2),1,1)",
+    "id": "february_common_2"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2023,2,1),DATE(2023,3,1)),1,3),1,1)",
+    "id": "february_common_3"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2023,2,1),DATE(2023,3,1)),1,4),1,1)",
+    "id": "february_common_4"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2024,2,1),DATE(2024,3,1)),1,1),1,1)",
+    "id": "february_leap_1"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2024,2,1),DATE(2024,3,1)),1,2),1,1)",
+    "id": "february_leap_2"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2024,2,1),DATE(2024,3,1)),1,3),1,1)",
+    "id": "february_leap_3"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2024,2,1),DATE(2024,3,1)),1,4),1,1)",
+    "id": "february_leap_4"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2024,1,1),DATE(2025,1,1)),1,1),1,1)",
+    "id": "full_leap_year_1"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2024,1,1),DATE(2025,1,1)),1,2),1,1)",
+    "id": "full_leap_year_2"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2024,1,1),DATE(2025,1,1)),1,3),1,1)",
+    "id": "full_leap_year_3"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2024,1,1),DATE(2025,1,1)),1,4),1,1)",
+    "id": "full_leap_year_4"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2026,1,31),DATE(2026,3,31)),1,1),1,1)",
+    "id": "month_end_31_1"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2026,1,31),DATE(2026,3,31)),1,2),1,1)",
+    "id": "month_end_31_2"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2026,1,31),DATE(2026,3,31)),1,3),1,1)",
+    "id": "month_end_31_3"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2026,1,31),DATE(2026,3,31)),1,4),1,1)",
+    "id": "month_end_31_4"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2023,2,28),DATE(2023,3,31)),1,1),1,1)",
+    "id": "common_february_end_1"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2023,2,28),DATE(2023,3,31)),1,2),1,1)",
+    "id": "common_february_end_2"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2023,2,28),DATE(2023,3,31)),1,3),1,1)",
+    "id": "common_february_end_3"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2023,2,28),DATE(2023,3,31)),1,4),1,1)",
+    "id": "common_february_end_4"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2024,2,29),DATE(2024,3,31)),1,1),1,1)",
+    "id": "leap_february_end_1"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2024,2,29),DATE(2024,3,31)),1,2),1,1)",
+    "id": "leap_february_end_2"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2024,2,29),DATE(2024,3,31)),1,3),1,1)",
+    "id": "leap_february_end_3"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2024,2,29),DATE(2024,3,31)),1,4),1,1)",
+    "id": "leap_february_end_4"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2024,2,29),DATE(2024,8,31)),1,1),1,1)",
+    "id": "leap_day_to_august_end_1"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2024,2,29),DATE(2024,8,31)),1,2),1,1)",
+    "id": "leap_day_to_august_end_2"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2024,2,29),DATE(2024,8,31)),1,3),1,1)",
+    "id": "leap_day_to_august_end_3"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2024,2,29),DATE(2024,8,31)),1,4),1,1)",
+    "id": "leap_day_to_august_end_4"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2023,12,31),DATE(2024,1,1)),1,1),1,1)",
+    "id": "one_day_year_boundary_1"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2023,12,31),DATE(2024,1,1)),1,2),1,1)",
+    "id": "one_day_year_boundary_2"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2023,12,31),DATE(2024,1,1)),1,3),1,1)",
+    "id": "one_day_year_boundary_3"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2023,12,31),DATE(2024,1,1)),1,4),1,1)",
+    "id": "one_day_year_boundary_4"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2023,12,1),DATE(2024,2,1)),1,1),1,1)",
+    "id": "split_common_leap_1"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2023,12,1),DATE(2024,2,1)),1,2),1,1)",
+    "id": "split_common_leap_2"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2023,12,1),DATE(2024,2,1)),1,3),1,1)",
+    "id": "split_common_leap_3"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2023,12,1),DATE(2024,2,1)),1,4),1,1)",
+    "id": "split_common_leap_4"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2023,7,1),DATE(2026,7,1)),1,1),1,1)",
+    "id": "multiple_calendar_years_1"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2023,7,1),DATE(2026,7,1)),1,2),1,1)",
+    "id": "multiple_calendar_years_2"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2023,7,1),DATE(2026,7,1)),1,3),1,1)",
+    "id": "multiple_calendar_years_3"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2023,7,1),DATE(2026,7,1)),1,4),1,1)",
+    "id": "multiple_calendar_years_4"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2000,2,28),DATE(2000,3,1)),1,1),1,1)",
+    "id": "leap_century_1"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2000,2,28),DATE(2000,3,1)),1,2),1,1)",
+    "id": "leap_century_2"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2000,2,28),DATE(2000,3,1)),1,3),1,1)",
+    "id": "leap_century_3"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2000,2,28),DATE(2000,3,1)),1,4),1,1)",
+    "id": "leap_century_4"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2100,2,28),DATE(2100,3,1)),1,1),1,1)",
+    "id": "common_century_1"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2100,2,28),DATE(2100,3,1)),1,2),1,1)",
+    "id": "common_century_2"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2100,2,28),DATE(2100,3,1)),1,3),1,1)",
+    "id": "common_century_3"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2100,2,28),DATE(2100,3,1)),1,4),1,1)",
+    "id": "common_century_4"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(1999,12,1),DATE(2001,1,1)),1,1),1,1)",
+    "id": "across_leap_century_1"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(1999,12,1),DATE(2001,1,1)),1,2),1,1)",
+    "id": "across_leap_century_2"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(1999,12,1),DATE(2001,1,1)),1,3),1,1)",
+    "id": "across_leap_century_3"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(1999,12,1),DATE(2001,1,1)),1,4),1,1)",
+    "id": "across_leap_century_4"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2099,12,1),DATE(2100,3,1)),1,1),1,1)",
+    "id": "across_common_century_1"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2099,12,1),DATE(2100,3,1)),1,2),1,1)",
+    "id": "across_common_century_2"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2099,12,1),DATE(2100,3,1)),1,3),1,1)",
+    "id": "across_common_century_3"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(2099,12,1),DATE(2100,3,1)),1,4),1,1)",
+    "id": "across_common_century_4"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(1901,1,1),DATE(1902,1,1)),1,1),1,1)",
+    "id": "first_supported_year_1"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(1901,1,1),DATE(1902,1,1)),1,2),1,1)",
+    "id": "first_supported_year_2"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(1901,1,1),DATE(1902,1,1)),1,3),1,1)",
+    "id": "first_supported_year_3"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(1901,1,1),DATE(1902,1,1)),1,4),1,1)",
+    "id": "first_supported_year_4"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(1901,1,1),DATE(2199,12,31)),1,1),1,1)",
+    "id": "long_interval_1"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(1901,1,1),DATE(2199,12,31)),1,2),1,1)",
+    "id": "long_interval_2"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(1901,1,1),DATE(2199,12,31)),1,3),1,1)",
+    "id": "long_interval_3"
+  },
+  {
+    "formula": "=INDEX(oz.DayCountRateλ(HSTACK(DATE(1901,1,1),DATE(2199,12,31)),1,4),1,1)",
+    "id": "long_interval_4"
+  }
+]

@@ -1,0 +1,651 @@
+{
+  "schema_version": 1,
+  "quantlib_version": "1.43",
+  "wheel": {
+    "version": "1.43",
+    "filename": "quantlib-1.43-cp39-abi3-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl",
+    "url": "https://files.pythonhosted.org/packages/2e/39/2df89a3f4fe6668535d7c56f29ee646f7642e46b7fc6a9db1707804c7520/quantlib-1.43-cp39-abi3-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl",
+    "sha256": "35cd2c178aa9a30c3b7a9ca050536037c3185afd6728e6a1cf2085adef54464e"
+  },
+  "binary_sha256": "a2a50e566b2cd6706085c4bb7da15f73419da1f4dd2d9359c51bd91d95aca889",
+  "generator_sha256": "55329a068df4966faa223a89a512639d7283a14142c064537ce04fd1d54764e2",
+  "python_version": "3.14.7",
+  "platform": "Linux-7.2.9-1-cachyos-x86_64-with-glibc2.44",
+  "interval_semantics": "[start, following)",
+  "constructor_expressions": {
+    "1": "Thirty360(European)",
+    "2": "Actual360(False)",
+    "3": "Actual365Fixed(Standard)",
+    "4": "ActualActual(ISDA)"
+  },
+  "conventions": {
+    "1": "30E/360 (Eurobond Basis)",
+    "2": "Actual/360",
+    "3": "Actual/365 (Fixed)",
+    "4": "Actual/Actual (ISDA)"
+  },
+  "cases": [
+    {
+      "id": "zero_leap_day",
+      "start": "2024-02-29",
+      "following": "2024-02-29",
+      "fractions": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0
+      }
+    },
+    {
+      "id": "ordinary_month",
+      "start": "2026-07-01",
+      "following": "2026-08-01",
+      "fractions": {
+        "1": 0.08333333333333333,
+        "2": 0.08611111111111111,
+        "3": 0.08493150684931507,
+        "4": 0.08493150684931505
+      }
+    },
+    {
+      "id": "february_common",
+      "start": "2023-02-01",
+      "following": "2023-03-01",
+      "fractions": {
+        "1": 0.08333333333333333,
+        "2": 0.07777777777777778,
+        "3": 0.07671232876712329,
+        "4": 0.0767123287671233
+      }
+    },
+    {
+      "id": "february_leap",
+      "start": "2024-02-01",
+      "following": "2024-03-01",
+      "fractions": {
+        "1": 0.08333333333333333,
+        "2": 0.08055555555555556,
+        "3": 0.07945205479452055,
+        "4": 0.07923497267759563
+      }
+    },
+    {
+      "id": "full_leap_year",
+      "start": "2024-01-01",
+      "following": "2025-01-01",
+      "fractions": {
+        "1": 1.0,
+        "2": 1.0166666666666666,
+        "3": 1.0027397260273974,
+        "4": 1.0
+      }
+    },
+    {
+      "id": "month_end_31",
+      "start": "2026-01-31",
+      "following": "2026-03-31",
+      "fractions": {
+        "1": 0.16666666666666666,
+        "2": 0.1638888888888889,
+        "3": 0.16164383561643836,
+        "4": 0.16164383561643836
+      }
+    },
+    {
+      "id": "common_february_end",
+      "start": "2023-02-28",
+      "following": "2023-03-31",
+      "fractions": {
+        "1": 0.08888888888888889,
+        "2": 0.08611111111111111,
+        "3": 0.08493150684931507,
+        "4": 0.08493150684931505
+      }
+    },
+    {
+      "id": "leap_february_end",
+      "start": "2024-02-29",
+      "following": "2024-03-31",
+      "fractions": {
+        "1": 0.08611111111111111,
+        "2": 0.08611111111111111,
+        "3": 0.08493150684931507,
+        "4": 0.0846994535519126
+      }
+    },
+    {
+      "id": "leap_day_to_august_end",
+      "start": "2024-02-29",
+      "following": "2024-08-31",
+      "fractions": {
+        "1": 0.5027777777777778,
+        "2": 0.5111111111111111,
+        "3": 0.5041095890410959,
+        "4": 0.5027322404371585
+      }
+    },
+    {
+      "id": "one_day_year_boundary",
+      "start": "2023-12-31",
+      "following": "2024-01-01",
+      "fractions": {
+        "1": 0.002777777777777778,
+        "2": 0.002777777777777778,
+        "3": 0.0027397260273972603,
+        "4": 0.0027397260273972603
+      }
+    },
+    {
+      "id": "split_common_leap",
+      "start": "2023-12-01",
+      "following": "2024-02-01",
+      "fractions": {
+        "1": 0.16666666666666666,
+        "2": 0.17222222222222222,
+        "3": 0.16986301369863013,
+        "4": 0.16963096040122763
+      }
+    },
+    {
+      "id": "multiple_calendar_years",
+      "start": "2023-07-01",
+      "following": "2026-07-01",
+      "fractions": {
+        "1": 3.0,
+        "2": 3.0444444444444443,
+        "3": 3.0027397260273974,
+        "4": 3.0
+      }
+    },
+    {
+      "id": "leap_century",
+      "start": "2000-02-28",
+      "following": "2000-03-01",
+      "fractions": {
+        "1": 0.008333333333333333,
+        "2": 0.005555555555555556,
+        "3": 0.005479452054794521,
+        "4": 0.005464480874316974
+      }
+    },
+    {
+      "id": "common_century",
+      "start": "2100-02-28",
+      "following": "2100-03-01",
+      "fractions": {
+        "1": 0.008333333333333333,
+        "2": 0.002777777777777778,
+        "3": 0.0027397260273972603,
+        "4": 0.002739726027397249
+      }
+    },
+    {
+      "id": "across_leap_century",
+      "start": "1999-12-01",
+      "following": "2001-01-01",
+      "fractions": {
+        "1": 1.0833333333333333,
+        "2": 1.1027777777777779,
+        "3": 1.0876712328767124,
+        "4": 1.084931506849315
+      }
+    },
+    {
+      "id": "across_common_century",
+      "start": "2099-12-01",
+      "following": "2100-03-01",
+      "fractions": {
+        "1": 0.25,
+        "2": 0.25,
+        "3": 0.2465753424657534,
+        "4": 0.2465753424657534
+      }
+    },
+    {
+      "id": "first_supported_year",
+      "start": "1901-01-01",
+      "following": "1902-01-01",
+      "fractions": {
+        "1": 1.0,
+        "2": 1.0138888888888888,
+        "3": 1.0,
+        "4": 1.0
+      }
+    },
+    {
+      "id": "long_interval",
+      "start": "1901-01-01",
+      "following": "2199-12-31",
+      "fractions": {
+        "1": 298.9972222222222,
+        "2": 303.35277777777776,
+        "3": 299.1972602739726,
+        "4": 298.9972602739726
+      }
+    }
+  ],
+  "variant_controls": [
+    {
+      "case_id": "common_february_end",
+      "method": "1",
+      "alternative": "Thirty360(USA)",
+      "fraction": 0.08333333333333333
+    },
+    {
+      "case_id": "leap_february_end",
+      "method": "1",
+      "alternative": "Thirty360(ISDA)",
+      "fraction": 0.08333333333333333
+    },
+    {
+      "case_id": "split_common_leap",
+      "method": "4",
+      "alternative": "ActualActual(ISMA)",
+      "fraction": 0.16666666666666666
+    },
+    {
+      "case_id": "common_february_end",
+      "method": "1",
+      "alternative": "Thirty360(BondBasis)",
+      "fraction": 0.09166666666666666
+    },
+    {
+      "case_id": "zero_leap_day",
+      "method": "2",
+      "alternative": "Actual360(True)",
+      "fraction": 0.002777777777777778
+    },
+    {
+      "case_id": "full_leap_year",
+      "method": "3",
+      "alternative": "Actual365Fixed(NoLeap)",
+      "fraction": 1.0
+    },
+    {
+      "case_id": "full_leap_year",
+      "method": "3",
+      "alternative": "ActualActual(ISDA)",
+      "fraction": 1.0
+    },
+    {
+      "case_id": "split_common_leap",
+      "method": "4",
+      "alternative": "ActualActual(AFB)",
+      "fraction": 0.16986301369863013
+    }
+  ],
+  "ozzit_base": "8a0d807b5a92051707dafe10c800cafa6b57437e",
+  "absolute_tolerance": 1e-12,
+  "excel": {
+    "excel": "16.0 build 20527",
+    "workbook_sha256": "8c42e2278de61bdacfb090b940e684bb12a7636a256816aa20f81360b71bb760",
+    "results": {
+      "zero_leap_day_1": [
+        [
+          0
+        ]
+      ],
+      "zero_leap_day_2": [
+        [
+          0
+        ]
+      ],
+      "zero_leap_day_3": [
+        [
+          0
+        ]
+      ],
+      "zero_leap_day_4": [
+        [
+          0
+        ]
+      ],
+      "ordinary_month_1": [
+        [
+          0.08333333333333333
+        ]
+      ],
+      "ordinary_month_2": [
+        [
+          0.08611111111111111
+        ]
+      ],
+      "ordinary_month_3": [
+        [
+          0.08493150684931507
+        ]
+      ],
+      "ordinary_month_4": [
+        [
+          0.08493150684931507
+        ]
+      ],
+      "february_common_1": [
+        [
+          0.08333333333333333
+        ]
+      ],
+      "february_common_2": [
+        [
+          0.07777777777777778
+        ]
+      ],
+      "february_common_3": [
+        [
+          0.07671232876712329
+        ]
+      ],
+      "february_common_4": [
+        [
+          0.07671232876712329
+        ]
+      ],
+      "february_leap_1": [
+        [
+          0.08333333333333333
+        ]
+      ],
+      "february_leap_2": [
+        [
+          0.08055555555555556
+        ]
+      ],
+      "february_leap_3": [
+        [
+          0.07945205479452055
+        ]
+      ],
+      "february_leap_4": [
+        [
+          0.07923497267759563
+        ]
+      ],
+      "full_leap_year_1": [
+        [
+          1
+        ]
+      ],
+      "full_leap_year_2": [
+        [
+          1.0166666666666666
+        ]
+      ],
+      "full_leap_year_3": [
+        [
+          1.0027397260273974
+        ]
+      ],
+      "full_leap_year_4": [
+        [
+          1
+        ]
+      ],
+      "month_end_31_1": [
+        [
+          0.16666666666666666
+        ]
+      ],
+      "month_end_31_2": [
+        [
+          0.1638888888888889
+        ]
+      ],
+      "month_end_31_3": [
+        [
+          0.16164383561643836
+        ]
+      ],
+      "month_end_31_4": [
+        [
+          0.16164383561643836
+        ]
+      ],
+      "common_february_end_1": [
+        [
+          0.08888888888888889
+        ]
+      ],
+      "common_february_end_2": [
+        [
+          0.08611111111111111
+        ]
+      ],
+      "common_february_end_3": [
+        [
+          0.08493150684931507
+        ]
+      ],
+      "common_february_end_4": [
+        [
+          0.08493150684931507
+        ]
+      ],
+      "leap_february_end_1": [
+        [
+          0.08611111111111111
+        ]
+      ],
+      "leap_february_end_2": [
+        [
+          0.08611111111111111
+        ]
+      ],
+      "leap_february_end_3": [
+        [
+          0.08493150684931507
+        ]
+      ],
+      "leap_february_end_4": [
+        [
+          0.08469945355191257
+        ]
+      ],
+      "leap_day_to_august_end_1": [
+        [
+          0.5027777777777778
+        ]
+      ],
+      "leap_day_to_august_end_2": [
+        [
+          0.5111111111111111
+        ]
+      ],
+      "leap_day_to_august_end_3": [
+        [
+          0.5041095890410959
+        ]
+      ],
+      "leap_day_to_august_end_4": [
+        [
+          0.5027322404371585
+        ]
+      ],
+      "one_day_year_boundary_1": [
+        [
+          0.002777777777777778
+        ]
+      ],
+      "one_day_year_boundary_2": [
+        [
+          0.002777777777777778
+        ]
+      ],
+      "one_day_year_boundary_3": [
+        [
+          0.0027397260273972603
+        ]
+      ],
+      "one_day_year_boundary_4": [
+        [
+          0.0027397260273972603
+        ]
+      ],
+      "split_common_leap_1": [
+        [
+          0.16666666666666666
+        ]
+      ],
+      "split_common_leap_2": [
+        [
+          0.17222222222222222
+        ]
+      ],
+      "split_common_leap_3": [
+        [
+          0.16986301369863013
+        ]
+      ],
+      "split_common_leap_4": [
+        [
+          0.16963096040122763
+        ]
+      ],
+      "multiple_calendar_years_1": [
+        [
+          3
+        ]
+      ],
+      "multiple_calendar_years_2": [
+        [
+          3.0444444444444443
+        ]
+      ],
+      "multiple_calendar_years_3": [
+        [
+          3.0027397260273974
+        ]
+      ],
+      "multiple_calendar_years_4": [
+        [
+          3
+        ]
+      ],
+      "leap_century_1": [
+        [
+          0.008333333333333333
+        ]
+      ],
+      "leap_century_2": [
+        [
+          0.005555555555555556
+        ]
+      ],
+      "leap_century_3": [
+        [
+          0.005479452054794521
+        ]
+      ],
+      "leap_century_4": [
+        [
+          0.00546448087431694
+        ]
+      ],
+      "common_century_1": [
+        [
+          0.008333333333333333
+        ]
+      ],
+      "common_century_2": [
+        [
+          0.002777777777777778
+        ]
+      ],
+      "common_century_3": [
+        [
+          0.0027397260273972603
+        ]
+      ],
+      "common_century_4": [
+        [
+          0.0027397260273972603
+        ]
+      ],
+      "across_leap_century_1": [
+        [
+          1.0833333333333333
+        ]
+      ],
+      "across_leap_century_2": [
+        [
+          1.1027777777777779
+        ]
+      ],
+      "across_leap_century_3": [
+        [
+          1.0876712328767124
+        ]
+      ],
+      "across_leap_century_4": [
+        [
+          1.084931506849315
+        ]
+      ],
+      "across_common_century_1": [
+        [
+          0.25
+        ]
+      ],
+      "across_common_century_2": [
+        [
+          0.25
+        ]
+      ],
+      "across_common_century_3": [
+        [
+          0.2465753424657534
+        ]
+      ],
+      "across_common_century_4": [
+        [
+          0.2465753424657534
+        ]
+      ],
+      "first_supported_year_1": [
+        [
+          1
+        ]
+      ],
+      "first_supported_year_2": [
+        [
+          1.0138888888888888
+        ]
+      ],
+      "first_supported_year_3": [
+        [
+          1
+        ]
+      ],
+      "first_supported_year_4": [
+        [
+          1
+        ]
+      ],
+      "long_interval_1": [
+        [
+          298.9972222222222
+        ]
+      ],
+      "long_interval_2": [
+        [
+          303.35277777777776
+        ]
+      ],
+      "long_interval_3": [
+        [
+          299.1972602739726
+        ]
+      ],
+      "long_interval_4": [
+        [
+          298.9972602739726
+        ]
+      ]
+    },
+    "cases_sha256": "a1cf3093945895eb4011a6257bddf2e4ecd7709bfa7953cdb633eadf84b1977a",
+    "helper_sha256": "228884ebb9da01a792fd891b9fc9714bba1ebb870b6e704b291921fc66b4f6a2",
+    "evidence_helper_sha256": "4f0db804f1d5ef13ddd8f2d635b51052db175e1c634ddaee5ad6af3dd42e6f59",
+    "evaluated_at_utc": "2026-10-05T07:45:09.4644357Z"
+  },
+  "scope": "First period of two supplied boundary dates, APR=1, explicit convention, default EndDates. Subsequent inferred periods and other timeline behaviour are not qualified.",
+  "max_abs_difference": 4.163336342344337e-17
+}
