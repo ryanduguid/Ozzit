@@ -65,7 +65,8 @@ an explicit convention and default `EndDates`. The zero-length pair records
 the observed result without asserting that duplicate dates form a useful
 financial timeline. Later inferred periods, `EndDates=TRUE`, date coercion,
 APR broadcasting, reverse intervals and Excel's 1900 date anomaly are outside
-this comparison.
+the QuantLib comparison. The additional native qualification below covers
+positive schedules and records the remaining limitations.
 
 Normal CI checks the retained native record against the current workbook
 hash and exact evaluated formulas, compares the Python arithmetic with the
@@ -73,3 +74,59 @@ independent values, rejects the recorded wrong variants and retains the
 formula-text pins. CI does not start
 Excel. A workbook change requires new native evidence before this record can
 qualify the changed workbook.
+
+## Native schedule and input qualification
+
+On 6 October 2026, Excel 16.0 build 20527 evaluated 113 additional formulas
+against the same workbook hash. All 312 numeric values from 87 supported-input
+cases on strictly increasing timelines agreed with declared rational calculations
+within `1e-12`. Three invalid
+numeric convention cases matched the native `#VALUE!` control. The remaining
+23 cases retain observations of unusual or invalid inputs, including the error
+controls; they do not qualify those inputs for financial use.
+
+The inputs and expectations are in
+`tools/tests/postbuild/fixtures/native-day-count-cases.json`, and the native
+results are in `native-day-count-results.json` beside it. The existing verified
+Excel helper evaluated that exact input file with LF line endings, as Git stores it.
+The result records its exact input hash, both helper hashes, workbook hash and
+evaluation time. Excel opened the workbook read-only and closed without saving;
+its bytes were unchanged.
+
+The numeric cases cover all four conventions across common and leap-year
+monthly schedules, month ends, weekly schedules, annual periods and calendar-year
+crossings. They include inferred final start-date periods and inferred first
+end-date periods, the 27/28-day inference threshold, row and column dates,
+scalar and row or column APR, zero and negative APR, omitted and non-numeric
+conventions, and logical or numeric end-date flags. ISO text, English month-name
+text and mixed numeric/text dates matched numeric dates in this Excel profile.
+Text-date acceptance in other locales remains unverified.
+
+Each base schedule declares rational terms separately from the workbook
+implementation. For example, January through April 2024 has Actual/Actual
+terms `31/366`, `29/366`, `31/366` and `30/366`; the end-date schedule uses
+31 January, 29 February, 31 March and 30 April for the same periods. The tests
+apply each APR to those declared terms and require one result row of the expected
+length. These hand calculations extend the native input qualification; they
+are separate from the compiled QuantLib record above.
+
+Descending dates expose an Actual/Actual limitation. For the first interval
+from 15 January 2024 back to 15 December 2023, Excel returned `-31/366`
+(`-0.08469945355191257`). Signed ISDA is `-(17/365 + 14/366)`
+(`-0.08482670858597201`). The help does not explicitly specify descending-date
+support. This interval is not qualified for signed ISDA; use ascending timelines
+pending a date-ordering contract decision. The regression check records the
+discrepancy without treating the observed result as a correct financial value.
+
+Mismatched APR lengths can return partial numeric rows with `#N/A`, and a
+two-dimensional timeline can return a matrix containing `#N/A`. Those shapes
+are outside the documented row-or-column, scalar-or-one-rate-per-period input
+contract. Fractional date serials and Excel's fictitious 29 February 1900 remain
+observations only. A single date and invalid text produced native errors.
+
+To repeat the run, pass `native-day-count-cases.json` to
+`tools/excel_eval_formulas_verified.ps1` with a new output path while Excel is
+closed. Its extra expectation fields are ignored by the native helper. Review
+the rational terms and limitations before replacing the retained result. CI
+checks both records against the current workbook and helper hashes; it does
+not launch Excel. A changed workbook requires refreshed native evidence.
