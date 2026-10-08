@@ -363,6 +363,99 @@ class QuantLibComparisonTests(unittest.TestCase):
                     )
 
 
+class NativeTimelineTests(unittest.TestCase):
+    """Retained Excel results for schedules, coercion and APR broadcasting.
+
+    Rational terms are declared independently for each positive schedule.
+    Descending dates and malformed inputs remain observations, not financial
+    expectations. A changed workbook needs a fresh read-only native run.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.fixtures = Path(__file__).with_name("fixtures")
+        cls.inputs = cls.fixtures / "native-day-count-cases.json"
+        cls.cases = json.loads(cls.inputs.read_text(encoding="utf-8"))
+        cls.by_id = {case["id"]: case for case in cls.cases}
+        cls.native = json.loads(
+            (cls.fixtures / "native-day-count-results.json").read_text(encoding="utf-8")
+        )
+
+    def test_the_record_is_bound_to_the_workbook_inputs_and_helpers(self):
+        for field, path in {
+            "workbook_sha256": ROOT / "ozzit.xlsx",
+            "cases_sha256": self.inputs,
+            "helper_sha256": TOOLS / "excel_eval_formulas.ps1",
+            "evidence_helper_sha256": TOOLS / "excel_eval_formulas_verified.ps1",
+        }.items():
+            with self.subTest(field=field):
+                self.assertEqual(self.native[field], hashlib.sha256(path.read_bytes()).hexdigest())
+        self.assertRegex(self.native["excel"], r"^\d+\.\d+ build \d+$")
+        self.assertRegex(self.native["evaluated_at_utc"], r"^\d{4}-\d{2}-\d{2}T.*Z$")
+        self.assertEqual(set(self.native["results"]), set(self.by_id))
+        self.assertEqual(len(self.cases), len(self.by_id))
+
+    def test_positive_periods_match_declared_rational_terms_and_apr(self):
+        values = 0
+        for case in self.cases:
+            if "terms" not in case and "equivalent_to" not in case:
+                continue
+            reference = self.by_id[case["equivalent_to"]] if "equivalent_to" in case else case
+            terms = reference["terms"]
+            apr = case.get("apr", [1] * len(terms))
+            self.assertEqual(len(apr), len(terms))
+            expected = [rate * sum(n / d for n, d in period)
+                        for rate, period in zip(apr, terms)]
+            with self.subTest(case=case["id"]):
+                actual, = self.native["results"][case["id"]]
+                self.assertEqual(len(actual), len(expected))
+                for value, wanted in zip(actual, expected):
+                    self.assertIn(type(value), (int, float))
+                    self.assertTrue(math.isfinite(value))
+                    self.assertAlmostEqual(value, wanted, delta=1e-12)
+                    values += 1
+        self.assertEqual(values, 312)
+
+    def test_qualification_keeps_observations_separate_and_covers_the_edges(self):
+        categories = ("terms", "equivalent_to", "error_control", "observation")
+        for case in self.cases:
+            with self.subTest(case=case["id"]):
+                self.assertEqual(sum(key in case for key in categories), 1)
+                self.assertTrue(case["formula"].startswith("="))
+        self.assertEqual(len(self.cases), 113)
+        self.assertEqual(sum("observation" in case for case in self.cases), 23)
+        tags = {tag for case in self.cases for tag in case.get("coverage", [])}
+        self.assertEqual(tags, {
+            "inferred_last", "inferred_first", "leap_year", "common_year", "month_end",
+            "short_gap", "gap_threshold", "month_clamp", "end_dates", "year_crossing",
+            "annual", "column_dates", "scalar_apr", "row_apr", "column_apr", "both_columns",
+            "text_dates", "mixed_dates", "end_flag", "default_convention", "invalid_method",
+        })
+        for schedule in ("leap_months", "common_months", "month_end_starts", "weekly",
+                         "gap_27", "gap_28", "end_months", "end_weekly", "year_crossing", "annual"):
+            for method in (1, 2, 3, 4):
+                self.assertIn("terms", self.by_id[f"{schedule}_{method}"])
+
+    def test_invalid_numeric_conventions_return_the_native_value_error(self):
+        results = self.native["results"]
+        self.assertEqual(results["value_error"], [["#ERR:-2146826273"]])
+        self.assertEqual(results["na_error"], [["#ERR:-2146826246"]])
+        for case in self.cases:
+            if "error_control" in case:
+                with self.subTest(case=case["id"]):
+                    self.assertEqual(results[case["id"]], results[case["error_control"]])
+
+    def test_descending_cross_year_observation_does_not_qualify_signed_isda(self):
+        case = self.by_id["reverse_cross_year_4"]
+        self.assertIn("observation", case)
+        actual = self.native["results"][case["id"]][0][0]
+        # 15 December to 1 January is 17 common-year days; 1 January to
+        # 15 January is 14 leap-year days. Reversing the interval negates both.
+        signed_isda = -(17 / 365 + 14 / 366)
+        self.assertAlmostEqual(actual, -31 / 366, delta=1e-12)
+        self.assertGreater(abs(actual - signed_isda), 1e-4)
+
+
 def normalised(text: str) -> str:
     return re.sub(r"\s+", " ", text)
 
