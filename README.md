@@ -4,6 +4,7 @@
 [![CodeQL](https://github.com/ryanduguid/Ozzit/actions/workflows/codeql.yml/badge.svg)](https://github.com/ryanduguid/Ozzit/actions/workflows/codeql.yml)
 [![release](https://img.shields.io/github/v/release/ryanduguid/Ozzit?color=5C2D91&labelColor=04001F)](https://github.com/ryanduguid/Ozzit/releases/latest)
 [![licence: MIT](https://img.shields.io/badge/licence-MIT-5C2D91.svg?labelColor=04001F)](LICENCE)
+[![Codacy code quality](https://app.codacy.com/project/badge/Grade/ffd3c7d7645541179caea8a353bd3f86?branch=main)](https://app.codacy.com/gh/ryanduguid/Ozzit/dashboard)
 ![Excel: 365 or 2024+](https://img.shields.io/badge/Excel-365%20or%202024%2B-5C2D91.svg?labelColor=04001F)
 
 One Excel workbook holding 137 native LAMBDA functions and 5 named help tables under
