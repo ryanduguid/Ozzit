@@ -22,7 +22,7 @@ change requires recalculation or cache validation.
 ## Verification
 
 Run the CI sequence exactly. The first 4 commands are the `lint` job; the rest
-run on Python 3.14:
+run on Python 3.14 and 3.15:
 
 ```powershell
 python -m pip install "ruff==0.16.6"
