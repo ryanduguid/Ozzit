@@ -43,7 +43,8 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
 ANCHOR = re.compile(
-    r'<c r="([A-Z]+)(\d+)"([^>]*)><f t="array" ref="([A-Z]+\d+:[A-Z]+\d+)"([^>]*)>'
+    r'<c r="([A-Z]+)(\d+)"([^>]*)><f\b(?=[^>]*\st="array")'
+    r'(?=[^>]*\sref="([A-Z]+\d+:[A-Z]+\d+)")([^>]*)>'
     r"(oz\.[A-Za-z0-9_]+λ(?:DV)?)\(\)</f>(?:<v(?:/>|>[^<]*</v>))?</c>"
 )
 CELL = re.compile(r'<c r="([A-Z]+)(\d+)"([^>]*?)(?:/>|>(.*?)</c>)', re.DOTALL)
@@ -169,8 +170,8 @@ def main() -> None:
         stale, anchors = run(workbook)
     except (OSError, ValueError, KeyError, zipfile.BadZipFile) as exc:
         sys.exit(f"FAIL: {exc}")
-    # A layout the anchor pattern no longer recognises, such as reordered attributes on
-    # the <f> element, finds nothing to compare. Nothing checked is not a pass.
+    # A layout the anchor pattern no longer recognises finds nothing to compare.
+    # Nothing checked is not a pass.
     if anchors == 0:
         sys.exit(f"FAIL: no help anchor found in {workbook}, so no cached help was checked")
     for line in stale:

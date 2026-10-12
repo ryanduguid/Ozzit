@@ -12,6 +12,7 @@ import sys
 import tempfile
 import unittest
 import zipfile
+from itertools import permutations
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -95,6 +96,14 @@ class HelpSpillCheckTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "oz.Hλ is not a defined name"):
             spills.check(parts_for(CURRENT.replace("oz.Fλ()", "oz.Hλ()")))
 
+    def test_formula_attribute_order_does_not_skip_a_stale_help(self):
+        for attributes in permutations(('t="array"', 'ref="A4:B5"', 'ca="1"')):
+            with self.subTest(attributes=attributes):
+                reordered = STALE.replace(
+                    '<f t="array" ref="A4:B5">', f'<f {" ".join(attributes)}>',
+                )
+                self.assertEqual(spills.check(parts_for(CURRENT, reordered)), ([STALE_LINE], 2))
+
     def test_a_self_closing_empty_cache_is_reported(self) -> None:
         # SpreadsheetML writes an empty cached value as <v/>, which the
         # ANCHOR pattern must still match: an anchor excluded by the
@@ -120,14 +129,21 @@ class HelpSpillCheckTests(unittest.TestCase):
 
     def test_cli_reports_stale_helps_and_never_writes(self):
         tool = TOOLS / "verify_help_spills.py"
-        stale = self.write("stale.xlsx", parts_for(CURRENT, STALE))
-        before = stale.read_bytes()
-        result = subprocess.run([sys.executable, str(tool), str(stale)], capture_output=True, text=True, encoding="utf-8", check=False)
-        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-        self.assertIn(STALE_LINE, result.stdout)
-        self.assertIn("FAIL: 1 of 2 cached helps", result.stderr)
-        self.assertIn("run tools/refresh_cache.py in Excel", result.stderr)
-        self.assertEqual(stale.read_bytes(), before)
+        for name, sheet in (
+            ("stale.xlsx", STALE),
+            ("reordered-stale.xlsx", STALE.replace(
+                '<f t="array" ref="A4:B5">', '<f ref="A4:B5" t="array">',
+            )),
+        ):
+            with self.subTest(workbook=name):
+                stale = self.write(name, parts_for(CURRENT, sheet))
+                before = stale.read_bytes()
+                result = subprocess.run([sys.executable, str(tool), str(stale)], capture_output=True, text=True, encoding="utf-8", check=False)
+                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+                self.assertIn(STALE_LINE, result.stdout)
+                self.assertIn("FAIL: 1 of 2 cached helps", result.stderr)
+                self.assertIn("run tools/refresh_cache.py in Excel", result.stderr)
+                self.assertEqual(stale.read_bytes(), before)
 
         current = self.write("current.xlsx", parts_for(CURRENT))
         result = subprocess.run([sys.executable, str(tool), str(current)], capture_output=True, text=True, encoding="utf-8", check=False)
