@@ -7,6 +7,7 @@
 [![Codacy code quality](https://app.codacy.com/project/badge/Grade/ffd3c7d7645541179caea8a353bd3f86?branch=main)](https://app.codacy.com/gh/ryanduguid/Ozzit/dashboard)
 [![SonarCloud](https://img.shields.io/sonar/quality_gate/ryanduguid_Ozzit?server=https%3A%2F%2Fsonarcloud.io&label=SonarCloud&labelColor=000000)](https://sonarcloud.io/summary/new_code?id=ryanduguid_Ozzit)
 [![VirusTotal](https://img.shields.io/badge/VirusTotal-release%20files%20scanned-66023C?labelColor=000000&logo=virustotal&logoColor=FFFFF0)](https://github.com/ryanduguid/Ozzit/releases/latest)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/ryanduguid/Ozzit/badge)](https://scorecard.dev/viewer/?uri=github.com/ryanduguid/Ozzit)
 ![Excel: 365 or 2024+](https://img.shields.io/badge/Excel-365%20or%202024%2B-5C2D91.svg?labelColor=04001F)
 
 One Excel workbook holding 137 native LAMBDA functions and 5 named help tables under
