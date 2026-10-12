@@ -9,7 +9,7 @@
 [![VirusTotal](https://img.shields.io/badge/VirusTotal-scanned-990024?labelColor=000000&style=flat-square&logo=virustotal&logoColor=FFFFF0)](https://github.com/ryanduguid/Ozzit/releases/latest)<br>
 [![release](https://img.shields.io/github/v/release/ryanduguid/Ozzit?color=66023C&labelColor=000000&style=flat-square)](https://github.com/ryanduguid/Ozzit/releases/latest)
 ![Excel: 365 or 2024+](https://img.shields.io/badge/Excel-365%20or%202024%2B-66023C?labelColor=000000&style=flat-square)
-[![licence: Apache-2.0](https://img.shields.io/badge/licence-Apache--2.0-66023C?labelColor=000000&style=flat-square)](LICENCE)
+[![licence: Apache-2.0](https://img.shields.io/badge/licence-Apache--2.0-66023C?labelColor=000000&style=flat-square)](LICENSE)
 
 One Excel workbook holding 137 native LAMBDA functions and 5 named help tables under
 the `oz.` prefix: amortisation, depreciation, ratios, AASB 16 lessee schedules, and
@@ -121,6 +121,6 @@ v3.4.2 `ozzit.xlsx` SHA-256: `0306793a7e473ce70e78149fea1e107fc0f714d61ab50960c1
 - [Repository checks](AGENTS.md) and [release and native verification](RELEASING.md)
 - [Changes](CHANGELOG.md) and [citation](CITATION.cff)
 
-Apache-2.0 licensed. See [LICENCE](LICENCE). If you redistribute this work or build on it, keep the attribution in [NOTICE](NOTICE). [DISCLAIMER.md](DISCLAIMER.md) states that this is not advice and names the bodies the project is not affiliated with.
+Apache-2.0 licensed. See [LICENSE](LICENSE). If you redistribute this work or build on it, keep the attribution in [NOTICE](NOTICE). [DISCLAIMER.md](DISCLAIMER.md) states that this is not advice and names the bodies the project is not affiliated with.
 
 </details>
