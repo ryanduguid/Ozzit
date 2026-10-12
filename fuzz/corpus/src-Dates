@@ -1,0 +1,78 @@
+/*  Module Contains Ozzit Compliant LAMBDAs that deal with dates */
+
+/*  FUNCTION NAME:  AboutDatesλ
+    DESCRIPTION:*//**Displays this module's repository URL and function list*/
+AboutDatesλ = TRIM(
+    TEXTSPLIT(
+        "About:                 →Ozzit compliant LAMBDAs dealing with dates. Suggested module name: oz¶" &
+        "Version:               →6 Sep 2026¶" &
+        "Repository:              →https://github.com/ryanduguid/Ozzit ¶" &
+        "→¶" & 
+        "Function               →Description¶" & 
+        "AboutDatesλ                 →Produces this table¶" &
+        "CountDOWλ              →Count instances of a specific day of the week between two dates¶" &
+        "IsBetweenλ             →Determine if a value is between a lower and upper limit¶" &
+        "IsOccurrenceDateλ      →Determine if a date passed is when a potentially repeating event happens¶" &
+        "OverLapDaysλ           →Return how many days overlap two period ranges.¶" &
+        "Periodsλ               →Determine the number of periods from Starts to Ends inclusive¶" &
+        "PeriodLabelλ           →Creates a label for a date based on period interval¶" &
+        "ScheduleRatesλ         →Schedule rates that persist until replaced in a timeline.¶" &
+        "ScheduleRatesByItemsλ  →Schedule rates that persist until replaced in a timeline for each item in a list.¶" &
+        "ScheduleValuesλ        →Schedules values in a timeline. ¶" &
+        "ScheduleValuesByItemsλ →Schedules values in a timeline for each item in a list.¶" &
+        "Timelineλ              →Creates a horizontal list of start or end dates for a timeline¶" &
+        "DateDifλ               →Whole years, months or days between two dates, and the remainders¶" & 
+        "FinancialYearλ         →Labels dates with their Australian financial year, starting 1 July¶" &
+        "→",  
+        "→", "¶"
+    )
+);
+
+
+
+/*  FUNCTION NAME:  CountDOWλ
+    DESCRIPTION:*/  /**Count instances of a specific day of the week between two dates.*/
+CountDOWλ = LAMBDA(   
+//  Parameter Declarations
+    [Starts],
+    [Ends],
+    [DayOfWeek],  
+//  Help
+    LET(Help,       TRIM(TEXTSPLIT( 
+                        "FUNCTION:      →CountDOWλ(Starts, Ends, DayOfWeek)¶" & 
+                        "DESCRIPTION:   →Count instances of a specific day of the week between two dates.¶" & 
+                        "WEBSITE:       →https://github.com/ryanduguid/Ozzit¶" &
+                        "PARAMETERS:    →¶" & 
+                        "Starts         →(Required) One of more start dates (text or numeric) in a row or column¶" & 
+                        "Ends           →(Required) End dates (text or numeric) for each start date¶" & 
+                        "DayOfWeek      →(Required) 1=Sunday, 7=Saturday.¶" &
+                        "EXAMPLES:      →¶" & 
+                        "Result         →Formula (oz is assumed to be the module's name)¶" &
+                        "3              →=oz.CountDOWλ(""23/7/2026"", ""11/8/2026"",  1)", 
+                        "→", "¶"
+                        )
+                    ),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR( ISOMITTED( Starts), 
+                            ISOMITTED( Ends),
+                            ISOMITTED( DayOfWeek)
+                        ),
+    //  Check inputs - Set optional arguments' defaults and apply convenience conversions
+        CvtStarts,      IF( ISOMITTED( Starts), 
+                            FALSE,
+                            IF( ISNUMBER( Starts), Starts, DATEVALUE( Starts))
+                        ),
+        CvtEnds,        IF( ISOMITTED( Ends), 
+                            FALSE, 
+                            IF( ISNUMBER( Ends), Ends, DATEVALUE( Ends))
+                        ),
+       //  Procedure
+       Result,          INT( ( ( CvtEnds - CvtStarts) + WeekDay( CvtStarts - DayOfWeek)) / 7),
+    //  Return Result
+        CHOOSE( Help? + 1, Result, Help)
+    )
+);
+
+
+
+/*  FUNCTION NAME:  IsBetween�
