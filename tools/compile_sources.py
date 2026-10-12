@@ -496,7 +496,7 @@ def apply(book: str, compiled: list[Compiled]) -> tuple[str, list[str]]:
 
 def update_index(path: Path, book: str, modules: dict[str, str]) -> bool:
     """Rewrite functions.csv from the compiled workbook, keeping previous_name."""
-    with path.open(encoding="utf-8-sig", newline="") as handle:
+    with path.open(encoding="utf-8-sig", newline="") as handle:  # NOSONAR: maintainer CLI; the person running it names this path on the command line
         reader = csv.DictReader(handle)
         fieldnames = list(reader.fieldnames or [])
         previous = {row["function"]: row.get("previous_name", "") for row in reader}
@@ -515,7 +515,7 @@ def update_index(path: Path, book: str, modules: dict[str, str]) -> bool:
             }
         )
     rows.sort(key=lambda row: row["function"])
-    with path.open(encoding="utf-8-sig", newline="") as handle:
+    with path.open(encoding="utf-8-sig", newline="") as handle:  # NOSONAR: maintainer CLI; the person running it names this path on the command line
         before = handle.read()
     buffer = io.StringIO()
     writer = csv.DictWriter(buffer, fieldnames=fieldnames, lineterminator="\n")
@@ -524,7 +524,7 @@ def update_index(path: Path, book: str, modules: dict[str, str]) -> bool:
     after = buffer.getvalue()
     if after == before:
         return False
-    with path.open("w", encoding="utf-8", newline="") as handle:
+    with path.open("w", encoding="utf-8", newline="") as handle:  # NOSONAR: maintainer CLI; the person running it names this path on the command line
         handle.write(after)
     return True
 

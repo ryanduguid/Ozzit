@@ -82,7 +82,7 @@ def check(text: str, workbook: Path, index: Path) -> list[str]:
         if earlier != name or declared.count(name) > 1:
             failures.append(f"{name} is declared more than once (case-insensitively)")
     shipped = {name[len(NAMESPACE) + 1 :] for name in workbook_names(workbook)}
-    with index.open(encoding="utf-8-sig", newline="") as handle:
+    with index.open(encoding="utf-8-sig", newline="") as handle:  # NOSONAR: maintainer CLI; the person running it names this path on the command line
         indexed = {row["function"][len(NAMESPACE) + 1 :] for row in csv.DictReader(handle)}
     for label, expected in (("workbook", shipped), ("functions.csv", indexed)):
         for name in sorted(expected - set(declared)):
@@ -120,7 +120,7 @@ def main(argv: list[str]) -> int:
             return 1
         print(f"OK: {output} is current, {len(declared_names(text))} names")
         return 0
-    output.write_bytes(text.encode("utf-8"))
+    output.write_bytes(text.encode("utf-8"))  # NOSONAR: maintainer CLI; the person running it names this path on the command line
     print(f"wrote {output}: {len(declared_names(text))} names, {len(text.encode('utf-8'))} bytes")
     return 0
 

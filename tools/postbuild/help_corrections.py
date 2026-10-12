@@ -444,7 +444,7 @@ def run(workbook: Path, src_dir: Path) -> list[str]:
             changed.append(f"src/{module}.txt")
 
         for temporary, destination in staged:
-            os.replace(temporary, destination)
+            os.replace(temporary, destination)  # NOSONAR: maintainer CLI; the person running it names this path on the command line
     finally:
         for temporary, _destination in staged:
             try:

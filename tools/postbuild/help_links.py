@@ -89,7 +89,7 @@ def run(workbook: Path, src_dir: Path) -> list[str]:
     # gates out of sync.
     new_book = apply_swaps(book, _forms("workbook"))
     new_ratios = apply_swaps(ratios, _forms("src"))
-    original_bytes = workbook.read_bytes()
+    original_bytes = workbook.read_bytes()  # NOSONAR: maintainer CLI; the person running it names this path on the command line
     try:
         if new_book != book:
             parts[BOOK] = new_book.encode("utf-8")

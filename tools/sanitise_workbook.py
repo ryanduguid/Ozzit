@@ -74,7 +74,7 @@ def column_number(letters: str) -> int:
 
 def read_text(path: Path) -> str:
     """Read UTF-8 text with the stored line endings left exactly as they are."""
-    with open(path, encoding="utf-8", newline="") as handle:
+    with open(path, encoding="utf-8", newline="") as handle:  # NOSONAR: maintainer CLI; the person running it names this path on the command line
         return handle.read()
 
 
@@ -128,7 +128,7 @@ def replace_atomically(workbook: Path, data: bytes) -> None:
     """Replace workbook atomically, retaining the original if replacement fails."""
     tmp = stage_bytes(workbook, data)
     try:
-        os.replace(tmp, workbook)
+        os.replace(tmp, workbook)  # NOSONAR: maintainer CLI; the person running it names this path on the command line
     finally:
         tmp.unlink(missing_ok=True)
 
@@ -289,7 +289,7 @@ def sanitise(workbook: Path) -> list[str]:
         log.append(f"dropped {len(empty)} empty worksheet rels")
 
     canonical = deterministic_bytes(parts)
-    if not log and workbook.read_bytes() == canonical:
+    if not log and workbook.read_bytes() == canonical:  # NOSONAR: maintainer CLI; the person running it names this path on the command line
         return ["already clean"]
     if not log:
         log.append("canonicalised archive metadata and compression")

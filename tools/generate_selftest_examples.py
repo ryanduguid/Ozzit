@@ -314,11 +314,11 @@ def main() -> None:
     text = generate(src)
     if not text.isascii():
         sys.exit("FAIL: the generated fragment is not pure ASCII")
-    before = output.read_text(encoding="ascii") if output.is_file() else None
+    before = output.read_text(encoding="ascii") if output.is_file() else None  # NOSONAR: maintainer CLI; the person running it names this path on the command line
     if before == text:
         print(f"already current: {output}")
         return
-    output.write_text(text, encoding="ascii", newline="\n")
+    output.write_text(text, encoding="ascii", newline="\n")  # NOSONAR: maintainer CLI; the person running it names this path on the command line
     print(f"wrote {output}: {text.count(chr(10))} lines")
 
 

@@ -110,7 +110,7 @@ def apply(workbook: Path, src: Path) -> list[str]:
             )
         stripped.append((module, before, after, blocks))
 
-    original_bytes = workbook.read_bytes()
+    original_bytes = workbook.read_bytes()  # NOSONAR: maintainer CLI; the person running it names this path on the command line
     parts = read_parts(workbook)
     core = parts["docProps/core.xml"]
     changes: list[str] = []

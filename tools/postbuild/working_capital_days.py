@@ -284,7 +284,7 @@ def index_state(index: Path | None) -> str | None:
         return None
     if not index.is_file():
         raise ValueError(f"{index}: no such index; supply an existing functions.csv or none")
-    with index.open(encoding="utf-8-sig", newline="") as handle:
+    with index.open(encoding="utf-8-sig", newline="") as handle:  # NOSONAR: maintainer CLI; the person running it names this path on the command line
         listed = {row.get("function", "") for row in csv.DictReader(handle)}
     present = sum(1 for name in QUALIFIED if name in listed)
     if present == 0:
@@ -344,7 +344,7 @@ def run(workbook: Path, src: Path, index: Path | None) -> list[str]:
     # the first included, is inside the recovery block, so a failure anywhere restores
     # all three stores.
     changed: list[str] = []
-    index_before = index.read_bytes() if index is not None else None
+    index_before = index.read_bytes() if index is not None else None  # NOSONAR: maintainer CLI; the person running it names this path on the command line
     indexed = False
     try:
         write_text(path, add_to_src(text))
@@ -359,7 +359,7 @@ def run(workbook: Path, src: Path, index: Path | None) -> list[str]:
     except Exception:
         write_text(path, text)
         if index is not None and index_before is not None:  # pragma: no branch - both set above
-            index.write_bytes(index_before)
+            index.write_bytes(index_before)  # NOSONAR: maintainer CLI; the person running it names this path on the command line
         raise
     changed.append("workbook")
     if indexed and index is not None:  # pragma: no branch - an absent index gains rows

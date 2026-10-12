@@ -396,7 +396,7 @@ def add_to_workbook(book: str, definitions: dict[str, tuple[str, str, str]]) -> 
 
 def update_index(path: Path, definitions: dict[str, tuple[str, str, str]]) -> bool:
     """Add a row per function, deriving every field the way verify_index does."""
-    with path.open(encoding="utf-8-sig", newline="") as handle:
+    with path.open(encoding="utf-8-sig", newline="") as handle:  # NOSONAR: maintainer CLI; the person running it names this path on the command line
         reader = csv.DictReader(handle)
         fieldnames = list(reader.fieldnames or [])
         rows = list(reader)
@@ -427,7 +427,7 @@ def update_index(path: Path, definitions: dict[str, tuple[str, str, str]]) -> bo
     # functions.csv is sorted case-sensitively, unlike the workbook's defined names.
     # Sorting it the other way moves a dozen untouched rows and buries the addition.
     rows.sort(key=lambda row: row["function"])
-    with path.open("w", encoding="utf-8", newline="") as handle:
+    with path.open("w", encoding="utf-8", newline="") as handle:  # NOSONAR: maintainer CLI; the person running it names this path on the command line
         writer = csv.DictWriter(handle, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)

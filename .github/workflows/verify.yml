@@ -31,11 +31,13 @@ jobs:
           python-version: '3.15'
           allow-prereleases: true
       - name: Install the pinned linter
-        run: python -m pip install --require-hashes --requirement requirements-ruff.txt
+        run: >-
+          python -m pip install --require-hashes --only-binary :all: --requirement requirements-ruff.txt
       - name: Lint the workbook tools and their tests
         run: python -m ruff check .
       - name: Install the pinned type checker
-        run: python -m pip install --require-hashes --requirement requirements-mypy.txt
+        run: >-
+          python -m pip install --require-hashes --only-binary :all: --requirement requirements-mypy.txt
       - name: Type-check production workbook tools
         run: python -m mypy --config-file mypy.ini
 
