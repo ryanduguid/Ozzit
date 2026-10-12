@@ -9,7 +9,8 @@ release; until then v3.4.2 behaves as it did, including the defects fixed here.
 
 From the next release, Ozzit is licensed under the Apache License 2.0 instead of MIT.
 Anyone who redistributes the workbook or a derivative must keep the attribution in
-`NOTICE`. v3.4.2 and earlier releases stay under MIT.
+`NOTICE`. v3.4.2 and earlier releases stay under MIT. The licence text moves from
+`LICENCE` to `LICENSE`, the file name licence checkers look for.
 
 ### Four working-capital functions added
 
@@ -1035,7 +1036,7 @@ baseline that grew around them.
   fixed in `nb.TimelineOffsetλ` and named as still outstanding here. `nb.LabelDepreciateλ`'s
   said 'teh'.
 
-- **A licence, for the parts of this repository that can carry one.** [LICENCE](LICENCE) is
+- **A licence, for the parts of this repository that can carry one.** [LICENCE](LICENSE) is
   MIT and covers `tools/`, `.github/`, the Markdown files and `assets/`. It does not extend
   to `nabla.xlsx`, `src/` or `functions.csv`, which were carved out at the time. v3.2.0
   removed the carve-out; MIT now covers the whole repository. v3.0.0 and v3.1.0 still
