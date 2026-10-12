@@ -143,7 +143,9 @@ class ResiduePathTests(ScratchDirectory):
             "froze the label columns on 1 wide demonstration sheets\n"
             f"OK: {workbook}\n"
         )))
-        self.assertEqual(workbook.read_bytes(), WORKBOOK.read_bytes())
+        # Compare the parts: deflate output differs between zlib builds, so the
+        # rewritten archive's bytes match the committed one only on some platforms.
+        self.assertEqual(read_parts(workbook), read_parts(WORKBOOK))
 
 
 def guard_loop():
