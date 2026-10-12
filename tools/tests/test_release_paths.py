@@ -9,7 +9,6 @@ import hashlib
 import io
 import json
 import shutil
-import subprocess
 import sys
 import tempfile
 import unittest
@@ -28,6 +27,77 @@ GATE_RESULTS = [
     {"command": command, "output": f"OK: fixture gate {number}"}
     for number, command in enumerate(release_bundle.GATE_COMMANDS, start=1)
 ]
+
+
+def set_claim(*keys, value):
+    def change(provenance):
+        target = provenance
+        for key in keys[:-1]:
+            target = target[key]
+        target[keys[-1]] = value
+
+    return change
+
+
+PROVENANCE_DEFECTS = (
+    (set_claim("schema", value=2), "provenance.json identifies an unsupported bundle"),
+    (set_claim("schema", value=True), "provenance.json identifies an unsupported bundle"),
+    (set_claim("project", value="Other"), "provenance.json identifies an unsupported bundle"),
+    (set_claim("assets", value=["ozzit.xlsx"]), "provenance asset inventory is invalid"),
+    (set_claim("version", value=3), "provenance version is invalid"),
+    (set_claim("version", value="v3.2.0"), "version must be canonical X.Y.Z"),
+    (set_claim("source", value="main"), "provenance source is invalid"),
+    (set_claim("source", "extra", value=1), "provenance source is invalid"),
+    (set_claim("source", "commit", value=7), "provenance source commit is invalid"),
+    (set_claim("source", "commit", value="main"), "source commit must be a full 40-character"),
+    (
+        set_claim("source", "workbook_path", value="other.xlsx"),
+        "provenance workbook path is invalid",
+    ),
+    (
+        set_claim("workbook", "size", value=1),
+        "provenance workbook evidence does not match the base workbook",
+    ),
+    # 1 == True, so the evidence compares equal and only the type check catches it.
+    (
+        set_claim("workbook", "copy_only", value=1),
+        "provenance workbook copy-only claim is invalid",
+    ),
+    (set_claim("verification", value=[]), "provenance verification evidence is invalid"),
+    (
+        set_claim("verification", "static_gates", value="all passed"),
+        "provenance static gate evidence is invalid",
+    ),
+    (
+        set_claim("verification", "static_gates", value=[["command", "output"]]),
+        "provenance static gate evidence is invalid",
+    ),
+    (
+        set_claim("verification", "static_gates", value=[{"command": "x"}]),
+        "provenance static gate evidence is invalid",
+    ),
+    (
+        set_claim("verification", "static_gates", value=[{"command": 1, "output": ""}]),
+        "provenance static gate evidence is invalid",
+    ),
+    (
+        set_claim("verification", "static_gates", value=[{"command": "", "output": 1}]),
+        "provenance static gate evidence is invalid",
+    ),
+    (
+        set_claim("verification", "static_gates", value=list(reversed(GATE_RESULTS))),
+        "provenance static gate sequence is invalid",
+    ),
+    (
+        set_claim("verification", "extra", value=True),
+        "provenance verification claims are invalid",
+    ),
+    # 0 == False, so the claim compares equal and only the type check catches it.
+    (
+        set_claim("verification", "native_gates", "included", value=0),
+        "provenance native gate claims must be Boolean",
+    ),
+)
 
 
 class ReleaseFixture(unittest.TestCase):
@@ -293,77 +363,8 @@ class BundleVerificationTests(ReleaseFixture):
             self.verify()
 
     def test_each_provenance_claim_is_checked(self):
-        def setter(*keys, value):
-            def change(provenance):
-                target = provenance
-                for key in keys[:-1]:
-                    target = target[key]
-                target[keys[-1]] = value
-
-            return change
-
-        reversed_gates = list(reversed(GATE_RESULTS))
-        cases = (
-            (setter("schema", value=2), "provenance.json identifies an unsupported bundle"),
-            (setter("schema", value=True), "provenance.json identifies an unsupported bundle"),
-            (setter("project", value="Other"), "provenance.json identifies an unsupported bundle"),
-            (setter("assets", value=["ozzit.xlsx"]), "provenance asset inventory is invalid"),
-            (setter("version", value=3), "provenance version is invalid"),
-            (setter("version", value="v3.2.0"), "version must be canonical X.Y.Z"),
-            (setter("source", value="main"), "provenance source is invalid"),
-            (setter("source", "extra", value=1), "provenance source is invalid"),
-            (setter("source", "commit", value=7), "provenance source commit is invalid"),
-            (setter("source", "commit", value="main"), "source commit must be a full 40-character"),
-            (
-                setter("source", "workbook_path", value="other.xlsx"),
-                "provenance workbook path is invalid",
-            ),
-            (
-                setter("workbook", "size", value=1),
-                "provenance workbook evidence does not match the base workbook",
-            ),
-            # 1 == True, so the evidence compares equal and only the type check catches it.
-            (
-                setter("workbook", "copy_only", value=1),
-                "provenance workbook copy-only claim is invalid",
-            ),
-            (setter("verification", value=[]), "provenance verification evidence is invalid"),
-            (
-                setter("verification", "static_gates", value="all passed"),
-                "provenance static gate evidence is invalid",
-            ),
-            (
-                setter("verification", "static_gates", value=[["command", "output"]]),
-                "provenance static gate evidence is invalid",
-            ),
-            (
-                setter("verification", "static_gates", value=[{"command": "x"}]),
-                "provenance static gate evidence is invalid",
-            ),
-            (
-                setter("verification", "static_gates", value=[{"command": 1, "output": ""}]),
-                "provenance static gate evidence is invalid",
-            ),
-            (
-                setter("verification", "static_gates", value=[{"command": "", "output": 1}]),
-                "provenance static gate evidence is invalid",
-            ),
-            (
-                setter("verification", "static_gates", value=reversed_gates),
-                "provenance static gate sequence is invalid",
-            ),
-            (
-                setter("verification", "extra", value=True),
-                "provenance verification claims are invalid",
-            ),
-            # 0 == False, so the claim compares equal and only the type check catches it.
-            (
-                setter("verification", "native_gates", "included", value=0),
-                "provenance native gate claims must be Boolean",
-            ),
-        )
         pristine = (self.bundle / "provenance.json").read_bytes()
-        for change, message in cases:
+        for change, message in PROVENANCE_DEFECTS:
             with self.subTest(message=message):
                 (self.bundle / "provenance.json").write_bytes(pristine)
                 self.rewrite_provenance(self.bundle, change)
@@ -503,9 +504,9 @@ class GitInvocationTests(unittest.TestCase):
         )
 
     def test_failed_git_query_propagates(self):
-        error = subprocess.CalledProcessError(128, ["git", "status"])
+        error = release_bundle.subprocess.CalledProcessError(128, ["git", "status"])
         with mock.patch.object(release_bundle.subprocess, "run", side_effect=error):
-            with self.assertRaises(subprocess.CalledProcessError):
+            with self.assertRaises(release_bundle.subprocess.CalledProcessError):
                 release_bundle._git_output(Path("checkout"), "status")
 
 

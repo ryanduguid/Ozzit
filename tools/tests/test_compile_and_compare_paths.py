@@ -4,20 +4,20 @@ the pyxirr comparison, on small fixture sources and workbooks built in a tempora
 
 import csv
 import hashlib
+import html
 import io
 import json
 import re
 import runpy
 import shutil
-import subprocess
 import sys
 import tempfile
 import unittest
 import zipfile
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
-from xml.sax.saxutils import escape as xml_escape
 
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
@@ -56,7 +56,7 @@ def write_book(path: Path, stored: dict[str, str] | None = None) -> Path:
         name = f"oz.{module}λ"
         body = (stored or {}).get(name, "_xlfn.LAMBDA(_xlop.x, _xlpm.x + 1)")
         names.append(f'<definedName name="{name}" comment="The {module} sample">'
-                     f"{xml_escape(body)}</definedName>")
+                     f"{html.escape(body, quote=False)}</definedName>")
     book = f"<workbook><definedNames>{''.join(names)}</definedNames></workbook>"
     with zipfile.ZipFile(path, "w") as archive:
         archive.writestr("xl/workbook.xml", book)
@@ -450,7 +450,7 @@ class ComparisonExcelTests(ScratchTestCase):
                         path=command[command.index("-Path") + 1], file=command[5])
             Path(command[command.index("-Out") + 1]).write_text(
                 json.dumps({"excel": "16.0", "results": {}}), encoding="utf-8")
-            return subprocess.CompletedProcess(command, 0)
+            return SimpleNamespace(args=command, returncode=0)
 
         workbook = self.directory / "book.xlsx"
         with mock.patch.object(comparison.subprocess, "run", side_effect=evaluator):
@@ -462,7 +462,7 @@ class ComparisonExcelTests(ScratchTestCase):
         self.assertEqual((seen["check"], seen["timeout"]), (True, 600))
 
     def test_a_timed_out_evaluation_stops_only_the_recorded_excel(self):
-        timeout = subprocess.TimeoutExpired(["powershell.exe"], 600)
+        timeout = comparison.subprocess.TimeoutExpired(["powershell.exe"], 600)
         with mock.patch.object(comparison.subprocess, "run", side_effect=timeout), \
                 mock.patch.object(comparison, "stop_recorded_excel") as stop, \
                 self.assertRaises(SystemExit) as failure:

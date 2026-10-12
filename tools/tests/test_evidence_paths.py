@@ -7,12 +7,12 @@ import importlib.util
 import io
 import json
 import shutil
-import subprocess
 import sys
 import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 TOOLS = Path(__file__).resolve().parents[1]
@@ -82,7 +82,8 @@ class CacheGatePathTests(unittest.TestCase):
                 target.unlink()
             else:
                 target.write_text(dump, encoding="utf-8")
-            return subprocess.CompletedProcess(args, returncode, stdout, stderr)
+            return SimpleNamespace(args=args, returncode=returncode, stdout=stdout,
+                                   stderr=stderr)
 
         output = io.StringIO()
         patches = [mock.patch.object(verify_cache, "WORKBOOK", str(workbook)),

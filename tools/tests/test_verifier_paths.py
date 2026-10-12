@@ -180,7 +180,8 @@ class VerifyWorkbookTests(unittest.TestCase):
             verify_workbook.main()
         return raised.exception.code, list(failures), output.getvalue()
 
-    def test_every_content_defect_is_reported(self):
+    def defective_parts(self):
+        """Return workbook parts that hold every content defect the gate reports."""
         store = base64.b64encode(
             json.dumps({"note": "dropbox", "padding": "x" * 80}).encode("utf-16-le")
         )
@@ -218,8 +219,10 @@ class VerifyWorkbookTests(unittest.TestCase):
             "xl/slicerCaches/slicerCache1.xml": '<slicerCacheDefinition name="Slicer_Region"/>',
             "xl/slicerCaches/slicerCache2.xml": '<slicerCacheDefinition name="Slicer_Other"/>',
         }
+        return parts
 
-        code, failures, printed = self.run_main(parts)
+    def test_every_content_defect_is_reported(self):
+        code, failures, printed = self.run_main(self.defective_parts())
 
         expected = [
             "banned token 'Calibri' in xl/styles.xml",

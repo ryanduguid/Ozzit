@@ -8,7 +8,6 @@ import importlib.util
 import io
 import shutil
 import stat
-import subprocess
 import sys
 import tempfile
 import unittest
@@ -252,7 +251,7 @@ class RefreshCacheTests(unittest.TestCase):
         clean.assert_not_called()
 
     def test_hung_refresh_is_reported(self):
-        timeout = subprocess.TimeoutExpired("powershell.exe", 600)
+        timeout = refresh_cache.subprocess.TimeoutExpired("powershell.exe", 600)
         code, printed, _, clean = self.refresh(side_effect=timeout)
         self.assertEqual(code, 1)
         self.assertEqual(
