@@ -1,15 +1,15 @@
 # Ozzit: Excel LAMBDA functions for Australian financial modelling
 
-[![verify](https://github.com/ryanduguid/Ozzit/actions/workflows/verify.yml/badge.svg)](https://github.com/ryanduguid/Ozzit/actions/workflows/verify.yml)
-[![Codecov](https://codecov.io/gh/ryanduguid/Ozzit/graph/badge.svg)](https://codecov.io/gh/ryanduguid/Ozzit)
-[![CodeQL](https://github.com/ryanduguid/Ozzit/actions/workflows/codeql.yml/badge.svg)](https://github.com/ryanduguid/Ozzit/actions/workflows/codeql.yml)
-[![release](https://img.shields.io/github/v/release/ryanduguid/Ozzit?color=66023C&labelColor=000000)](https://github.com/ryanduguid/Ozzit/releases/latest)
-[![licence: MIT](https://img.shields.io/badge/licence-MIT-66023C.svg?labelColor=000000)](LICENCE)
-[![Codacy code quality](https://app.codacy.com/project/badge/Grade/ffd3c7d7645541179caea8a353bd3f86?branch=main)](https://app.codacy.com/gh/ryanduguid/Ozzit/dashboard)
-[![SonarCloud](https://img.shields.io/sonar/quality_gate/ryanduguid_Ozzit?server=https%3A%2F%2Fsonarcloud.io&label=SonarCloud&labelColor=000000)](https://sonarcloud.io/summary/new_code?id=ryanduguid_Ozzit)
-[![VirusTotal](https://img.shields.io/badge/VirusTotal-release%20files%20scanned-66023C?labelColor=000000&logo=virustotal&logoColor=FFFFF0)](https://github.com/ryanduguid/Ozzit/releases/latest)
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/ryanduguid/Ozzit/badge)](https://scorecard.dev/viewer/?uri=github.com/ryanduguid/Ozzit)
-![Excel: 365 or 2024+](https://img.shields.io/badge/Excel-365%20or%202024%2B-66023C.svg?labelColor=000000)
+[![verify](https://img.shields.io/github/actions/workflow/status/ryanduguid/Ozzit/verify.yml?branch=main&label=verify&labelColor=000000&style=flat-square)](https://github.com/ryanduguid/Ozzit/actions/workflows/verify.yml)
+[![Codecov](https://img.shields.io/codecov/c/github/ryanduguid/Ozzit?label=coverage&labelColor=000000&style=flat-square)](https://codecov.io/gh/ryanduguid/Ozzit)
+[![CodeQL](https://img.shields.io/github/actions/workflow/status/ryanduguid/Ozzit/codeql.yml?branch=main&label=CodeQL&labelColor=000000&style=flat-square)](https://github.com/ryanduguid/Ozzit/actions/workflows/codeql.yml)
+[![SonarCloud](https://img.shields.io/sonar/quality_gate/ryanduguid_Ozzit?server=https%3A%2F%2Fsonarcloud.io&label=SonarCloud&labelColor=000000&style=flat-square)](https://sonarcloud.io/summary/new_code?id=ryanduguid_Ozzit)
+[![Codacy code quality](https://img.shields.io/codacy/grade/ffd3c7d7645541179caea8a353bd3f86?label=Codacy&labelColor=000000&style=flat-square)](https://app.codacy.com/gh/ryanduguid/Ozzit/dashboard)<br>
+[![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/ryanduguid/Ozzit?label=Scorecard&labelColor=000000&style=flat-square)](https://scorecard.dev/viewer/?uri=github.com/ryanduguid/Ozzit)
+[![VirusTotal](https://img.shields.io/badge/VirusTotal-scanned-990024?labelColor=000000&style=flat-square&logo=virustotal&logoColor=FFFFF0)](https://github.com/ryanduguid/Ozzit/releases/latest)<br>
+[![release](https://img.shields.io/github/v/release/ryanduguid/Ozzit?color=66023C&labelColor=000000&style=flat-square)](https://github.com/ryanduguid/Ozzit/releases/latest)
+![Excel: 365 or 2024+](https://img.shields.io/badge/Excel-365%20or%202024%2B-66023C?labelColor=000000&style=flat-square)
+[![licence: MIT](https://img.shields.io/badge/licence-MIT-66023C?labelColor=000000&style=flat-square)](LICENCE)
 
 One Excel workbook holding 137 native LAMBDA functions and 5 named help tables under
 the `oz.` prefix: amortisation, depreciation, ratios, AASB 16 lessee schedules, and
