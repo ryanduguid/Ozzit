@@ -81,8 +81,8 @@ The independent verifier must record and compare GitHub's API `digest` for the u
 Install the pinned linter and type checker in the clean candidate:
 
 ```powershell
-python -m pip install "ruff==0.16.6"
-python -m pip install "mypy==2.3.1"
+python -m pip install --require-hashes --requirement requirements-ruff.txt
+python -m pip install --require-hashes --requirement requirements-mypy.txt
 ```
 
 Then run the following 12 static and repository gates, the same commands CI runs:
