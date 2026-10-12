@@ -26,9 +26,9 @@ WORKBOOK_BASE = ROOT / "release" / "workbook-base.json"
 
 
 EXPECTED_VERIFY_COMMANDS = (
-    'python -m pip install "ruff==0.16.6"',
+    'python -m pip install --require-hashes --requirement requirements-ruff.txt',
     "python -m ruff check .",
-    'python -m pip install "mypy==2.3.1"',
+    'python -m pip install --require-hashes --requirement requirements-mypy.txt',
     "python -m mypy --config-file mypy.ini",
     "python tools/verify_workbook.py ozzit.xlsx",
     "python tools/verify_sources.py ozzit.xlsx src",
@@ -95,8 +95,8 @@ def read_utf8(path: Path) -> str:
 
 def workflow_commands(workflow: str) -> tuple[str, ...]:
     """Read every scalar and block ``run`` gate without a YAML dependency."""
-    # The trailing aggregate job checks job results, not the repository, so its
-    # scripts are not contributor commands.
+    # The aggregate job checks job results, not the repository, so its scripts
+    # are not contributor commands; nor are the CI-only coverage jobs after it.
     workflow = re.split(r"(?m)^  [\w-]+-gates:$", workflow, maxsplit=1)[0]
     lines = workflow.splitlines()
     commands: list[str] = []
@@ -232,7 +232,8 @@ class RepositoryPolicyTests(unittest.TestCase):
         workflow = read_utf8(VERIFY_WORKFLOW)
         config = read_utf8(MYPY_CONFIG)
 
-        self.assertIn('python -m pip install "mypy==2.3.1"', workflow)
+        self.assertIn('python -m pip install --require-hashes --requirement requirements-mypy.txt', workflow)
+        self.assertIn("mypy==2.3.1 \\", read_utf8(ROOT / "requirements-mypy.txt"))
         self.assertIn("python -m mypy --config-file mypy.ini", workflow)
         self.assertIn("files = tools", config)
         self.assertIn("exclude = ^tools[/\\\\]tests[/\\\\]", config)
@@ -252,24 +253,20 @@ class RepositoryPolicyTests(unittest.TestCase):
             for function in ast.walk(ast.parse(read_utf8(path), filename=str(path)))
             if isinstance(function, (ast.FunctionDef, ast.AsyncFunctionDef))
         ]
-        incomplete = []
-        for path, function in functions:
-            parameters = [
-                *function.args.posonlyargs,
-                *function.args.args,
-                *function.args.kwonlyargs,
-            ]
-            parameters.extend(
-                parameter
-                for parameter in (function.args.vararg, function.args.kwarg)
-                if parameter is not None
-            )
-            if function.returns is None or any(
-                parameter.annotation is None for parameter in parameters
-            ):
-                incomplete.append(
-                    f"{path.relative_to(ROOT).as_posix()}:{function.lineno}:{function.name}"
+        incomplete = [
+            f"{path.relative_to(ROOT).as_posix()}:{function.lineno}:{function.name}"
+            for path, function in functions
+            if function.returns is None
+            or any(
+                parameter.annotation is None
+                for parameter in (
+                    *function.args.posonlyargs,
+                    *function.args.args,
+                    *function.args.kwonlyargs,
+                    *(p for p in (function.args.vararg, function.args.kwarg) if p is not None),
                 )
+            )
+        ]
 
         self.assertGreaterEqual(len(production), 20)
         self.assertGreaterEqual(len(functions), 146)
@@ -321,8 +318,11 @@ class RepositoryPolicyTests(unittest.TestCase):
             cwd=ROOT, capture_output=True, check=True, text=True,
         ).stdout.split()
         releases = [tag for tag in tags if re.fullmatch(r"v\d+\.\d+\.\d+", tag)]
-        for tag in releases:
-            self.assertEqual(tag, f"v{version}", "the tagged commit publishes another version")
+        self.assertEqual(
+            releases,
+            [f"v{version}"] * len(releases),
+            "the tagged commit publishes another version",
+        )
 
     def test_readme_links_the_disclaimer(self):
         # The disclaimer states what the library is not advice about. A reader who

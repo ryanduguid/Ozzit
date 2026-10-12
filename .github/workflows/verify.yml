@@ -31,11 +31,11 @@ jobs:
           python-version: '3.15'
           allow-prereleases: true
       - name: Install the pinned linter
-        run: python -m pip install "ruff==0.16.6"
+        run: python -m pip install --require-hashes --requirement requirements-ruff.txt
       - name: Lint the workbook tools and their tests
         run: python -m ruff check .
       - name: Install the pinned type checker
-        run: python -m pip install "mypy==2.3.1"
+        run: python -m pip install --require-hashes --requirement requirements-mypy.txt
       - name: Type-check production workbook tools
         run: python -m mypy --config-file mypy.ini
 
@@ -84,7 +84,7 @@ jobs:
     # unless every job it needs succeeded, when a job in this file is missing
     # from needs, or when a pull request removes a job without adding a
     # "# removed-jobs: <job>" comment to this file.
-    needs: [lint, verify]
+    needs: [lint, verify, coverage]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -104,4 +104,63 @@ jobs:
       - name: Require every job to be listed, kept and successful
         env:
           RESULTS: ${{ toJSON(needs) }}
-        run: python3 .github/ci/check_gates.py .github/workflows/verify.yml verify-gates
+        run: python3 .github/ci/check_gates.py .github/workflows/verify.yml verify-gates --exempt codecov
+
+  # Measures the tool tests' branch coverage for the Codecov badge. This job
+  # and codecov sit after verify-gates because they are CI measurements, not
+  # contributor checks: AGENTS.md and CONTRIBUTING.md list the commands above it.
+  coverage:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # The tool tests read history the release manifest pins, as in verify.
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+          allow-prereleases: true
+      - name: Install the hash-pinned coverage tool
+        run: python -m pip install --disable-pip-version-check --require-hashes --no-deps --only-binary=coverage --requirement requirements-coverage.txt
+      - name: Run the unit tests under branch coverage
+        run: python -m coverage run --branch --source=tools -m unittest discover -s tools/tests
+      - name: Report coverage
+        run: python -m coverage report --fail-under=100
+      - name: Write coverage for Codecov
+        run: python -m coverage xml -o coverage-codecov.xml
+      - name: Keep the coverage report for the Codecov upload
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-codecov
+          path: coverage-codecov.xml
+          retention-days: 1
+
+  # The upload runs apart from the tests so the OIDC token is never available
+  # while test code runs. It is exempt from verify-gates: a Codecov outage must not
+  # block merges.
+  codecov:
+    name: upload coverage to Codecov
+    needs: coverage
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write # Authenticate the Codecov upload with OIDC; no stored token.
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: coverage-codecov
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          use_oidc: true
+          files: coverage-codecov.xml
+          disable_search: true
+          fail_ci_if_error: true

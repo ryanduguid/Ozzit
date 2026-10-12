@@ -92,8 +92,9 @@ class ReleaseBundleTests(unittest.TestCase):
         # verify_repository_base asks Git for the last commit that changed
         # ozzit.xlsx. A shallow clone may have cut that commit away, so the
         # answer is only meaningful with full history. CI checks out with
-        # fetch-depth 0 and is never shallow, so it always runs this test.
-        if repository_is_shallow(ROOT):
+        # fetch-depth 0 and is never shallow, so it always runs this test, and the
+        # coverage job never takes the skip.
+        if repository_is_shallow(ROOT):  # pragma: no cover - only shallow local clones skip
             self.skipTest(
                 "shallow Git clone: the manifest's last_workbook_commit cannot be "
                 "checked against truncated history (run git fetch --unshallow)"

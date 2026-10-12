@@ -161,13 +161,13 @@ def main() -> None:
     if not blob:
         fail("AFE project store missing")
         report(z)
-        return
+        return  # pragma: no cover - report() exits once a failure is recorded
     try:
         store = json.loads(base64.b64decode(blob.group(1), validate=True).decode("utf-16-le"))
     except (ValueError, UnicodeError) as exc:
         fail(f"invalid AFE project store: {exc}")
         report(z)
-        return
+        return  # pragma: no cover - report() exits once a failure is recorded
     store_text = json.dumps(store, ensure_ascii=False)
     for hit in BANNED.finditer(store_text):
         fail(f"banned token {hit.group(0)!r} in the AFE project store")

@@ -80,14 +80,12 @@ class HelpLinkRecoveryTests(unittest.TestCase):
         before_workbook = self.workbook.read_bytes()
         before_ratios = self.ratios_path.read_bytes()
 
-        real_write = help_links.write_text
         calls = []
 
         def failing_restore(path, text):
+            # Ratios.txt is the only store help_links writes with write_text.
             calls.append(Path(path).name)
-            if Path(path).name == "Ratios.txt":
-                raise PermissionError("synthetic failure on every Ratios write")
-            return real_write(path, text)
+            raise PermissionError("synthetic failure on every Ratios write")
 
         with mock.patch.object(help_links, "write_text", side_effect=failing_restore):
             with self.assertRaises(PermissionError):
@@ -168,10 +166,12 @@ class StripRecoveryTests(unittest.TestCase):
             if len(calls) == 2:
                 raise PermissionError("synthetic failure on the second module write")
             return real_write(path, text)
-        with mock.patch.dict(strip.EXPECTED_BLOCKS, self.expected):
-            with mock.patch.object(strip, "write_text", side_effect=failing_write):
-                with self.assertRaises(PermissionError):
-                    strip.apply(self.workbook, self.src)
+        with (
+            mock.patch.dict(strip.EXPECTED_BLOCKS, self.expected),
+            mock.patch.object(strip, "write_text", side_effect=failing_write),
+            self.assertRaises(PermissionError),
+        ):
+            strip.apply(self.workbook, self.src)
 
         # 2 writes attempted, then the restore loop writes every module back:
         # the recovery covers the modules written before the failure and the
@@ -184,12 +184,12 @@ class StripRecoveryTests(unittest.TestCase):
         before = self._before()
         before_workbook = self.workbook.read_bytes()
 
-        with mock.patch.dict(strip.EXPECTED_BLOCKS, self.expected):
-            with mock.patch.object(
-                strip, "sync", side_effect=ValueError("synthetic AFE sync failure")
-            ):
-                with self.assertRaisesRegex(ValueError, "synthetic AFE sync failure"):
-                    strip.apply(self.workbook, self.src)
+        with (
+            mock.patch.dict(strip.EXPECTED_BLOCKS, self.expected),
+            mock.patch.object(strip, "sync", side_effect=ValueError("synthetic AFE sync failure")),
+            self.assertRaisesRegex(ValueError, "synthetic AFE sync failure"),
+        ):
+            strip.apply(self.workbook, self.src)
 
         self.assertEqual(self._before(), before)
         self.assertEqual(self.workbook.read_bytes(), before_workbook)
@@ -210,11 +210,13 @@ class StripRecoveryTests(unittest.TestCase):
                 raise PermissionError("synthetic failure on the Dates restore")
             return real_write(path, text)
 
-        with mock.patch.dict(strip.EXPECTED_BLOCKS, self.expected):
-            with mock.patch.object(strip, "sync", side_effect=ValueError("synthetic AFE sync failure")):
-                with mock.patch.object(strip, "write_text", side_effect=failing_restore):
-                    with self.assertRaises(PermissionError):
-                        strip.apply(self.workbook, self.src)
+        with (
+            mock.patch.dict(strip.EXPECTED_BLOCKS, self.expected),
+            mock.patch.object(strip, "sync", side_effect=ValueError("synthetic AFE sync failure")),
+            mock.patch.object(strip, "write_text", side_effect=failing_restore),
+            self.assertRaises(PermissionError),
+        ):
+            strip.apply(self.workbook, self.src)
 
         self.assertEqual(self.workbook.read_bytes(), before_workbook)
 
@@ -231,10 +233,12 @@ class StripRecoveryTests(unittest.TestCase):
     def test_unreadable_workbook_leaves_every_module_untouched(self):
         before = self._before()
         before_workbook = self.workbook.read_bytes()
-        with mock.patch.dict(strip.EXPECTED_BLOCKS, self.expected):
-            with mock.patch.object(strip, "read_parts", side_effect=ValueError("invalid archive")):
-                with self.assertRaisesRegex(ValueError, "invalid archive"):
-                    strip.apply(self.workbook, self.src)
+        with (
+            mock.patch.dict(strip.EXPECTED_BLOCKS, self.expected),
+            mock.patch.object(strip, "read_parts", side_effect=ValueError("invalid archive")),
+            self.assertRaisesRegex(ValueError, "invalid archive"),
+        ):
+            strip.apply(self.workbook, self.src)
         self.assertEqual(self._before(), before)
         self.assertEqual(self.workbook.read_bytes(), before_workbook)
 

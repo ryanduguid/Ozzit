@@ -60,7 +60,8 @@ class AfeGateTests(unittest.TestCase):
         target = self.directory / "stale-dates.xlsx"
         store, encoded = afe_parts(WORKBOOK)
         for item in store["files"]:
-            if item.get("path", "").startswith("/projects/"):
+            # Every item in the committed store is a /projects/ module.
+            if item.get("path", "").startswith("/projects/"):  # pragma: no branch
                 item["text"] = item["text"].replace("20 Aug 2026", "19 Aug 2026", 1)
         replacement = base64.b64encode(
             json.dumps(store, ensure_ascii=False, separators=(",", ":")).encode("utf-16-le")

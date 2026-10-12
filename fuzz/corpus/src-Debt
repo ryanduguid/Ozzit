@@ -1,0 +1,66 @@
+/*  Module Contains Ozzit Compliant LAMBDAs for debt sculpting and amortisation.
+    Every schedule solves its closing balances with SCAN, one period after another, so
+    nothing here recurses and the module is held in the Advanced Formula Environment
+    store with the other five. */
+
+/*  FUNCTION NAME:  AmortiseBλ
+    DESCRIPTION:*//**Creates an amortisation schedule for a debt/loan across a model's periods*/
+AmortiseBλ = LAMBDA(
+//  Parameter Declarations
+    [Principal],
+    [APR],
+    [Term],
+    [ModelPeriods],
+    [StartPeriod],
+    [MonthsPerPeriod],
+//  Help
+    LET(Help,       TRIM(TEXTSPLIT(
+                        "FUNCTION:      →AmortiseBλ(Principal, APR, Term, ModelPeriods, [StartPeriod], [MonthsPerPeriod])¶" &
+                        "DESCRIPTION:   →Creates an amortisation schedule for a debt/loan across a model's periods.¶" &
+                        "ROW CONTENTS:  →Opening Balance¶" &
+                        "               →Interest Portion¶" &
+                        "               →Repayment¶" &
+                        "               →Closing Balance¶" &
+                        "               →Principal Portion¶" &
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                        "VERSION:       →20 Aug 2026¶" &
+                        "PARAMETERS:    →¶" &
+                        "Principal      →(Required) Principal opening balance.¶" &
+                        "APR            →(Required) Annual percentage rate.¶" &
+                        "Term           →(Required) Number of periods to pay off the debt.¶" &
+                        "ModelPeriods   →(Required) Number of model periods.¶" &
+                        "StartPeriod    →(Optional) Period when the debt is issued. Defaults to 1.¶" &
+                        "MonthsPerPeriod→(Optional) Number of months in each period. Defaults to 1.¶" &
+                        "EXAMPLES:      →¶" &
+                        "Result         →Formula (oz is assumed to be the module's name)¶" &
+                        "5 rows, 60 cols→=oz.AmortiseBλ(10000, 3%, 48, 60)",
+                        "→", "¶"
+                        )
+                    ),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR( ISOMITTED( Principal),
+                            ISOMITTED( APR),
+                            ISOMITTED( Term),
+                            ISOMITTED( ModelPeriods)
+                        ),
+    //  Check inputs - Errors in argument values
+        ErrMsgs,        {"Principal must be a single number providing the opening debt amount.";
+                         "APR must be a single number providing annual percentage rate for interest.";
+                         "Term must be a positive whole number of periods to pay off the debt";
+                         "Model Periods must be a positive whole number of periods in this model."},
+    //  Term reaches PMT( Rate, Term, Opening) and ModelPeriods reaches SEQUENCE:
+    //  a zero, negative or fractional value returns #NUM! rather than this message.
+        Errors,         VSTACK( NOT( ISNUMBER( Principal)),
+                                NOT( ISNUMBER( APR)),
+                                NOT( AND( ISNUMBER( Term), Term > 0, Term = INT( Term))),
+                                NOT( AND( ISNUMBER( ModelPeriods), ModelPeriods > 0,
+                                          ModelPeriods = INT( ModelPeriods)))
+                        ),
+        Messages,       FILTER( ErrMsgs, Errors, ""),
+    //  Check inputs - Set optional arguments' defaults
+        StartPeriod,    IF( ISNUMBER( StartPeriod), StartPeriod, 1),
+        MonthsPerPeriod, IF( ISNUMBER( MonthsPerPeriod), MonthsPerPeriod, 1),
+    //  Procedure - solve the closing balance period by period, then read the rows off it.
+    //  Before the start period the balance is carried untouched; from it, each period pays
+    //  the level payment for the term that remains, capped at the balance plus interest.
+        Rate,           APR / 12 * Mo

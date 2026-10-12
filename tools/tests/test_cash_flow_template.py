@@ -403,13 +403,6 @@ def dashboard_charts(parts, dashboard_path):
     return charts
 
 
-def sum_abs_differences(left_sheet, left_cells, right_sheet, right_cells):
-    return "+".join(
-        f"ABS('{left_sheet}'!${left_column}${left_row}-'{right_sheet}'!${right_column}${right_row})"
-        for (left_column, left_row), (right_column, right_row) in zip(left_cells, right_cells)
-    )
-
-
 def max_abs_formula(expressions):
     return "MAX(" + ",".join(f"ABS({expression})" for expression in expressions) + ")"
 
@@ -444,11 +437,6 @@ def conditional_rule_styles(parts, path):
         fill_colour = next((node.attrib.get("rgb") for node in dxf.findall("m:fill/m:patternFill/m:bgColor", NS)), None)
         rules[rule.findtext("m:formula", namespaces=NS)] = (font_colour, fill_colour)
     return rules
-
-
-def formulas_without_string_literals(parts):
-    for path in dict(sheet_paths(parts)).values():
-        yield from formulas_by_address(parts, path).values()
 
 
 class CashFlowTemplateContractTests(unittest.TestCase):
