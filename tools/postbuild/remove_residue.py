@@ -40,6 +40,7 @@ import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from opc import resolve_target  # noqa: E402
 from sanitise_workbook import column_number, write_deterministic  # noqa: E402
 from workbook import read_parts  # noqa: E402
 
@@ -68,7 +69,7 @@ def sheet_targets(parts: dict[str, bytes]) -> dict[str, str]:
     targets = dict(re.findall(r'<Relationship Id="([^"]+)"[^>]*Target="([^"]+)"', rels))
     out = {}
     for name, rid in re.findall(r'<sheet name="([^"]+)"[^>]*r:id="([^"]+)"', book):
-        out[name] = "xl/" + targets[rid].lstrip("/")
+        out[name] = resolve_target("xl/workbook.xml", targets[rid])
     return out
 
 
@@ -98,7 +99,10 @@ def drop_sheet(parts: dict[str, bytes], name: str, log: list[str]) -> None:
     relationship = re.search(rf'<Relationship Id="{rid}"[^>]*/>', rels)
     if relationship is None:
         raise ValueError(f"{name}: relationship {rid} missing")
-    target = "xl/" + re.search(r'Target="([^"]+)"', relationship.group(0)).group(1).lstrip("/")  # type: ignore[union-attr]
+    target = resolve_target(
+        "xl/workbook.xml",
+        re.search(r'Target="([^"]+)"', relationship.group(0)).group(1),  # type: ignore[union-attr]
+    )
     parts["xl/_rels/workbook.xml.rels"] = rels.replace(relationship.group(0), "", 1).encode("utf-8")
 
     sheet_rels = target.replace("worksheets/", "worksheets/_rels/") + ".rels"
