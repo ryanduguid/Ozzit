@@ -95,8 +95,8 @@ def read_utf8(path: Path) -> str:
 
 def workflow_commands(workflow: str) -> tuple[str, ...]:
     """Read every scalar and block ``run`` gate without a YAML dependency."""
-    # The trailing aggregate job checks job results, not the repository, so its
-    # scripts are not contributor commands.
+    # The aggregate job checks job results, not the repository, so its scripts
+    # are not contributor commands; nor are the CI-only coverage jobs after it.
     workflow = re.split(r"(?m)^  [\w-]+-gates:$", workflow, maxsplit=1)[0]
     lines = workflow.splitlines()
     commands: list[str] = []
