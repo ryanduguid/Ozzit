@@ -444,7 +444,8 @@ def run(workbook: Path, src_dir: Path) -> list[str]:
             changed.append(f"src/{module}.txt")
 
         for temporary, destination in staged:
-            os.replace(temporary, destination)
+            # Build tool; the path is the repository's own file or the maintainer's argument.
+            os.replace(temporary, destination)  # NOSONAR
     finally:
         for temporary, _destination in staged:
             try:

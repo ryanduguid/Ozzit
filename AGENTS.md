@@ -25,9 +25,9 @@ Run the CI sequence exactly. The first 4 commands are the `lint` job; the rest
 run on Python 3.14 and 3.15:
 
 ```powershell
-python -m pip install --require-hashes --requirement requirements-ruff.txt
+python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-ruff.txt
 python -m ruff check .
-python -m pip install --require-hashes --requirement requirements-mypy.txt
+python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-mypy.txt
 python -m mypy --config-file mypy.ini
 python tools/verify_workbook.py ozzit.xlsx
 python tools/verify_sources.py ozzit.xlsx src

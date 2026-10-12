@@ -360,7 +360,8 @@ def index_state(index: Path | None) -> str | None:
     """
     if index is None or not index.is_file():
         return None
-    with index.open(encoding="utf-8-sig", newline="") as handle:
+    # Build tool; the path is the repository's own file or the maintainer's argument.
+    with index.open(encoding="utf-8-sig", newline="") as handle:  # NOSONAR
         listed = {row.get("function", "") for row in csv.DictReader(handle)}
     present = sum(1 for name in QUALIFIED if name in listed)
     if present == 0:
@@ -425,7 +426,8 @@ def run(workbook: Path, src: Path, index: Path | None) -> list[str]:
     # source loop used to leave the modules already written standing, so the pass then
     # read one module as applied and another as absent and refused to run at all.
     changed: list[str] = []
-    index_before = index.read_bytes() if index is not None and index.is_file() else None
+    # Build tool; the path is the repository's own file or the maintainer's argument.
+    index_before = index.read_bytes() if index is not None and index.is_file() else None  # NOSONAR
     indexed = False
     try:
         for module in MODULES:
@@ -444,7 +446,8 @@ def run(workbook: Path, src: Path, index: Path | None) -> list[str]:
         for module in MODULES:
             write_text(src / f"{module}.txt", texts[module])
         if index_before is not None and index is not None:
-            index.write_bytes(index_before)
+            # Build tool; the path is the repository's own file or the maintainer's argument.
+            index.write_bytes(index_before)  # NOSONAR
         raise
     changed.append("workbook")
     if indexed and index is not None:
