@@ -1,0 +1,48 @@
+/*  Module Contains a library of Financial Ratios */
+
+/*  FUNCTION NAME:  AboutRatiosλ
+    DESCRIPTION:*//**Displays this module's repository URL and function list*/
+AboutRatiosλ = TRIM(
+    TEXTSPLIT(
+        "About:                     →A library of Financial Ratios¶" &
+        "Version:                   →20 Aug 2026¶" &
+        "Repository:                  →https://github.com/ryanduguid/Ozzit ¶" &
+        "Notes:                     →Sources include Investopedia.com, Corporate Finance and WallStreetPrep.com.¶" &
+                                   "→Copyright applies to LAMBDA coding¶" &
+        "→¶" & 
+        "Function                   →Description¶" & 
+        "AboutRatiosλ                     →Produces this table¶" &
+        "→¶" & 
+        "Liquidity Ratios→¶" &
+        "CurrentRatioλ              →Measures ability to pay short-term obligations¶" &
+        "QuickRatioλ                →Measures ability to meet short-term obligations¶" &
+        "CashRatioλ                 →Evaluates ability to repay short-term debt w/cash or near-cash resources¶" &
+        "OperatingCashFlowRatioλ    →Measures how readily current liabilities are covered by cash flows generated from operations. ¶" &
+        "ReceivablesTurnoverRatioλ  →Indicates effectiveness in collecting outstanding balances from clients and managing line of credit process¶" &
+        "InventoryTurnoverRatioλ    →Shows how many times a company turned over its inventory relative  to its cost of goods sold¶" &
+        "WorkingCapitalTurnoverRatioλ→Working Capital Turnover Ratio measures how efficiently a company is using its working capital to support sales and growth¶" &
+        "→¶" & 
+        "Leverage Ratios→¶" &
+        "DebtRatioλ                 →Measures the extent of a company's leverage¶" &
+        "DSCRλ                      →Debt service coverage Ratio measures a firm’s available cash flow to pay its current debt obligations¶" &
+        "DebtToCapitalRatioλ        →Gives analysts and investors a better idea of a company's financial structure and whether or not the company is a suitable investment¶" &
+        "EquityMultiplierλ          →Measures the portion of a company’s assets financed by shareholders'equity rather than by debt¶" &
+        "→¶" & 
+        "Solvency Ratios→¶" &
+        "DebtToEquityRatioλ         →Measures the degree to which a company is financing operations with debt rather than its own resources.¶" &
+        "DebtToAssetRatioλ          →Analysts can compare one company's leverage with that of other companies in the same industry.¶" &
+        "InterestCoverageRatioλ     →Determines how easily a company can pay interest on its outstanding debt¶" &
+        "EquityRatioλ               →Measures the long-term solvency of a company by comparing its shareholders’ equity to its total assets¶" &
+        "→¶" & 
+        "Efficiency Ratios→¶" &
+        "AssetTurnoverRatioλ        →Measures the value of a company's sales or revenues relative to the value of its assets.¶" &
+        "DSIλ                       →Days Sales in Inventory Ratio (aka Average age of inventory indicates the average time in days that a company takes to turn its inventory¶" &
+        "OperatingRatioλ            →Shows how efficient management is at keeping costs low while generating revenue¶" &
+        "ReceivableDaysλ            →Receivable days (DSO): receivables as days of sales¶" &
+        "PayableDaysλ               →Payable days (DPO): payables as days of purchases¶" &
+        "WIPDaysλ                   →Work in progress days: WIP as days of related revenue or cost¶" &
+        "CashConversionCycleλ       →Cash conversion cycle: inventory, WIP and receivable days less payable days¶" &
+        "→¶" & 
+        "Profitability Margins & Ratios→¶" &
+        "GrossMarginλ               →Shows how much profit a company makes after paying off its Cost of Goods Sold¶" &
+        "EBITDAMarginλ              →Measures a 
