@@ -17,6 +17,7 @@ import xml.etree.ElementTree as ET
 import zipfile
 from pathlib import Path
 
+from opc import resolve_target
 from sanitise_workbook import write_deterministic
 
 MAIN_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
@@ -57,7 +58,7 @@ def sheet_paths(parts: dict[str, bytes]) -> dict[str, str]:
     if sheets is None:
         raise ValueError("workbook has no sheets collection")
     return {
-        sheet.attrib["name"]: "xl/" + targets[sheet.attrib[rid]].lstrip("/")
+        sheet.attrib["name"]: resolve_target("xl/workbook.xml", targets[sheet.attrib[rid]])
         for sheet in sheets
     }
 

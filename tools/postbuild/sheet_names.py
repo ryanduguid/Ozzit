@@ -24,6 +24,7 @@ import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from opc import resolve_target
 from sanitise_workbook import write_deterministic
 from workbook import read_parts
 
@@ -38,7 +39,7 @@ def edits(parts: dict[str, bytes]) -> dict[str, list[tuple[str, str, int]]]:
     rels = parts["xl/_rels/workbook.xml.rels"].decode("utf-8")
     targets = dict(re.findall(r'<Relationship Id="([^"]+)"[^>]*Target="([^"]+)"', rels))
     by_name = {
-        name: "xl/" + targets[rid].lstrip("/")
+        name: resolve_target("xl/workbook.xml", targets[rid])
         for name, rid in re.findall(r'<sheet name="([^"]+)"[^>]*r:id="([^"]+)"', book)
     }
     demo = by_name.get(NEW) or by_name.get(OLD)

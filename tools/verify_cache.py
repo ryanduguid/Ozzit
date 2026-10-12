@@ -29,6 +29,7 @@ if hasattr(sys.stdout, "reconfigure"):
 WORKBOOK = sys.argv[1] if len(sys.argv) > 1 else "ozzit.xlsx"
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+from opc import resolve_target  # noqa: E402
 from sanitise_workbook import column_number  # noqa: E402
 
 # Below this the run proved nothing and the pass would be vacuous.
@@ -60,7 +61,7 @@ def cached_values(
     book = z.read("xl/workbook.xml").decode("utf-8")
     rels = dict(re.findall(r'Id="([^"]+)"[^>]*Target="([^"]+)"',
                            z.read("xl/_rels/workbook.xml.rels").decode("utf-8")))
-    order = [(m.group(1), rels[m.group(2)]) for m in
+    order = [(m.group(1), resolve_target("xl/workbook.xml", rels[m.group(2)])) for m in
              re.finditer(r'<sheet name="([^"]+)"[^>]*r:id="([^"]+)"', book)]
 
     shared: list[str] = []
@@ -71,7 +72,7 @@ def cached_values(
     # Excel's Worksheets collection skips chart sheets while workbook.xml lists them, so a
     # chart sheet would shift every position after it and compare 2 different sheets
     # against each other without saying so. There are none today; stop if that changes.
-    charts = [n for n, t in order if "/worksheets/" not in ("/" + t.lstrip("/"))]
+    charts = [n for n, t in order if not t.startswith("xl/worksheets/")]
     if charts:
         raise SystemExit("FAIL: %s are not worksheets, so tab position no longer lines up "
                          "with Excel's Worksheets collection" % ", ".join(charts))
@@ -80,7 +81,7 @@ def cached_values(
     names: dict[int, str] = {}
     for pos, (name, target) in enumerate(order, start=1):
         names[pos] = name
-        text = z.read("xl/" + target.lstrip("/")).decode("utf-8")
+        text = z.read(target).decode("utf-8")
         for m in CELL.finditer(text):
             attrs, inner = m.group(3), m.group(4)
             kind_match = KIND_RE.search(attrs)
