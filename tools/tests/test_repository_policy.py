@@ -26,9 +26,9 @@ WORKBOOK_BASE = ROOT / "release" / "workbook-base.json"
 
 
 EXPECTED_VERIFY_COMMANDS = (
-    'python -m pip install --require-hashes --requirement requirements-ruff.txt',
+    "python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-ruff.txt",
     "python -m ruff check .",
-    'python -m pip install --require-hashes --requirement requirements-mypy.txt',
+    "python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-mypy.txt",
     "python -m mypy --config-file mypy.ini",
     "python tools/verify_workbook.py ozzit.xlsx",
     "python tools/verify_sources.py ozzit.xlsx src",
@@ -232,7 +232,7 @@ class RepositoryPolicyTests(unittest.TestCase):
         workflow = read_utf8(VERIFY_WORKFLOW)
         config = read_utf8(MYPY_CONFIG)
 
-        self.assertIn('python -m pip install --require-hashes --requirement requirements-mypy.txt', workflow)
+        self.assertIn("python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-mypy.txt", workflow)
         self.assertIn("mypy==2.3.1 \\", read_utf8(ROOT / "requirements-mypy.txt"))
         self.assertIn("python -m mypy --config-file mypy.ini", workflow)
         self.assertIn("files = tools", config)

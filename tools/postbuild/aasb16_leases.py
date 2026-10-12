@@ -396,7 +396,8 @@ def add_to_workbook(book: str, definitions: dict[str, tuple[str, str, str]]) -> 
 
 def update_index(path: Path, definitions: dict[str, tuple[str, str, str]]) -> bool:
     """Add a row per function, deriving every field the way verify_index does."""
-    with path.open(encoding="utf-8-sig", newline="") as handle:
+    # Build tool; the path is the repository's own file or the maintainer's argument.
+    with path.open(encoding="utf-8-sig", newline="") as handle:  # NOSONAR
         reader = csv.DictReader(handle)
         fieldnames = list(reader.fieldnames or [])
         rows = list(reader)
@@ -408,7 +409,7 @@ def update_index(path: Path, definitions: dict[str, tuple[str, str, str]]) -> bo
     if set(definitions) & have:
         raise ValueError(f"{path} holds some of the lease functions but not all")
 
-    signature_re = re.compile(r"FUNCTION:\s*→?\s*(.*?)¶")
+    signature_re = re.compile(r"FUNCTION:\s*+(?:→\s*+)?(.*?)¶")
     for name in sorted(definitions):
         comment, stored, _body = definitions[name]
         found = signature_re.search(stored)
@@ -427,7 +428,8 @@ def update_index(path: Path, definitions: dict[str, tuple[str, str, str]]) -> bo
     # functions.csv is sorted case-sensitively, unlike the workbook's defined names.
     # Sorting it the other way moves a dozen untouched rows and buries the addition.
     rows.sort(key=lambda row: row["function"])
-    with path.open("w", encoding="utf-8", newline="") as handle:
+    # Build tool; the path is the repository's own file or the maintainer's argument.
+    with path.open("w", encoding="utf-8", newline="") as handle:  # NOSONAR
         writer = csv.DictWriter(handle, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)

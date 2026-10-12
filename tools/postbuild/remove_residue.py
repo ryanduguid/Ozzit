@@ -152,7 +152,8 @@ def drop_custom_properties(parts: dict[str, bytes], log: list[str]) -> None:
         del parts[name]
     for name in [n for n in parts if n.startswith("xl/worksheets/_rels/")]:
         text = parts[name].decode("utf-8")
-        text = re.sub(r'<Relationship [^>]*Target="\.\./customProperty\d+\.bin"[^>]*/>', "", text)
+        # Bounded input: each attempt stays within one tag of the repository's own workbook XML.
+        text = re.sub(r'<Relationship [^>]*Target="\.\./customProperty\d+\.bin"[^>]*/>', "", text)  # NOSONAR
         if re.search(r"<Relationships[^>]*>\s*</Relationships>", text):
             del parts[name]
         else:

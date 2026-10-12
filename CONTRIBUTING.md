@@ -18,9 +18,9 @@ hooks once with `python -m pip install pre-commit && pre-commit install`; they
 run the pinned ruff check on staged files.
 
 ```powershell
-python -m pip install --require-hashes --requirement requirements-ruff.txt
+python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-ruff.txt
 python -m ruff check .
-python -m pip install --require-hashes --requirement requirements-mypy.txt
+python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-mypy.txt
 python -m mypy --config-file mypy.ini
 python tools/verify_workbook.py ozzit.xlsx
 python tools/verify_sources.py ozzit.xlsx src
