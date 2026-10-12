@@ -1,0 +1,45 @@
+/*  FUNCTION NAME:  AboutFinancialλ
+    DESCRIPTION:*//**Displays this module's repository URL and function list*/
+
+AboutFinancialλ = TRIM(TEXTSPLIT(
+    "ABOUT:             →Ozzit's Financial Models module. Suggested module name: oz¶" &
+    "VERSION:           →6 Sep 2026¶" &
+    "REPOSITORY:          →https://github.com/ryanduguid/Ozzit ¶" &
+    "WEBSITE:           →https://github.com/ryanduguid/Ozzit ¶" &
+    "→¶" &
+    "FUNCTION           →DESCRIPTION¶" & 
+    "AboutFinancialλ             →Produces this table¶" & 
+    "Corkscrewλ         →Creates a simple corkscrew where the closing balance is the sum of independent flows plus opening balance¶" &
+    "CorkScrewReversalλ →Create a corkscrew where the opening balance is reversed in the next period based on a timing row¶" &
+    "Cumulativeλ        →Creates a row or column of cumulative totals from a total row or column¶" &
+    "IntOnIntλ          →Calculate Interest on Interest. Use to determine amount needed to cover debt plus interest on debt¶" & 
+    "IRRλ               →Calculates IRR, correcting for when the first investment is not in the first period¶" & 
+    "Movementλ          →Create a row of differences from column to column¶" & 
+    "Reversalλ          →Create a row that reverses input values in the next period.¶" & 
+    "RollingAvgλ        →Creates averages for preceding values of a set size moving from beginning to end over a row of values.¶" &
+    "RollingMaxλ        →Finds the maximum value the n preceding values in a set moving from beginning to end over a row of values.¶" &
+    "RollingMinλ        →Finds the minimum value the n preceding values in a set moving from beginning to end over a row of values.¶" &
+    "RollingSumλ        →Creates totals for preceding values of a set size moving from beginning to end over a row of values.¶" &
+    "SumContainsλ       →Creates a row of totals for each row in an array where its labels contain a unique letter, word, or phrase.¶" & 
+    "SumPeriodsλ        →Groups and totals all columns in a Values array by period resulting in one column for each period.¶" & 
+    "→¶" &
+    "AMORTISATION SUITE→¶" & 
+    "Amortiseλ          →Creates a corkscrew amortisation schedule.¶" & 
+    "LabelAmortiseλ     →Create row labels for Amortiseλ result¶" & 
+    "SumAmortiseλ       →Create row totals for payments, interest, and principal portion in Amortiseλ results¶" & 
+    "→¶" &
+    "DEPRECIATION SUITE→¶" & 
+    "Depreciateλ        →Create a block of CAPEX, Opening Balance, Depreciation Values, and Book Value for each asset¶" & 
+    "LabelDepreciateλ   →Create row labels for Depreciateλ result¶" & 
+    "SumDepreciateλ     →Create row totals for CAPEX, Depreciation, Salvage Value, and Disposal costs in Depreciateλ results¶" & 
+    "Allocateλ          →Divide one or more amounts equally across smaller periods¶" & 
+    "SLNλ               →Straight Line depreciation method for one asset or asset class.¶" & 
+    "SYDλ               →Sum-of-years' digits depreciation method for one asset or asset class.¶" & 
+    "DBλ                →Fixed declining balance depreciation method for one asset or asset class.¶" & 
+    "DDBλ               →Double-declining balance depreciation method for one asset or asset class.¶" & 
+    "VDBλ               →Variable declining balance depreciation method for one asset or asset class.¶" & 
+                                           "DiminishingValueλ  →Diminishing-balance depreciation schedule at 200% of the straight-line rate, writing the residual off in the final period. A modelling schedule, not a tax calculation.¶" & 
+                                           "PrimeCostλ         →Straight-line depreciation schedule for one asset or asset class, in whole years. A modelling schedule, not a tax calculation.¶" & 
+                                           "→¶" & 
+                                           "AUSTRALIAN TAX     →¶" & 
+                         
