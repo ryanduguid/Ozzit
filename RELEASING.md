@@ -40,8 +40,8 @@ request with a merge commit, never a squash: the manifest names the workbook
 commit, and `tools/tests/test_release_bundle.py` fails unless it is the last
 commit on the branch to change the workbook. A squash replaces it. Pull requests that change only documentation may be squashed.
 
-MIT covers the whole repository, `ozzit.xlsx`, `src/` and `functions.csv` included.
-Every source archive must still include `LICENCE`.
+Apache-2.0 covers the whole repository, `ozzit.xlsx`, `src/` and `functions.csv` included.
+Every source archive must still include `LICENCE` and `NOTICE`.
 
 ## Approval and tag
 

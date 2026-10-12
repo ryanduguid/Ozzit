@@ -5,6 +5,12 @@
 Changes on `main` since v3.4.2. They reach the published workbook in the next
 release; until then v3.4.2 behaves as it did, including the defects fixed here.
 
+### Licence changed to Apache-2.0
+
+From the next release, Ozzit is licensed under the Apache License 2.0 instead of MIT.
+Anyone who redistributes the workbook or a derivative must keep the attribution in
+`NOTICE`. v3.4.2 and earlier releases stay under MIT.
+
 ### Four working-capital functions added
 
 Four LAMBDA functions join the Ratios group, taking the library from 133 to 137

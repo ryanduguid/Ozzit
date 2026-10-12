@@ -3,7 +3,7 @@
 [![verify](https://github.com/ryanduguid/Ozzit/actions/workflows/verify.yml/badge.svg)](https://github.com/ryanduguid/Ozzit/actions/workflows/verify.yml)
 [![CodeQL](https://github.com/ryanduguid/Ozzit/actions/workflows/codeql.yml/badge.svg)](https://github.com/ryanduguid/Ozzit/actions/workflows/codeql.yml)
 [![release](https://img.shields.io/github/v/release/ryanduguid/Ozzit?color=5C2D91&labelColor=04001F)](https://github.com/ryanduguid/Ozzit/releases/latest)
-[![licence: MIT](https://img.shields.io/badge/licence-MIT-5C2D91.svg?labelColor=04001F)](LICENCE)
+[![licence: Apache-2.0](https://img.shields.io/badge/licence-Apache--2.0-5C2D91.svg?labelColor=04001F)](LICENCE)
 [![Codacy code quality](https://app.codacy.com/project/badge/Grade/ffd3c7d7645541179caea8a353bd3f86?branch=main)](https://app.codacy.com/gh/ryanduguid/Ozzit/dashboard)
 ![Excel: 365 or 2024+](https://img.shields.io/badge/Excel-365%20or%202024%2B-5C2D91.svg?labelColor=04001F)
 
@@ -18,7 +18,7 @@ bookkeeping tool and never touches a ledger.
 
 **Needs Microsoft 365 or Excel 2024 or later**, which support `LAMBDA` and dynamic
 arrays. LibreOffice, Google Sheets and earlier Excel versions cannot evaluate the
-functions. MIT licensed.
+functions. Apache-2.0 licensed.
 
 **Current published release: [v3.4.2](https://github.com/ryanduguid/Ozzit/releases/tag/v3.4.2)**,
 published 20 September 2026 from the cut dated 16 September 2026.
@@ -117,6 +117,6 @@ v3.4.2 `ozzit.xlsx` SHA-256: `0306793a7e473ce70e78149fea1e107fc0f714d61ab50960c1
 - [Repository checks](AGENTS.md) and [release and native verification](RELEASING.md)
 - [Changes](CHANGELOG.md) and [citation](CITATION.cff)
 
-MIT licensed. See [LICENCE](LICENCE). [DISCLAIMER.md](DISCLAIMER.md) states that this is not advice and names the bodies the project is not affiliated with.
+Apache-2.0 licensed. See [LICENCE](LICENCE). If you redistribute this work or build on it, keep the attribution in [NOTICE](NOTICE). [DISCLAIMER.md](DISCLAIMER.md) states that this is not advice and names the bodies the project is not affiliated with.
 
 </details>
