@@ -3,13 +3,13 @@
 [![verify](https://github.com/ryanduguid/Ozzit/actions/workflows/verify.yml/badge.svg)](https://github.com/ryanduguid/Ozzit/actions/workflows/verify.yml)
 [![Codecov](https://codecov.io/gh/ryanduguid/Ozzit/graph/badge.svg)](https://codecov.io/gh/ryanduguid/Ozzit)
 [![CodeQL](https://github.com/ryanduguid/Ozzit/actions/workflows/codeql.yml/badge.svg)](https://github.com/ryanduguid/Ozzit/actions/workflows/codeql.yml)
-[![release](https://img.shields.io/github/v/release/ryanduguid/Ozzit?color=5C2D91&labelColor=04001F)](https://github.com/ryanduguid/Ozzit/releases/latest)
-[![licence: MIT](https://img.shields.io/badge/licence-MIT-5C2D91.svg?labelColor=04001F)](LICENCE)
+[![release](https://img.shields.io/github/v/release/ryanduguid/Ozzit?color=66023C&labelColor=000000)](https://github.com/ryanduguid/Ozzit/releases/latest)
+[![licence: MIT](https://img.shields.io/badge/licence-MIT-66023C.svg?labelColor=000000)](LICENCE)
 [![Codacy code quality](https://app.codacy.com/project/badge/Grade/ffd3c7d7645541179caea8a353bd3f86?branch=main)](https://app.codacy.com/gh/ryanduguid/Ozzit/dashboard)
 [![SonarCloud](https://img.shields.io/sonar/quality_gate/ryanduguid_Ozzit?server=https%3A%2F%2Fsonarcloud.io&label=SonarCloud&labelColor=000000)](https://sonarcloud.io/summary/new_code?id=ryanduguid_Ozzit)
 [![VirusTotal](https://img.shields.io/badge/VirusTotal-release%20files%20scanned-66023C?labelColor=000000&logo=virustotal&logoColor=FFFFF0)](https://github.com/ryanduguid/Ozzit/releases/latest)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/ryanduguid/Ozzit/badge)](https://scorecard.dev/viewer/?uri=github.com/ryanduguid/Ozzit)
-![Excel: 365 or 2024+](https://img.shields.io/badge/Excel-365%20or%202024%2B-5C2D91.svg?labelColor=04001F)
+![Excel: 365 or 2024+](https://img.shields.io/badge/Excel-365%20or%202024%2B-66023C.svg?labelColor=000000)
 
 One Excel workbook holding 137 native LAMBDA functions and 5 named help tables under
 the `oz.` prefix: amortisation, depreciation, ratios, AASB 16 lessee schedules, and
