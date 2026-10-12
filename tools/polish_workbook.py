@@ -90,7 +90,7 @@ def set_existing_shared_cell(text: str, address: str, index: int) -> tuple[str, 
     if not match:
         raise ValueError(f"shared-string cell {address} not found")
     current_match = re.search(r"\d+", match.group(0).split("<v>", 1)[1])
-    if current_match is None:
+    if current_match is None:  # pragma: no cover - the pattern above puts digits after <v>
         raise ValueError(f"shared-string cell {address} has no value index")
     current = int(current_match.group())
     if current == index:

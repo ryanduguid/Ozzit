@@ -138,7 +138,7 @@ class CollapsedDefaultTests(unittest.TestCase):
         for path in sorted((ROOT / "src").glob("*.txt")):
             for statement in verify_sources.statements(path.read_text(encoding="utf-8")):
                 match = verify_sources.NAME.match(statement)
-                if match:
+                if match:  # pragma: no branch - every src statement is an assignment
                     held.update((match.group(1), p) for p in found(match.group(2)))
         self.assertEqual(held, set(verify_sources.KNOWN_COLLAPSED_DEFAULTS))
 
