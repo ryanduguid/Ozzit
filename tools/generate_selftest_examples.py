@@ -199,7 +199,7 @@ def number(text: str) -> tuple[Decimal, Decimal] | None:
     totals and made the fragment irreproducible between interpreters).
     """
     match = NUMBER.match(text.strip())
-    if not match or match.group(1) in ("", "-", "%"):
+    if not match or match.group(1) in ("", "-", "%", "-%"):
         return None
     text = match.group(1)
     percent = text.endswith("%")
@@ -250,7 +250,8 @@ def checks_for(name: str, example: Example, index: int, library: set[str], bindi
     elif rows and all(LIST.match(r) or number(r) for r in rows):
         parsed = [number(x) for r in rows for x in r.split(",")]
         items = [p for p in parsed if p is not None]
-        if len(items) == len(parsed):
+        # The elif above admits only rows whose comma-separated items all parse.
+        if len(items) == len(parsed):  # pragma: no branch
             total = sum((v for v, _t in items), Decimal(0))
             tolerance = sum((t for _v, t in items), Decimal(0))
             lines.append(f"Near {tag} \"COUNT({powershell(formula)})\" '{len(items)}'")

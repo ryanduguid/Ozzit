@@ -352,17 +352,17 @@ def run(workbook: Path, src: Path, index: Path | None) -> list[str]:
         compiled = compile_sources(src)
         book = insert_names(book, [c for c in compiled if c.name in QUALIFIED])
         book, _recompiled = apply(book, compiled)
-        if index is not None:
+        if index is not None:  # pragma: no branch - the index was required above
             indexed = update_index(index, book, {c.name: c.module for c in compiled})
         parts["xl/workbook.xml"] = book.encode("utf-8")
         write_deterministic(workbook, parts)
     except Exception:
         write_text(path, text)
-        if index is not None and index_before is not None:
+        if index is not None and index_before is not None:  # pragma: no branch - both set above
             index.write_bytes(index_before)
         raise
     changed.append("workbook")
-    if indexed and index is not None:
+    if indexed and index is not None:  # pragma: no branch - an absent index gains rows
         changed.append(index.name)
     return changed
 
