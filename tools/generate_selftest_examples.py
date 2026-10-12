@@ -314,11 +314,13 @@ def main() -> None:
     text = generate(src)
     if not text.isascii():
         sys.exit("FAIL: the generated fragment is not pure ASCII")
-    before = output.read_text(encoding="ascii") if output.is_file() else None
+    # Build tool; the path is the repository's own file or the maintainer's argument.
+    before = output.read_text(encoding="ascii") if output.is_file() else None  # NOSONAR
     if before == text:
         print(f"already current: {output}")
         return
-    output.write_text(text, encoding="ascii", newline="\n")
+    # Build tool; the path is the repository's own file or the maintainer's argument.
+    output.write_text(text, encoding="ascii", newline="\n")  # NOSONAR
     print(f"wrote {output}: {text.count(chr(10))} lines")
 
 

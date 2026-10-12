@@ -131,7 +131,8 @@ class Compiled(NamedTuple):
 # Manager comment. Excel keeps at most 255 characters of a comment and stores a
 # line break as _x000a_.
 HEADER = re.compile(
-    r"/\*\s*FUNCTION NAME:\s*(?P<name>[^\n]+?)\s*\n\s*DESCRIPTION:\*/\s*/\*\*(?P<text>.*?)\*/",
+    # Bounded input: the repository's own Excel Labs source comments.
+    r"/\*\s*FUNCTION NAME:\s*(?P<name>[^\n]+?)\s*\n\s*DESCRIPTION:\*/\s*/\*\*(?P<text>.*?)\*/",  # NOSONAR
     re.DOTALL,
 )
 COMMENT_LIMIT = 255
@@ -496,7 +497,8 @@ def apply(book: str, compiled: list[Compiled]) -> tuple[str, list[str]]:
 
 def update_index(path: Path, book: str, modules: dict[str, str]) -> bool:
     """Rewrite functions.csv from the compiled workbook, keeping previous_name."""
-    with path.open(encoding="utf-8-sig", newline="") as handle:
+    # Build tool; the path is the repository's own file or the maintainer's argument.
+    with path.open(encoding="utf-8-sig", newline="") as handle:  # NOSONAR
         reader = csv.DictReader(handle)
         fieldnames = list(reader.fieldnames or [])
         previous = {row["function"]: row.get("previous_name", "") for row in reader}
@@ -515,7 +517,8 @@ def update_index(path: Path, book: str, modules: dict[str, str]) -> bool:
             }
         )
     rows.sort(key=lambda row: row["function"])
-    with path.open(encoding="utf-8-sig", newline="") as handle:
+    # Build tool; the path is the repository's own file or the maintainer's argument.
+    with path.open(encoding="utf-8-sig", newline="") as handle:  # NOSONAR
         before = handle.read()
     buffer = io.StringIO()
     writer = csv.DictWriter(buffer, fieldnames=fieldnames, lineterminator="\n")
@@ -524,7 +527,8 @@ def update_index(path: Path, book: str, modules: dict[str, str]) -> bool:
     after = buffer.getvalue()
     if after == before:
         return False
-    with path.open("w", encoding="utf-8", newline="") as handle:
+    # Build tool; the path is the repository's own file or the maintainer's argument.
+    with path.open("w", encoding="utf-8", newline="") as handle:  # NOSONAR
         handle.write(after)
     return True
 
