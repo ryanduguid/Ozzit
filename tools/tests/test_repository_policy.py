@@ -233,7 +233,7 @@ class RepositoryPolicyTests(unittest.TestCase):
         config = read_utf8(MYPY_CONFIG)
 
         self.assertIn("python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-mypy.txt", workflow)
-        self.assertIn("mypy==2.3.1 \\", read_utf8(ROOT / "requirements-mypy.txt"))
+        self.assertIn("mypy==2.4.0 \\", read_utf8(ROOT / "requirements-mypy.txt"))
         self.assertIn("python -m mypy --config-file mypy.ini", workflow)
         self.assertIn("files = tools", config)
         self.assertIn("exclude = ^tools[/\\\\]tests[/\\\\]", config)
