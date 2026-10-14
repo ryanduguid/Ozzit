@@ -49,6 +49,13 @@ python tools/postbuild/sheet_names.py ozzit.xlsx
 python tools/sanitise_workbook.py ozzit.xlsx   # always last, after any Excel save
 ```
 
+The templates take the colour roles alone, without the Ozzit-specific folds:
+
+```bash
+python tools/postbuild/workbook_palette.py --template templates/13-week-cash-flow-forecast.xlsx
+python tools/postbuild/workbook_palette.py --template templates/retention-reconciliation.xlsx
+```
+
 After `tools/refresh_cache.py` has saved the workbook through Excel, run
 `tools/postbuild/remove_residue.py` again and then `tools/sanitise_workbook.py`:
 an Excel save leaves named cell styles unused, renumbers the worksheet parts and

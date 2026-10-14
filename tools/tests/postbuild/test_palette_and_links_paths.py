@@ -65,7 +65,7 @@ DXFS = (
 
 def palette_parts(dxfs=DXFS):
     return {
-        "xl/theme/theme1.xml": '<a:theme><a:srgbClr val="3F656F"/></a:theme>',
+        "xl/theme/theme1.xml": '<a:theme><a:accent1><a:srgbClr val="3F656F"/></a:accent1></a:theme>',
         "xl/styles.xml": (
             '<styleSheet><fonts><font><name val="Arial"/><color rgb="FF006600"/></font></fonts>'
             '<fills><fill><patternFill><fgColor rgb="FFCCFFCC"/></patternFill></fill></fills>'
@@ -78,13 +78,55 @@ def palette_parts(dxfs=DXFS):
 
 class WorkbookPaletteTests(ScratchTestCase):
     def test_hue_map_moves_teal_and_salmon_into_the_palette_bands(self):
-        self.assertEqual(palette.hue_map("40A0A0"), "6F5A86")
+        self.assertEqual(palette.hue_map("40A0A0"), "865A74")
         self.assertEqual(palette.hue_map("C08060"), "9B8F85")
 
     def test_recolour_remaps_a_six_digit_theme_value(self):
         self.assertEqual(
-            palette.recolour('<a:srgbClr val="3F656F"/>'), ('<a:srgbClr val="5C2D91"/>', 1)
+            palette.recolour('<a:srgbClr val="3F656F"/>'), ('<a:srgbClr val="66023C"/>', 1)
         )
+
+    def test_tab_colours_follow_the_module_roles(self):
+        sheet = '<sheetPr><tabColor rgb="FF{}"/></sheetPr>'
+        for old, new in (("4F485E", "E5E4E2"), ("2B1A54", "000000"), ("5C2D91", "66023C"), ("7A5AB5", "990024")):
+            self.assertEqual(palette.tab_colours(sheet.format(old)), (sheet.format(new), 1))
+
+    def test_theme_slots_keep_the_system_window_colours(self):
+        theme = (
+            '<a:dk1><a:sysClr val="windowText" lastClr="000000"/></a:dk1>'
+            '<a:accent1><a:srgbClr val="5C2D91"/></a:accent1><a:hlink><a:srgbClr val="0563C1"/></a:hlink>'
+        )
+        self.assertEqual(
+            palette.theme_slots(theme),
+            '<a:dk1><a:sysClr val="windowText" lastClr="000000"/></a:dk1>'
+            '<a:accent1><a:srgbClr val="66023C"/></a:accent1><a:hlink><a:srgbClr val="66023C"/></a:hlink>',
+        )
+
+    def test_white_text_becomes_ivory_but_white_borders_stay(self):
+        styles = '<font><color rgb="FFFFFFFF"/></font><border><top><color rgb="FFFFFFFF"/></top></border>'
+        self.assertEqual(
+            palette.ivory_text(styles),
+            ('<font><color rgb="FFFFFFF0"/></font><border><top><color rgb="FFFFFFFF"/></top></border>', 1),
+        )
+
+    def test_passed_checks_get_their_own_green_font_and_links_keep_theirs(self):
+        styles = (
+            '<styleSheet><fonts count="1"><font><color rgb="FF008000"/></font></fonts>'
+            '<fills count="2"><fill><patternFill patternType="none"/></fill>'
+            '<fill><patternFill patternType="solid"><fgColor rgb="FFDBE4E0"/></patternFill></fill></fills>'
+            '<cellXfs count="2"><xf fontId="0" fillId="0"/><xf fontId="0" fillId="1"/></cellXfs>'
+            '<dxfs count="2"><dxf><font><color rgb="FF008000"/></font>'
+            '<fill><patternFill><bgColor rgb="FFDBE4E0"/></patternFill></fill></dxf>'
+            '<dxf><font><color rgb="FF008000"/></font></dxf></dxfs></styleSheet>'
+        )
+        result, count = palette.passed_green(styles)
+        self.assertEqual(count, 2)
+        self.assertIn(
+            '<fonts count="2"><font><color rgb="FF008000"/></font><font><color rgb="FF0F4B32"/></font></fonts>', result
+        )
+        self.assertIn('<xf fontId="0" fillId="0"/><xf fontId="1" fillId="1"/>', result)
+        self.assertIn('<dxf><font><color rgb="FF008000"/></font></dxf>', result)
+        self.assertEqual(palette.passed_green(result), (result, 0))
 
     def test_recolour_refuses_a_colour_still_remappable_after_one_pass(self):
         with self.assertRaisesRegex(
@@ -97,24 +139,36 @@ class WorkbookPaletteTests(ScratchTestCase):
         self.assertEqual(
             palette.run(self.workbook),
             [
-                "xl/theme/theme1.xml: 1 colours remapped",
+                "xl/theme/theme1.xml: theme colours set",
+                "xl/styles.xml: 2 colours remapped",
                 'font family <name val="Arial"/> -> <name val="Aptos"/>',
                 'rich-text font <rFont val="Arial"/> -> <rFont val="Aptos"/>',
                 "help-label fonts folded to palette (1 entries)",
-                "help-block fills folded to neutrals (1 entries)",
+                "help-block fills folded to ivory (1 entries)",
             ],
         )
         parts = self.text_parts()
-        self.assertIn('val="5C2D91"', parts["xl/theme/theme1.xml"])
+        self.assertIn('val="66023C"', parts["xl/theme/theme1.xml"])
         styles = parts["xl/styles.xml"]
-        self.assertIn('<name val="Aptos"/><color rgb="FF5C2D91"/>', styles)
-        self.assertIn('<fgColor rgb="FFF3F1F6"/>', styles)
+        self.assertIn('<name val="Aptos"/><color rgb="FF66023C"/>', styles)
+        self.assertIn('<fgColor rgb="FFFFFFF0"/>', styles)
+        self.assertIn('<color rgb="FF990024"/>', styles)
+        self.assertIn('<bgColor rgb="FFF0D9DE"/>', styles)
         self.assertIn('<rFont val="Aptos"/>', parts["xl/sharedStrings.xml"])
         self.assertEqual(palette.run(self.workbook), [])
 
     def test_main_rejects_extra_arguments(self):
         code, _ = call_main(palette, "a.xlsx", "b.xlsx")
-        self.assertEqual(code, "FAIL: usage: python tools/postbuild/workbook_palette.py [workbook]")
+        self.assertEqual(code, "FAIL: usage: python tools/postbuild/workbook_palette.py [--template] [workbook]")
+
+    def test_template_mode_skips_the_ozzit_folds_and_guard(self):
+        self.write_parts(palette_parts(dxfs="<dxfs></dxfs>"))
+        code, output = call_main(palette, "--template", str(self.workbook))
+        self.assertIsNone(code)
+        self.assertIn("theme colours set", output)
+        styles = self.text_parts()["xl/styles.xml"]
+        self.assertIn('<name val="Arial"/><color rgb="FF006600"/>', styles)
+        self.assertIn('<fgColor rgb="FFCCFFCC"/>', styles)
 
     def test_main_rejects_a_missing_workbook(self):
         code, _ = call_main(palette, str(self.missing))
@@ -124,7 +178,7 @@ class WorkbookPaletteTests(ScratchTestCase):
         self.write_parts(palette_parts(dxfs="<dxfs></dxfs>"))
         before = self.workbook.read_bytes()
         code, _ = call_main(palette, str(self.workbook))
-        self.assertEqual(code, "FAIL: TOC warning red was remapped")
+        self.assertEqual(code, "FAIL: TOC warning colours are missing")
         self.assertEqual(self.workbook.read_bytes(), before)
 
     def test_main_reports_a_file_that_is_not_a_workbook(self):

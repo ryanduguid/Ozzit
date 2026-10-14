@@ -173,7 +173,7 @@ def update_styles(parts: dict[str, bytes]) -> list[str]:
     mint_count = styles.count('<fgColor indexed="42"/>')
     if mint_count:
         styles = styles.replace(
-            '<fgColor indexed="42"/>', '<fgColor rgb="FFDED9E8"/>'
+            '<fgColor indexed="42"/>', '<fgColor rgb="FFE8D9E2"/>'
         )
         changes.append(f"replaced {mint_count} mint fill definition")
 
