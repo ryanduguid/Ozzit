@@ -128,6 +128,61 @@ class WorkbookPaletteTests(ScratchTestCase):
         self.assertIn('<dxf><font><color rgb="FF008000"/></font></dxf>', result)
         self.assertEqual(palette.passed_green(result), (result, 0))
 
+    def test_passed_checks_sharing_a_font_share_one_copy(self):
+        styles = (
+            '<styleSheet><fonts count="2"><font><color rgb="FF008000"/></font><font><b/></font></fonts>'
+            '<fills count="1"><fill><patternFill patternType="solid"><fgColor rgb="FFDBE4E0"/></patternFill></fill></fills>'
+            '<cellXfs count="4"><xf fontId="0" fillId="0"/><xf fontId="0" fillId="0"/>'
+            '<xf fontId="1" fillId="0"/><xf numFmtId="0"/></cellXfs></styleSheet>'
+        )
+        result, count = palette.passed_green(styles)
+        self.assertEqual(count, 2)
+        self.assertIn('<font><b/></font><font><color rgb="FF0F4B32"/></font></fonts>', result)
+        self.assertIn(
+            '<xf fontId="2" fillId="0"/><xf fontId="2" fillId="0"/><xf fontId="1" fillId="0"/><xf numFmtId="0"/>',
+            result,
+        )
+
+    def test_passed_green_leaves_styles_without_cell_formats(self):
+        styles = "<styleSheet><fonts/></styleSheet>"
+        self.assertEqual(palette.passed_green(styles), (styles, 0))
+
+    def test_hue_map_leaves_greys_alone(self):
+        self.assertIsNone(palette.hue_map("808080"))
+
+    def test_run_sets_tabs_the_green_outline_and_the_input_fill(self):
+        parts = palette_parts()
+        parts["xl/worksheets/sheet1.xml"] = '<worksheet><sheetPr><tabColor rgb="FF5C2D91"/></sheetPr></worksheet>'
+        parts["xl/worksheets/sheet2.xml"] = "<worksheet/>"
+        parts["xl/drawings/drawing1.xml"] = '<a:ln><a:solidFill><a:prstClr val="green"/></a:solidFill></a:ln>'
+        parts["xl/drawings/drawing2.xml"] = "<xdr:wsDr/>"
+        parts["xl/styles.xml"] = parts["xl/styles.xml"].replace(
+            "</fills>", f"<fill><patternFill>{palette.INPUT_FILL}</patternFill></fill></fills>"
+        )
+        self.write_parts(parts)
+        changes = palette.run(self.workbook)
+        self.assertEqual(changes[0], "tab colours set (1 sheets)")
+        self.assertIn("xl/drawings/drawing1.xml: green outline made platinum", changes)
+        self.assertIn("input fills made platinum (1 entries)", changes)
+        written = self.text_parts()
+        self.assertIn('<tabColor rgb="FF66023C"/>', written["xl/worksheets/sheet1.xml"])
+        self.assertIn('<a:schemeClr val="accent3"/>', written["xl/drawings/drawing1.xml"])
+        self.assertIn('<fgColor rgb="FFE5E4E2"/>', written["xl/styles.xml"])
+        self.assertEqual(palette.run(self.workbook), [])
+
+    def test_template_run_without_shared_strings_then_nothing_to_do(self):
+        parts = palette_parts(dxfs="<dxfs></dxfs>")
+        del parts["xl/sharedStrings.xml"]
+        parts["xl/styles.xml"] = parts["xl/styles.xml"].replace(
+            "</fonts>", '<font><color rgb="FFFFFFFF"/></font></fonts>'
+        )
+        self.write_parts(parts)
+        self.assertEqual(
+            palette.run(self.workbook, template=True),
+            ["xl/theme/theme1.xml: theme colours set", "white text made ivory (1 entries)"],
+        )
+        self.assertEqual(palette.run(self.workbook, template=True), [])
+
     def test_recolour_refuses_a_colour_still_remappable_after_one_pass(self):
         with self.assertRaisesRegex(
             ValueError, "remap is not a fixed point: A28F7E is still remappable after one pass"
