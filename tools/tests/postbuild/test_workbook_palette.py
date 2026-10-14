@@ -1,10 +1,10 @@
 """Contract for tools/postbuild/workbook_palette.py.
 
-The pass applies the house palette: explicit colour remaps in theme,
-styles, sheets and drawings, plus the font-family consolidation, the help-label
-greens folded to brand purple, and the mint help-block fill folded to pale
-lavender. It must be a byte no-op on the current workbook and must refuse to
-touch the deliberate TOC warning red (dxf FFCCCC/C00000).
+The pass applies the Mermaid palette: theme slots, tab colours and explicit
+colour remaps in styles, sheets and drawings, plus the font-family consolidation,
+the help-label greens folded to Tyrian purple, and the mint help-block fill folded
+to ivory. It must be a byte no-op on the current workbook and must keep the TOC
+length warning in crimson (dxf F0D9DE/990024).
 """
 
 import shutil
@@ -49,14 +49,14 @@ class WorkbookPaletteTests(unittest.TestCase):
         self.assertIn("already", result.stdout.lower())
         self.assertEqual(self.workbook.read_bytes(), before)
 
-    def test_pass_preserves_the_deliberate_toc_warning_red(self):
+    def test_pass_keeps_the_toc_warning_in_crimson(self):
         # Even after a run, the TOC length-guard dxf keeps its warning colours.
         result = self._run()
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         styles = self._styles()
         dxfs = styles[styles.index("<dxfs") : styles.index("</dxfs>")]
-        self.assertIn("FFFFCCCC", dxfs, "TOC warning fill must survive the palette pass")
-        self.assertIn("FFC00000", dxfs, "TOC warning font must survive the palette pass")
+        self.assertIn("FFF0D9DE", dxfs, "TOC warning fill must survive the palette pass")
+        self.assertIn("FF990024", dxfs, "TOC warning font must survive the palette pass")
 
     def test_pass_refolds_a_reverted_green_font_and_mint_fill(self):
         # Simulate pre-v3.1.0 state: put one legacy green font and one mint fill
@@ -65,17 +65,17 @@ class WorkbookPaletteTests(unittest.TestCase):
             parts = {n: archive.read(n) for n in archive.namelist()}
         styles = parts["xl/styles.xml"].decode("utf-8")
         fonts = styles[styles.index("<fonts") : styles.index("</fonts>")]
-        self.assertIn('rgb="FF5C2D91"', fonts, "precondition: purple font present")
+        self.assertIn('rgb="FF66023C"', fonts, "precondition: purple font present")
         styles = styles.replace(
             fonts,
-            fonts.replace('rgb="FF5C2D91"', 'rgb="FF006600"', 1),
+            fonts.replace('rgb="FF66023C"', 'rgb="FF006600"', 1),
             1,
         )
         fills = styles[styles.index("<fills") : styles.index("</fills>")]
-        self.assertIn('rgb="FFDED9E8"', fills, "precondition: lavender fill present")
+        self.assertIn('rgb="FFE8D9E2"', fills, "precondition: function-cell fill present")
         styles = styles.replace(
             fills,
-            fills.replace('rgb="FFDED9E8"', 'indexed="42"', 1),
+            fills.replace('rgb="FFE8D9E2"', 'indexed="42"', 1),
             1,
         )
         parts["xl/styles.xml"] = styles.encode("utf-8")
@@ -89,7 +89,7 @@ class WorkbookPaletteTests(unittest.TestCase):
         fonts = styles[styles.index("<fonts") : styles.index("</fonts>")]
         self.assertNotIn('rgb="FF006600"', fonts, "green font must be folded to purple")
         fills = styles[styles.index("<fills") : styles.index("</fills>")]
-        self.assertNotIn('indexed="42"', fills, "mint fill must be folded to lavender")
+        self.assertNotIn('indexed="42"', fills, "mint fill must be folded to ivory")
 
     def test_pass_folds_rich_text_font_and_colour_in_shared_strings(self):
         # The TOC "Totals ↓ Dates→" string carries a bold run in Aptos Narrow /
@@ -108,9 +108,9 @@ class WorkbookPaletteTests(unittest.TestCase):
         with zipfile.ZipFile(self.workbook) as archive:
             parts = {n: archive.read(n) for n in archive.namelist()}
         shared = parts["xl/sharedStrings.xml"].decode("utf-8")
-        self.assertIn('rgb="FF2B2733"', shared, "precondition: folded colour present")
+        self.assertIn('rgb="FF000000"', shared, "precondition: folded colour present")
         self.assertIn('rFont val="Aptos"', shared, "precondition: folded font present")
-        shared = shared.replace('rgb="FF2B2733"', 'rgb="FF2E4950"', 1)
+        shared = shared.replace('rgb="FF000000"', 'rgb="FF2E4950"', 1)
         shared = shared.replace('rFont val="Aptos"', 'rFont val="Aptos Narrow"', 1)
         parts["xl/sharedStrings.xml"] = shared.encode("utf-8")
         with zipfile.ZipFile(self.workbook, "w", zipfile.ZIP_DEFLATED) as archive:
@@ -123,7 +123,7 @@ class WorkbookPaletteTests(unittest.TestCase):
             shared = archive.read("xl/sharedStrings.xml").decode("utf-8")
         self.assertNotIn('rFont val="Aptos Narrow"', shared)
         self.assertNotIn('rgb="FF2E4950"', shared)
-        self.assertIn('rgb="FF2B2733"', shared)
+        self.assertIn('rgb="FF000000"', shared)
 
 
 if __name__ == "__main__":

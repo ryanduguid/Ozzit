@@ -64,7 +64,7 @@ SCENARIO_CLOSING_CASH = {
 FORECAST_COLUMNS = "BCDEFGHIJKLMN"
 FLOW_ROWS = (*range(10, 20), *range(22, 44), 47)
 TERMINAL_ROWS = (46, 48, 49, 50, 51)
-PALETTE_ANCHORS = ("5C2D91", "04001F", "2B2733", "B1AFAD", "DED9E8", "F3F1F6", "7A5AB5", "C00000")
+PALETTE_ANCHORS = ("66023C", "000000", "FFFFF0", "E5E4E2", "E8D9E2", "990024", "F0D9DE", "0F4B32", "DBE4E0")
 BANNED_SOURCE_TEXT = ("tradepoint", "1099", "federal tax", "state tax", "tradepointcfo")
 WORKING_SHEETS = EXPECTED_SHEETS[1:]
 EXCEL_EPOCH = date(1899, 12, 30)
@@ -517,7 +517,7 @@ class CashFlowTemplateContractTests(unittest.TestCase):
         ])
         self.assertEqual(start_here_values.get("A23"), "Colour legend")
         self.assertEqual([start_here_values.get(f"A{row}") for row in range(24, 29)], [
-            "Blue text / lavender fill", "Black text", "Green text", "Red text / pale-red fill", "Dark green / pale-green fill",
+            "Blue text / ivory fill", "Black text", "Green text", "Red text / pale-red fill", "Dark green / pale-green fill",
         ])
         self.assertEqual([start_here_values.get(f"B{row}") for row in range(24, 29)], [
             "Editable user input", "Formula or calculation", "Cross-sheet link", "Warning or exception", "Passing check",
@@ -559,8 +559,8 @@ class CashFlowTemplateContractTests(unittest.TestCase):
         self.assertIn("Monday forecast start", assumptions_values.get("A27", ""))
         input_style = style_for_cell(parts, sheet_map["Assumptions"], "B10")
         link_style = style_for_cell(parts, sheet_map["Start Here"], "D7")
-        self.assertEqual(input_style, ("FF0000FF", "FFB1AFAD"))
-        self.assertEqual(link_style, ("FF2B2733", None))
+        self.assertEqual(input_style, ("FF0000FF", "FFE5E4E2"))
+        self.assertEqual(link_style, ("FF000000", None))
         self.assertNotEqual(link_style, input_style)
 
         assumptions_root = ET.fromstring(parts[sheet_map["Assumptions"]])
@@ -638,7 +638,7 @@ class CashFlowTemplateContractTests(unittest.TestCase):
         self.assertEqual(forecast_formulas.get("O47"), "SUM(B47:N47)")
         self.assertEqual(forecast_values.get("O47"), "-369000")
 
-        self.assertEqual(style_for_cell(parts, forecast_path, "B10"), ("FF0000FF", "FFF3F1F6"))
+        self.assertEqual(style_for_cell(parts, forecast_path, "B10"), ("FF0000FF", "FFFFFFF0"))
         self.assertEqual(style_for_cell(parts, forecast_path, "B18")[0], "FF000000")
         self.assertEqual(style_for_cell(parts, forecast_path, "B46")[0], "FF008000")
         self.assertEqual(font_and_number_format(parts, forecast_path, "B5")[1], DATE_FORMAT)
@@ -688,19 +688,19 @@ class CashFlowTemplateContractTests(unittest.TestCase):
             for variance_column in "EFIJM":
                 self.assertIsNone(cached_value(parts, review_path, f"{variance_column}{row}"))
         for address in ("A6", "B6", "C6", "G6", "K6"):
-            self.assertEqual(style_for_cell(parts, review_path, address), ("FF0000FF", "FFF3F1F6"))
-        self.assertEqual(style_for_cell(parts, review_path, "D6"), ("FF0000FF", "FFF3F1F6"))
-        self.assertEqual(style_for_cell(parts, review_path, "H6"), ("FF0000FF", "FFF3F1F6"))
-        self.assertEqual(style_for_cell(parts, review_path, "L6"), ("FF0000FF", "FFF3F1F6"))
-        self.assertEqual(style_for_cell(parts, review_path, "N6"), ("FF0000FF", "FFF3F1F6"))
+            self.assertEqual(style_for_cell(parts, review_path, address), ("FF0000FF", "FFFFFFF0"))
+        self.assertEqual(style_for_cell(parts, review_path, "D6"), ("FF0000FF", "FFFFFFF0"))
+        self.assertEqual(style_for_cell(parts, review_path, "H6"), ("FF0000FF", "FFFFFFF0"))
+        self.assertEqual(style_for_cell(parts, review_path, "L6"), ("FF0000FF", "FFFFFFF0"))
+        self.assertEqual(style_for_cell(parts, review_path, "N6"), ("FF0000FF", "FFFFFFF0"))
         self.assertEqual(font_and_number_format(parts, review_path, "A6")[1], DATE_FORMAT)
         self.assertEqual(font_and_number_format(parts, review_path, "C6")[1], AUD_FORMAT)
         self.assertEqual(font_and_number_format(parts, review_path, "F6")[1], PERCENT_FORMAT)
         review_status_styles = conditional_rule_styles(parts, review_path)
         for formula in ("E6>0", "I6>0", "M6>0"):
-            self.assertEqual(review_status_styles[formula], ("FF008000", "FFE2F0D9"))
+            self.assertEqual(review_status_styles[formula], ("FF0F4B32", "FFDBE4E0"))
         for formula in ("E6<0", "I6<0", "M6<0"):
-            self.assertEqual(review_status_styles[formula], ("FFC00000", "FFFCE4D6"))
+            self.assertEqual(review_status_styles[formula], ("FF990024", "FFF0D9DE"))
         review_root = ET.fromstring(parts[review_path])
         self.assertEqual(review_root.findall("m:dataValidations/m:dataValidation", NS), [])
 
@@ -885,17 +885,17 @@ class CashFlowTemplateContractTests(unittest.TestCase):
         for phrase in ("illustrative fp&a cash-planning model only", "not tax, bas, payroll, superannuation or legal advice", "entity-specific lodgement dates and tax classifications must be confirmed by the user or adviser"):
             self.assertIn(phrase, disclaimer)
 
-        self.assertEqual(style_for_cell(parts, dashboard_path, "A1"), ("FFFFFFFF", "FF5C2D91"))
-        self.assertEqual(style_for_cell(parts, dashboard_path, "A6"), ("FFFFFFFF", "FF04001F"))
-        self.assertEqual(style_for_cell(parts, dashboard_path, "B7"), ("FF04001F", "FFFFFFFF"))
-        self.assertEqual(style_for_cell(parts, checks_path, "A21"), ("FFFFFFFF", "FF04001F"))
+        self.assertEqual(style_for_cell(parts, dashboard_path, "A1"), ("FFFFFFF0", "FF66023C"))
+        self.assertEqual(style_for_cell(parts, dashboard_path, "A6"), ("FFFFFFF0", "FF000000"))
+        self.assertEqual(style_for_cell(parts, dashboard_path, "B7"), ("FF000000", "FFFFFFFF"))
+        self.assertEqual(style_for_cell(parts, checks_path, "A21"), ("FFFFFFF0", "FF000000"))
         dashboard_status_styles = conditional_rule_styles(parts, dashboard_path)
         checks_status_styles = conditional_rule_styles(parts, checks_path)
-        self.assertEqual(dashboard_status_styles['I7="PASS"'], ("FF008000", "FFE2F0D9"))
-        self.assertEqual(dashboard_status_styles['J7="ACTION REQUIRED"'], ("FFC00000", "FFFCE4D6"))
-        self.assertEqual(checks_status_styles['B4="PASS"'], ("FF008000", "FFE2F0D9"))
-        self.assertEqual(checks_status_styles['E4="ACTION REQUIRED"'], ("FFC00000", "FFFCE4D6"))
-        self.assertEqual(checks_status_styles['E4="OK"'], ("FF008000", "FFE2F0D9"))
+        self.assertEqual(dashboard_status_styles['I7="PASS"'], ("FF0F4B32", "FFDBE4E0"))
+        self.assertEqual(dashboard_status_styles['J7="ACTION REQUIRED"'], ("FF990024", "FFF0D9DE"))
+        self.assertEqual(checks_status_styles['B4="PASS"'], ("FF0F4B32", "FFDBE4E0"))
+        self.assertEqual(checks_status_styles['E4="ACTION REQUIRED"'], ("FF990024", "FFF0D9DE"))
+        self.assertEqual(checks_status_styles['E4="OK"'], ("FF0F4B32", "FFDBE4E0"))
         self.assertEqual(font_and_number_format(parts, checks_path, "B11")[1], AUD_FORMAT)
 
     def test_v12_forecast_accuracy_governance_contract(self):
@@ -935,7 +935,7 @@ class CashFlowTemplateContractTests(unittest.TestCase):
             ["Finance Manager", "CFO / Business Owner", "Finance Manager", excel_serial(date(2026, 9, 13))],
         )
         for address in ("B21", "B22", "B23", "B24"):
-            self.assertEqual(style_for_cell(parts, assumptions_path, address), ("FF0000FF", "FFF3F1F6"))
+            self.assertEqual(style_for_cell(parts, assumptions_path, address), ("FF0000FF", "FFFFFFF0"))
         self.assertEqual(font_and_number_format(parts, assumptions_path, "B24")[1], DATE_FORMAT)
 
         review_path = sheet_map["Weekly Review"]
@@ -947,8 +947,8 @@ class CashFlowTemplateContractTests(unittest.TestCase):
             self.assertEqual(review_formulas.get(f"O{row}"), expected)
             self.assertEqual(review_values.get(f"O{row}"), "NOT STARTED")
         review_status_styles = conditional_rule_styles(parts, review_path)
-        self.assertEqual(review_status_styles['O6="COMPLETE"'], ("FF008000", "FFE2F0D9"))
-        self.assertEqual(review_status_styles['O6="INCOMPLETE"'], ("FFC00000", "FFFCE4D6"))
+        self.assertEqual(review_status_styles['O6="COMPLETE"'], ("FF0F4B32", "FFDBE4E0"))
+        self.assertEqual(review_status_styles['O6="INCOMPLETE"'], ("FF990024", "FFF0D9DE"))
 
         dashboard_path = sheet_map["Dashboard"]
         dashboard_values = values_by_address(parts, dashboard_path)
@@ -975,8 +975,8 @@ class CashFlowTemplateContractTests(unittest.TestCase):
         self.assertEqual(font_and_number_format(parts, dashboard_path, "B33")[1], PERCENT_FORMAT)
         self.assertEqual(font_and_number_format(parts, dashboard_path, "D33")[1], AUD_FORMAT)
         dashboard_status_styles = conditional_rule_styles(parts, dashboard_path)
-        self.assertEqual(dashboard_status_styles['E33="COMPLETE"'], ("FF008000", "FFE2F0D9"))
-        self.assertEqual(dashboard_status_styles['E33="INCOMPLETE"'], ("FFC00000", "FFFCE4D6"))
+        self.assertEqual(dashboard_status_styles['E33="COMPLETE"'], ("FF0F4B32", "FFDBE4E0"))
+        self.assertEqual(dashboard_status_styles['E33="INCOMPLETE"'], ("FF990024", "FFF0D9DE"))
 
         checks_path = sheet_map["Checks & Sources"]
         checks_formulas = formulas_by_address(parts, checks_path)

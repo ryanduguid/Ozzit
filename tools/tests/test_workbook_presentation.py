@@ -122,7 +122,7 @@ class WorkbookPresentationTests(unittest.TestCase):
                 (node.attrib.get("rgb") for node in font.iter() if node.tag.endswith("color")),
                 None,
             )
-            if rgb not in {"FF6E6862", "FF04001F", "FF2B2733", "FF5C2D91"}:
+            if rgb not in {"FF6E6862", "FF000000", "FF66023C"}:
                 bad.append((name, rgb))  # pragma: no cover - on failure only
         self.assertEqual(bad, [])
 
