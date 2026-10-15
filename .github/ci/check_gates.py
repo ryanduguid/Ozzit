@@ -79,6 +79,8 @@ def parse_jobs(text: str) -> tuple[dict[str, str | None], list[str]] | None:
     in_name = False
     has_property = False
     for line in parts[1].splitlines():
+        if not line.strip() or line.lstrip(" \t").startswith("#"):
+            continue
         if line[:1] not in ("", " ", "#"):
             break  # the next top-level key ends the jobs block
         if line.startswith("  ") and line[2:3] not in ("", " ", "#"):
@@ -127,15 +129,19 @@ def possible_context(name: str | None, context: str) -> bool:
         return True
     if "${{" not in name:
         return name == context
-    if "}}" not in name:
+    prefix, expression = name.split("${{", 1)
+    if "}}" not in expression:
         return True
-    return context.startswith(name.split("${{", 1)[0]) and context.endswith(name.rsplit("}}", 1)[1])
+    suffix = expression.rsplit("}}", 1)[1]
+    return (len(context) >= len(prefix) + len(suffix)
+            and context.startswith(prefix) and context.endswith(suffix))
 
 
 def base_copy(workflow: str, gate: str, head: str) -> str | None:
     """Return the base branch's copy of WORKFLOW, or of its predecessor, or None if it is new."""
+    candidates = {}
     if git("ls-tree", "--name-only", "HEAD^1", "--", workflow).strip():
-        return git("show", f"HEAD^1:{workflow}")
+        candidates[workflow] = git("show", f"HEAD^1:{workflow}")
     context = parse_jobs(head)[0][gate]
     if context is None or "${{" in context:
         sys.exit("Cannot determine the gate context; use a single-line literal name")
@@ -143,9 +149,8 @@ def base_copy(workflow: str, gate: str, head: str) -> str | None:
     # Keep possible matches and reject ambiguity; use a full parser if broader syntax is needed.
     # Match ID and reported context together: preferring an ID collision could select
     # an unrelated workflow and silently lose the protected context's predecessor.
-    candidates = []
-    listing = git("ls-tree", "-r", "--name-only", "HEAD^1", "--", ".github/workflows/")
-    for path in listing.splitlines():
+    listing = git("ls-tree", "-r", "--name-only", "-z", "HEAD^1", "--", ".github/workflows/")
+    for path in listing.split("\0"):
         # GitHub reads workflows only from the top level of .github/workflows.
         if path.count("/") == 2 and path.endswith((".yml", ".yaml")):
             text = git("show", f"HEAD^1:{path}")
@@ -153,12 +158,12 @@ def base_copy(workflow: str, gate: str, head: str) -> str | None:
             if parsed is None or not parsed[0] or parsed[1]:
                 sys.exit(f"Cannot read base workflow {path}; the gate check needs updating")
             if gate in parsed[0] or any(possible_context(name, context) for name in parsed[0].values()):
-                candidates.append(text)
+                candidates[path] = text
     if len(candidates) > 1:
         sys.exit(
             f"More than one base workflow can precede {gate}; the gate check needs updating"
         )
-    return candidates[0] if candidates else None
+    return next(iter(candidates.values()), None)
 
 
 def workflow_file(argument: str) -> str:
@@ -173,7 +178,7 @@ def workflow_file(argument: str) -> str:
 
 
 def git(*args: str) -> str:
-    return subprocess.run(["git", *args], capture_output=True, text=True, check=True).stdout
+    return subprocess.run(["git", *args], capture_output=True, text=True, encoding="utf-8", check=True).stdout
 
 
 def main(argv: list[str]) -> None:
