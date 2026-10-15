@@ -87,6 +87,11 @@ you can check by hand; the lease guide explains the four lessee functions.
 [Open, copy functions and use modern Excel](docs/workbook-use.md) shows how to
 copy a function into your own workbook.
 
+For an AI assistant, [the Ozzit skill](skills/ozzit/SKILL.md) routes function
+selection and composition through the existing catalogue and approved workbook.
+Copy `skills/ozzit` into the host's skill directory and supply the approved bundle
+location and revision. Installing the skill does not install the Excel names.
+
 <details>
 <summary>Setup, function catalogue, workbook examples and reference</summary>
 
