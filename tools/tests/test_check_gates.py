@@ -42,10 +42,6 @@ class GatePredecessorTests(unittest.TestCase):
         git_outputs = {
             ("ls-tree", "--name-only", "HEAD^1", "--", f".github/workflows/{filename}"):
                 filename if f".github/workflows/{filename}" in sources else "",
-            ("ls-tree", "-r", "--name-only", "HEAD^1", "--", ".github/workflows/"):
-                "\n".join(sources) + "\n",
-            ("ls-tree", "-r", "--name-only", "-z", "HEAD^1", "--", ".github/workflows/"):
-                "\0".join(sources) + "\0",
         }
         git_outputs.update({("show", f"HEAD^1:{path}"): text for path, text in sources.items()})
 
@@ -53,12 +49,25 @@ class GatePredecessorTests(unittest.TestCase):
             workflow = Path(directory) / filename
             workflow.write_text(head, encoding="utf-8")
             with (patch.object(CHECK_GATES, "git", side_effect=lambda *args: git_outputs[args]),
+                  patch.object(CHECK_GATES, "base_workflow_paths", return_value=list(sources)),
                   patch.object(CHECK_GATES, "workflow_file", return_value=str(workflow)),
                   patch.dict(os.environ, {"RESULTS": json.dumps({}), "GITHUB_EVENT_NAME": "pull_request"})):
                 CHECK_GATES.main([
                     f".github/workflows/{filename}", gate,
                     "--exempt", "codecov",
                 ])
+
+    def test_path_listing_preserves_linebreaks_and_rejects_invalid_utf8(self):
+        paths = [".github/workflows/verify\r.yml", ".github/workflows/verify\n.yml"]
+        completed = subprocess.CompletedProcess([], 0, "\0".join(paths).encode("utf-8") + b"\0")
+        with patch.object(CHECK_GATES.subprocess, "run", return_value=completed) as run:
+            self.assertEqual(CHECK_GATES.base_workflow_paths(), paths + [""])
+            self.assertNotIn("encoding", run.call_args.kwargs)
+            self.assertNotIn("text", run.call_args.kwargs)
+        with patch.object(CHECK_GATES.subprocess, "run",
+                          return_value=subprocess.CompletedProcess([], 0, b"\xff\0")):
+            with self.assertRaises(UnicodeDecodeError):
+                CHECK_GATES.base_workflow_paths()
 
     def test_renamed_file_and_id_preserve_removal_checks_for_the_same_reported_name(self):
         with self.assertRaisesRegex(SystemExit, "coverage.*lint.*verify"):
@@ -208,7 +217,8 @@ class GatePredecessorTests(unittest.TestCase):
                 with self.assertRaisesRegex(SystemExit, "Cannot determine the gate context"):
                     self.run_gate("replacement", "verify-gates", head=head)
 
-    def run_cli_fixture(self, *, quoted_path=False, occupied=False):
+    def run_cli_fixture(self, *, quoted_path=False, occupied=False, control_paths=False,
+                        context="verify-gates", declaration=""):
         git_executable = shutil.which("git")
         self.assertIsNotNone(git_executable, "Git is required for the gate CLI regression")
         with tempfile.TemporaryDirectory(prefix="gate-predecessor-") as directory:
@@ -225,9 +235,10 @@ class GatePredecessorTests(unittest.TestCase):
 
             git_prefix = [rtk, "proxy", "git"] if (rtk := shutil.which("rtk")) else [git_executable]
 
-            def git_command(*args):
+            def git_command(*args, raw=False):
                 return subprocess.run([*git_prefix, *args], cwd=repo, env=env,
-                                      capture_output=True, text=True, encoding="utf-8",
+                                      capture_output=True, text=not raw,
+                                      encoding=None if raw else "utf-8",
                                       check=True, timeout=10)
 
             workflows = repo / ".github/workflows"
@@ -236,12 +247,16 @@ class GatePredecessorTests(unittest.TestCase):
             for source in sorted([*source_workflows.glob("*.yml"),
                                   *source_workflows.glob("*.yaml")]):
                 (workflows / source.name).write_bytes(source.read_bytes())
-            base_name = "v\u00e9rify.yml" if quoted_path else "verify.yml"
+            base_name = "verify\r.yml" if control_paths else "v\u00e9rify.yml" if quoted_path else "verify.yml"
             base = (source_workflows / "verify.yml").read_text(encoding="utf-8")
             if quoted_path:
                 base = base.replace(".github/workflows/verify.yml", f".github/workflows/{base_name}")
+            if quoted_path or control_paths:
                 (workflows / "verify.yml").unlink()
                 (workflows / base_name).write_text(base, encoding="utf-8")
+            if control_paths:
+                (workflows / "verify\n.yml").write_text(
+                    self.head_workflow("unrelated", "unrelated"), encoding="utf-8")
             old = workflows / base_name
             git_command("init", "--quiet", "--initial-branch=main")
             git_command("config", "core.quotePath", "true")
@@ -249,16 +264,24 @@ class GatePredecessorTests(unittest.TestCase):
             identity = ("-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
                         "-c", "commit.gpgsign=false")
             git_command(*identity, "commit", "--quiet", "-m", "Base fixture")
+            git_command("checkout", "--quiet", "-b", "change")
             old.unlink()
             destination = "fuzzing.yml" if occupied else "renamed.yml"
             gate = "fuzzing" if occupied else "replacement"
-            head = self.head_workflow(gate, "verify-gates")
+            head = self.head_workflow(gate, context, declaration)
             (workflows / destination).write_text(head, encoding="utf-8")
             git_command("add", "--all", "--", ".github/workflows")
             git_command(*identity, "commit", "--quiet", "-m", "Rename fixture")
+            git_command("checkout", "--quiet", "main")
+            (repo / ".github/first-parent-control.txt").write_text("base advances\n", encoding="utf-8")
+            git_command("add", "--", ".github/first-parent-control.txt")
+            git_command(*identity, "commit", "--quiet", "-m", "Advance base fixture")
+            git_command(*identity, "merge", "--quiet", "--no-ff", "change", "-m", "Merge fixture")
+            self.assertEqual(len(git_command("rev-list", "--parents", "-n", "1", "HEAD").stdout.split()), 3)
+            self.assertEqual(git_command("show", f"HEAD^2:.github/workflows/{destination}").stdout, head)
             self.assertEqual(git_command("show", f"HEAD^1:.github/workflows/{base_name}").stdout,
                              base)
-            changes = git_command("diff", "--no-renames", "--name-status", "-z", "HEAD^1", "HEAD").stdout.split("\0")[:-1]
+            changes = git_command("diff", "--no-renames", "--name-status", "-z", "HEAD^1", "HEAD", raw=True).stdout.decode("utf-8").split("\0")[:-1]
             self.assertEqual(
                 set(zip(changes[::2], changes[1::2])),
                 {("D", f".github/workflows/{base_name}"),
@@ -268,6 +291,10 @@ class GatePredecessorTests(unittest.TestCase):
             if quoted_path:
                 self.assertIn('".github/workflows/v\\303\\251rify.yml"', git_command(
                     "ls-tree", "-r", "--name-only", "HEAD^1", "--", ".github/workflows/").stdout)
+            if control_paths:
+                paths = git_command("ls-tree", "-r", "--name-only", "-z", "HEAD^1", "--", ".github/workflows/", raw=True).stdout.decode("utf-8").split("\0")
+                self.assertIn(".github/workflows/verify\r.yml", paths)
+                self.assertIn(".github/workflows/verify\n.yml", paths)
             result = subprocess.run([
                 sys.executable, "-I", str(ROOT / ".github/ci/check_gates.py"),
                 f".github/workflows/{destination}", gate,
@@ -290,3 +317,20 @@ class GatePredecessorTests(unittest.TestCase):
         result = self.run_cli_fixture(quoted_path=True)
         self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
         self.assertIn("These jobs were removed", result.stderr)
+
+    @unittest.skipIf(os.name == "nt", "CR/LF filenames require a POSIX working tree")
+    def test_distinct_cr_lf_paths_retain_predecessor_removals(self):
+        result = self.run_cli_fixture(control_paths=True)
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("lint", result.stderr)
+
+    @unittest.skipIf(os.name == "nt", "CR/LF filenames require a POSIX working tree")
+    def test_distinct_cr_lf_paths_accept_declared_removals(self):
+        result = self.run_cli_fixture(control_paths=True,
+            declaration="codecov, coverage, lint, verify, verify-gates")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    @unittest.skipIf(os.name == "nt", "CR/LF filenames require a POSIX working tree")
+    def test_distinct_cr_lf_paths_do_not_invent_a_predecessor(self):
+        result = self.run_cli_fixture(control_paths=True, context="new-gates")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
