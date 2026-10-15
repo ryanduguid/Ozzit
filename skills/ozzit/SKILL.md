@@ -1,6 +1,8 @@
 ---
 name: ozzit
 description: Use Ozzit's existing Excel LAMBDAs to prepare Australian accounting formulas and schedules from an approved workbook bundle. Use for Ozzit function selection, composition or installation checks; tax treatment and professional conclusions require human review.
+metadata:
+  author: Ryan Duguid
 ---
 
 # Use the Ozzit library
