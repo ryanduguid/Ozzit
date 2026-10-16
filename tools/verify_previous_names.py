@@ -49,10 +49,22 @@ FLOOR = 100          # the library ships 130 functions; reading far fewer is a b
 
 
 def main() -> int:
-    with open(BASELINE, encoding="utf-8") as fh:
-        released = {ln.strip() for ln in fh if ln.strip() and not ln.startswith("#")}
-    with open(CSV, encoding="utf-8-sig", newline="") as fh:
-        rows = list(csv.DictReader(fh))
+    input_path = BASELINE
+    try:
+        with open(BASELINE, encoding="utf-8") as fh:
+            released = {ln.strip() for ln in fh if ln.strip() and not ln.startswith("#")}
+        input_path = CSV
+        with open(CSV, encoding="utf-8-sig", newline="") as fh:
+            reader = csv.DictReader(fh)
+            columns = reader.fieldnames or []
+            duplicates = [field for field in ("function", "previous_name", "signature", "description")
+                          if columns.count(field) > 1]
+            if duplicates:
+                sys.exit("%s has duplicate CSV column(s): %s" % (CSV, ", ".join(duplicates)))
+            rows = list(reader)
+    except (OSError, UnicodeDecodeError, csv.Error) as exc:
+        print(f"FAIL: cannot read {input_path}: {exc}")
+        return 1
 
     if not rows:
         sys.exit("no rows read from %s" % CSV)
@@ -109,8 +121,8 @@ def main() -> int:
     # mid-parameter-list because its help wraps onto a second row, and 31 descriptions
     # carried the raw OOXML escape for a line break out of a Name Manager comment.
     for row in rows:
-        sig = row.get("signature", "")
-        blurb = row.get("description", "")
+        sig = row.get("signature") or ""
+        blurb = row.get("description") or ""
         if sig.count("(") != sig.count(")"):
             failures.append("%s publishes a signature with unbalanced brackets: %s"
                             % (row["function"], sig))
@@ -133,11 +145,13 @@ def main() -> int:
         for item in failures:
             print("  - %s" % item)
         return 1
-    fresh = sum(1 for row in rows if not row["previous_name"].strip())
+    fresh = sum(1 for row in rows if not (row["previous_name"] or "").strip())
     print("OK: %d functions, %d of them replacing a name from %s, %d new since it"
           % (len(rows), len(claimed), os.path.basename(BASELINE), fresh))
     return 0
 
 
 if __name__ == "__main__":
+    if len(sys.argv) > 3:
+        sys.exit("FAIL: usage: python tools/verify_previous_names.py [functions.csv] [baseline]")
     sys.exit(main())

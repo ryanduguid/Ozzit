@@ -184,7 +184,14 @@ def main() -> int:
 
     # every name the library declares, so a help reference can be checked against it.
     # Not `declared`: that is the function just above, which reads a LAMBDA's parameters.
-    modules = {path: statements(Path(path).read_text(encoding="utf-8")) for path in paths}
+    modules = {}
+    for path in paths:
+        try:
+            text = Path(path).read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as exc:
+            print("FAIL: cannot read %s: %s" % (path, exc))
+            return 1
+        modules[path] = statements(text)
     declared_names = set()
     for path, module_statements in modules.items():
         for st in module_statements:
@@ -315,4 +322,6 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    if len(sys.argv) > 2:
+        sys.exit("FAIL: usage: python tools/verify_signatures.py [src dir]")
     sys.exit(main())

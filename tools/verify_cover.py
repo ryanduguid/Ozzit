@@ -65,9 +65,14 @@ def published_functions(index: Path) -> int:
     # utf-8-sig: the compiler and the index gates accept a byte-order mark, so
     # this one must not let the mark become part of the first column name.
     with index.open(encoding="utf-8-sig", newline="") as stream:
-        names = [row["function"] for row in csv.DictReader(stream)]
+        reader = csv.DictReader(stream)
+        if (reader.fieldnames or []).count("function") > 1:
+            raise ValueError(f"{index.name}: duplicate CSV column(s): function")
+        names = [row["function"] for row in reader]
     if not names:
         raise ValueError("functions.csv lists no functions")
+    if any(name is None or not name.strip() for name in names):
+        raise ValueError("functions.csv contains an empty function name")
     return sum(1 for name in names if not name.startswith("oz.About"))
 
 
@@ -84,7 +89,7 @@ def main() -> int:
         date, count = cover_label(WORKBOOK)
         functions = published_functions(INDEX)
         cut = current_cut_date(CHANGELOG)
-    except (OSError, ValueError, KeyError, zipfile.BadZipFile) as exc:
+    except (OSError, ValueError, KeyError, csv.Error, zipfile.BadZipFile) as exc:
         print(f"FAIL: {exc}")
         return 1
     if count != functions:
@@ -100,4 +105,6 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    if len(sys.argv) > 4:
+        sys.exit("FAIL: usage: python tools/verify_cover.py [workbook] [functions.csv] [CHANGELOG.md]")
     sys.exit(main())

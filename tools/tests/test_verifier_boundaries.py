@@ -2,6 +2,7 @@
 
 import base64
 import contextlib
+import csv
 import io
 import json
 import shutil
@@ -133,11 +134,131 @@ class WorkbookFixtureTests(unittest.TestCase):
 
         self.assertTrue(verify_afe.check(store, self.directory)[-1].startswith("cannot read workbook names"))
 
+    def test_afe_workbook_readers_reject_a_directory(self):
+        workbook = self.directory / "directory.xlsx"
+        workbook.mkdir()
+        for reader, message in ((verify_afe.decode_store, "cannot read AFE store"),
+                                (verify_afe.workbook_names, "cannot read workbook names")):
+            with self.subTest(reader=reader.__name__):
+                with self.assertRaisesRegex(ValueError, message):
+                    reader(workbook)
+        self.assertTrue(verify_afe.check(workbook, self.directory)[0].startswith("cannot read AFE store"))
+        result = self.run_tool(TOOLS / "verify_afe.py", workbook, self.directory)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("FAIL: 1 AFE problem(s)", result.stdout)
+        self.assertEqual(result.stderr, "")
+
+    def test_afe_reports_unreadable_source_modules(self):
+        for label in ("not-utf8", "directory"):
+            with self.subTest(source=label):
+                src = self.directory / label
+                shutil.copytree(TOOLS.parent / "src", src)
+                source = src / "Dates.txt"
+                if label == "not-utf8":
+                    source.write_bytes(b"\xff")
+                else:
+                    source.unlink()
+                    source.mkdir()
+                failures = verify_afe.check(TOOLS.parent / "ozzit.xlsx", src)
+                self.assertEqual(len(failures), 1)
+                self.assertIn(f"cannot read source module {source}", failures[0])
+                result = self.run_tool(TOOLS / "verify_afe.py", TOOLS.parent / "ozzit.xlsx", src)
+                self.assertEqual(result.returncode, 1)
+                self.assertIn("FAIL: 1 AFE problem(s)", result.stdout)
+                self.assertIn(f"cannot read source module {source}", result.stdout)
+                self.assertEqual(result.stderr, "")
+
     def run_tool(self, *args):
         return subprocess.run(
             [sys.executable, *map(str, args)],
             capture_output=True, text=True, encoding="utf-8", errors="replace", check=False, timeout=120,
         )
+
+    def test_previous_name_inputs_fail_with_a_message(self):
+        script = TOOLS / "verify_previous_names.py"
+        current_csv = TOOLS.parent / "functions.csv"
+        current_baseline = TOOLS / "released-names-v1.2.6.txt"
+        missing = self.directory / "missing"
+        directory = self.directory / "directory"
+        directory.mkdir()
+        undecodable = self.directory / "not-utf8"
+        undecodable.write_bytes(b"\xff")
+        oversized = self.directory / "oversized.csv"
+        oversized.write_text(
+            "function,previous_name,signature,description\n"
+            + "x" * (csv.field_size_limit() + 1) + ",,,\n",
+            encoding="utf-8",
+        )
+        cases = [
+            ("CSV missing", missing, current_baseline, missing),
+            ("CSV directory", directory, current_baseline, directory),
+            ("CSV not UTF-8", undecodable, current_baseline, undecodable),
+            ("CSV parse error", oversized, current_baseline, oversized),
+            ("baseline missing", current_csv, missing, missing),
+            ("baseline directory", current_csv, directory, directory),
+            ("baseline not UTF-8", current_csv, undecodable, undecodable),
+        ]
+        for label, index, baseline, failed_path in cases:
+            with self.subTest(input=label):
+                before = {path: path.read_bytes() for path in (index, baseline) if path.is_file()}
+                result = self.run_tool(script, index, baseline)
+                self.assertEqual(result.returncode, 1, result.stderr)
+                self.assertIn(f"FAIL: cannot read {failed_path}:", result.stdout)
+                self.assertNotIn("OK:", result.stdout)
+                self.assertEqual(result.stderr, "")
+                for path, original in before.items():
+                    self.assertEqual(path.read_bytes(), original)
+
+    def test_index_and_cover_csv_parse_errors_fail_with_a_message(self):
+        workbook = TOOLS.parent / "ozzit.xlsx"
+        changelog = TOOLS.parent / "CHANGELOG.md"
+        oversized = "x" * (csv.field_size_limit() + 1)
+        cases = {
+            "header": oversized + ",function\n",
+            "row": "function,module,signature,description\n" + oversized + ",,,\n",
+        }
+        original_inputs = {path: path.read_bytes() for path in (workbook, changelog)}
+        for label, text in cases.items():
+            index = self.directory / f"{label}.csv"
+            index.write_text(text, encoding="utf-8")
+            original_index = index.read_bytes()
+            for tool, args in (
+                ("verify_index.py", (workbook, TOOLS.parent / "src", index)),
+                ("verify_cover.py", (workbook, index, changelog)),
+            ):
+                with self.subTest(tool=tool, CSV=label):
+                    result = self.run_tool(TOOLS / tool, *args)
+                    self.assertEqual(result.returncode, 1, result.stderr)
+                    self.assertIn("FAIL:", result.stdout)
+                    self.assertIn("field larger than field limit", result.stdout)
+                    self.assertNotIn("OK:", result.stdout)
+                    self.assertEqual(result.stderr, "")
+                    self.assertEqual(index.read_bytes(), original_index)
+        for path, original in original_inputs.items():
+            self.assertEqual(path.read_bytes(), original)
+
+    def test_verification_commands_reject_surplus_inputs(self):
+        root = TOOLS.parent
+        workbook = root / "ozzit.xlsx"
+        source = root / "src"
+        index = root / "functions.csv"
+        cases = [
+            ("verify_workbook.py", [workbook]),
+            ("verify_sources.py", [workbook, source]),
+            ("verify_signatures.py", [source]),
+            ("verify_previous_names.py", [index, TOOLS / "released-names-v1.2.6.txt"]),
+            ("verify_index.py", [workbook, source, index]),
+            ("verify_cover.py", [workbook, index, root / "CHANGELOG.md"]),
+            ("verify_afe.py", [workbook, source]),
+        ]
+        for name, inputs in cases:
+            with self.subTest(tool=name):
+                result = self.run_tool(
+                    TOOLS / name, *inputs, self.directory / "unrequested.xlsx"
+                )
+                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+                self.assertIn("FAIL: usage:", result.stderr)
+                self.assertEqual(result.stdout, "")
 
     def test_unreadable_workbooks_fail_with_a_message_not_a_traceback(self):
         not_zip = self.directory / "not-a-zip.xlsx"
@@ -154,6 +275,30 @@ class WorkbookFixtureTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 1, result.stderr)
                 self.assertIn(f"FAIL: cannot read {workbook}", result.stdout)
                 self.assertNotIn("Traceback", result.stderr)
+
+    def test_undecodable_source_modules_fail_with_a_message(self):
+        source = self.directory / "Invalid.txt"
+        source.write_bytes(b"\xff")
+        runs = [(TOOLS / "verify_sources.py", TOOLS.parent / "ozzit.xlsx", self.directory),
+                (TOOLS / "verify_signatures.py", self.directory)]
+        for script, *args in runs:
+            with self.subTest(tool=script.name):
+                result = self.run_tool(script, *args)
+                self.assertEqual(result.returncode, 1)
+                self.assertIn(f"FAIL: cannot read {source}", result.stdout)
+                self.assertEqual(result.stderr, "")
+
+    def test_source_directory_entries_fail_with_a_message(self):
+        source = self.directory / "Invalid.txt"
+        source.mkdir()
+        runs = [(TOOLS / "verify_sources.py", TOOLS.parent / "ozzit.xlsx", self.directory),
+                (TOOLS / "verify_signatures.py", self.directory)]
+        for script, *args in runs:
+            with self.subTest(tool=script.name):
+                result = self.run_tool(script, *args)
+                self.assertEqual(result.returncode, 1)
+                self.assertIn(f"FAIL: cannot read {source}", result.stdout)
+                self.assertEqual(result.stderr, "")
 
     def test_workbook_check_skips_parts_already_reported_as_malformed(self):
         encoded = base64.b64encode(json.dumps({"padding": "x" * 80}).encode("utf-16-le"))
@@ -233,6 +378,62 @@ class WorkbookFixtureTests(unittest.TestCase):
                 self.assertIn(expected, output.getvalue())
                 self.assertEqual(run.call_args.kwargs["timeout"], verify_cache.DUMP_TIMEOUT_SECONDS)
 
+    def test_cache_gate_compares_nonfinite_values_at_the_real_floor(self):
+        self.assertEqual(verify_cache.FLOOR, 15000)
+        for cached, live, expected in (
+            ("1", "inf", 1),
+            ("1", "-inf", 1),
+            ("1", "1e309", 1),
+            ("inf", "1", 1),
+            ("inf", "-inf", 1),
+            ("#NUM!", "inf", 1),
+            ("#NUM!", "nan", 1),
+            ("1", "nan", 1),
+            ("inf", "inf", 0),
+            ("1000000", "1000000.0005", 0),
+            ("#NUM!", "-2146826252", 0),
+        ):
+            with self.subTest(cached=cached, live=live):
+                parts = self.cache_parts()
+                parts["xl/worksheets/sheet1.xml"] = (
+                    "<worksheet><sheetData>"
+                    + "".join(
+                        f'<row r="{row}"><c r="A{row}"><v>'
+                        f'{cached if row == 1 else "1"}</v></c></row>'
+                        for row in range(1, verify_cache.FLOOR + 1)
+                    )
+                    + "</sheetData></worksheet>"
+                )
+                workbook = self.write_archive("full-floor.xlsx", parts)
+                dumps = []
+
+                def dump_values(args, **kwargs):
+                    dump = Path(args[args.index("-Out") + 1])
+                    dumps.append(dump)
+                    dump.write_text(
+                        f"1\t1\t1\t{live}\n"
+                        + "".join(
+                            f"1\t{row}\t1\t1\n"
+                            for row in range(2, verify_cache.FLOOR + 1)
+                        ),
+                        encoding="utf-8",
+                    )
+                    return subprocess.CompletedProcess(args, 0, "", "")
+
+                output = io.StringIO()
+                with patch.object(verify_cache, "WORKBOOK", str(workbook)), \
+                     patch.object(verify_cache.subprocess, "run", side_effect=dump_values), \
+                     contextlib.redirect_stdout(output):
+                    result = verify_cache.main()
+                self.assertEqual(result, expected, output.getvalue())
+                self.assertEqual(len(dumps), 1)
+                self.assertFalse(dumps[0].exists())
+                if expected:
+                    self.assertIn("FAIL: 1 of 15000 cached values", output.getvalue())
+                    self.assertIn("Data row 1 col 1", output.getvalue())
+                else:
+                    self.assertIn("OK: all 15000 cached values", output.getvalue())
+
     def test_value_dump_opens_its_output_inside_the_excel_cleanup(self):
         text = (TOOLS / "dump_values.ps1").read_text(encoding="utf-8")
         # a bad -Out path thrown before the try would skip Quit() and leave Excel running
@@ -261,6 +462,27 @@ class CacheComparisonTests(unittest.TestCase):
     def test_agree_maps_excel_com_error_codes(self):
         self.assertTrue(verify_cache.agree("#DIV/0!", "-2146826281"))
         self.assertFalse(verify_cache.agree("#N/A", "-2146826281"))
+
+    def test_agree_rejects_nonfinite_numeric_coercion(self):
+        for nonfinite in ("inf", "-inf", "nan", "NaN", "1e309", "-1e309"):
+            with self.subTest(nonfinite=nonfinite):
+                self.assertFalse(verify_cache.agree("1", nonfinite))
+                self.assertFalse(verify_cache.agree(nonfinite, "1"))
+                self.assertFalse(verify_cache.agree("#NUM!", nonfinite))
+        self.assertFalse(verify_cache.agree("inf", "-inf"))
+
+    def test_agree_preserves_exact_nonfinite_text_and_newlines(self):
+        for text in ("inf", "-inf", "nan", "1e309"):
+            with self.subTest(text=text):
+                self.assertTrue(verify_cache.agree(text, text))
+        self.assertTrue(verify_cache.agree("a\r\nb", r"a\nb"))
+
+    def test_agree_preserves_finite_error_code_conversion(self):
+        for code, label in verify_cache.ERRORS.items():
+            with self.subTest(code=code):
+                self.assertTrue(verify_cache.agree(label, str(code)))
+                self.assertTrue(verify_cache.agree(label, f"{code}.75"))
+                self.assertFalse(verify_cache.agree(label, str(-code)))
 
 
 if __name__ == "__main__":
