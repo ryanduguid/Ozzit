@@ -131,7 +131,8 @@ class Compiled(NamedTuple):
 # Manager comment. Excel keeps at most 255 characters of a comment and stores a
 # line break as _x000a_.
 HEADER = re.compile(
-    r"/\*\s*FUNCTION NAME:\s*(?P<name>[^\n]+?)\s*\n\s*DESCRIPTION:\*/\s*/\*\*(?P<text>.*?)\*/",
+    # Bounded input: the repository's own Excel Labs source comments.
+    r"/\*\s*FUNCTION NAME:\s*(?P<name>[^\n]+?)\s*\n\s*DESCRIPTION:\*/\s*/\*\*(?P<text>.*?)\*/",  # NOSONAR
     re.DOTALL,
 )
 COMMENT_LIMIT = 255
@@ -496,7 +497,17 @@ def apply(book: str, compiled: list[Compiled]) -> tuple[str, list[str]]:
 
 def update_index(path: Path, book: str, modules: dict[str, str]) -> bool:
     """Rewrite functions.csv from the compiled workbook, keeping previous_name."""
-    with path.open(encoding="utf-8-sig", newline="") as handle:
+    after = render_index(path, book, modules)
+    if after is None:
+        return False
+    write_index(path, after)
+    return True
+
+
+def render_index(path: Path, book: str, modules: dict[str, str]) -> str | None:
+    """functions.csv as the compiled workbook gives it, or None when it would not change."""
+    # Build tool; the path is the repository's own file or the maintainer's argument.
+    with path.open(encoding="utf-8-sig", newline="") as handle:  # NOSONAR
         reader = csv.DictReader(handle)
         fieldnames = list(reader.fieldnames or [])
         previous = {row["function"]: row.get("previous_name", "") for row in reader}
@@ -515,18 +526,21 @@ def update_index(path: Path, book: str, modules: dict[str, str]) -> bool:
             }
         )
     rows.sort(key=lambda row: row["function"])
-    with path.open(encoding="utf-8-sig", newline="") as handle:
+    # Build tool; the path is the repository's own file or the maintainer's argument.
+    with path.open(encoding="utf-8-sig", newline="") as handle:  # NOSONAR
         before = handle.read()
     buffer = io.StringIO()
     writer = csv.DictWriter(buffer, fieldnames=fieldnames, lineterminator="\n")
     writer.writeheader()
     writer.writerows(rows)
     after = buffer.getvalue()
-    if after == before:
-        return False
-    with path.open("w", encoding="utf-8", newline="") as handle:
-        handle.write(after)
-    return True
+    return None if after == before else after
+
+
+def write_index(path: Path, text: str) -> None:
+    # Build tool; the path is the repository's own file or the maintainer's argument.
+    with path.open("w", encoding="utf-8", newline="") as handle:  # NOSONAR
+        handle.write(text)
 
 
 def run(workbook: Path, src: Path, check: bool, index: Path | None) -> list[str]:
@@ -537,13 +551,17 @@ def run(workbook: Path, src: Path, check: bool, index: Path | None) -> list[str]
     new_book, changed = apply(book, compiled)
     if check:
         return changed
+    # Read and validate the index before writing either output, so a malformed
+    # index is refused with the workbook untouched.
+    new_index = None
+    if index is not None:
+        new_index = render_index(index, new_book, {c.name: c.module for c in compiled})
     if changed:
         parts["xl/workbook.xml"] = new_book.encode("utf-8")
         write_deterministic(workbook, parts)
-    if index is not None:
-        modules = {c.name: c.module for c in compiled}
-        if update_index(index, new_book, modules):
-            changed.append(index.name)
+    if index is not None and new_index is not None:
+        write_index(index, new_index)
+        changed.append(index.name)
     return changed
 
 

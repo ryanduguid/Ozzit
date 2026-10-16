@@ -82,7 +82,8 @@ def check(text: str, workbook: Path, index: Path) -> list[str]:
         if earlier != name or declared.count(name) > 1:
             failures.append(f"{name} is declared more than once (case-insensitively)")
     shipped = {name[len(NAMESPACE) + 1 :] for name in workbook_names(workbook)}
-    with index.open(encoding="utf-8-sig", newline="") as handle:
+    # Build tool; the path is the repository's own file or the maintainer's argument.
+    with index.open(encoding="utf-8-sig", newline="") as handle:  # NOSONAR
         reader = csv.DictReader(handle)
         if (reader.fieldnames or []).count("function") > 1:
             failures.append(f"{index.name}: duplicate CSV column(s): function")
@@ -130,7 +131,8 @@ def main(argv: list[str]) -> int:
             return 1
         print(f"OK: {output} is current, {len(declared_names(text))} names")
         return 0
-    output.write_bytes(text.encode("utf-8"))
+    # Build tool; the path is the repository's own file or the maintainer's argument.
+    output.write_bytes(text.encode("utf-8"))  # NOSONAR
     print(f"wrote {output}: {len(declared_names(text))} names, {len(text.encode('utf-8'))} bytes")
     return 0
 

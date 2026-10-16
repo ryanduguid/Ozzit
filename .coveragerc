@@ -1,0 +1,9 @@
+# The verify workflow's coverage job reads this file from the repository root.
+[run]
+# Several tests run a tool as a script, as contributors do; measure those runs too.
+patch = subprocess
+
+[report]
+# Each tool's command-line entry guard only calls main(), which the tests call directly.
+exclude_also =
+    if __name__ == .__main__.:

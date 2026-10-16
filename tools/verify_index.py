@@ -26,7 +26,7 @@ INDEX = Path(sys.argv[3] if len(sys.argv) > 3 else "functions.csv")
 NAME_RE = re.compile(
     r'<definedName name="(oz\.[^"]+)"([^>]*)>(.*?)</definedName>', re.DOTALL
 )
-SIG_RE = re.compile(r"FUNCTION:\s*→?\s*(.*?)¶")
+SIG_RE = re.compile(r"FUNCTION:\s*+(?:→\s*+)?(.*?)¶")
 DESC_RE = re.compile(r"DESCRIPTION:\s*→(.*?)¶")
 ROW_RE = re.compile(r"→(.*?)¶")
 

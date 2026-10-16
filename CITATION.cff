@@ -11,7 +11,7 @@ type: software
 version: 3.4.2
 date-released: 2026-09-16
 repository-code: "https://github.com/ryanduguid/Ozzit"
-license: MIT
+license: Apache-2.0
 keywords:
   - Microsoft Excel
   - LAMBDA

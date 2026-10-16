@@ -17,6 +17,7 @@ import xml.etree.ElementTree as ET
 import zipfile
 from pathlib import Path
 
+from opc import resolve_target
 from sanitise_workbook import write_deterministic
 
 MAIN_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
@@ -57,7 +58,7 @@ def sheet_paths(parts: dict[str, bytes]) -> dict[str, str]:
     if sheets is None:
         raise ValueError("workbook has no sheets collection")
     return {
-        sheet.attrib["name"]: "xl/" + targets[sheet.attrib[rid]].lstrip("/")
+        sheet.attrib["name"]: resolve_target("xl/workbook.xml", targets[sheet.attrib[rid]])
         for sheet in sheets
     }
 
@@ -90,7 +91,7 @@ def set_existing_shared_cell(text: str, address: str, index: int) -> tuple[str, 
     if not match:
         raise ValueError(f"shared-string cell {address} not found")
     current_match = re.search(r"\d+", match.group(0).split("<v>", 1)[1])
-    if current_match is None:
+    if current_match is None:  # pragma: no cover - the pattern above puts digits after <v>
         raise ValueError(f"shared-string cell {address} has no value index")
     current = int(current_match.group())
     if current == index:
@@ -172,7 +173,7 @@ def update_styles(parts: dict[str, bytes]) -> list[str]:
     mint_count = styles.count('<fgColor indexed="42"/>')
     if mint_count:
         styles = styles.replace(
-            '<fgColor indexed="42"/>', '<fgColor rgb="FFDED9E8"/>'
+            '<fgColor indexed="42"/>', '<fgColor rgb="FFE8D9E2"/>'
         )
         changes.append(f"replaced {mint_count} mint fill definition")
 

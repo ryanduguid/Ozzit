@@ -22,6 +22,11 @@ The workbook tracked in this repository is the candidate the gates below run aga
 
    The repository also includes an [Ozzit 13-week cash-flow forecast template](../templates/README.md) for Australian FP&A planning; see the [template overview](cash-flow-template.md).
 
+   Use `oz.txt`, `functions.csv` and `ozzit.xlsx` from the same approved tag or
+   commit. A current `main` text file may differ from an older release workbook;
+   do not combine those versions. Record the revision and workbook checksum
+   alongside an installation check.
+
    The Advanced Formula Environment takes a function's prefix from the module
    container it is imported into, so importing one `src/` file as a module named
    after it produces `Dates.CountDOWλ` rather than `oz.CountDOWλ`, and a call from

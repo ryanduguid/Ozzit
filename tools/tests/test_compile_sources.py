@@ -210,6 +210,18 @@ class WorkbookTests(unittest.TestCase):
         self.assertEqual(rows["oz.DebtRatioλ"]["description"], "Leverage, the short way")
         self.assertEqual(rows["oz.DebtRatioλ"]["previous_name"], "nabla.r.DebtRatioλ")
 
+    def test_a_malformed_index_is_refused_before_the_workbook_changes(self):
+        module = self.src / "Ratios.txt"
+        text = module.read_text(encoding="utf-8")
+        old = "/**Measures the extent of a company’s gearing */"
+        self.assertEqual(text.count(old), 1)
+        module.write_text(text.replace(old, "/**Leverage, the short way*/"), encoding="utf-8")
+        self.index.write_text("function,module\noz.DebtRatioλ,Ratios\n", encoding="utf-8")
+        before = self.workbook.read_bytes()
+        with self.assertRaisesRegex(ValueError, "unexpected columns"):
+            compile_sources.run(self.workbook, self.src, False, self.index)
+        self.assertEqual(self.workbook.read_bytes(), before)
+
     def test_a_source_name_that_does_not_ship_is_refused(self):
         module = self.src / "Debt.txt"
         module.write_text(

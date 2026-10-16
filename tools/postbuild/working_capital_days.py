@@ -284,7 +284,8 @@ def index_state(index: Path | None) -> str | None:
         return None
     if not index.is_file():
         raise ValueError(f"{index}: no such index; supply an existing functions.csv or none")
-    with index.open(encoding="utf-8-sig", newline="") as handle:
+    # Build tool; the path is the repository's own file or the maintainer's argument.
+    with index.open(encoding="utf-8-sig", newline="") as handle:  # NOSONAR
         listed = {row.get("function", "") for row in csv.DictReader(handle)}
     present = sum(1 for name in QUALIFIED if name in listed)
     if present == 0:
@@ -344,7 +345,8 @@ def run(workbook: Path, src: Path, index: Path | None) -> list[str]:
     # the first included, is inside the recovery block, so a failure anywhere restores
     # all three stores.
     changed: list[str] = []
-    index_before = index.read_bytes() if index is not None else None
+    # Build tool; the path is the repository's own file or the maintainer's argument.
+    index_before = index.read_bytes() if index is not None else None  # NOSONAR
     indexed = False
     try:
         write_text(path, add_to_src(text))
@@ -352,17 +354,18 @@ def run(workbook: Path, src: Path, index: Path | None) -> list[str]:
         compiled = compile_sources(src)
         book = insert_names(book, [c for c in compiled if c.name in QUALIFIED])
         book, _recompiled = apply(book, compiled)
-        if index is not None:
+        if index is not None:  # pragma: no branch - the index was required above
             indexed = update_index(index, book, {c.name: c.module for c in compiled})
         parts["xl/workbook.xml"] = book.encode("utf-8")
         write_deterministic(workbook, parts)
     except Exception:
         write_text(path, text)
-        if index is not None and index_before is not None:
-            index.write_bytes(index_before)
+        if index is not None and index_before is not None:  # pragma: no branch - both set above
+            # Build tool; the path is the repository's own file or the maintainer's argument.
+            index.write_bytes(index_before)  # NOSONAR
         raise
     changed.append("workbook")
-    if indexed and index is not None:
+    if indexed and index is not None:  # pragma: no branch - an absent index gains rows
         changed.append(index.name)
     return changed
 

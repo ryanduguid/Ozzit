@@ -11,4 +11,4 @@ This project is not affiliated with, sponsored by, endorsed by, or approved by:
 
 LAMBDA functions and demonstration workbooks are computational helpers. Tax depreciation, GST rules, and lease accounting standards (AASB 16) require independent verification against entity-specific facts and current legislation.
 
-See [LICENCE](LICENCE) for copyright and [SECURITY.md](SECURITY.md) for vulnerability reporting.
+See [LICENSE](LICENSE) for copyright and [SECURITY.md](SECURITY.md) for vulnerability reporting.

@@ -1,10 +1,16 @@
 # Ozzit: Excel LAMBDA functions for Australian financial modelling
 
-[![verify](https://github.com/ryanduguid/Ozzit/actions/workflows/verify.yml/badge.svg)](https://github.com/ryanduguid/Ozzit/actions/workflows/verify.yml)
-[![CodeQL](https://github.com/ryanduguid/Ozzit/actions/workflows/codeql.yml/badge.svg)](https://github.com/ryanduguid/Ozzit/actions/workflows/codeql.yml)
-[![release](https://img.shields.io/github/v/release/ryanduguid/Ozzit?color=5C2D91&labelColor=04001F)](https://github.com/ryanduguid/Ozzit/releases/latest)
-[![licence: MIT](https://img.shields.io/badge/licence-MIT-5C2D91.svg?labelColor=04001F)](LICENCE)
-![Excel: 365 or 2024+](https://img.shields.io/badge/Excel-365%20or%202024%2B-5C2D91.svg?labelColor=04001F)
+[![verify](https://img.shields.io/github/actions/workflow/status/ryanduguid/Ozzit/verify.yml?branch=main&label=verify&labelColor=000000&style=flat-square)](https://github.com/ryanduguid/Ozzit/actions/workflows/verify.yml)
+[![Codecov](https://img.shields.io/codecov/c/github/ryanduguid/Ozzit?label=coverage&labelColor=000000&style=flat-square)](https://codecov.io/gh/ryanduguid/Ozzit)
+[![CodeQL](https://img.shields.io/github/actions/workflow/status/ryanduguid/Ozzit/codeql.yml?branch=main&label=CodeQL&labelColor=000000&style=flat-square)](https://github.com/ryanduguid/Ozzit/actions/workflows/codeql.yml)
+[![SonarCloud](https://img.shields.io/sonar/quality_gate/ryanduguid_Ozzit?server=https%3A%2F%2Fsonarcloud.io&label=SonarCloud&labelColor=000000&style=flat-square)](https://sonarcloud.io/summary/new_code?id=ryanduguid_Ozzit)
+[![Codacy code quality](https://img.shields.io/codacy/grade/ffd3c7d7645541179caea8a353bd3f86?label=Codacy&labelColor=000000&style=flat-square)](https://app.codacy.com/gh/ryanduguid/Ozzit/dashboard)<br>
+[![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/ryanduguid/Ozzit?label=Scorecard&labelColor=000000&style=flat-square)](https://scorecard.dev/viewer/?uri=github.com/ryanduguid/Ozzit)
+[![OpenSSF Best Practices](https://img.shields.io/cii/level/15420?label=Best%20Practices&labelColor=000000&style=flat-square)](https://www.bestpractices.dev/projects/15420)
+[![VirusTotal](https://img.shields.io/badge/VirusTotal-scanned-990024?labelColor=000000&style=flat-square&logo=virustotal&logoColor=FFFFF0)](https://github.com/ryanduguid/Ozzit/releases/latest)<br>
+[![release](https://img.shields.io/github/v/release/ryanduguid/Ozzit?color=66023C&labelColor=000000&style=flat-square)](https://github.com/ryanduguid/Ozzit/releases/latest)
+![Excel: 365 or 2024+](https://img.shields.io/badge/Excel-365%20or%202024%2B-66023C?labelColor=000000&style=flat-square)
+[![licence: Apache-2.0](https://img.shields.io/badge/licence-Apache--2.0-66023C?labelColor=000000&style=flat-square)](LICENSE)
 
 One Excel workbook holding 137 native LAMBDA functions and 5 named help tables under
 the `oz.` prefix: amortisation, depreciation, ratios, AASB 16 lessee schedules, and
@@ -17,7 +23,7 @@ bookkeeping tool and never touches a ledger.
 
 **Needs Microsoft 365 or Excel 2024 or later**, which support `LAMBDA` and dynamic
 arrays. LibreOffice, Google Sheets and earlier Excel versions cannot evaluate the
-functions. MIT licensed.
+functions. Apache-2.0 licensed.
 
 **Current published release: [v3.4.2](https://github.com/ryanduguid/Ozzit/releases/tag/v3.4.2)**,
 published 20 September 2026 from the cut dated 16 September 2026.
@@ -81,6 +87,11 @@ you can check by hand; the lease guide explains the four lessee functions.
 [Open, copy functions and use modern Excel](docs/workbook-use.md) shows how to
 copy a function into your own workbook.
 
+For an AI assistant, [the Ozzit skill](skills/ozzit/SKILL.md) routes function
+selection and composition through the existing catalogue and approved workbook.
+Copy `skills/ozzit` into the host's skill directory and supply the approved bundle
+location and revision. Installing the skill does not install the Excel names.
+
 <details>
 <summary>Setup, function catalogue, workbook examples and reference</summary>
 
@@ -111,11 +122,11 @@ The screenshot uses a disposable copy with a synthetic label, an explicit argume
 
 The current release is v3.4.2, dated 16 September 2026; citation metadata is in [CITATION.cff](CITATION.cff). It was published on 20 September 2026 from the signed tag `v3.4.2` on commit `621af0e265306f00a83e17c4d27dca09031c5ccd`, after the native gates [RELEASING.md](RELEASING.md) requires ran on the exact file it ships. The [release page](https://github.com/ryanduguid/Ozzit/releases/tag/v3.4.2) carries `ozzit.xlsx`, `provenance.json` and `SHA256SUMS`, and GitHub reports the release immutable.
 
-v3.4.2 `ozzit.xlsx` SHA-256: `0306793a7e473ce70e78149fea1e107fc0f714d61ab50960c16f6fd528878f6f` (439,097 bytes), the same bytes as the release asset. `main` is ahead of that tag, so the file you clone is not the file the release ships: the tracked `ozzit.xlsx` is SHA-256 `8c42e2278de61bdacfb090b940e684bb12a7636a256816aa20f81360b71bb760` (452,439 bytes), pinned in [release/workbook-base.json](release/workbook-base.json) and checked by the tool tests. On 29 September 2026, Excel 16.0 build 20430 recalculated 1,129 formulas with 0 in error, ran 1,033 self-test assertions with 0 failures and found 19,446 cached values equal to what their formulas produce. The workbook was byte-identical before and after both native gates.
+v3.4.2 `ozzit.xlsx` SHA-256: `0306793a7e473ce70e78149fea1e107fc0f714d61ab50960c16f6fd528878f6f` (439,097 bytes), the same bytes as the release asset. `main` is ahead of that tag, so the file you clone is not the file the release ships: the tracked `ozzit.xlsx` is SHA-256 `b92b36e3e935490d15357588a4942ac9cbdca5bb2ff233ca3fe29d323bb6dbec` (452,325 bytes), pinned in [release/workbook-base.json](release/workbook-base.json) and checked by the tool tests. On 14 October 2026, Excel 16.0 build 20527 recalculated 1,129 formulas with 0 in error, ran 1,033 self-test assertions with 0 failures and found 19,446 cached values equal to what their formulas produce. The workbook was byte-identical before and after both native gates.
 
 - [Repository checks](AGENTS.md) and [release and native verification](RELEASING.md)
 - [Changes](CHANGELOG.md) and [citation](CITATION.cff)
 
-MIT licensed. See [LICENCE](LICENCE). [DISCLAIMER.md](DISCLAIMER.md) states that this is not advice and names the bodies the project is not affiliated with.
+Apache-2.0 licensed. See [LICENSE](LICENSE). If you redistribute this work or build on it, keep the attribution in [NOTICE](NOTICE). [DISCLAIMER.md](DISCLAIMER.md) states that this is not advice and names the bodies the project is not affiliated with.
 
 </details>

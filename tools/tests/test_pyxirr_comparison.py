@@ -82,8 +82,8 @@ class PyxirrComparisonTests(unittest.TestCase):
         for case in broken["cases"]:
             if not case["agrees"]:
                 case["note"] = None
-        if any(not c["agrees"] for c in broken["cases"]):
-            self.assertIn("| NO |", comparison.table(broken))
+        disagrees = any(not c["agrees"] for c in broken["cases"])
+        self.assertEqual("| NO |" in comparison.table(broken), disagrees)
 
 
 class ComparisonFailureTests(unittest.TestCase):
@@ -235,9 +235,8 @@ class ReleasedWorkbookTests(unittest.TestCase):
             result = comparison.main(self.args)
             evaluate.assert_called_once_with(self.workbook.resolve())
             write_table.assert_not_called()
-            if result == 0:
-                # A completed run ends by printing the comparison table.
-                self.assertIn("| Case | Compared |", printed.getvalue())
+            # A completed run ends by printing the comparison table, whatever it returns.
+            self.assertIn("| Case | Compared |", printed.getvalue())
             return result
 
     def test_evidence_identifies_downloaded_bytes_without_rewriting_history(self) -> None:

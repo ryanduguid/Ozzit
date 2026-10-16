@@ -80,7 +80,7 @@ class WorkbookPresentationTests(unittest.TestCase):
             for cell in root.findall(".//m:c[@s]", NS):
                 style = self.cell_xfs[int(cell.attrib["s"])]
                 if int(style.attrib.get("fillId", "0")) in mint_fill_ids:
-                    used.append(f"{name}!{cell.attrib['r']}")
+                    used.append(f"{name}!{cell.attrib['r']}")  # pragma: no cover - on failure only
         self.assertEqual(used, [])
 
     def test_populated_dates_do_not_use_locale_dependent_builtin_14(self):
@@ -95,11 +95,11 @@ class WorkbookPresentationTests(unittest.TestCase):
                     continue
                 try:
                     serial = float(value.text)
-                except ValueError:
+                except ValueError:  # pragma: no cover - no styled cell holds a non-number value
                     continue
                 style = self.cell_xfs[int(cell.attrib["s"])]
                 if serial > 20_000 and style.attrib.get("numFmtId", "0") == "14":
-                    bad.append(f"{name}!{cell.attrib['r']}")
+                    bad.append(f"{name}!{cell.attrib['r']}")  # pragma: no cover - on failure only
         self.assertEqual(bad, [])
 
     def test_essentials_and_ratio_straplines_match_toc_descriptions(self):
@@ -115,15 +115,15 @@ class WorkbookPresentationTests(unittest.TestCase):
             root = ET.fromstring(self.parts[path])
             cell = root.find(".//m:c[@r='A2'][@s]", NS)
             if cell is None or not cell_text(root, "A2", self.strings):
-                continue
+                continue  # pragma: no cover - every oz. sheet has a styled A2 strapline
             style = self.cell_xfs[int(cell.attrib["s"])]
             font = self.fonts[int(style.attrib.get("fontId", "0"))]
             rgb = next(
                 (node.attrib.get("rgb") for node in font.iter() if node.tag.endswith("color")),
                 None,
             )
-            if rgb not in {"FF6E6862", "FF04001F", "FF2B2733", "FF5C2D91"}:
-                bad.append((name, rgb))
+            if rgb not in {"FF6E6862", "FF000000", "FF66023C"}:
+                bad.append((name, rgb))  # pragma: no cover - on failure only
         self.assertEqual(bad, [])
 
     def test_cover_describes_brand_neutral_formula_highlights(self):

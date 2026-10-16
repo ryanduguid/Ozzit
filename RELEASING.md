@@ -40,8 +40,8 @@ request with a merge commit, never a squash: the manifest names the workbook
 commit, and `tools/tests/test_release_bundle.py` fails unless it is the last
 commit on the branch to change the workbook. A squash replaces it. Pull requests that change only documentation may be squashed.
 
-MIT covers the whole repository, `ozzit.xlsx`, `src/` and `functions.csv` included.
-Every source archive must still include `LICENCE`.
+Apache-2.0 covers the whole repository, `ozzit.xlsx`, `src/` and `functions.csv` included.
+Every source archive must still include `LICENSE` and `NOTICE`.
 
 ## Approval and tag
 
@@ -81,8 +81,8 @@ The independent verifier must record and compare GitHub's API `digest` for the u
 Install the pinned linter and type checker in the clean candidate:
 
 ```powershell
-python -m pip install "ruff==0.16.6"
-python -m pip install "mypy==2.3.1"
+python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-ruff.txt
+python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-mypy.txt
 ```
 
 Then run the following 12 static and repository gates, the same commands CI runs:

@@ -13,14 +13,14 @@ or attach to one. Follow the evidence, hash and Excel-version requirements in
 `RELEASING.md`.
 
 Run the CI sequence exactly before submitting a change. The first 4 commands
-are the `lint` job; the rest run on Python 3.14. Install the git
+are the `lint` job; the rest run on Python 3.14 and 3.15. Install the git
 hooks once with `python -m pip install pre-commit && pre-commit install`; they
 run the pinned ruff check on staged files.
 
 ```powershell
-python -m pip install "ruff==0.16.6"
+python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-ruff.txt
 python -m ruff check .
-python -m pip install "mypy==2.3.1"
+python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-mypy.txt
 python -m mypy --config-file mypy.ini
 python tools/verify_workbook.py ozzit.xlsx
 python tools/verify_sources.py ozzit.xlsx src

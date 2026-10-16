@@ -5,6 +5,30 @@
 Changes on `main` since v3.4.2. They reach the published workbook in the next
 release; until then v3.4.2 behaves as it did, including the defects fixed here.
 
+### Licence changed to Apache-2.0
+
+From the next release, Ozzit is licensed under the Apache License 2.0 instead of MIT.
+Anyone who redistributes the workbook or a derivative must keep the attribution in
+`NOTICE`. v3.4.2 and earlier releases stay under MIT. The licence text moves from
+`LICENCE` to `LICENSE`, the file name licence checkers look for.
+
+### Workbook and templates restyled to the repository palette
+
+`ozzit.xlsx` and both templates now use the colours of the README, logo, social card
+and diagrams: black `#000000`, ivory `#FFFFF0`, platinum `#E5E4E2`, Tyrian purple
+`#66023C`, crimson `#990024`, and Rhodesian green `#0F4B32` for passed checks only.
+Titles, links and function cells move from `#5C2D91` to Tyrian purple, with function
+cells on a pale Tyrian fill. Input cells are platinum, header-label bands ivory, and
+text on dark fills ivory. Warnings, failed checks and the TOC length guard are crimson
+on a pale crimson fill. Tabs follow the modules: Cover, TOC and Data Validation
+platinum, dates black, financial functions, Australian tax and ratios Tyrian purple,
+and array essentials crimson. The theme colours match, so Excel's colour picker,
+hyperlinks and charts offer the same palette. The strapline grey and the templates'
+blue input and green link text are unchanged. The cash-flow legend now reads "Blue
+text / ivory fill". Only formatting changed: no formula, value or cached result moved.
+`tools/postbuild/workbook_palette.py` applies the palette, with `--template` for the
+workbooks in `templates/`.
+
 ### Four working-capital functions added
 
 Four LAMBDA functions join the Ratios group, taking the library from 133 to 137
@@ -1029,7 +1053,7 @@ baseline that grew around them.
   fixed in `nb.TimelineOffsetλ` and named as still outstanding here. `nb.LabelDepreciateλ`'s
   said 'teh'.
 
-- **A licence, for the parts of this repository that can carry one.** [LICENCE](LICENCE) is
+- **A licence, for the parts of this repository that can carry one.** [LICENCE](LICENSE) is
   MIT and covers `tools/`, `.github/`, the Markdown files and `assets/`. It does not extend
   to `nabla.xlsx`, `src/` or `functions.csv`, which were carved out at the time. v3.2.0
   removed the carve-out; MIT now covers the whole repository. v3.0.0 and v3.1.0 still

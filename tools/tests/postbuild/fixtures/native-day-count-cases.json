@@ -1,0 +1,1777 @@
+[
+  {
+    "id": "leap_months_1",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),1,1)",
+    "terms": [
+      [
+        [
+          30,
+          360
+        ]
+      ],
+      [
+        [
+          30,
+          360
+        ]
+      ],
+      [
+        [
+          30,
+          360
+        ]
+      ],
+      [
+        [
+          30,
+          360
+        ]
+      ]
+    ],
+    "coverage": [
+      "inferred_last",
+      "leap_year"
+    ]
+  },
+  {
+    "id": "leap_months_2",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),1,2)",
+    "terms": [
+      [
+        [
+          31,
+          360
+        ]
+      ],
+      [
+        [
+          29,
+          360
+        ]
+      ],
+      [
+        [
+          31,
+          360
+        ]
+      ],
+      [
+        [
+          30,
+          360
+        ]
+      ]
+    ],
+    "coverage": [
+      "inferred_last",
+      "leap_year"
+    ]
+  },
+  {
+    "id": "leap_months_3",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),1,3)",
+    "terms": [
+      [
+        [
+          31,
+          365
+        ]
+      ],
+      [
+        [
+          29,
+          365
+        ]
+      ],
+      [
+        [
+          31,
+          365
+        ]
+      ],
+      [
+        [
+          30,
+          365
+        ]
+      ]
+    ],
+    "coverage": [
+      "inferred_last",
+      "leap_year"
+    ]
+  },
+  {
+    "id": "leap_months_4",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),1,4)",
+    "terms": [
+      [
+        [
+          31,
+          366
+        ]
+      ],
+      [
+        [
+          29,
+          366
+        ]
+      ],
+      [
+        [
+          31,
+          366
+        ]
+      ],
+      [
+        [
+          30,
+          366
+        ]
+      ]
+    ],
+    "coverage": [
+      "inferred_last",
+      "leap_year"
+    ]
+  },
+  {
+    "id": "common_months_1",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2026,1,1),DATE(2026,2,1),DATE(2026,3,1),DATE(2026,4,1)),1,1)",
+    "terms": [
+      [
+        [
+          30,
+          360
+        ]
+      ],
+      [
+        [
+          30,
+          360
+        ]
+      ],
+      [
+        [
+          30,
+          360
+        ]
+      ],
+      [
+        [
+          30,
+          360
+        ]
+      ]
+    ],
+    "coverage": [
+      "inferred_last",
+      "common_year"
+    ]
+  },
+  {
+    "id": "common_months_2",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2026,1,1),DATE(2026,2,1),DATE(2026,3,1),DATE(2026,4,1)),1,2)",
+    "terms": [
+      [
+        [
+          31,
+          360
+        ]
+      ],
+      [
+        [
+          28,
+          360
+        ]
+      ],
+      [
+        [
+          31,
+          360
+        ]
+      ],
+      [
+        [
+          30,
+          360
+        ]
+      ]
+    ],
+    "coverage": [
+      "inferred_last",
+      "common_year"
+    ]
+  },
+  {
+    "id": "common_months_3",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2026,1,1),DATE(2026,2,1),DATE(2026,3,1),DATE(2026,4,1)),1,3)",
+    "terms": [
+      [
+        [
+          31,
+          365
+        ]
+      ],
+      [
+        [
+          28,
+          365
+        ]
+      ],
+      [
+        [
+          31,
+          365
+        ]
+      ],
+      [
+        [
+          30,
+          365
+        ]
+      ]
+    ],
+    "coverage": [
+      "inferred_last",
+      "common_year"
+    ]
+  },
+  {
+    "id": "common_months_4",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2026,1,1),DATE(2026,2,1),DATE(2026,3,1),DATE(2026,4,1)),1,4)",
+    "terms": [
+      [
+        [
+          31,
+          365
+        ]
+      ],
+      [
+        [
+          28,
+          365
+        ]
+      ],
+      [
+        [
+          31,
+          365
+        ]
+      ],
+      [
+        [
+          30,
+          365
+        ]
+      ]
+    ],
+    "coverage": [
+      "inferred_last",
+      "common_year"
+    ]
+  },
+  {
+    "id": "month_end_starts_1",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,31),DATE(2024,2,29),DATE(2024,3,31)),1,1)",
+    "terms": [
+      [
+        [
+          29,
+          360
+        ]
+      ],
+      [
+        [
+          31,
+          360
+        ]
+      ],
+      [
+        [
+          30,
+          360
+        ]
+      ]
+    ],
+    "coverage": [
+      "inferred_last",
+      "month_end"
+    ]
+  },
+  {
+    "id": "month_end_starts_2",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,31),DATE(2024,2,29),DATE(2024,3,31)),1,2)",
+    "terms": [
+      [
+        [
+          29,
+          360
+        ]
+      ],
+      [
+        [
+          31,
+          360
+        ]
+      ],
+      [
+        [
+          30,
+          360
+        ]
+      ]
+    ],
+    "coverage": [
+      "inferred_last",
+      "month_end"
+    ]
+  },
+  {
+    "id": "month_end_starts_3",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,31),DATE(2024,2,29),DATE(2024,3,31)),1,3)",
+    "terms": [
+      [
+        [
+          29,
+          365
+        ]
+      ],
+      [
+        [
+          31,
+          365
+        ]
+      ],
+      [
+        [
+          30,
+          365
+        ]
+      ]
+    ],
+    "coverage": [
+      "inferred_last",
+      "month_end"
+    ]
+  },
+  {
+    "id": "month_end_starts_4",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,31),DATE(2024,2,29),DATE(2024,3,31)),1,4)",
+    "terms": [
+      [
+        [
+          29,
+          366
+        ]
+      ],
+      [
+        [
+          31,
+          366
+        ]
+      ],
+      [
+        [
+          30,
+          366
+        ]
+      ]
+    ],
+    "coverage": [
+      "inferred_last",
+      "month_end"
+    ]
+  },
+  {
+    "id": "weekly_1",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2026,7,1),DATE(2026,7,8),DATE(2026,7,15)),1,1)",
+    "terms": [
+      [
+        [
+          7,
+          360
+        ]
+      ],
+      [
+        [
+          7,
+          360
+        ]
+      ],
+      [
+        [
+          7,
+          360
+        ]
+      ]
+    ],
+    "coverage": [
+      "short_gap",
+      "inferred_last"
+    ]
+  },
+  {
+    "id": "weekly_2",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2026,7,1),DATE(2026,7,8),DATE(2026,7,15)),1,2)",
+    "terms": [
+      [
+        [
+          7,
+          360
+        ]
+      ],
+      [
+        [
+          7,
+          360
+        ]
+      ],
+      [
+        [
+          7,
+          360
+        ]
+      ]
+    ],
+    "coverage": [
+      "short_gap",
+      "inferred_last"
+    ]
+  },
+  {
+    "id": "weekly_3",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2026,7,1),DATE(2026,7,8),DATE(2026,7,15)),1,3)",
+    "terms": [
+      [
+        [
+          7,
+          365
+        ]
+      ],
+      [
+        [
+          7,
+          365
+        ]
+      ],
+      [
+        [
+          7,
+          365
+        ]
+      ]
+    ],
+    "coverage": [
+      "short_gap",
+      "inferred_last"
+    ]
+  },
+  {
+    "id": "weekly_4",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2026,7,1),DATE(2026,7,8),DATE(2026,7,15)),1,4)",
+    "terms": [
+      [
+        [
+          7,
+          365
+        ]
+      ],
+      [
+        [
+          7,
+          365
+        ]
+      ],
+      [
+        [
+          7,
+          365
+        ]
+      ]
+    ],
+    "coverage": [
+      "short_gap",
+      "inferred_last"
+    ]
+  },
+  {
+    "id": "gap_27_1",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2026,1,1),DATE(2026,1,28)),1,1)",
+    "terms": [
+      [
+        [
+          27,
+          360
+        ]
+      ],
+      [
+        [
+          26,
+          360
+        ]
+      ]
+    ],
+    "coverage": [
+      "gap_threshold",
+      "short_gap"
+    ]
+  },
+  {
+    "id": "gap_27_2",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2026,1,1),DATE(2026,1,28)),1,2)",
+    "terms": [
+      [
+        [
+          27,
+          360
+        ]
+      ],
+      [
+        [
+          27,
+          360
+        ]
+      ]
+    ],
+    "coverage": [
+      "gap_threshold",
+      "short_gap"
+    ]
+  },
+  {
+    "id": "gap_27_3",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2026,1,1),DATE(2026,1,28)),1,3)",
+    "terms": [
+      [
+        [
+          27,
+          365
+        ]
+      ],
+      [
+        [
+          27,
+          365
+        ]
+      ]
+    ],
+    "coverage": [
+      "gap_threshold",
+      "short_gap"
+    ]
+  },
+  {
+    "id": "gap_27_4",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2026,1,1),DATE(2026,1,28)),1,4)",
+    "terms": [
+      [
+        [
+          27,
+          365
+        ]
+      ],
+      [
+        [
+          27,
+          365
+        ]
+      ]
+    ],
+    "coverage": [
+      "gap_threshold",
+      "short_gap"
+    ]
+  },
+  {
+    "id": "gap_28_1",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2026,1,1),DATE(2026,1,29)),1,1)",
+    "terms": [
+      [
+        [
+          28,
+          360
+        ]
+      ],
+      [
+        [
+          29,
+          360
+        ]
+      ]
+    ],
+    "coverage": [
+      "gap_threshold",
+      "month_clamp"
+    ]
+  },
+  {
+    "id": "gap_28_2",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2026,1,1),DATE(2026,1,29)),1,2)",
+    "terms": [
+      [
+        [
+          28,
+          360
+        ]
+      ],
+      [
+        [
+          30,
+          360
+        ]
+      ]
+    ],
+    "coverage": [
+      "gap_threshold",
+      "month_clamp"
+    ]
+  },
+  {
+    "id": "gap_28_3",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2026,1,1),DATE(2026,1,29)),1,3)",
+    "terms": [
+      [
+        [
+          28,
+          365
+        ]
+      ],
+      [
+        [
+          30,
+          365
+        ]
+      ]
+    ],
+    "coverage": [
+      "gap_threshold",
+      "month_clamp"
+    ]
+  },
+  {
+    "id": "gap_28_4",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2026,1,1),DATE(2026,1,29)),1,4)",
+    "terms": [
+      [
+        [
+          28,
+          365
+        ]
+      ],
+      [
+        [
+          30,
+          365
+        ]
+      ]
+    ],
+    "coverage": [
+      "gap_threshold",
+      "month_clamp"
+    ]
+  },
+  {
+    "id": "end_months_1",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,31),DATE(2024,2,29),DATE(2024,3,31),DATE(2024,4,30)),1,1,TRUE)",
+    "terms": [
+      [
+        [
+          30,
+          360
+        ]
+      ],
+      [
+        [
+          30,
+          360
+        ]
+      ],
+      [
+        [
+          30,
+          360
+        ]
+      ],
+      [
+        [
+          30,
+          360
+        ]
+      ]
+    ],
+    "coverage": [
+      "inferred_first",
+      "end_dates",
+      "month_end"
+    ]
+  },
+  {
+    "id": "end_months_2",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,31),DATE(2024,2,29),DATE(2024,3,31),DATE(2024,4,30)),1,2,TRUE)",
+    "terms": [
+      [
+        [
+          31,
+          360
+        ]
+      ],
+      [
+        [
+          29,
+          360
+        ]
+      ],
+      [
+        [
+          31,
+          360
+        ]
+      ],
+      [
+        [
+          30,
+          360
+        ]
+      ]
+    ],
+    "coverage": [
+      "inferred_first",
+      "end_dates",
+      "month_end"
+    ]
+  },
+  {
+    "id": "end_months_3",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,31),DATE(2024,2,29),DATE(2024,3,31),DATE(2024,4,30)),1,3,TRUE)",
+    "terms": [
+      [
+        [
+          31,
+          365
+        ]
+      ],
+      [
+        [
+          29,
+          365
+        ]
+      ],
+      [
+        [
+          31,
+          365
+        ]
+      ],
+      [
+        [
+          30,
+          365
+        ]
+      ]
+    ],
+    "coverage": [
+      "inferred_first",
+      "end_dates",
+      "month_end"
+    ]
+  },
+  {
+    "id": "end_months_4",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,31),DATE(2024,2,29),DATE(2024,3,31),DATE(2024,4,30)),1,4,TRUE)",
+    "terms": [
+      [
+        [
+          31,
+          366
+        ]
+      ],
+      [
+        [
+          29,
+          366
+        ]
+      ],
+      [
+        [
+          31,
+          366
+        ]
+      ],
+      [
+        [
+          30,
+          366
+        ]
+      ]
+    ],
+    "coverage": [
+      "inferred_first",
+      "end_dates",
+      "month_end"
+    ]
+  },
+  {
+    "id": "end_weekly_1",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2026,7,7),DATE(2026,7,14),DATE(2026,7,21)),1,1,TRUE)",
+    "terms": [
+      [
+        [
+          7,
+          360
+        ]
+      ],
+      [
+        [
+          7,
+          360
+        ]
+      ],
+      [
+        [
+          7,
+          360
+        ]
+      ]
+    ],
+    "coverage": [
+      "inferred_first",
+      "end_dates",
+      "short_gap"
+    ]
+  },
+  {
+    "id": "end_weekly_2",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2026,7,7),DATE(2026,7,14),DATE(2026,7,21)),1,2,TRUE)",
+    "terms": [
+      [
+        [
+          7,
+          360
+        ]
+      ],
+      [
+        [
+          7,
+          360
+        ]
+      ],
+      [
+        [
+          7,
+          360
+        ]
+      ]
+    ],
+    "coverage": [
+      "inferred_first",
+      "end_dates",
+      "short_gap"
+    ]
+  },
+  {
+    "id": "end_weekly_3",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2026,7,7),DATE(2026,7,14),DATE(2026,7,21)),1,3,TRUE)",
+    "terms": [
+      [
+        [
+          7,
+          365
+        ]
+      ],
+      [
+        [
+          7,
+          365
+        ]
+      ],
+      [
+        [
+          7,
+          365
+        ]
+      ]
+    ],
+    "coverage": [
+      "inferred_first",
+      "end_dates",
+      "short_gap"
+    ]
+  },
+  {
+    "id": "end_weekly_4",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2026,7,7),DATE(2026,7,14),DATE(2026,7,21)),1,4,TRUE)",
+    "terms": [
+      [
+        [
+          7,
+          365
+        ]
+      ],
+      [
+        [
+          7,
+          365
+        ]
+      ],
+      [
+        [
+          7,
+          365
+        ]
+      ]
+    ],
+    "coverage": [
+      "inferred_first",
+      "end_dates",
+      "short_gap"
+    ]
+  },
+  {
+    "id": "year_crossing_1",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2023,11,1),DATE(2023,12,1),DATE(2024,1,1)),1,1)",
+    "terms": [
+      [
+        [
+          30,
+          360
+        ]
+      ],
+      [
+        [
+          30,
+          360
+        ]
+      ],
+      [
+        [
+          30,
+          360
+        ]
+      ]
+    ],
+    "coverage": [
+      "year_crossing",
+      "inferred_last"
+    ]
+  },
+  {
+    "id": "year_crossing_2",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2023,11,1),DATE(2023,12,1),DATE(2024,1,1)),1,2)",
+    "terms": [
+      [
+        [
+          30,
+          360
+        ]
+      ],
+      [
+        [
+          31,
+          360
+        ]
+      ],
+      [
+        [
+          31,
+          360
+        ]
+      ]
+    ],
+    "coverage": [
+      "year_crossing",
+      "inferred_last"
+    ]
+  },
+  {
+    "id": "year_crossing_3",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2023,11,1),DATE(2023,12,1),DATE(2024,1,1)),1,3)",
+    "terms": [
+      [
+        [
+          30,
+          365
+        ]
+      ],
+      [
+        [
+          31,
+          365
+        ]
+      ],
+      [
+        [
+          31,
+          365
+        ]
+      ]
+    ],
+    "coverage": [
+      "year_crossing",
+      "inferred_last"
+    ]
+  },
+  {
+    "id": "year_crossing_4",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2023,11,1),DATE(2023,12,1),DATE(2024,1,1)),1,4)",
+    "terms": [
+      [
+        [
+          30,
+          365
+        ]
+      ],
+      [
+        [
+          31,
+          365
+        ]
+      ],
+      [
+        [
+          31,
+          366
+        ]
+      ]
+    ],
+    "coverage": [
+      "year_crossing",
+      "inferred_last"
+    ]
+  },
+  {
+    "id": "annual_1",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2023,7,1),DATE(2024,7,1),DATE(2025,7,1)),1,1)",
+    "terms": [
+      [
+        [
+          360,
+          360
+        ]
+      ],
+      [
+        [
+          360,
+          360
+        ]
+      ],
+      [
+        [
+          360,
+          360
+        ]
+      ]
+    ],
+    "coverage": [
+      "annual",
+      "year_crossing",
+      "inferred_last"
+    ]
+  },
+  {
+    "id": "annual_2",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2023,7,1),DATE(2024,7,1),DATE(2025,7,1)),1,2)",
+    "terms": [
+      [
+        [
+          366,
+          360
+        ]
+      ],
+      [
+        [
+          365,
+          360
+        ]
+      ],
+      [
+        [
+          365,
+          360
+        ]
+      ]
+    ],
+    "coverage": [
+      "annual",
+      "year_crossing",
+      "inferred_last"
+    ]
+  },
+  {
+    "id": "annual_3",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2023,7,1),DATE(2024,7,1),DATE(2025,7,1)),1,3)",
+    "terms": [
+      [
+        [
+          366,
+          365
+        ]
+      ],
+      [
+        [
+          365,
+          365
+        ]
+      ],
+      [
+        [
+          365,
+          365
+        ]
+      ]
+    ],
+    "coverage": [
+      "annual",
+      "year_crossing",
+      "inferred_last"
+    ]
+  },
+  {
+    "id": "annual_4",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2023,7,1),DATE(2024,7,1),DATE(2025,7,1)),1,4)",
+    "terms": [
+      [
+        [
+          184,
+          365
+        ],
+        [
+          182,
+          366
+        ]
+      ],
+      [
+        [
+          184,
+          366
+        ],
+        [
+          181,
+          365
+        ]
+      ],
+      [
+        [
+          365,
+          365
+        ]
+      ]
+    ],
+    "coverage": [
+      "annual",
+      "year_crossing",
+      "inferred_last"
+    ]
+  },
+  {
+    "id": "column_dates_1",
+    "formula": "=oz.DayCountRateλ(VSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),1,1)",
+    "equivalent_to": "leap_months_1",
+    "coverage": [
+      "column_dates"
+    ]
+  },
+  {
+    "id": "scalar_apr_1",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),0.073,1)",
+    "equivalent_to": "leap_months_1",
+    "coverage": [
+      "scalar_apr"
+    ],
+    "apr": [
+      0.073,
+      0.073,
+      0.073,
+      0.073
+    ]
+  },
+  {
+    "id": "row_apr_1",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),{0.073,0,-0.01,0.1},1)",
+    "equivalent_to": "leap_months_1",
+    "coverage": [
+      "row_apr"
+    ],
+    "apr": [
+      0.073,
+      0,
+      -0.01,
+      0.1
+    ]
+  },
+  {
+    "id": "column_apr_1",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),{0.073;0;-0.01;0.1},1)",
+    "equivalent_to": "leap_months_1",
+    "coverage": [
+      "column_apr"
+    ],
+    "apr": [
+      0.073,
+      0,
+      -0.01,
+      0.1
+    ]
+  },
+  {
+    "id": "both_columns_1",
+    "formula": "=oz.DayCountRateλ(VSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),{0.073;0;-0.01;0.1},1)",
+    "equivalent_to": "leap_months_1",
+    "coverage": [
+      "both_columns"
+    ],
+    "apr": [
+      0.073,
+      0,
+      -0.01,
+      0.1
+    ]
+  },
+  {
+    "id": "iso_text_1",
+    "formula": "=oz.DayCountRateλ({\"2024-01-01\",\"2024-02-01\",\"2024-03-01\",\"2024-04-01\"},1,1)",
+    "equivalent_to": "leap_months_1",
+    "coverage": [
+      "text_dates"
+    ]
+  },
+  {
+    "id": "month_text_1",
+    "formula": "=oz.DayCountRateλ({\"1 Jan 2024\",\"1 Feb 2024\",\"1 Mar 2024\",\"1 Apr 2024\"},1,1)",
+    "equivalent_to": "leap_months_1",
+    "coverage": [
+      "text_dates"
+    ]
+  },
+  {
+    "id": "mixed_dates_1",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1),\"2024-02-01\",DATE(2024,3,1),\"1 Apr 2024\"),1,1)",
+    "equivalent_to": "leap_months_1",
+    "coverage": [
+      "mixed_dates"
+    ]
+  },
+  {
+    "id": "end_numeric_1",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,31),DATE(2024,2,29),DATE(2024,3,31),DATE(2024,4,30)),1,1,1)",
+    "equivalent_to": "end_months_1",
+    "coverage": [
+      "end_flag"
+    ]
+  },
+  {
+    "id": "end_negative_1",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,31),DATE(2024,2,29),DATE(2024,3,31),DATE(2024,4,30)),1,1,-1)",
+    "equivalent_to": "end_months_1",
+    "coverage": [
+      "end_flag"
+    ]
+  },
+  {
+    "id": "column_dates_2",
+    "formula": "=oz.DayCountRateλ(VSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),1,2)",
+    "equivalent_to": "leap_months_2",
+    "coverage": [
+      "column_dates"
+    ]
+  },
+  {
+    "id": "scalar_apr_2",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),0.073,2)",
+    "equivalent_to": "leap_months_2",
+    "coverage": [
+      "scalar_apr"
+    ],
+    "apr": [
+      0.073,
+      0.073,
+      0.073,
+      0.073
+    ]
+  },
+  {
+    "id": "row_apr_2",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),{0.073,0,-0.01,0.1},2)",
+    "equivalent_to": "leap_months_2",
+    "coverage": [
+      "row_apr"
+    ],
+    "apr": [
+      0.073,
+      0,
+      -0.01,
+      0.1
+    ]
+  },
+  {
+    "id": "column_apr_2",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),{0.073;0;-0.01;0.1},2)",
+    "equivalent_to": "leap_months_2",
+    "coverage": [
+      "column_apr"
+    ],
+    "apr": [
+      0.073,
+      0,
+      -0.01,
+      0.1
+    ]
+  },
+  {
+    "id": "both_columns_2",
+    "formula": "=oz.DayCountRateλ(VSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),{0.073;0;-0.01;0.1},2)",
+    "equivalent_to": "leap_months_2",
+    "coverage": [
+      "both_columns"
+    ],
+    "apr": [
+      0.073,
+      0,
+      -0.01,
+      0.1
+    ]
+  },
+  {
+    "id": "iso_text_2",
+    "formula": "=oz.DayCountRateλ({\"2024-01-01\",\"2024-02-01\",\"2024-03-01\",\"2024-04-01\"},1,2)",
+    "equivalent_to": "leap_months_2",
+    "coverage": [
+      "text_dates"
+    ]
+  },
+  {
+    "id": "month_text_2",
+    "formula": "=oz.DayCountRateλ({\"1 Jan 2024\",\"1 Feb 2024\",\"1 Mar 2024\",\"1 Apr 2024\"},1,2)",
+    "equivalent_to": "leap_months_2",
+    "coverage": [
+      "text_dates"
+    ]
+  },
+  {
+    "id": "mixed_dates_2",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1),\"2024-02-01\",DATE(2024,3,1),\"1 Apr 2024\"),1,2)",
+    "equivalent_to": "leap_months_2",
+    "coverage": [
+      "mixed_dates"
+    ]
+  },
+  {
+    "id": "end_numeric_2",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,31),DATE(2024,2,29),DATE(2024,3,31),DATE(2024,4,30)),1,2,1)",
+    "equivalent_to": "end_months_2",
+    "coverage": [
+      "end_flag"
+    ]
+  },
+  {
+    "id": "end_negative_2",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,31),DATE(2024,2,29),DATE(2024,3,31),DATE(2024,4,30)),1,2,-1)",
+    "equivalent_to": "end_months_2",
+    "coverage": [
+      "end_flag"
+    ]
+  },
+  {
+    "id": "column_dates_3",
+    "formula": "=oz.DayCountRateλ(VSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),1,3)",
+    "equivalent_to": "leap_months_3",
+    "coverage": [
+      "column_dates"
+    ]
+  },
+  {
+    "id": "scalar_apr_3",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),0.073,3)",
+    "equivalent_to": "leap_months_3",
+    "coverage": [
+      "scalar_apr"
+    ],
+    "apr": [
+      0.073,
+      0.073,
+      0.073,
+      0.073
+    ]
+  },
+  {
+    "id": "row_apr_3",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),{0.073,0,-0.01,0.1},3)",
+    "equivalent_to": "leap_months_3",
+    "coverage": [
+      "row_apr"
+    ],
+    "apr": [
+      0.073,
+      0,
+      -0.01,
+      0.1
+    ]
+  },
+  {
+    "id": "column_apr_3",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),{0.073;0;-0.01;0.1},3)",
+    "equivalent_to": "leap_months_3",
+    "coverage": [
+      "column_apr"
+    ],
+    "apr": [
+      0.073,
+      0,
+      -0.01,
+      0.1
+    ]
+  },
+  {
+    "id": "both_columns_3",
+    "formula": "=oz.DayCountRateλ(VSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),{0.073;0;-0.01;0.1},3)",
+    "equivalent_to": "leap_months_3",
+    "coverage": [
+      "both_columns"
+    ],
+    "apr": [
+      0.073,
+      0,
+      -0.01,
+      0.1
+    ]
+  },
+  {
+    "id": "iso_text_3",
+    "formula": "=oz.DayCountRateλ({\"2024-01-01\",\"2024-02-01\",\"2024-03-01\",\"2024-04-01\"},1,3)",
+    "equivalent_to": "leap_months_3",
+    "coverage": [
+      "text_dates"
+    ]
+  },
+  {
+    "id": "month_text_3",
+    "formula": "=oz.DayCountRateλ({\"1 Jan 2024\",\"1 Feb 2024\",\"1 Mar 2024\",\"1 Apr 2024\"},1,3)",
+    "equivalent_to": "leap_months_3",
+    "coverage": [
+      "text_dates"
+    ]
+  },
+  {
+    "id": "mixed_dates_3",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1),\"2024-02-01\",DATE(2024,3,1),\"1 Apr 2024\"),1,3)",
+    "equivalent_to": "leap_months_3",
+    "coverage": [
+      "mixed_dates"
+    ]
+  },
+  {
+    "id": "end_numeric_3",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,31),DATE(2024,2,29),DATE(2024,3,31),DATE(2024,4,30)),1,3,1)",
+    "equivalent_to": "end_months_3",
+    "coverage": [
+      "end_flag"
+    ]
+  },
+  {
+    "id": "end_negative_3",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,31),DATE(2024,2,29),DATE(2024,3,31),DATE(2024,4,30)),1,3,-1)",
+    "equivalent_to": "end_months_3",
+    "coverage": [
+      "end_flag"
+    ]
+  },
+  {
+    "id": "column_dates_4",
+    "formula": "=oz.DayCountRateλ(VSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),1,4)",
+    "equivalent_to": "leap_months_4",
+    "coverage": [
+      "column_dates"
+    ]
+  },
+  {
+    "id": "scalar_apr_4",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),0.073,4)",
+    "equivalent_to": "leap_months_4",
+    "coverage": [
+      "scalar_apr"
+    ],
+    "apr": [
+      0.073,
+      0.073,
+      0.073,
+      0.073
+    ]
+  },
+  {
+    "id": "row_apr_4",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),{0.073,0,-0.01,0.1},4)",
+    "equivalent_to": "leap_months_4",
+    "coverage": [
+      "row_apr"
+    ],
+    "apr": [
+      0.073,
+      0,
+      -0.01,
+      0.1
+    ]
+  },
+  {
+    "id": "column_apr_4",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),{0.073;0;-0.01;0.1},4)",
+    "equivalent_to": "leap_months_4",
+    "coverage": [
+      "column_apr"
+    ],
+    "apr": [
+      0.073,
+      0,
+      -0.01,
+      0.1
+    ]
+  },
+  {
+    "id": "both_columns_4",
+    "formula": "=oz.DayCountRateλ(VSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),{0.073;0;-0.01;0.1},4)",
+    "equivalent_to": "leap_months_4",
+    "coverage": [
+      "both_columns"
+    ],
+    "apr": [
+      0.073,
+      0,
+      -0.01,
+      0.1
+    ]
+  },
+  {
+    "id": "iso_text_4",
+    "formula": "=oz.DayCountRateλ({\"2024-01-01\",\"2024-02-01\",\"2024-03-01\",\"2024-04-01\"},1,4)",
+    "equivalent_to": "leap_months_4",
+    "coverage": [
+      "text_dates"
+    ]
+  },
+  {
+    "id": "month_text_4",
+    "formula": "=oz.DayCountRateλ({\"1 Jan 2024\",\"1 Feb 2024\",\"1 Mar 2024\",\"1 Apr 2024\"},1,4)",
+    "equivalent_to": "leap_months_4",
+    "coverage": [
+      "text_dates"
+    ]
+  },
+  {
+    "id": "mixed_dates_4",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1),\"2024-02-01\",DATE(2024,3,1),\"1 Apr 2024\"),1,4)",
+    "equivalent_to": "leap_months_4",
+    "coverage": [
+      "mixed_dates"
+    ]
+  },
+  {
+    "id": "end_numeric_4",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,31),DATE(2024,2,29),DATE(2024,3,31),DATE(2024,4,30)),1,4,1)",
+    "equivalent_to": "end_months_4",
+    "coverage": [
+      "end_flag"
+    ]
+  },
+  {
+    "id": "end_negative_4",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,31),DATE(2024,2,29),DATE(2024,3,31),DATE(2024,4,30)),1,4,-1)",
+    "equivalent_to": "end_months_4",
+    "coverage": [
+      "end_flag"
+    ]
+  },
+  {
+    "id": "convention_omitted",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),1)",
+    "equivalent_to": "leap_months_3",
+    "coverage": [
+      "default_convention"
+    ]
+  },
+  {
+    "id": "convention_blank",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),1,)",
+    "equivalent_to": "leap_months_3",
+    "coverage": [
+      "default_convention"
+    ]
+  },
+  {
+    "id": "convention_text",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),1,\"2\")",
+    "equivalent_to": "leap_months_3",
+    "coverage": [
+      "default_convention"
+    ]
+  },
+  {
+    "id": "convention_boolean",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),1,FALSE)",
+    "equivalent_to": "leap_months_3",
+    "coverage": [
+      "default_convention"
+    ]
+  },
+  {
+    "id": "end_false",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),1,3,FALSE)",
+    "equivalent_to": "leap_months_3",
+    "coverage": [
+      "end_flag"
+    ]
+  },
+  {
+    "id": "end_zero",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),1,3,0)",
+    "equivalent_to": "leap_months_3",
+    "coverage": [
+      "end_flag"
+    ]
+  },
+  {
+    "id": "end_text",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),1,3,\"TRUE\")",
+    "equivalent_to": "leap_months_3",
+    "coverage": [
+      "end_flag"
+    ]
+  },
+  {
+    "id": "invalid_method_zero",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),1,0)",
+    "error_control": "value_error",
+    "coverage": [
+      "invalid_method"
+    ]
+  },
+  {
+    "id": "invalid_method_five",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),1,5)",
+    "error_control": "value_error",
+    "coverage": [
+      "invalid_method"
+    ]
+  },
+  {
+    "id": "invalid_method_fraction",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),1,2.5)",
+    "error_control": "value_error",
+    "coverage": [
+      "invalid_method"
+    ]
+  },
+  {
+    "id": "value_error",
+    "formula": "=VALUE(\"invalid\")",
+    "observation": "Native #VALUE! error control"
+  },
+  {
+    "id": "na_error",
+    "formula": "=NA()",
+    "observation": "Native #N/A error control"
+  },
+  {
+    "id": "one_date",
+    "formula": "=oz.DayCountRateλ(DATE(2024,1,1),1,3)",
+    "observation": "A timeline with fewer than two dates is outside the input contract"
+  },
+  {
+    "id": "short_apr",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),{0.073,0},3)",
+    "observation": "APR length differs from the period count"
+  },
+  {
+    "id": "long_apr",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1),DATE(2024,2,1),DATE(2024,3,1),DATE(2024,4,1)),{0.073,0,0,0,0},3)",
+    "observation": "APR length differs from the period count"
+  },
+  {
+    "id": "matrix_dates",
+    "formula": "=oz.DayCountRateλ(VSTACK(HSTACK(DATE(2024,1,1),DATE(2024,2,1)),HSTACK(DATE(2024,3,1),DATE(2024,4,1))),1,3)",
+    "observation": "A two-dimensional timeline is outside the input contract"
+  },
+  {
+    "id": "invalid_text_date",
+    "formula": "=oz.DayCountRateλ(HSTACK(\"invalid\",DATE(2024,2,1)),1,3)",
+    "observation": "Invalid text date"
+  },
+  {
+    "id": "reverse_same_year_1",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2026,7,15),DATE(2026,7,8),DATE(2026,7,1)),1,1)",
+    "observation": "Descending dates; date ordering support is unspecified"
+  },
+  {
+    "id": "reverse_cross_year_1",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,15),DATE(2023,12,15)),1,1)",
+    "observation": "Descending dates across a calendar-year boundary; date ordering support is unspecified"
+  },
+  {
+    "id": "serial_1900_1",
+    "formula": "=oz.DayCountRateλ({59,60,61},1,1)",
+    "observation": "Excel serial 60 represents the fictitious 29 February 1900"
+  },
+  {
+    "id": "fractional_date_1",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1)+0.5,DATE(2024,1,2)),1,1)",
+    "observation": "Fractional date serial; time-of-day support is unspecified"
+  },
+  {
+    "id": "reverse_same_year_2",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2026,7,15),DATE(2026,7,8),DATE(2026,7,1)),1,2)",
+    "observation": "Descending dates; date ordering support is unspecified"
+  },
+  {
+    "id": "reverse_cross_year_2",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,15),DATE(2023,12,15)),1,2)",
+    "observation": "Descending dates across a calendar-year boundary; date ordering support is unspecified"
+  },
+  {
+    "id": "serial_1900_2",
+    "formula": "=oz.DayCountRateλ({59,60,61},1,2)",
+    "observation": "Excel serial 60 represents the fictitious 29 February 1900"
+  },
+  {
+    "id": "fractional_date_2",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1)+0.5,DATE(2024,1,2)),1,2)",
+    "observation": "Fractional date serial; time-of-day support is unspecified"
+  },
+  {
+    "id": "reverse_same_year_3",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2026,7,15),DATE(2026,7,8),DATE(2026,7,1)),1,3)",
+    "observation": "Descending dates; date ordering support is unspecified"
+  },
+  {
+    "id": "reverse_cross_year_3",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,15),DATE(2023,12,15)),1,3)",
+    "observation": "Descending dates across a calendar-year boundary; date ordering support is unspecified"
+  },
+  {
+    "id": "serial_1900_3",
+    "formula": "=oz.DayCountRateλ({59,60,61},1,3)",
+    "observation": "Excel serial 60 represents the fictitious 29 February 1900"
+  },
+  {
+    "id": "fractional_date_3",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1)+0.5,DATE(2024,1,2)),1,3)",
+    "observation": "Fractional date serial; time-of-day support is unspecified"
+  },
+  {
+    "id": "reverse_same_year_4",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2026,7,15),DATE(2026,7,8),DATE(2026,7,1)),1,4)",
+    "observation": "Descending dates; date ordering support is unspecified"
+  },
+  {
+    "id": "reverse_cross_year_4",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,15),DATE(2023,12,15)),1,4)",
+    "observation": "Descending dates across a calendar-year boundary; date ordering support is unspecified"
+  },
+  {
+    "id": "serial_1900_4",
+    "formula": "=oz.DayCountRateλ({59,60,61},1,4)",
+    "observation": "Excel serial 60 represents the fictitious 29 February 1900"
+  },
+  {
+    "id": "fractional_date_4",
+    "formula": "=oz.DayCountRateλ(HSTACK(DATE(2024,1,1)+0.5,DATE(2024,1,2)),1,4)",
+    "observation": "Fractional date serial; time-of-day support is unspecified"
+  }
+]

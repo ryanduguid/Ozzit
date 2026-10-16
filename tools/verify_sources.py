@@ -43,7 +43,8 @@ MODULES = ["Dates", "Essentials", "Financial", "Ratios", "Utilities", "Debt"]
 NAMESPACE = "oz"          # every function ships under one prefix, whatever module it lives in
 
 OPENERS, CLOSERS = "({[", ")}]"
-NAME = re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_.λ]*)\s*=\s*(.+)$", re.DOTALL)
+# Bounded input: one line of this repository's own sources or cover sheet.
+NAME = re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_.λ]*)\s*=\s*(.+)$", re.DOTALL)  # NOSONAR
 OPTIONAL = re.compile(r"_xlop\.([A-Za-z_][A-Za-z0-9_]*\??)")   # ? is legal in a parameter name
 PREFIX = re.compile(r"_xl[a-z]+\.", re.IGNORECASE)
 PLACEHOLDER = re.compile("\x00(\\d+)\x00")            # a held-aside string literal

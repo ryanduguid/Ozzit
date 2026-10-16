@@ -199,7 +199,7 @@ def number(text: str) -> tuple[Decimal, Decimal] | None:
     totals and made the fragment irreproducible between interpreters).
     """
     match = NUMBER.match(text.strip())
-    if not match or match.group(1) in ("", "-", "%"):
+    if not match or match.group(1) in ("", "-", "%", "-%"):
         return None
     text = match.group(1)
     percent = text.endswith("%")
@@ -250,7 +250,8 @@ def checks_for(name: str, example: Example, index: int, library: set[str], bindi
     elif rows and all(LIST.match(r) or number(r) for r in rows):
         parsed = [number(x) for r in rows for x in r.split(",")]
         items = [p for p in parsed if p is not None]
-        if len(items) == len(parsed):
+        # The elif above admits only rows whose comma-separated items all parse.
+        if len(items) == len(parsed):  # pragma: no branch
             total = sum((v for v, _t in items), Decimal(0))
             tolerance = sum((t for _v, t in items), Decimal(0))
             lines.append(f"Near {tag} \"COUNT({powershell(formula)})\" '{len(items)}'")
@@ -313,11 +314,13 @@ def main() -> None:
     text = generate(src)
     if not text.isascii():
         sys.exit("FAIL: the generated fragment is not pure ASCII")
-    before = output.read_text(encoding="ascii") if output.is_file() else None
+    # Build tool; the path is the repository's own file or the maintainer's argument.
+    before = output.read_text(encoding="ascii") if output.is_file() else None  # NOSONAR
     if before == text:
         print(f"already current: {output}")
         return
-    output.write_text(text, encoding="ascii", newline="\n")
+    # Build tool; the path is the repository's own file or the maintainer's argument.
+    output.write_text(text, encoding="ascii", newline="\n")  # NOSONAR
     print(f"wrote {output}: {text.count(chr(10))} lines")
 
 

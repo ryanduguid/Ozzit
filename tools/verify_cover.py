@@ -25,9 +25,11 @@ WORKBOOK = Path(sys.argv[1] if len(sys.argv) > 1 else "ozzit.xlsx")
 INDEX = Path(sys.argv[2] if len(sys.argv) > 2 else "functions.csv")
 CHANGELOG = Path(sys.argv[3] if len(sys.argv) > 3 else "CHANGELOG.md")
 
-LABEL = re.compile(r"^Version (?P<date>.+?)\s+-\s+(?P<count>\d+) functions\s+-\s+.+$")
+# Bounded input: one line of this repository's own sources or cover sheet.
+LABEL = re.compile(r"^Version (?P<date>.+?)\s+-\s+(?P<count>\d+) functions\s+-\s+.+$")  # NOSONAR
 CUT = re.compile(r"^## v\d+\.\d+\.\d+, (?P<date>\d{1,2} [A-Z][a-z]+ \d{4}),", re.MULTILINE)
-COVER_SHEET = re.compile(r'<sheet [^>]*name="Cover"[^>]*r:id="(?P<rid>rId\d+)"')
+# Bounded input: each attempt stays within one tag of the repository's own workbook XML.
+COVER_SHEET = re.compile(r'<sheet [^>]*name="Cover"[^>]*r:id="(?P<rid>rId\d+)"')  # NOSONAR
 CELL = re.compile(r'<c r="A3"(?P<attrs>[^>]*)>(?P<body>.*?)</c>', re.DOTALL)
 
 

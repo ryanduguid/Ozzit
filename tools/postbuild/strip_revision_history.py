@@ -110,7 +110,8 @@ def apply(workbook: Path, src: Path) -> list[str]:
             )
         stripped.append((module, before, after, blocks))
 
-    original_bytes = workbook.read_bytes()
+    # Build tool; the path is the repository's own file or the maintainer's argument.
+    original_bytes = workbook.read_bytes()  # NOSONAR
     parts = read_parts(workbook)
     core = parts["docProps/core.xml"]
     changes: list[str] = []

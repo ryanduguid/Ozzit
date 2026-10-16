@@ -20,7 +20,8 @@ from typing import TextIO, TypedDict, cast
 
 WORKBOOK = sys.argv[1] if len(sys.argv) > 1 else "ozzit.xlsx"
 SRC = Path(sys.argv[2] if len(sys.argv) > 2 else "src")
-SCHEMA = "http://schemas.advancedformulaenvironment.officeapps.live.com/afeprojects/0.2"
+# XML namespace identifier, not a URL that is fetched.
+SCHEMA = "http://schemas.advancedformulaenvironment.officeapps.live.com/afeprojects/0.2"  # NOSONAR
 MODULES = ("Dates", "Essentials", "Financial", "Ratios", "Utilities", "Debt")
 AFE_BLOB_RE = rb"[A-Za-z0-9+/]{100,}={0,2}"
 
