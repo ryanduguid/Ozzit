@@ -77,13 +77,20 @@ def main() -> int:
         with zipfile.ZipFile(WORKBOOK) as archive:
             workbook = archive.read("xl/workbook.xml").decode("utf-8")
         with INDEX.open(encoding="utf-8-sig", newline="") as index_file:
-            rows = list(csv.DictReader(index_file))
-    except (OSError, KeyError, UnicodeDecodeError, zipfile.BadZipFile) as exc:
+            reader = csv.DictReader(index_file)
+            columns = reader.fieldnames or []
+            duplicates = [field for field in ("function", "module", "signature", "description")
+                          if columns.count(field) > 1]
+            if duplicates:
+                print(f"FAIL: {INDEX.name}: duplicate CSV column(s): {', '.join(duplicates)}")
+                return 1
+            rows = list(reader)
+        modules = source_modules(SRC)
+    except (OSError, KeyError, UnicodeDecodeError, csv.Error, zipfile.BadZipFile) as exc:
         print(f"FAIL: cannot read index inputs: {exc}")
         return 1
 
     expected = {}
-    modules = source_modules(SRC)
     for name, attrs, encoded in NAME_RE.findall(workbook):
         body = html.unescape(encoded)
         signature, description = index_fields(attrs, body, name.rsplit(".", 1)[1])
@@ -99,13 +106,13 @@ def main() -> int:
     # before anything reads the fields.
     counts: dict[str, int] = {}
     for row in rows:
-        name = row.get("function", "")
+        name = row.get("function") or ""
         counts[name] = counts.get(name, 0) + 1
     for name, count in sorted(counts.items()):
         if count > 1:
             failures.append(f"{name} appears {count} times in {INDEX.name}")
 
-    actual = {row.get("function", ""): row for row in rows}
+    actual = {row.get("function") or "": row for row in rows}
     for name in sorted(set(expected) - set(actual)):
         failures.append(f"{name} is in the workbook but missing from functions.csv")
     for name in sorted(set(actual) - set(expected)):
@@ -129,4 +136,6 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    if len(sys.argv) > 4:
+        sys.exit("FAIL: usage: python tools/verify_index.py [workbook] [src dir] [functions.csv]")
     sys.exit(main())

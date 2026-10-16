@@ -37,12 +37,6 @@ import zipfile
 from collections.abc import Collection
 from pathlib import Path
 
-# Every function name carries a λ, and a Windows console defaults to cp1252, which
-# cannot encode it: without this the check dies printing its own result.
-if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8")
-
-
 WORKBOOK = sys.argv[1] if len(sys.argv) > 1 else "ozzit.xlsx"
 SRC_DIR = sys.argv[2] if len(sys.argv) > 2 else "src"
 MODULES = ["Dates", "Essentials", "Financial", "Ratios", "Utilities", "Debt"]
@@ -358,6 +352,10 @@ def collapsed_defaults(body: str) -> list[str]:
 
 
 def main() -> int:
+    # Function names contain λ, which legacy console encodings cannot represent.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+
     # Two passes: the namespace is flat, so a call in one module may name a function
     # declared in another, and every declaration has to be known before any is qualified.
     raw = {}
@@ -368,7 +366,11 @@ def main() -> int:
         if not path.exists():
             fail("missing source module %s" % path)
     for path in sorted(src.glob("*.txt")):
-        text = path.read_text(encoding="utf-8")
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as exc:
+            print("FAIL: cannot read %s: %s" % (path, exc))
+            return 1
         # The published source must be in the form Excel accepts as input.
         for token in ("[0]!", "_xlfn.", "_xlpm.", "_xlop.", "_xlws."):
             if token in text:
@@ -436,4 +438,6 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    if len(sys.argv) > 3:
+        sys.exit("FAIL: usage: python tools/verify_sources.py [workbook] [src dir]")
     sys.exit(main())

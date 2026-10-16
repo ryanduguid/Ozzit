@@ -24,7 +24,7 @@ import zipfile
 from pathlib import Path
 
 from sanitise_workbook import write_deterministic
-from verify_afe import MODULES, find_afe_blob, workbook_names
+from verify_afe import MODULES, emit_line, find_afe_blob, workbook_names
 from verify_sources import NAME, statements
 
 NAMESPACE = "oz"
@@ -114,8 +114,8 @@ def main() -> None:
     ) as exc:
         sys.exit(f"FAIL: cannot sync AFE store: {exc}")
     for change in changes:
-        print(change)
-    print(f"OK: {workbook} AFE store synced, {workbook.stat().st_size:,} bytes")
+        emit_line(change)
+    emit_line(f"OK: {workbook} AFE store synced, {workbook.stat().st_size:,} bytes")
 
 
 if __name__ == "__main__":

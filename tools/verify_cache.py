@@ -16,6 +16,7 @@ converter to a web preview, reads the cached answer.
 Needs Excel, so this is a local gate like the arithmetic one, not a CI gate.
 """
 import html
+import math
 import os
 import re
 import subprocess
@@ -118,11 +119,14 @@ def agree(cached: str, live: str) -> bool:
         return True
     try:
         a, b = float(cached), float(live)
+        if not math.isfinite(a) or not math.isfinite(b):
+            return False
         return abs(a - b) <= max(1e-9, 1e-9 * max(abs(a), abs(b)))
     except ValueError:
         pass
     try:                                   # a saved error against the code Excel returns
-        return ERRORS.get(int(float(live))) == cached
+        code = float(live)
+        return math.isfinite(code) and ERRORS.get(int(code)) == cached
     except ValueError:
         return False
 

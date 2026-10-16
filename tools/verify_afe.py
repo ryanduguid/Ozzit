@@ -53,7 +53,7 @@ def decode_store(workbook: Path) -> AfeStore:
     try:
         with zipfile.ZipFile(workbook) as archive:
             raw = archive.read("customXml/item1.xml")
-    except (FileNotFoundError, KeyError, zipfile.BadZipFile) as exc:
+    except (OSError, KeyError, zipfile.BadZipFile) as exc:
         raise ValueError(f"cannot read AFE store: {exc}") from exc
     try:
         encoded = find_afe_blob(raw)
@@ -89,7 +89,7 @@ def workbook_names(workbook: Path) -> set[str]:
     try:
         with zipfile.ZipFile(workbook) as archive:
             text = archive.read("xl/workbook.xml").decode("utf-8")
-    except (FileNotFoundError, KeyError, UnicodeDecodeError, zipfile.BadZipFile) as exc:
+    except (OSError, KeyError, UnicodeDecodeError, zipfile.BadZipFile) as exc:
         raise ValueError(f"cannot read workbook names: {exc}") from exc
     names = set()
     for raw in re.findall(r'<definedName\b[^>]*\bname="([^"]+)"[^>]*>', text):
@@ -130,6 +130,9 @@ def check(workbook: Path, src: Path) -> list[str]:
             expected = expected_path.read_text(encoding="utf-8")
         except FileNotFoundError:
             fail(failures, f"source module {expected_path} missing")
+            continue
+        except (OSError, UnicodeDecodeError) as exc:
+            fail(failures, f"cannot read source module {expected_path}: {exc}")
             continue
         if files[path] != expected:
             first = next(
@@ -183,4 +186,6 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    if len(sys.argv) > 3:
+        sys.exit("FAIL: usage: python tools/verify_afe.py [workbook] [src dir]")
     main()

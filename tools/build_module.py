@@ -84,7 +84,17 @@ def check(text: str, workbook: Path, index: Path) -> list[str]:
     shipped = {name[len(NAMESPACE) + 1 :] for name in workbook_names(workbook)}
     # Build tool; the path is the repository's own file or the maintainer's argument.
     with index.open(encoding="utf-8-sig", newline="") as handle:  # NOSONAR
-        indexed = {row["function"][len(NAMESPACE) + 1 :] for row in csv.DictReader(handle)}
+        reader = csv.DictReader(handle)
+        if (reader.fieldnames or []).count("function") > 1:
+            failures.append(f"{index.name}: duplicate CSV column(s): function")
+            return sorted(set(failures))
+        indexed = set()
+        for row in reader:
+            name = row.get("function") or ""
+            if not name.startswith(f"{NAMESPACE}."):
+                failures.append(f"{index.name}: invalid function name {name!r}; expected {NAMESPACE}. prefix")
+            else:
+                indexed.add(name[len(NAMESPACE) + 1 :])
     for label, expected in (("workbook", shipped), ("functions.csv", indexed)):
         for name in sorted(expected - set(declared)):
             failures.append(f"{label} ships {NAMESPACE}.{name}, which the module text does not declare")

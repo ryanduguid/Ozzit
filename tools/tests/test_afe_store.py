@@ -32,11 +32,11 @@ class AfeGateTests(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.directory, ignore_errors=True)
 
-    def _run(self, path, encoding):
+    def _run(self, path, encoding, script="verify_afe.py"):
         env = os.environ.copy()
         env["PYTHONIOENCODING"] = encoding
         return subprocess.run(
-            [sys.executable, str(TOOLS / "verify_afe.py"), str(path), str(ROOT / "src")],
+            [sys.executable, str(TOOLS / script), str(path), str(ROOT / "src")],
             capture_output=True,
             text=True,
             encoding=encoding,
@@ -192,6 +192,67 @@ class AfeGateTests(unittest.TestCase):
         self._assert_controlled_failure(utf8, 2)
         self.assertIn("AFE file path /projects/Dates appears 2 times", utf8.stdout)
         self.assertIn("AFE projectNames entry oz.CountDOWλ appears 2 times", utf8.stdout)
+
+    def test_importing_source_helpers_preserves_output_encoding(self):
+        code = (
+            f"import sys; sys.path.insert(0, {str(TOOLS)!r}); "
+            "sys.stdout.reconfigure(encoding='cp1252'); "
+            "import verify_sources; print(sys.stdout.encoding)"
+        )
+        result = subprocess.run(
+            [sys.executable, "-c", code], capture_output=True, text=True, check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stderr, "")
+        self.assertEqual(result.stdout.strip(), "cp1252")
+
+    def test_sync_reports_success_in_supported_encodings(self):
+        target = self.directory / "synced-λ→.xlsx"
+        original = WORKBOOK.read_bytes()
+        target.write_bytes(original)
+        for encoding in ("cp1252", "utf-8"):
+            with self.subTest(encoding=encoding):
+                result = self._run(target, encoding, "sync_afe_store.py")
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(result.stderr, "")
+                self.assertIn("AFE store already matches src/", result.stdout)
+                expected_path = (
+                    r"synced-\u03bb\u2192.xlsx" if encoding == "cp1252" else "synced-λ→.xlsx"
+                )
+                self.assertIn(f"{expected_path} AFE store synced,", result.stdout)
+                self.assertEqual(target.read_bytes(), original)
+
+    def test_sync_reports_success_after_update_in_supported_encodings(self):
+        target = self.directory / "updated-λ→.xlsx"
+        current, encoded = afe_parts(WORKBOOK)
+        with zipfile.ZipFile(WORKBOOK) as source:
+            original_parts = {name: source.read(name) for name in source.namelist()}
+        for encoding in ("cp1252", "utf-8"):
+            with self.subTest(encoding=encoding):
+                stale, _ = afe_parts(WORKBOOK)
+                dates = next(item for item in stale["files"] if item["path"] == "/projects/Dates")
+                dates["text"] = dates["text"].replace("20 Aug 2026", "19 Aug 2026", 1)
+                replacement = base64.b64encode(
+                    json.dumps(stale, ensure_ascii=False, separators=(",", ":")).encode("utf-16-le")
+                )
+                with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as output:
+                    for name, data in original_parts.items():
+                        if name == "customXml/item1.xml":
+                            data = data.replace(encoded, replacement)
+                        output.writestr(name, data)
+                result = self._run(target, encoding, "sync_afe_store.py")
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(result.stderr, "")
+                self.assertIn("synced AFE module /projects/Dates", result.stdout)
+                expected_path = (
+                    r"updated-\u03bb\u2192.xlsx" if encoding == "cp1252" else "updated-λ→.xlsx"
+                )
+                self.assertIn(f"{expected_path} AFE store synced,", result.stdout)
+                self.assertEqual(afe_parts(target)[0], current)
+                with zipfile.ZipFile(target) as archive:
+                    for name, data in original_parts.items():
+                        if name != "customXml/item1.xml":
+                            self.assertEqual(archive.read(name), data, name)
 
     def test_gate_reports_success_in_supported_encodings(self):
         target = self.directory / "valid-λ→.xlsx"
