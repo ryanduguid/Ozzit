@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## Unreleased: v3.5.0 candidate
 
 Changes on `main` since v3.4.2. They reach the published workbook in the next
 release; until then v3.4.2 behaves as it did, including the defects fixed here.
