@@ -119,14 +119,25 @@ class CacheGatePathTests(unittest.TestCase):
 
     def test_cached_values_without_shared_strings_skip_empty_inline_cells(self):
         workbook = self.workbook('<c r="A1"><v>7</v></c><c r="B1" t="inlineStr"><is/></c>')
-        self.assertEqual(verify_cache.cached_values(workbook), ({(1, 1, 1): "7"}, {1: "Data"}))
+        self.assertEqual(verify_cache.cached_values(workbook),
+                         ({(1, 1, 1): verify_cache.CellValue("7")}, {1: "Data"}))
 
-    def test_short_dump_lines_are_ignored_and_a_thin_comparison_fails_the_floor(self):
+    def test_malformed_dump_lines_fail_with_a_diagnostic(self):
         workbook = self.workbook('<c r="A1"><v>7</v></c><c r="B1" t="inlineStr"><is/></c>')
-        result, output = self.run_gate(workbook, dump="1\t1\t1\t7\nnot a dump row\n1\t2\n")
+        result, output = self.run_gate(workbook, dump="1\t1\t1\tvalue\t7\nnot a dump row\n1\t2\n")
+        self.assertEqual(result, 1)
+        self.assertIn("FAIL: cannot read Excel dump: row 2", output)
+
+    def test_a_complete_but_thin_dump_still_fails_the_floor(self):
+        result, output = self.run_gate(self.numbers(1), dump="1\t1\t1\tvalue\t1\n")
         self.assertEqual(result, 1)
         self.assertIn("FAIL: only 1 cells carried both a cached and a calculated value, "
                       "under the floor of 15000.", output)
+
+    def test_value_tabs_remain_inside_the_final_dump_field(self):
+        workbook = self.workbook('<c r="A1" t="str"><v>a\tb</v></c>')
+        result, output = self.run_gate(workbook, dump="1\t1\t1\tvalue\ta\tb\n", floor=1)
+        self.assertEqual(result, 0, output)
 
     def test_more_than_twenty_missing_cells_are_summarised(self):
         result, output = self.run_gate(self.numbers(25))
@@ -137,14 +148,14 @@ class CacheGatePathTests(unittest.TestCase):
         self.assertEqual(lines[-1], "  ... and 5 more")
 
     def test_more_than_twenty_stale_cells_are_summarised(self):
-        dump = "".join(f"1\t{row}\t1\t2\n" for row in range(1, 26))
+        dump = "".join(f"1\t{row}\t1\tvalue\t2\n" for row in range(1, 26))
         result, output = self.run_gate(self.numbers(25), dump=dump, floor=1)
         self.assertEqual(result, 1)
         lines = output.splitlines()
         self.assertEqual(
             lines[0], "FAIL: 25 of 25 cached values are not what the formula produces, on 1 sheet(s)"
         )
-        self.assertEqual(lines[1], "  - Data row 1 col 1: cached 1, calculates to 2")
+        self.assertEqual(lines[1], "  - Data row 1 col 1: cached 1 (value), calculates to 2 (value)")
         self.assertEqual(lines[-2:], ["  ... and 5 more", "Run: python tools/refresh_cache.py"])
 
 

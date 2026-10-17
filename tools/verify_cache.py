@@ -23,6 +23,7 @@ import subprocess
 import sys
 import tempfile
 import zipfile
+from typing import NamedTuple
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -45,6 +46,13 @@ ERRORS = {-2146826288: "#NULL!", -2146826281: "#DIV/0!", -2146826273: "#VALUE!",
 
 CELL = re.compile(r'<c r="([A-Z]+)(\d+)"([^>]*)>((?:(?!<c[ /]).)*?)</c>', re.S)
 CellKey = tuple[int, int, int]
+
+
+class CellValue(NamedTuple):
+    text: str
+    is_error: bool = False
+
+
 KIND_RE = re.compile(r't="([^"]+)"')
 INLINE_T_RE = re.compile(r"<t[^>]*>(.*?)</t>", re.S)
 V_RE = re.compile(r"<v>(.*?)</v>", re.S)
@@ -52,7 +60,7 @@ V_RE = re.compile(r"<v>(.*?)</v>", re.S)
 
 def cached_values(
     path: str | os.PathLike[str],
-) -> tuple[dict[CellKey, str], dict[int, str]]:
+) -> tuple[dict[CellKey, CellValue], dict[int, str]]:
     """Every cached value in the workbook, keyed by (tab position, row, column).
 
     Keyed by position rather than by part name because Excel renumbers the sheet parts
@@ -78,7 +86,7 @@ def cached_values(
         raise SystemExit("FAIL: %s are not worksheets, so tab position no longer lines up "
                          "with Excel's Worksheets collection" % ", ".join(charts))
 
-    out: dict[CellKey, str] = {}
+    out: dict[CellKey, CellValue] = {}
     names: dict[int, str] = {}
     for pos, (name, target) in enumerate(order, start=1):
         names[pos] = name
@@ -102,7 +110,7 @@ def cached_values(
                 else:
                     value = raw
             if value is not None:
-                out[(pos, int(m.group(2)), column_number(m.group(1)))] = value
+                out[(pos, int(m.group(2)), column_number(m.group(1)))] = CellValue(value, kind == "e")
     return out, names
 
 
@@ -114,19 +122,21 @@ def fold(text: str) -> str:
                 .replace(chr(13), marker))
 
 
-def agree(cached: str, live: str) -> bool:
-    if fold(cached) == live:
+def agree(cached: CellValue, live: CellValue) -> bool:
+    if cached.is_error != live.is_error:
+        return False
+    if cached.is_error:
+        try:
+            return ERRORS.get(int(live.text)) == cached.text
+        except ValueError:
+            return False
+    if fold(cached.text) == live.text:
         return True
     try:
-        a, b = float(cached), float(live)
+        a, b = float(cached.text), float(live.text)
         if not math.isfinite(a) or not math.isfinite(b):
             return False
         return abs(a - b) <= max(1e-9, 1e-9 * max(abs(a), abs(b)))
-    except ValueError:
-        pass
-    try:                                   # a saved error against the code Excel returns
-        code = float(live)
-        return math.isfinite(code) and ERRORS.get(int(code)) == cached
     except ValueError:
         return False
 
@@ -160,12 +170,20 @@ def main() -> int:
             print((proc.stdout or proc.stderr or "").strip()[:2000])
             return 1
 
-        live: dict[CellKey, str] = {}
-        with open(dump, encoding="utf-8-sig") as fh:
-            for line in fh:
-                bits = line.rstrip("\n").split("\t", 3)
-                if len(bits) == 4:
-                    live[(int(bits[0]), int(bits[1]), int(bits[2]))] = bits[3]
+        live: dict[CellKey, CellValue] = {}
+        try:
+            with open(dump, encoding="utf-8-sig") as fh:
+                for row, line in enumerate(fh, start=1):
+                    bits = line.rstrip("\n").split("\t", 4)
+                    if len(bits) != 5 or bits[3] not in {"value", "error"}:
+                        raise ValueError(f"row {row} needs a cell position, value kind and value")
+                    key = (int(bits[0]), int(bits[1]), int(bits[2]))
+                    if min(key) < 1 or key in live:
+                        raise ValueError(f"row {row} has an invalid or repeated cell position")
+                    live[key] = CellValue(bits[4], bits[3] == "error")
+        except (OSError, ValueError) as exc:
+            print(f"FAIL: cannot read Excel dump: {exc}")
+            return 1
     finally:
         try:
             os.unlink(dump)
@@ -196,8 +214,9 @@ def main() -> int:
         print("FAIL: %d of %d cached values are not what the formula produces, on %d sheet(s)"
               % (len(stale), len(both), len({k[0] for k, _, _ in stale})))
         for (pos, row, col), was, now in stale[:20]:
-            print("  - %s row %d col %d: cached %s, calculates to %s"
-                  % (names[pos], row, col, str(was)[:40], str(now)[:40]))
+            print("  - %s row %d col %d: cached %s (%s), calculates to %s (%s)"
+                  % (names[pos], row, col, was.text[:40], "error" if was.is_error else "value",
+                     now.text[:40], "error" if now.is_error else "value"))
         if len(stale) > 20:
             print("  ... and %d more" % (len(stale) - 20))
         print("Run: python tools/refresh_cache.py")

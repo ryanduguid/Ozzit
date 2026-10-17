@@ -1,5 +1,6 @@
 # Write every calculated cell value in a workbook to a tab-separated file, so a checker can
-# compare what Excel produces against what the file has cached.
+# compare what Excel produces against what the file has cached. Columns are
+# sheet, row, column, value kind (error/value), then the newline-folded value.
 #
 # Cells are keyed by tab position rather than by $ws.Index, which intermittently returns an
 # empty value over COM and silently attributes a sheet's cells to the wrong sheet.
@@ -55,16 +56,19 @@ try {
         $vals = $ur.Value2
         if ($null -eq $vals) { continue }
         if ($vals -isnot [object[,]]) {
-            $sw.WriteLine("$pos`t$r0`t$c0`t" + (([string]$vals) -replace "`r`n", '\n' -replace "`n", '\n' -replace "`r", '\n'))
+            $kind = if ($vals -is [int]) { 'error' } else { 'value' }
+            $sw.WriteLine("$pos`t$r0`t$c0`t$kind`t" + (([string]$vals) -replace "`r`n", '\n' -replace "`n", '\n' -replace "`r", '\n'))
             continue
         }
         for ($i = 1; $i -le $vals.GetLength(0); $i++) {
             for ($j = 1; $j -le $vals.GetLength(1); $j++) {
                 $v = $vals[$i, $j]
                 if ($null -eq $v) { continue }
+                # COM errors are Int32; an ordinary number with the same text is Double.
+                $kind = if ($v -is [int]) { 'error' } else { 'value' }
                 # A cell may hold newlines. Fold them so one cell stays one line.
                 $s = ([string]$v) -replace "`r`n", '\n' -replace "`n", '\n' -replace "`r", '\n'
-                $sw.WriteLine("$pos`t" + ($r0 + $i - 1) + "`t" + ($c0 + $j - 1) + "`t" + $s)
+                $sw.WriteLine("$pos`t" + ($r0 + $i - 1) + "`t" + ($c0 + $j - 1) + "`t$kind`t" + $s)
             }
         }
     }

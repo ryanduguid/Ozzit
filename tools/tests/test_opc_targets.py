@@ -94,7 +94,9 @@ class AbsoluteTargetTests(unittest.TestCase):
             for name, data in parts.items():
                 archive.writestr(name, data)
         self.assertEqual(
-            verify_cache.cached_values(path), ({(1, 1, 1): "1", (2, 1, 1): "2"}, {1: "Data", 2: "Notes"})
+            verify_cache.cached_values(path),
+            ({(1, 1, 1): verify_cache.CellValue("1"), (2, 1, 1): verify_cache.CellValue("2")},
+             {1: "Data", 2: "Notes"})
         )
 
 
