@@ -297,7 +297,7 @@ class RepositoryPolicyTests(unittest.TestCase):
             "at least one module ends without a final newline",
         )
 
-    def test_release_metadata_describes_the_newest_changelog_release(self):
+    def test_citation_distinguishes_an_unreleased_candidate_from_release_history(self):
         changelog = read_utf8(CHANGELOG)
         heading = re.search(r"^## v(\d+\.\d+\.\d+), (\d{1,2} \w+ \d{4}),", changelog, re.M)
         self.assertIsNotNone(heading, "CHANGELOG.md has no dated release heading")
@@ -305,12 +305,22 @@ class RepositoryPolicyTests(unittest.TestCase):
         released = datetime.strptime(written, "%d %B %Y").date()
 
         citation = read_utf8(CITATION)
-        self.assertIn(f"version: {version}\n", citation)
-        self.assertIn(f"date-released: {released.isoformat()}\n", citation)
+        candidate = re.search(r"^## Unreleased: v(\d+\.\d+\.\d+) candidate$", changelog, re.M)
+        if candidate:
+            self.assertIn(f"version: {candidate.group(1)}\n", citation)
+            self.assertNotRegex(citation, r"(?m)^date-released:")
+            self.assertIn("unreleased", citation)
+            self.assertIn("license: Apache-2.0\n", citation)
+        else:
+            self.assertIn(f"version: {version}\n", citation)
+            self.assertIn(f"date-released: {released.isoformat()}\n", citation)
 
         readme = read_utf8(README)
         self.assertIn(f"releases/tag/v{version}", readme)
-        self.assertIn(f"dated {written};", readme)
+        self.assertIn(f"dated {written}", readme)
+        if candidate:
+            self.assertIn(f"v{candidate.group(1)} candidate is unreleased", readme)
+            self.assertIn("under MIT", readme)
 
         # At a release commit the tag is the last word on which release this is.
         tags = subprocess.run(
@@ -318,6 +328,8 @@ class RepositoryPolicyTests(unittest.TestCase):
             cwd=ROOT, capture_output=True, check=True, text=True,
         ).stdout.split()
         releases = [tag for tag in tags if re.fullmatch(r"v\d+\.\d+\.\d+", tag)]
+        if candidate:
+            self.assertEqual(releases, [], "an unreleased candidate must not have a release tag")
         self.assertEqual(
             releases,
             [f"v{version}"] * len(releases),
