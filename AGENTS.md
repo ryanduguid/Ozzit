@@ -38,6 +38,7 @@ python tools/verify_cover.py ozzit.xlsx functions.csv CHANGELOG.md
 python tools/verify_afe.py ozzit.xlsx src
 python tools/verify_help_spills.py ozzit.xlsx
 python tools/verify_native_evidence.py
+python -m pip install --require-hashes --requirement requirements-citation.txt
 python -m unittest discover -s tools/tests -v
 ```
 

@@ -78,11 +78,12 @@ The independent verifier must record and compare GitHub's API `digest` for the u
 
 ## Verification gates
 
-Install the pinned linter and type checker in the clean candidate:
+Install the pinned linter, type checker and citation parser in the clean candidate:
 
 ```powershell
 python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-ruff.txt
 python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-mypy.txt
+python -m pip install --require-hashes --requirement requirements-citation.txt
 ```
 
 Then run the following 12 static and repository gates, the same commands CI runs:
