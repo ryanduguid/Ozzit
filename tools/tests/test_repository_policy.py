@@ -7,7 +7,8 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 
-import yaml
+from ruamel.yaml import YAML
+from ruamel.yaml.error import YAMLError
 
 ROOT = Path(__file__).resolve().parents[2]
 SECURITY = ROOT / "SECURITY.md"
@@ -41,7 +42,7 @@ EXPECTED_VERIFY_COMMANDS = (
     "python tools/verify_afe.py ozzit.xlsx src",
     "python tools/verify_help_spills.py ozzit.xlsx",
     "python tools/verify_native_evidence.py",
-    "python -m pip install --require-hashes --requirement requirements-citation.txt",
+    "python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-citation.txt",
     "python -m unittest discover -s tools/tests -v",
 )
 
@@ -344,23 +345,9 @@ class RepositoryPolicyTests(unittest.TestCase):
                 )
 
     def assert_citation_matches_history(self, changelog, citation, readme, tags):
-        class UniqueKeysLoader(yaml.SafeLoader):
-            pass
-
-        def unique_mapping(loader, node):
-            result = {}
-            for key_node, value_node in node.value:
-                key = loader.construct_object(key_node)
-                self.assertNotIn(key, result, "CITATION.cff has a duplicate key")
-                result[key] = loader.construct_object(value_node)
-            return result
-
-        UniqueKeysLoader.add_constructor(
-            yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, unique_mapping,
-        )
         try:
-            metadata = yaml.load(citation, Loader=UniqueKeysLoader)
-        except yaml.YAMLError as error:
+            metadata = YAML(typ="safe", pure=True).load(citation)
+        except YAMLError as error:
             self.fail(f"CITATION.cff is invalid YAML: {error}")
         self.assertIsInstance(metadata, dict, "CITATION.cff must be a mapping")
 
