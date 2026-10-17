@@ -298,13 +298,41 @@ class RepositoryPolicyTests(unittest.TestCase):
         )
 
     def test_citation_distinguishes_an_unreleased_candidate_from_release_history(self):
-        changelog = read_utf8(CHANGELOG)
+        tags = subprocess.run(
+            ["git", "tag", "--points-at", "HEAD"],
+            cwd=ROOT, capture_output=True, check=True, text=True,
+        ).stdout.split()
+        self.assert_citation_matches_history(
+            read_utf8(CHANGELOG), read_utf8(CITATION), read_utf8(README), tags,
+        )
+
+    def test_citation_policy_checks_published_metadata_and_candidate_tags(self):
+        changelog = "## v1.2.3, 9 May 2024, synthetic release\n"
+        citation = "version: 1.2.3\ndate-released: 2024-05-09\n"
+        readme = "releases/tag/v1.2.3 dated 9 May 2024\n"
+        self.assert_citation_matches_history(
+            changelog, citation, readme, ["unrelated-tag", "v1.2.3"],
+        )
+        with self.assertRaises(AssertionError):
+            self.assert_citation_matches_history(changelog, citation, readme, ["v1.2.4"])
+        with self.assertRaises(AssertionError):
+            self.assert_citation_matches_history(
+                changelog, citation.replace("2024-05-09", "2024-05-10"), readme, [],
+            )
+
+        changelog = "## Unreleased: v1.3.0 candidate\n" + changelog
+        citation = "version: 1.3.0\nlicense: Apache-2.0\nunreleased\n"
+        readme += "v1.3.0 candidate is unreleased; historical version under MIT\n"
+        self.assert_citation_matches_history(changelog, citation, readme, [])
+        with self.assertRaises(AssertionError):
+            self.assert_citation_matches_history(changelog, citation, readme, ["v1.3.0"])
+
+    def assert_citation_matches_history(self, changelog, citation, readme, tags):
         heading = re.search(r"^## v(\d+\.\d+\.\d+), (\d{1,2} \w+ \d{4}),", changelog, re.M)
         self.assertIsNotNone(heading, "CHANGELOG.md has no dated release heading")
         version, written = heading.group(1), heading.group(2)
         released = datetime.strptime(written, "%d %B %Y").date()
 
-        citation = read_utf8(CITATION)
         candidate = re.search(r"^## Unreleased: v(\d+\.\d+\.\d+) candidate$", changelog, re.M)
         if candidate:
             self.assertIn(f"version: {candidate.group(1)}\n", citation)
@@ -315,7 +343,6 @@ class RepositoryPolicyTests(unittest.TestCase):
             self.assertIn(f"version: {version}\n", citation)
             self.assertIn(f"date-released: {released.isoformat()}\n", citation)
 
-        readme = read_utf8(README)
         self.assertIn(f"releases/tag/v{version}", readme)
         self.assertIn(f"dated {written}", readme)
         if candidate:
@@ -323,10 +350,6 @@ class RepositoryPolicyTests(unittest.TestCase):
             self.assertIn("under MIT", readme)
 
         # At a release commit the tag is the last word on which release this is.
-        tags = subprocess.run(
-            ["git", "tag", "--points-at", "HEAD"],
-            cwd=ROOT, capture_output=True, check=True, text=True,
-        ).stdout.split()
         releases = [tag for tag in tags if re.fullmatch(r"v\d+\.\d+\.\d+", tag)]
         if candidate:
             self.assertEqual(releases, [], "an unreleased candidate must not have a release tag")
