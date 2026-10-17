@@ -120,7 +120,13 @@ The screenshot uses a disposable copy with a synthetic label, an explicit argume
 
 ## Verification and attribution
 
-The current release is v3.4.2, dated 16 September 2026; citation metadata is in [CITATION.cff](CITATION.cff). It was published on 20 September 2026 from the signed tag `v3.4.2` on commit `621af0e265306f00a83e17c4d27dca09031c5ccd`, after the native gates [RELEASING.md](RELEASING.md) requires ran on the exact file it ships. The [release page](https://github.com/ryanduguid/Ozzit/releases/tag/v3.4.2) carries `ozzit.xlsx`, `provenance.json` and `SHA256SUMS`, and GitHub reports the release immutable.
+The current release is v3.4.2, dated 16 September 2026, under MIT. It was published on 20 September 2026 from the signed tag `v3.4.2` on commit `621af0e265306f00a83e17c4d27dca09031c5ccd`, after the native gates [RELEASING.md](RELEASING.md) requires ran on the exact file it ships. The [release page](https://github.com/ryanduguid/Ozzit/releases/tag/v3.4.2) carries `ozzit.xlsx`, `provenance.json` and `SHA256SUMS`, and GitHub reports the release immutable.
+
+The local **v3.5.0 candidate is unreleased**, under Apache-2.0. Its
+[citation metadata](CITATION.cff) names the candidate without a release date;
+record the exact commit when citing it. [Unreleased changes](CHANGELOG.md)
+describe the workbook and source views included in this candidate. Publication
+requires the fourteen gates and exact-candidate approval in [RELEASING.md](RELEASING.md).
 
 v3.4.2 `ozzit.xlsx` SHA-256: `0306793a7e473ce70e78149fea1e107fc0f714d61ab50960c16f6fd528878f6f` (439,097 bytes), the same bytes as the release asset. `main` is ahead of that tag, so the file you clone is not the file the release ships: the tracked `ozzit.xlsx` is SHA-256 `b92b36e3e935490d15357588a4942ac9cbdca5bb2ff233ca3fe29d323bb6dbec` (452,325 bytes), pinned in [release/workbook-base.json](release/workbook-base.json) and checked by the tool tests. On 14 October 2026, Excel 16.0 build 20527 recalculated 1,129 formulas with 0 in error, ran 1,033 self-test assertions with 0 failures and found 19,446 cached values equal to what their formulas produce. The workbook was byte-identical before and after both native gates.
 
