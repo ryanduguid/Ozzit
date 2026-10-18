@@ -1,6 +1,6 @@
 # Practice calculator improvements
 
-Ozzit's companion now combines 13 arithmetic workflows, explicit assumptions,
+Ozzit's companion now combines 21 arithmetic workflows, explicit assumptions,
 input warnings and a linked contents page. Three calculators were added after
 comparing similar tools: loan offers, break-even modelling and working-capital
 cash release. The [32-product catalogue report](between-spreadsheets.md) records
@@ -24,7 +24,7 @@ trial, purchase or form submission was used.
 
 | Idea | Disposition and reason |
 | --- | --- |
-| Put usable tasks before the full LAMBDA catalogue. | Implemented: a companion entry in the README task table and a contents page linking all 13 calculators. Every calculator links back. |
+| Put usable tasks before the full LAMBDA catalogue. | Implemented: a companion entry in the README task table and a contents page linking all 21 calculators. Every calculator links back. |
 | Compare finance costs rather than interest rates alone. | Implemented: Loan offers separates loan payments, interest, fees, balloon and total outlay. |
 | Show whether target profit fits operational capacity. | Implemented: Break even calculates whole required units and flags a target above supplied capacity. |
 | Translate working-capital days into cash. | Implemented: Working capital shows receivables, inventory and payables on their matching flow bases and preserves negative cash release. |
@@ -37,6 +37,37 @@ trial, purchase or form submission was used.
 | Add client-system sync, accounts, subscriptions or private data uploads. | Not included: these are unnecessary for the requested local workbook improvements and introduce separate access and operating requirements. |
 
 ## New calculator contracts
+
+### Remaining feasible workflows
+
+The 19 October follow-up adds eight workflows. Native Excel tests exercise
+representative inputs, failure cases and boundaries.
+
+| Workflow | Calculation contract |
+| --- | --- |
+| Construction WIP | Forecast cost is actual plus remaining cost. Forecast profit is contract value less forecast cost. Modelled cumulative revenue is contract value times reviewer-approved progress. Deduct prior modelled revenue for the current period, preserving negative revisions. Compare cumulative revenue with billings for unbilled/advance balances, and billings with collections for debtors. Costs include supplied allocated overheads. |
+| KPI awards | Below the supplied threshold, the cash award is zero. At or above it, multiply the target award by the lower of actual score and paid-score cap. Scores are ratios. Withholding cannot exceed the award. Employer on-costs use the same supplied super/payroll basis as Allocation. Missing cost rates suppress employer cost while leaving a valid net award available. |
+| Asset disposal | Book value at disposal is opening book value less supplied depreciation. Book profit is sale proceeds less assessed sale GST, net disposal costs and book value. Cash is proceeds less disposal and replacement payments. Supplied sale GST less disposal/replacement credits bridges that cash to after-GST cash, assuming settlement in the same period. |
+| Exit pay | Annual leave is approved hours times rate times one plus loading. Other leave is hours times its rate. Notice is weeks times weekly pay. Add approved redundancy/other gross payments for gross pay, deduct supplied withholding for net pay and add supplied employer super for employer cost. No statutory entitlement or classification is determined. |
+| Tax cash | Closing liability is opening liability plus assessed expense and signed adjustments, less payments and noncash credits, plus refunds received. Payments include cash instalments. Display positive payables and negative credit/refund balances separately, with no cross-entity legal offset. |
+| Investment | Capital growth applies to opening value. Add capital contributions and deduct withdrawals at year end. Charge interest on opening debt, then add new borrowing and deduct principal paid. Cash combines distributions, capital flows, debt flows, interest and supplied tax, including refunds. Return is undiscounted cash plus ending equity less opening equity. |
+| Action register | Reviewers supply actions, owners and legal deadlines. Due today is due soon, not overdue. The reminder window includes its final day. Completion requires an owner, date no later than the review date and evidence. Outstanding actions remain visible if another action is completed. |
+| Benefit totals | Multiply final reviewer-classified type 1 and type 2 taxable values by their respective supplied gross-up multipliers, add them, then multiply by the supplied FBT rate. The basic business/government arithmetic follows the [ATO steps](https://www.ato.gov.au/businesses-and-organisations/hiring-and-paying-your-workers/fringe-benefits-tax/calculating-your-fbt), checked 19 October 2026. No eligibility, exemptions, rebates, reportability or whole-dollar return rounding is inferred. |
+
+Mixed loan now accepts six signed principal adjustments per event, after interest
+and before repayments/fee allocation. A purpose balance cannot become negative.
+Zero-sum entries transfer principal between purposes; net adjustments change
+principal without being treated as cash flows.
+
+Amortisation accepts a first-period fraction from zero to one. It allocates the
+remaining amount in full annual charges and a final partial period, with residual
+value preserved. A supplied early write-off accelerates the remaining depreciable
+amount. The displayed horizon can end before recovery is complete. Statutory
+proration and tax eligibility remain reviewer decisions.
+
+Packaging adds validated commencement/cessation dates and a review date. It flags
+an arrangement ending within 30 days or whose cease date has passed. These are
+diary reminders; the entered annual salary and benefit amounts are not prorated.
 
 ### Loan offers
 
@@ -96,17 +127,20 @@ the companion uses `#2455A4`. Purple headers carry ivory text. Warnings use
 crimson text on a pale crimson fill, with the failed condition written out.
 Dates/diary tabs are black, the contents tab platinum and financial tabs purple.
 
-The workbook uses a light working surface for readable tables and printing.
-It does not rely on dark purple against black for essential text. The main
-library and earlier templates already use the established palette. The new
-companion uses the same colour roles.
+The whole companion uses white working cells for readability and printing,
+platinum inputs, pale Tyrian output bands and neutral valid-input states.
+Rhodesian green `#0F4B32` on `#DBE4E0` identifies actions recorded complete,
+accompanied by text. Crimson is reserved for warnings. Allocation now has a Tyrian
+tab. The main library and two earlier templates retain their existing
+matching palette. A portable gate measures contrast on every populated companion
+cell and its conditional styles.
 
 ## Native preparation and checks
 
 The authoring runtime cannot produce a usable cached result for `HYPERLINK`.
 Navigation therefore uses native Excel cell hyperlinks, added by
 `tools/prepare_practice_template.ps1`. The script checks the expected workbook,
-adds 26 internal links, recalculates and saves. It refuses to run while a user
+adds 42 internal links, recalculates and saves. It refuses to run while a user
 Excel session is open. Rebuild in this order:
 
 ```powershell

@@ -13,8 +13,9 @@ const money = '#,##0.00;(#,##0.00);"-"';
 const pct = '0.0%;(0.0%);"-"';
 const blue = '#2455A4';
 const purple = '#66023C';
+const green = '#0F4B32';
 book.colorScheme = {name:'Ozzit',themeColors:{dk1:'#000000',lt1:'#FFFFFF',dk2:'#000000',lt2:'#FFFFF0',
-  accent1:purple,accent2:'#990024',accent3:'#E5E4E2',accent4:'#6E6862',accent5:'#B1AFAD',accent6:'#DCDAD7',
+  accent1:purple,accent2:'#990024',accent3:green,accent4:'#E5E4E2',accent5:'#6E6862',accent6:'#DCDAD7',
   hlink:purple,folHlink:'#990024'}};
 const sheets = new Map();
 const cell = (s, a, v) => { s.getRange(a).values = [[v === '' ? null : v]]; };
@@ -32,6 +33,7 @@ function sheet(name, title, last = 'N', rows = 60) {
   s.showGridLines = false;
   const r = s.getRange(`B2:${last}${rows}`);
   r.format.font = { name: 'Arial', size: 10, color: '#000000' };
+  r.format.fill = '#FFFFFF';
   r.format.rowHeight = 21;
   r.format.columnWidth = 15;
   r.format.verticalAlignment = 'center';
@@ -47,7 +49,7 @@ function header(s, row, labels, start = 2) {
   const r = s.getRange(`${col(start)}${row}:${col(start + labels.length - 1)}${row}`);
   r.values = [labels];
   r.format = { fill: purple, font: { name: 'Arial', size: 10, bold: true, color: '#FFFFF0' },
-    horizontalAlignment: 'center', verticalAlignment: 'center', wrapText: true, rowHeight: 42 };
+    horizontalAlignment: 'center', verticalAlignment: 'center', wrapText: true, rowHeight: 56 };
 }
 function pair(s, row, label, value, format = money) {
   cell(s, `B${row}`, label); input(s, `D${row}`, value, format);
@@ -56,6 +58,7 @@ function result(s, row, label, f, format = money) {
   cell(s, `B${row}`, label); formula(s, `D${row}`, f);
   s.getRange(`D${row}`).setNumberFormat(format);
   s.getRange(`B${row}:D${row}`).format.font.bold = true;
+  s.getRange(`B${row}:D${row}`).format.fill = '#E8D9E2';
 }
 function flag(s, address, good = 'Ready') {
   s.getRange(address).conditionalFormats.add('expression', {
@@ -65,21 +68,30 @@ function flag(s, address, good = 'Ready') {
   s.getRange(address).format.horizontalAlignment = 'center';
 }
 function note(s, address, text) { cell(s, address, text); s.getRange(address).format.font.italic = true; }
+function rowStatus(s, row, lastInput, status, count, valid, lastRow) {
+  const inputs=`C${row}:${lastInput}${row}`;
+  formula(s,`${status}${row}`,`=IF(B${row}="",IF(COUNTA(${inputs})=0,"","Missing name"),IF(COUNT(${inputs})<>${count},"Check inputs",IF(AND(${valid},SUMPRODUCT(--($B$14:$B$${lastRow}=B${row}))=1),"Ready","Check inputs")))`);
+}
+function tableStatus(s, address, status, lastRow) {
+  formula(s,address,`=IF(AND(COUNTA(B14:B${lastRow})>0,COUNTIF(${status}14:${status}${lastRow},"Ready")=COUNTA(B14:B${lastRow}),COUNTIF(${status}14:${status}${lastRow},"Missing name")=0),"Ready","Check rows")`);
+  flag(s,address);flag(s,`${status}14:${status}${lastRow}`);
+}
 const names = ['Read me', 'Allocation', 'Contractor', 'Vendor finance', 'Mixed loan', 'Rental',
   'Packaging', 'Amortisation', 'Timeline', 'Deed register', 'Carry forward',
-  'Loan offers', 'Break even', 'Working capital'];
+  'Loan offers', 'Break even', 'Working capital', 'Construction WIP', 'KPI awards',
+  'Asset disposal', 'Exit pay', 'Tax cash', 'Investment', 'Action register', 'Benefit totals'];
 for (const name of names) sheet(name, name === 'Read me' ? 'Ozzit practice calculators' : name,
-  name === 'Mixed loan' ? 'AQ' : name === 'Timeline' ? 'AF' : name === 'Amortisation' ? 'U' : name === 'Allocation' ? 'T' : 'N',
+  name === 'Mixed loan' ? 'AW' : name === 'Timeline' ? 'AF' : name === 'Amortisation' ? 'V' : ['Allocation','Exit pay'].includes(name) ? 'T' : name === 'Construction WIP' ? 'Q' : name === 'Asset disposal' ? 'P' : name === 'Investment' ? 'R' : 'N',
   name === 'Mixed loan' ? 54 : 48);
 
 {
   const s = sheets.get('Read me');
-  cell(s, 'B5', 'Thirteen standalone modelling workflows using ordinary Excel formulas.');
+  cell(s, 'B5', 'Twenty-one standalone modelling workflows using ordinary Excel formulas.');
   cell(s, 'B7', 'Open a tab and replace its fabricated inputs. No Ozzit LAMBDA import is needed.');
   cell(s, 'B9', 'Tax treatment, rates, eligibility and legal deadlines must be supplied by the reviewer.');
   cell(s, 'B10', 'This workbook does not reproduce the purchased BTS workbooks or their hidden rules.');
   header(s, 13, ['Calculator', 'What it calculates'], 2);
-  s.getRange('C13:C30').format.columnWidth = 100;
+  s.getRange('C13:C34').format.columnWidth = 100;
   const rows = [
     ['Allocation', 'Allocate one budget across 20 people or jobs equally, by salary, or by eight weighted factors.'],
     ['Contractor', 'Compare employer cost with contractor revenue per billable week and hour.'],
@@ -94,11 +106,19 @@ for (const name of names) sheet(name, name === 'Read me' ? 'Ozzit practice calcu
     ['Loan offers', 'Compare eight fixed-rate offers including balloons, fees and a supplied rate shock.'],
     ['Break even', 'Calculate contribution, break-even units, target profit and capacity constraints.'],
     ['Working capital', 'Estimate cash released by changes in receivable, inventory and payable days.'],
+    ['Construction WIP', 'Reconcile approved project progress, forecast costs, billings and collections.'],
+    ['KPI awards', 'Calculate individual target bonuses using supplied scores, thresholds and caps.'],
+    ['Asset disposal', 'Bridge supplied sale, book-value, replacement and GST amounts to profit and cash.'],
+    ['Exit pay', 'Calculate gross and net pay from approved leave, notice and other entitlement inputs.'],
+    ['Tax cash', 'Track assessed liabilities, payments, refunds and credits across twelve entities.'],
+    ['Investment', 'Project ten annual periods of investment value, debt and after-tax cash flows.'],
+    ['Action register', 'Track owners, supplied deadlines, evidence and completion of review actions.'],
+    ['Benefit totals', 'Gross up reviewer-classified type 1 and type 2 taxable values using supplied FBT rates.'],
   ];
-  s.getRange('B14:C26').values = rows;
-  note(s, 'B29', 'Sources and coverage: docs/between-spreadsheets.md and docs/practice-improvements.md.');
-  note(s, 'B31', 'Sample rates and capacities are modelling assumptions, not statutory rates or limits.');
-  note(s, 'B33', 'Fixed ranges: extend formulas and native checks if you add rows. Inputs remain unrounded.');
+  s.getRange('B14:C34').values = rows;
+  note(s, 'B36', 'Sources and coverage: docs/between-spreadsheets.md and docs/practice-improvements.md.');
+  note(s, 'B38', 'Sample rates and capacities are modelling assumptions, not statutory rates or limits.');
+  note(s, 'B40', 'Fixed ranges: extend formulas and native checks if you add rows. Inputs remain unrounded.');
   s.tabColor = '#E5E4E2';
 }
 {
@@ -179,37 +199,40 @@ for (const name of names) sheet(name, name === 'Read me' ? 'Ozzit practice calcu
   header(s,5,Array.from({length:6},(_,i)=>`Use ${i+1}`),6);
   for(let c=6;c<=11;c++) input(s,`${col(c)}6`,c===6?60000:c===7?40000:0);
   note(s,'F8','Six opening balances above. Uses are labels, not tax classifications.');
-  note(s,'B10','Interest accrues before each event. Draws occur before proportional repayments and fee allocation.');
+  note(s,'B10','Interest accrues first. Draws and signed purpose adjustments precede proportional repayments and fee allocation.');
   note(s,'B11','Interest and fees are reported separately and are not capitalised. Same-day events accrue zero days.');
-  note(s,'B14','Interest stops at the final event date. Use a zero-cash event at the required cut-off.');
+  note(s,'B14','Interest stops at the final event. AR:AW are principal adjustments, not cash flows. Use zero-sum entries for transfers between uses.');
   result(s,12,'Final principal','=SUM(X51:AC51)');
   result(s,13,'Total allocated interest','=SUM(R16:W51)');
   cell(s,'F12','Input status'); formula(s,'H12','=IF(COUNTIF(AQ16:AQ51,"Ready")=36,"Ready","Check events")'); flag(s,'H12');
   cell(s,'F13','Unapplied repayments'); formula(s,'H13','=SUM(AP16:AP51)'); s.getRange('H13').setNumberFormat(money);
   header(s,15,['Event date','Repayment',...Array.from({length:6},(_,i)=>`Draw ${i+1}`),'Fee','Days',
     ...['Opening','Interest','Closing','Fee share','Repayment share'].flatMap(x=>Array.from({length:6},(_,i)=>`${x} ${i+1}`)),
-    'Unapplied cash','Input status']);
+    'Unapplied cash','Input status',...Array.from({length:6},(_,i)=>`Adjustment ${i+1}`)]);
   for(let r=16;r<=51;r++) {
     const i=r-16;
     input(s,`B${r}`,new Date(Date.UTC(2026,6+Math.floor(i/3),1+(i%3)*10)),'d-mmm-yyyy');
     input(s,`C${r}`,i===1?10000:0);
     for(let c=4;c<=9;c++) input(s,`${col(c)}${r}`,i===2&&c===5?10000:0);
     input(s,`J${r}`,i===1?100:0);
+    for(let c=44;c<=49;c++)input(s,`${col(c)}${r}`,0);
     const prior=r===16?'$D$5':`B${r-1}`;
-    formula(s,`AQ${r}`,`=IF(AND(COUNT(B${r}:J${r})=9,COUNT($D$5:$D$7)=3,COUNT($F$6:$K$6)=6,MIN(C${r}:J${r},$D$6,$F$6:$K$6)>=0,$D$7>0,B${r}>=${prior},B${r}=INT(B${r}),OR(SUM(L${r}:Q${r},D${r}:I${r})>0,J${r}=0),${r>16?`AQ${r-1}="Ready"`:'$D$5=INT($D$5)'}),"Ready","Check inputs")`);
+    const balances=Array.from({length:6},(_,u)=>`${col(12+u)}${r}+${col(4+u)}${r}+${col(44+u)}${r}`).join(',');
+    formula(s,`AQ${r}`,`=IF(OR(COUNT(B${r}:J${r},AR${r}:AW${r})<>15,COUNT($D$5:$D$7)<>3,COUNT($F$6:$K$6)<>6${r>16?`,AQ${r-1}<>"Ready"`:''}),"Check inputs",IF(AND(MIN(C${r}:J${r},$D$6,$F$6:$K$6)>=0,MIN(${balances})>=0,$D$7>0,B${r}>=${prior},B${r}=INT(B${r}),$D$5=INT($D$5),OR(SUM(L${r}:Q${r},D${r}:I${r},AR${r}:AW${r})>0,J${r}=0)),"Ready","Check inputs"))`);
     formula(s,`K${r}`,`=IF(AQ${r}="Ready",B${r}-${prior},NA())`);
     for(let u=0;u<6;u++) {
-      const opening=`${col(12+u)}${r}`, draw=`${col(4+u)}${r}`;
+      const opening=`${col(12+u)}${r}`, draw=`${col(4+u)}${r}`, adjustment=`${col(44+u)}${r}`;
       formula(s,opening,r===16?`=${col(6+u)}6`:`=${col(24+u)}${r-1}`);
       formula(s,`${col(18+u)}${r}`,`=IF(AQ${r}="Ready",${opening}*$D$6*K${r}/$D$7,NA())`);
-      const basis=`SUM(L${r}:Q${r},D${r}:I${r})`;
-      formula(s,`${col(36+u)}${r}`,`=IF(AQ${r}="Ready",IF(${basis}=0,0,MIN(C${r},${basis})*(${opening}+${draw})/${basis}),NA())`);
-      formula(s,`${col(30+u)}${r}`,`=IF(AQ${r}="Ready",IF(${basis}=0,IF(J${r}=0,0,NA()),J${r}*(${opening}+${draw})/${basis}),NA())`);
-      formula(s,`${col(24+u)}${r}`,`=IF(AQ${r}="Ready",${opening}+${draw}-${col(36+u)}${r},NA())`);
+      const basis=`SUM(L${r}:Q${r},D${r}:I${r},AR${r}:AW${r})`;
+      formula(s,`${col(36+u)}${r}`,`=IF(AQ${r}="Ready",IF(${basis}=0,0,MIN(C${r},${basis})*(${opening}+${draw}+${adjustment})/${basis}),NA())`);
+      formula(s,`${col(30+u)}${r}`,`=IF(AQ${r}="Ready",IF(${basis}=0,IF(J${r}=0,0,NA()),J${r}*(${opening}+${draw}+${adjustment})/${basis}),NA())`);
+      formula(s,`${col(24+u)}${r}`,`=IF(AQ${r}="Ready",${opening}+${draw}+${adjustment}-${col(36+u)}${r},NA())`);
     }
     formula(s,`AP${r}`,`=IF(AQ${r}="Ready",C${r}-SUM(AJ${r}:AO${r}),NA())`);
   }
   s.getRange('C16:AP51').setNumberFormat(money); s.getRange('K16:K51').setNumberFormat('0');
+  s.getRange('AR16:AW51').setNumberFormat(money);
   flag(s,'AQ16:AQ51'); s.freezePanes.freezeRows(15); s.freezePanes.freezeColumns(3);
 }
 {
@@ -260,20 +283,36 @@ for (const name of names) sheet(name, name === 'Read me' ? 'Ozzit practice calcu
   note(s,'F5','Supply assessed tax and total on-costs for each arrangement. No tax or FBT rates are inferred.');
   note(s,'F7','Employer benefit costs must use one consistent GST basis.');
   note(s,'F9','Post-tax employee contributions are cash received by the employer.'); flag(s,'D11');
+  cell(s,'F11','Review date');input(s,'H11',new Date(Date.UTC(2026,9,19)),'d-mmm-yyyy');
+  header(s,26,['Benefit','Commencement','Cessation','Days remaining','Timing reminder']);
+  for(let r=27;r<=31;r++) {
+    formula(s,`B${r}`,`=B${r-8}`);
+    input(s,`C${r}`,new Date(Date.UTC(2026,6,1)),'d-mmm-yyyy');
+    input(s,`D${r}`,new Date(Date.UTC(2027,5,30)),'d-mmm-yyyy');
+    const valid=`IF(COUNT(C${r}:D${r},$H$11)=3,AND(MIN(C${r}:D${r},$H$11)>0,C${r}=INT(C${r}),D${r}=INT(D${r}),$H$11=INT($H$11),D${r}>=C${r}),FALSE)`;
+    formula(s,`E${r}`,`=IF(${valid},MAX(0,D${r}-$H$11),NA())`);
+    formula(s,`F${r}`,`=IF(${valid},IF($H$11>D${r},"Cease date passed",IF($H$11<C${r},"Not started",IF(D${r}-$H$11<=30,"Ends within 30 days","Active"))),"Check dates")`);
+  }
+  s.getRange('C27:D31').format.columnWidth=18;s.getRange('F27:F31').format.columnWidth=24;
+  s.getRange('F27:F31').format.horizontalAlignment='center';
+  s.getRange('F27:F31').conditionalFormats.add('expression',{formula:'OR(F27="Check dates",F27="Cease date passed",F27="Ends within 30 days")',format:{fill:'#F0D9DE',font:{color:'#990024',bold:true}}});
+  note(s,'B34','Supplied dates create diary reminders only. Annual amounts above are not automatically prorated.');
 }
 {
   const s=sheets.get('Amortisation');
   pair(s,5,'First annual period',2026,'0');
-  note(s,'F5','Whole annual periods; no part-year apportionment. The reviewer supplies the life and write-off year.');
+  note(s,'F5','Supply the life, first-period fraction in V and any early write-off year. A partial first period extends recovery into a final period.');
   header(s,8,['Cost cohort','Cost','Residual','Life in years','First period','Early write-off year',...Array.from({length:11},(_,i)=>2026+i),'Allocated in horizon','Closing book value','Input status']);
   for(let c=8;c<=18;c++)formula(s,`${col(c)}8`,`=$D$5+${c-8}`);
+  header(s,8,['First period fraction'],22);
   for(let r=9;r<=19;r++) {
     input(s,`B${r}`,`Example cohort ${r-8}`,'@'); input(s,`C${r}`,r===9?5000:r===10?2000:r===11?9000:0);
     input(s,`D${r}`,0);input(s,`E${r}`,r===9?5:r===10?4:3,'0');input(s,`F${r}`,r===11?2028:2026,'0');input(s,`G${r}`,r===10?2028:0,'0');
-    formula(s,`U${r}`,`=IF(AND(COUNT(C${r}:G${r})=5,MIN(C${r}:E${r})>=0,E${r}>0,E${r}=INT(E${r}),D${r}<=C${r},F${r}=INT(F${r}),G${r}=INT(G${r}),OR(G${r}=0,G${r}>=F${r}),COUNT($D$5)=1,$D$5=INT($D$5),F${r}>=$D$5,F${r}<=$D$5+10),"Ready","Check inputs")`);
+    input(s,`V${r}`,1,pct);
+    formula(s,`U${r}`,`=IF(AND(COUNT(C${r}:G${r},V${r})=6,MIN(C${r}:E${r})>=0,E${r}>0,E${r}=INT(E${r}),D${r}<=C${r},F${r}=INT(F${r}),G${r}=INT(G${r}),OR(G${r}=0,G${r}>=F${r}),COUNT($D$5)=1,$D$5=INT($D$5),F${r}>=$D$5,F${r}<=$D$5+10,V${r}>=0,V${r}<=1),"Ready","Check inputs")`);
     for(let c=8;c<=18;c++){
       const y=`${col(c)}$8`,prior=c===8?'0':`SUM(H${r}:${col(c-1)}${r})`;
-      formula(s,`${col(c)}${r}`,`=IF($U${r}="Ready",IF(OR(${y}<$F${r},${y}>=$F${r}+$E${r},AND($G${r}>0,${y}>$G${r})),0,IF(AND($G${r}>0,${y}=$G${r}),$C${r}-$D${r}-${prior},($C${r}-$D${r})/$E${r})),NA())`);
+      formula(s,`${col(c)}${r}`,`=IF($U${r}="Ready",IF(OR(${y}<$F${r},${y}>$F${r}+$E${r},AND($G${r}>0,${y}>$G${r})),0,IF(AND($G${r}>0,${y}=$G${r}),$C${r}-$D${r}-${prior},MIN($C${r}-$D${r}-${prior},($C${r}-$D${r})/$E${r}*IF(${y}=$F${r},$V${r},1)))),NA())`);
     }
     formula(s,`S${r}`,`=SUM(H${r}:R${r})`);formula(s,`T${r}`,`=C${r}-S${r}`);
   }
@@ -395,9 +434,176 @@ for (const name of names) sheet(name, name === 'Read me' ? 'Ozzit practice calcu
   note(s,'B24','Negative cash release means more cash is tied up. Supplier terms and feasible targets require business review.');flag(s,'D10');
 }
 
+{
+  const s=sheets.get('Construction WIP');
+  result(s,5,'Input status','=""','@');tableStatus(s,'D5','Q',25);
+  result(s,6,'Forecast project profit','=IF(D5="Ready",SUM(K14:K25),NA())');
+  result(s,7,'Unbilled modelled revenue','=IF(D5="Ready",SUM(N14:N25),NA())');
+  result(s,8,'Billings in advance','=IF(D5="Ready",SUM(O14:O25),NA())');
+  result(s,9,'Outstanding billings','=IF(D5="Ready",SUM(P14:P25),NA())');
+  note(s,'F5','Progress is approved by the reviewer. It is not a revenue-recognition or tax decision.');
+  note(s,'F7','Costs include the allocated overheads from Allocation. Use one consistent GST basis.');
+  header(s,13,['Project','Contract amount','Costs to date','Remaining costs','Approved progress','Prior modelled revenue','Billings to date','Cash collected','Forecast cost','Forecast profit','Modelled revenue','Current revenue','Unbilled revenue','Billings in advance','Debtors','Input status']);
+  for(let r=14;r<=25;r++) {
+    input(s,`B${r}`,r===14?'Example project':null,'@');
+    const values=[200000,60000,40000,0.6,50000,100000,80000];
+    for(let c=3;c<=9;c++)input(s,`${col(c)}${r}`,r===14?values[c-3]:null,c===6?pct:money);
+    rowStatus(s,r,'I','Q',7,`MIN(C${r}:I${r})>=0,F${r}<=1,I${r}<=H${r}`,25);
+    for(const [c,f] of [['J',`D${r}+E${r}`],['K',`C${r}-J${r}`],['L',`C${r}*F${r}`],['M',`L${r}-G${r}`],['N',`MAX(0,L${r}-H${r})`],['O',`MAX(0,H${r}-L${r})`],['P',`H${r}-I${r}`]])formula(s,`${c}${r}`,`=IF(B${r}="","",IF(Q${r}="Ready",${f},NA()))`);
+  }
+  s.getRange('J14:P25').setNumberFormat(money);
+  note(s,'B28','A revised approved progress can produce negative current revenue. Forecast losses are preserved.');
+  s.freezePanes.freezeRows(13);s.freezePanes.freezeColumns(2);
+}
+{
+  const s=sheets.get('KPI awards');
+  pair(s,5,'Super cost / cash award',0.12,pct);pair(s,6,'Payroll cost / award + super',0.05,pct);
+  result(s,8,'Award inputs','=""','@');tableStatus(s,'D8','L',33);
+  cell(s,'F9','Cost rates');formula(s,'H9','=IF(AND(COUNT(D5:D6)=2,MIN(D5:D6)>=0),"Ready","Check cost rates")');flag(s,'H9');
+  result(s,9,'Total employer cost','=IF(AND(D8="Ready",H9="Ready"),SUM(J14:J33),NA())');
+  result(s,10,'Total net awards','=IF(D8="Ready",SUM(K14:K33),NA())');
+  note(s,'F5','Award = target cash × capped score, only when the supplied threshold is reached.');
+  note(s,'F7','Scores, thresholds and caps are ratios. The independent rule here does not reproduce the private vendor rule.');
+  header(s,13,['Person','Target cash award','Achievement score','Minimum score','Maximum paid score','Withholding','Cash award','Employer on-costs','Employer total','Net cash','Input status']);
+  for(let r=14;r<=33;r++) {
+    input(s,`B${r}`,r===14?'Example employee':null,'@');
+    const values=[10000,1.2,0.8,1.5,2000];
+    for(let c=3;c<=7;c++)input(s,`${col(c)}${r}`,r===14?values[c-3]:null,c>=4&&c<=6?pct:money);
+    rowStatus(s,r,'G','L',5,`MIN(C${r}:G${r})>=0,E${r}<=F${r},G${r}<=IF(D${r}<E${r},0,C${r}*MIN(D${r},F${r}))`,33);
+    formula(s,`H${r}`,`=IF(B${r}="","",IF(L${r}="Ready",IF(D${r}<E${r},0,C${r}*MIN(D${r},F${r})),NA()))`);
+    formula(s,`I${r}`,`=IF(B${r}="","",IF(AND(L${r}="Ready",$H$9="Ready"),H${r}*((1+$D$5)*(1+$D$6)-1),NA()))`);
+    formula(s,`J${r}`,`=IF(B${r}="","",SUM(H${r}:I${r}))`);
+    formula(s,`K${r}`,`=IF(B${r}="","",H${r}-G${r})`);
+  }
+  s.getRange('H14:K33').setNumberFormat(money);
+  note(s,'B36','Individual awards do not redistribute a fixed pool. Use Allocation when total spending must equal one budget.');
+}
+{
+  const s=sheets.get('Asset disposal');
+  result(s,5,'Input status','=""','@');tableStatus(s,'D5','P',25);
+  for(const [r,label,c] of [[6,'Book profit / (loss)','L'],[7,'Cash before GST settlement','M'],[8,'Supplied net GST / (credit)','N'],[9,'Cash after supplied GST','O']])result(s,r,label,`=IF(D5="Ready",SUM(${c}14:${c}25),NA())`);
+  note(s,'F5','Book values, depreciation and GST are supplied amounts. No tax balancing adjustment is calculated.');
+  note(s,'F7','Cash after GST assumes all entered GST is settled in this modelling period.');
+  header(s,13,['Asset','Opening book value','Depreciation to sale','Gross sale proceeds','Sale GST assessed','Disposal cash costs','Disposal GST credit','Replacement cash cost','Replacement GST credit','Book value at disposal','Book profit / (loss)','Cash before GST','Net GST / (credit)','Cash after GST','Input status']);
+  for(let r=14;r<=25;r++) {
+    input(s,`B${r}`,r===14?'Example asset':null,'@');
+    const values=[20000,2000,22000,2000,1100,100,33000,3000];
+    for(let c=3;c<=10;c++)input(s,`${col(c)}${r}`,r===14?values[c-3]:null);
+    rowStatus(s,r,'J','P',8,`MIN(C${r}:J${r})>=0,D${r}<=C${r},F${r}<=E${r},H${r}<=G${r},J${r}<=I${r}`,25);
+    for(const [c,f] of [['K',`C${r}-D${r}`],['L',`E${r}-F${r}-G${r}+H${r}-K${r}`],['M',`E${r}-G${r}-I${r}`],['N',`F${r}-H${r}-J${r}`],['O',`M${r}-N${r}`]])formula(s,`${c}${r}`,`=IF(B${r}="","",IF(P${r}="Ready",${f},NA()))`);
+  }
+  s.getRange('K14:O25').setNumberFormat(money);s.freezePanes.freezeRows(13);
+}
+{
+  const s=sheets.get('Exit pay');
+  result(s,5,'Input status','=""','@');tableStatus(s,'D5','T',23);
+  result(s,6,'Total approved gross pay','=IF(D5="Ready",SUM(Q14:Q23),NA())');
+  result(s,7,'Total net pay','=IF(D5="Ready",SUM(R14:R23),NA())');
+  result(s,8,'Total employer cost','=IF(D5="Ready",SUM(S14:S23),NA())');
+  note(s,'F5','Enter approved entitlements and assessed withholding/super. No award, ETP cap, tax label or legal entitlement is inferred.');
+  header(s,13,['Employee','Annual leave hours','Annual leave rate','Leave loading ratio','Other leave hours','Other leave rate','Notice weeks','Weekly notice pay','Approved redundancy','Other gross payments','Withholding','Employer super','Annual leave pay','Other leave pay','Notice pay','Gross pay','Net pay','Employer cost','Input status']);
+  for(let r=14;r<=23;r++) {
+    input(s,`B${r}`,r===14?'Example employee':null,'@');
+    const values=[80,50,0.175,40,50,2,1900,10000,500,4000,300];
+    for(let c=3;c<=13;c++)input(s,`${col(c)}${r}`,r===14?values[c-3]:null,c===5?pct:money);
+    rowStatus(s,r,'M','T',11,`MIN(C${r}:M${r})>=0,L${r}<=C${r}*D${r}*(1+E${r})+F${r}*G${r}+H${r}*I${r}+J${r}+K${r}`,23);
+    for(const [c,f] of [['N',`C${r}*D${r}*(1+E${r})`],['O',`F${r}*G${r}`],['P',`H${r}*I${r}`],['Q',`SUM(N${r}:P${r},J${r}:K${r})`],['R',`Q${r}-L${r}`],['S',`Q${r}+M${r}`]])formula(s,`${c}${r}`,`=IF(B${r}="","",IF(T${r}="Ready",${f},NA()))`);
+  }
+  s.getRange('N14:S23').setNumberFormat(money);s.freezePanes.freezeRows(13);s.freezePanes.freezeColumns(2);
+}
+{
+  const s=sheets.get('Tax cash');
+  result(s,5,'Input status','=""','@');tableStatus(s,'D5','L',25);
+  result(s,6,'Total payable balances','=IF(D5="Ready",SUM(J14:J25),NA())');
+  result(s,7,'Total refund balances','=IF(D5="Ready",SUM(K14:K25),NA())');
+  result(s,8,'Net closing liability','=IF(D5="Ready",SUM(I14:I25),NA())');
+  note(s,'F5','Positive balances are liabilities. Negative balances are credits. Payments include cash instalments.');
+  note(s,'F7','Assessed tax and signed adjustments are supplied. Balances are not legally offset between entities.');
+  header(s,13,['Entity / account','Opening liability / (credit)','Assessed tax expense','Signed adjustments','Cash payments','Cash refunds','Noncash credits','Closing liability / (credit)','Payable','Refund balance','Input status']);
+  for(let r=14;r<=25;r++) {
+    input(s,`B${r}`,r===14?'Example entity':null,'@');
+    const values=[1000,25000,-500,20000,0,1000];
+    for(let c=3;c<=8;c++)input(s,`${col(c)}${r}`,r===14?values[c-3]:null);
+    rowStatus(s,r,'H','L',6,`MIN(F${r}:H${r})>=0`,25);
+    for(const [c,f] of [['I',`SUM(C${r}:E${r})-F${r}+G${r}-H${r}`],['J',`MAX(0,I${r})`],['K',`MAX(0,-I${r})`]])formula(s,`${c}${r}`,`=IF(B${r}="","",IF(L${r}="Ready",${f},NA()))`);
+  }
+  s.getRange('I14:K25').setNumberFormat(money);
+  note(s,'B28','Cash refunds consume credit balances. Due dates can be recorded in Action register. No tax rate or distribution is optimised.');
+}
+{
+  const s=sheets.get('Investment');
+  pair(s,5,'Opening investment value',100000);pair(s,6,'Opening debt',60000);
+  pair(s,7,'First period label',2027,'0');
+  result(s,9,'Ending net equity','=Q23');
+  result(s,10,'Total net cash flow','=SUM(P14:P23)');
+  result(s,11,'Cash plus equity return','=D10+D9-(D5-D6)');
+  note(s,'F5','Growth changes value. Distributions are separate cash income. Capital flows and debt payments occur at year end.');
+  note(s,'F7','Supply assessed tax (negative for refunds). No unit-trust, super, franking or deductibility rules are inferred.');
+  header(s,13,['Period','Opening investment','Capital growth ratio','Cash distributions','Capital withdrawals','Capital additions','Closing investment','Opening debt','Interest ratio','Interest cost','Principal paid','New borrowing','Closing debt','Assessed tax / (refund)','Net cash flow','Net equity','Input status']);
+  for(let r=14;r<=23;r++) {
+    formula(s,`B${r}`,`=$D$7+${r-14}`);
+    formula(s,`C${r}`,r===14?'=$D$5':`=H${r-1}`);formula(s,`I${r}`,r===14?'=$D$6':`=N${r-1}`);
+    for(const [c,v] of [['D',0.08],['E',6000],['F',0],['G',2000],['J',0.06],['L',3000],['M',0],['O',1000]])input(s,`${c}${r}`,v,['D','J'].includes(c)?pct:money);
+    const valid=`IF(COUNT(D${r}:G${r},J${r},L${r}:M${r},O${r},$D$5:$D$7)=11,AND(MIN(E${r}:G${r},J${r},L${r}:M${r},$D$5:$D$6)>=0,$D$7=INT($D$7),D${r}>=-1,F${r}<=C${r}*(1+D${r})+G${r},L${r}<=I${r}+M${r}),FALSE)`;
+    formula(s,`R${r}`,`=IF(${r===14?'TRUE':`R${r-1}="Ready"`},IF(${valid},"Ready","Check inputs"),"Check prior year")`);
+    for(const [c,f] of [['H',`C${r}*(1+D${r})+G${r}-F${r}`],['K',`I${r}*J${r}`],['N',`I${r}+M${r}-L${r}`],['P',`E${r}+F${r}-G${r}-K${r}-L${r}+M${r}-O${r}`],['Q',`H${r}-N${r}`]])formula(s,`${c}${r}`,`=IF(R${r}="Ready",${f},NA())`);
+  }
+  s.getRange('C14:Q23').setNumberFormat(money);s.getRange('D14:D23').setNumberFormat(pct);s.getRange('J14:J23').setNumberFormat(pct);flag(s,'R14:R23');
+  note(s,'B26','Net return is undiscounted cash plus ending equity less opening equity. It is not an annualised return or an investment recommendation.');
+  s.freezePanes.freezeRows(13);
+}
+{
+  const s=sheets.get('Action register');
+  pair(s,5,'Review date',new Date(Date.UTC(2026,9,19)),'d-mmm-yyyy');pair(s,6,'Reminder window in days',30,'0');
+  result(s,7,'Input status','=""','@');tableStatus(s,'D7','J',33);
+  result(s,8,'Open actions','=IF(D7="Ready",COUNTIF(K14:K33,"Open")+COUNTIF(K14:K33,"Overdue")+COUNTIF(K14:K33,"Due soon"),NA())','0');
+  result(s,9,'Overdue actions','=IF(D7="Ready",COUNTIF(K14:K33,"Overdue"),NA())','0');
+  result(s,10,'Due soon','=IF(D7="Ready",COUNTIF(K14:K33,"Due soon"),NA())','0');
+  note(s,'F5','Record reviewer-selected AML, corporate, SMSF, packaging or other actions. All legal scope and due dates are supplied.');
+  note(s,'F7','Recorded complete requires an owner, completion date and evidence. It is an administrative status, not a legal conclusion.');
+  header(s,13,['Action ID','Workflow','Action','Owner','Due date','Complete: Yes / No','Completed date','Evidence / reference','Input status','Action status','Days overdue']);
+  for(let r=14;r<=33;r++) {
+    const values=['EXAMPLE-01','Other','Confirm supplied scope','Example reviewer',new Date(Date.UTC(2026,10,1)),'No',null,null];
+    for(let c=2;c<=9;c++)input(s,`${col(c)}${r}`,r===14?values[c-2]:null,[6,8].includes(c)?'d-mmm-yyyy':'@');
+    s.getRange(`G${r}`).dataValidation={rule:{type:'list',values:['Yes','No']}};
+    const valid=`AND(C${r}<>"",D${r}<>"",E${r}<>"",COUNT(F${r},$D$5:$D$6)=3,F${r}>0,F${r}=INT(F${r}),$D$5>0,$D$5=INT($D$5),$D$6>=0,$D$6=INT($D$6),OR(AND(G${r}="No",H${r}=""),AND(G${r}="Yes",ISNUMBER(H${r}),H${r}>0,H${r}=INT(H${r}),H${r}<=$D$5,I${r}<>"")),SUMPRODUCT(--($B$14:$B$33=B${r}))=1)`;
+    formula(s,`J${r}`,`=IF(B${r}="",IF(COUNTA(C${r}:I${r})=0,"","Missing name"),IF(OR(COUNT(F${r},$D$5:$D$6)<>3,AND(H${r}<>"",NOT(ISNUMBER(H${r})))),"Check inputs",IF(${valid},"Ready","Check inputs")))`);
+    formula(s,`K${r}`,`=IF(B${r}="","",IF(J${r}="Ready",IF(G${r}="Yes","Recorded complete",IF(F${r}<$D$5,"Overdue",IF(F${r}<=$D$5+$D$6,"Due soon","Open"))),"Check inputs"))`);
+    formula(s,`L${r}`,`=IF(B${r}="","",IF(J${r}="Ready",IF(G${r}="Yes",0,MAX(0,$D$5-F${r})),NA()))`);
+  }
+  s.getRange('C14:C33').format.columnWidth=21;s.getRange('D14:D33').format.columnWidth=30;
+  s.getRange('E14:E33').format.columnWidth=22;s.getRange('F14:F33').format.columnWidth=18;s.getRange('H14:H33').format.columnWidth=18;
+  s.getRange('G14:G33').format.horizontalAlignment='center';
+  s.getRange('I14:I33').format.columnWidth=30;s.getRange('K14:K33').format.columnWidth=24;
+  s.getRange('K14:K33').conditionalFormats.add('expression',{formula:'K14="Recorded complete"',format:{fill:'#DBE4E0',font:{color:green,bold:true}}});
+  s.getRange('K14:K33').conditionalFormats.add('expression',{formula:'OR(K14="Overdue",K14="Due soon",K14="Check inputs")',format:{fill:'#F0D9DE',font:{color:'#990024',bold:true}}});
+  s.getRange('L14:L33').setNumberFormat('0');s.freezePanes.freezeRows(13);
+}
+
+{
+  const s=sheets.get('Benefit totals');
+  pair(s,5,'Type 1 gross-up multiplier',2.0802,'0.0000');
+  pair(s,6,'Type 2 gross-up multiplier',1.8868,'0.0000');pair(s,7,'FBT rate',0.47,pct);
+  result(s,9,'Rate inputs','=IF(AND(COUNT(D5:D7)=3,MIN(D5:D6)>=1,D7>=0,D7<=1),"Ready","Check rates")','@');flag(s,'D9');
+  result(s,10,'Benefit inputs','=""','@');tableStatus(s,'D10','I',33);
+  result(s,11,'Modelled FBT','=IF(AND(D9="Ready",D10="Ready"),SUM(H14:H33),NA())');
+  note(s,'F5','Enter final taxable values after reviewer classification and adjustments. No exemptions, rebates or reportability decisions are made.');
+  note(s,'F7','Illustrative rates checked 19 Oct 2026. Confirm the applicable period and employer treatment.');
+  header(s,13,['Benefit / employee','Final type 1 taxable value','Final type 2 taxable value','Type 1 grossed up','Type 2 grossed up','Grossed-up total','Modelled FBT','Input status']);
+  for(let r=14;r<=33;r++) {
+    input(s,`B${r}`,r===14?'Example benefits':null,'@');input(s,`C${r}`,r===14?10000:null);input(s,`D${r}`,r===14?5000:null);
+    rowStatus(s,r,'D','I',2,`MIN(C${r}:D${r})>=0`,33);
+    for(const [c,f] of [['E',`C${r}*$D$5`],['F',`D${r}*$D$6`],['G',`SUM(E${r}:F${r})`],['H',`G${r}*$D$7`]])formula(s,`${c}${r}`,`=IF(B${r}="","",IF(AND(I${r}="Ready",$D$9="Ready"),${f},NA()))`);
+  }
+  s.getRange('E14:H33').setNumberFormat(money);
+  note(s,'B36','Source: ATO, Calculating your FBT, basic business/government gross-up steps.');
+  cell(s,'B37','https://www.ato.gov.au/businesses-and-organisations/hiring-and-paying-your-workers/fringe-benefits-tax/calculating-your-fbt');
+  note(s,'B39','No statutory rates are selected automatically. No whole-dollar return rounding is applied.');
+}
+
 for(const name of names.filter(n=>n!=='Read me')) {
   const s=sheets.get(name);
-  s.tabColor=['Timeline','Deed register'].includes(name)?'#000000':name==='Allocation'?'#990024':purple;
+  s.tabColor=['Timeline','Deed register','Action register'].includes(name)?'#000000':purple;
   cell(s,'B1','Contents');
   s.getRange('B1').format.font={name:'Arial',size:10,color:purple};
 }
@@ -418,12 +624,12 @@ if(previewDir) {
   // eslint-disable-next-line security/detect-non-literal-fs-filename
   await fs.mkdir(previewDir,{recursive:true}); // nosemgrep: javascript_pathtraversal_rule-non-literal-fs-filename
   for(const name of names) {
-    const range=name==='Allocation'?'B1:T19':name==='Mixed loan'?'B1:K20':name==='Amortisation'?'B1:K14':name==='Timeline'?'B1:O15':name==='Deed register'?'B1:N14':name==='Read me'?'B2:F33':name==='Vendor finance'?'B1:N26':name==='Rental'?'B1:N43':name==='Loan offers'?'B1:N23':'B1:J28';
+    const range=name==='Allocation'?'B1:T19':name==='Mixed loan'?'B1:K20':name==='Amortisation'?'B1:K14':name==='Timeline'?'B1:O15':name==='Deed register'?'B1:N14':name==='Read me'?'B2:F40':name==='Vendor finance'?'B1:N26':name==='Rental'?'B1:N43':name==='Loan offers'?'B1:N23':name==='Construction WIP'?'B1:Q16':name==='Asset disposal'?'B1:P16':name==='Exit pay'?'B1:T16':name==='Investment'?'B1:R24':name==='Action register'?'B1:L17':name==='Packaging'?'B1:J35':'B1:L28';
     const png=await book.render({sheetName:name,range,scale:1.4,format:'png'});
     // eslint-disable-next-line security/detect-non-literal-fs-filename
     await fs.writeFile(path.join(previewDir,`${name.replaceAll(' ','-')}.png`),new Uint8Array(await png.arrayBuffer())); // nosemgrep: javascript_pathtraversal_rule-non-literal-fs-filename
   }
-  for(const [name,range,label] of [['Mixed loan','L15:AC20','mixed-balances'],['Mixed loan','AD15:AQ20','mixed-allocations'],['Amortisation','L8:U14','amortisation-closing']]) {
+  for(const [name,range,label] of [['Mixed loan','L15:AC20','mixed-balances'],['Mixed loan','AD15:AW20','mixed-allocations'],['Amortisation','L8:V14','amortisation-closing']]) {
     const png=await book.render({sheetName:name,range,scale:1.4,format:'png'});
     // eslint-disable-next-line security/detect-non-literal-fs-filename
     await fs.writeFile(path.join(previewDir,`${label}.png`),new Uint8Array(await png.arrayBuffer())); // nosemgrep: javascript_pathtraversal_rule-non-literal-fs-filename

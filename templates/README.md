@@ -2,9 +2,9 @@
 
 For a separate contract workpaper, see [Retention reconciliation](RETENTION.md).
 
-For allocations, contractor pricing, vendor finance, mixed-use loans, rental
-summaries, packaging, amortisation, timelines, deed reminders and expiring
-capacity, open [practice-calculators.xlsx](practice-calculators.xlsx). Its
+For 21 practice workflows, including construction WIP, KPI awards, asset
+disposal, approved exit pay, assessed-tax cash, investments and review actions,
+open [practice-calculators.xlsx](practice-calculators.xlsx). Its
 [guide and 32-product coverage report](../docs/between-spreadsheets.md) explain
 the supplied assumptions, native test and features that remain unimplemented.
 
