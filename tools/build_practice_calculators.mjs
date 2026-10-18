@@ -16,7 +16,7 @@ const purple = '#66023C';
 book.colorScheme = {name:'Ozzit',themeColors:{dk1:'#000000',lt1:'#FFFFFF',dk2:'#000000',lt2:'#FFFFF0',
   accent1:purple,accent2:'#990024',accent3:'#E5E4E2',accent4:'#6E6862',accent5:'#B1AFAD',accent6:'#DCDAD7',
   hlink:purple,folHlink:'#990024'}};
-const sheets = {};
+const sheets = new Map();
 const cell = (s, a, v) => { s.getRange(a).values = [[v === '' ? null : v]]; };
 const formula = (s, a, v) => { s.getRange(a).formulas = [[v]]; };
 const col = n => { let t = ''; for (; n; n = Math.floor((n - 1) / 26)) t = String.fromCharCode(65 + (n - 1) % 26) + t; return t; };
@@ -28,7 +28,7 @@ function input(s, a, v, format = money) {
 }
 function sheet(name, title, last = 'N', rows = 60) {
   const s = book.worksheets.add(name);
-  sheets[name] = s;
+  sheets.set(name, s);
   s.showGridLines = false;
   const r = s.getRange(`B2:${last}${rows}`);
   r.format.font = { name: 'Arial', size: 10, color: '#000000' };
@@ -73,7 +73,7 @@ for (const name of names) sheet(name, name === 'Read me' ? 'Ozzit practice calcu
   name === 'Mixed loan' ? 54 : 48);
 
 {
-  const s = sheets['Read me'];
+  const s = sheets.get('Read me');
   cell(s, 'B5', 'Thirteen standalone modelling workflows using ordinary Excel formulas.');
   cell(s, 'B7', 'Open a tab and replace its fabricated inputs. No Ozzit LAMBDA import is needed.');
   cell(s, 'B9', 'Tax treatment, rates, eligibility and legal deadlines must be supplied by the reviewer.');
@@ -102,7 +102,7 @@ for (const name of names) sheet(name, name === 'Read me' ? 'Ozzit practice calcu
   s.tabColor = '#E5E4E2';
 }
 {
-  const s = sheets.Allocation;
+  const s = sheets.get('Allocation');
   pair(s, 5, 'Total employer budget', 12000);
   pair(s, 6, 'Super cost / cash bonus', 0.12, pct);
   pair(s, 7, 'Payroll cost / bonus + super', 0.05, pct);
@@ -138,7 +138,7 @@ for (const name of names) sheet(name, name === 'Read me' ? 'Ozzit practice calcu
   s.freezePanes.freezeRows(13); s.freezePanes.freezeColumns(2);
 }
 {
-  const s = sheets.Contractor;
+  const s = sheets.get('Contractor');
   const rows = [['Employee cash salary',100000],['Employee employer super',12000],['Employee other on-costs',8000],
     ['Contractor retirement saving',12000],['Contractor annual overheads',10000],['Contractor insurance',2000],
     ['Billable weeks per year',42],['Billable hours per week',35]];
@@ -155,7 +155,7 @@ for (const name of names) sheet(name, name === 'Read me' ? 'Ozzit practice calcu
   flag(s,'D14');
 }
 {
-  const s=sheets['Vendor finance'];
+  const s=sheets.get('Vendor finance');
   pair(s,5,'Initial vendor debt',100000);
   note(s,'F5','Annual interest is charged on opening debt. Cash is paid at year end.');
   note(s,'F7','The reserve is a supplied cash amount, not an income tax calculation.');
@@ -173,7 +173,7 @@ for (const name of names) sheet(name, name === 'Read me' ? 'Ozzit practice calcu
   flag(s,'M11:M20'); result(s,23,'Debt after ten years','=K20');
 }
 {
-  const s=sheets['Mixed loan'];
+  const s=sheets.get('Mixed loan');
   pair(s,5,'Opening date',new Date(Date.UTC(2026,6,1)),'d-mmm-yyyy');
   pair(s,6,'Annual simple interest rate',0.06,pct); pair(s,7,'Days per interest year',365,'0');
   header(s,5,Array.from({length:6},(_,i)=>`Use ${i+1}`),6);
@@ -213,7 +213,7 @@ for (const name of names) sheet(name, name === 'Read me' ? 'Ozzit practice calcu
   flag(s,'AQ16:AQ51'); s.freezePanes.freezeRows(15); s.freezePanes.freezeColumns(3);
 }
 {
-  const s=sheets.Rental;
+  const s=sheets.get('Rental');
   pair(s,5,'Gross cash rent',50000); pair(s,6,'GST assessed on rent',0);
   pair(s,7,'Opening funds held by agent',1000); pair(s,8,'Closing funds held by agent',3500); pair(s,9,'Other net cash receipts',0);
   pair(s,10,'GST cash paid / (refund)',0);
@@ -247,7 +247,7 @@ for (const name of names) sheet(name, name === 'Read me' ? 'Ozzit practice calcu
   flag(s,'D13');flag(s,'F39:F43');
 }
 {
-  const s=sheets.Packaging;
+  const s=sheets.get('Packaging');
   pair(s,5,'Cash salary before packaging',100000); pair(s,6,'Assessed tax before packaging',25000);
   pair(s,7,'Employer on-costs before',20000); pair(s,8,'Assessed tax after packaging',22000); pair(s,9,'Employer on-costs after',18000);
   result(s,11,'Input status','=IF(AND(COUNT(D5:D9)=5,MIN(D5:D9)>=0,COUNT(C19:E23)=15,MIN(C19:E23)>=0,SUM(D19:D23)<=D5,D6<=D5,D8+SUM(E19:E23)<=D5-SUM(D19:D23)),"Ready","Check inputs")','@');
@@ -262,7 +262,7 @@ for (const name of names) sheet(name, name === 'Read me' ? 'Ozzit practice calcu
   note(s,'F9','Post-tax employee contributions are cash received by the employer.'); flag(s,'D11');
 }
 {
-  const s=sheets.Amortisation;
+  const s=sheets.get('Amortisation');
   pair(s,5,'First annual period',2026,'0');
   note(s,'F5','Whole annual periods; no part-year apportionment. The reviewer supplies the life and write-off year.');
   header(s,8,['Cost cohort','Cost','Residual','Life in years','First period','Early write-off year',...Array.from({length:11},(_,i)=>2026+i),'Allocated in horizon','Closing book value','Input status']);
@@ -280,7 +280,7 @@ for (const name of names) sheet(name, name === 'Read me' ? 'Ozzit practice calcu
   s.getRange('H9:T19').setNumberFormat(money);flag(s,'U9:U19');s.freezePanes.freezeRows(8);s.freezePanes.freezeColumns(2);
 }
 {
-  const s=sheets.Timeline;
+  const s=sheets.get('Timeline');
   pair(s,5,'Reporting window start',new Date(Date.UTC(2026,6,1)),'d-mmm-yyyy');
   pair(s,6,'Reporting window end',new Date(Date.UTC(2027,5,30)),'d-mmm-yyyy');
   header(s,9,['Interval','Start','End','Inclusive days','Days in window','Purpose / note','Evidence',...Array.from({length:24},(_,i)=>`Month ${i+1}`)]);
@@ -302,7 +302,7 @@ for (const name of names) sheet(name, name === 'Read me' ? 'Ozzit practice calcu
   s.freezePanes.freezeRows(9);s.freezePanes.freezeColumns(2);
 }
 {
-  const s=sheets['Deed register'];pair(s,5,'Review date',new Date(Date.UTC(2026,9,18)),'d-mmm-yyyy');
+  const s=sheets.get('Deed register');pair(s,5,'Review date',new Date(Date.UTC(2026,9,18)),'d-mmm-yyyy');
   header(s,8,['Trust','Deed held','Signed','Stamped','Trustee','Appointor','Vesting date','Vesting review','FTE record','IEE record','NSW amendment record','Evidence']);
   for(let r=9;r<=28;r++) {
     for(let c=2;c<=13;c++)if(c!==9)input(s,`${col(c)}${r}`,'','@');
@@ -315,7 +315,7 @@ for (const name of names) sheet(name, name === 'Read me' ? 'Ozzit practice calcu
   s.freezePanes.freezeRows(8);s.freezePanes.freezeColumns(2);
 }
 {
-  const s=sheets['Carry forward'];
+  const s=sheets.get('Carry forward');
   pair(s,5,'Eligibility supplied by reviewer','Yes','@');s.getRange('D5').dataValidation={rule:{type:'list',values:['Yes','No']}};
   pair(s,6,'Current annual capacity',30000);pair(s,7,'Already used this year',20000);pair(s,8,'Proposed additional use',25000);pair(s,9,'Current period label',2027,'0');
   result(s,11,'Input status','=IF(AND(OR(D5="Yes",D5="No"),COUNT(D6:D9)=4,MIN(D6:D8)>=0,D9=INT(D9),COUNT(B18:D22)=15,MIN(D18:D22)>=0,COUNTIF(H18:H22,"Ready")=5),"Ready","Check inputs")','@');
@@ -337,7 +337,7 @@ for (const name of names) sheet(name, name === 'Read me' ? 'Ozzit practice calcu
 }
 
 {
-  const s=sheets['Loan offers'];
+  const s=sheets.get('Loan offers');
   pair(s,5,'Annual rate shock',0.02,pct);
   note(s,'F5','Nominal annual rates, monthly compounding, end-of-month payments. Fees are paid in cash.');
   note(s,'B7','Compare offers with the same principal and term. Total outlay includes regular payments, balloon and fees.');
@@ -358,7 +358,7 @@ for (const name of names) sheet(name, name === 'Read me' ? 'Ozzit practice calcu
   note(s,'B22','No extra payments, rate resets, offset account, break costs or borrowing-capacity decision.');
 }
 {
-  const s=sheets['Break even'];
+  const s=sheets.get('Break even');
   [['Fixed costs per period',60000],['Selling price per unit',100],['Variable cost per unit',40],
     ['Expected units sold',1500],['Target profit per period',30000],['Maximum units per period',1800]].forEach(([label,value],i)=>pair(s,i+5,label,value,i>=3?'0.00':money));
   result(s,12,'Input status','=IF(AND(COUNT(D5:D10)=6,MIN(D5:D10)>=0,D6>D7),"Ready","Check costs or inputs")','@');
@@ -376,7 +376,7 @@ for (const name of names) sheet(name, name === 'Read me' ? 'Ozzit practice calcu
   flag(s,'D12');flag(s,'D18','Within capacity');
 }
 {
-  const s=sheets['Working capital'];
+  const s=sheets.get('Working capital');
   [['Credit sales for period',1200000],['Cost of sales for period',600000],['Credit purchases for period',720000],
     ['Days in reporting period',365]].forEach(([label,value],i)=>pair(s,i+5,label,value,i===3?'0':money));
   result(s,10,'Input status','=IF(AND(COUNT(D5:D8)=4,MIN(D5:D7)>=0,D8>0,COUNT(C15:D17)=6,MIN(C15:D17)>=0),"Ready","Check inputs")','@');
@@ -396,7 +396,7 @@ for (const name of names) sheet(name, name === 'Read me' ? 'Ozzit practice calcu
 }
 
 for(const name of names.filter(n=>n!=='Read me')) {
-  const s=sheets[name];
+  const s=sheets.get(name);
   s.tabColor=['Timeline','Deed register'].includes(name)?'#000000':name==='Allocation'?'#990024':purple;
   cell(s,'B1','Contents');
   s.getRange('B1').format.font={name:'Arial',size:10,color:purple};
@@ -407,19 +407,26 @@ const checks = await book.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE
 console.log(checks.ndjson);
 if(checks.ndjson.split('\n').filter(Boolean).some(line=>JSON.parse(line).kind==='match')) throw new Error('Example calculation errors; export cancelled');
 console.log((await book.inspect({kind:'table',range:'Contractor!B14:D19',include:'values,formulas',tableMaxRows:6,tableMaxCols:3})).ndjson);
+// The output is fixed relative to this script, with no external path input.
+// nosemgrep: javascript.pathtraversal.rule-non-literal-fs-filename
 await fs.mkdir(path.dirname(output),{recursive:true});
 await (await SpreadsheetFile.exportXlsx(book)).save(output);
 console.log(`Saved ${output}`);
 if(previewDir) {
-  await fs.mkdir(previewDir,{recursive:true});
+  // OZZIT_PREVIEW_DIR is the author's explicit local destination. Filenames below
+  // come only from the fixed sheet list and literal labels, never workbook input.
+  // eslint-disable-next-line security/detect-non-literal-fs-filename
+  await fs.mkdir(previewDir,{recursive:true}); // nosemgrep: javascript.pathtraversal.rule-non-literal-fs-filename
   for(const name of names) {
     const range=name==='Allocation'?'B1:T19':name==='Mixed loan'?'B1:K20':name==='Amortisation'?'B1:K14':name==='Timeline'?'B1:O15':name==='Deed register'?'B1:N14':name==='Read me'?'B2:F33':name==='Vendor finance'?'B1:N26':name==='Rental'?'B1:N43':name==='Loan offers'?'B1:N23':'B1:J28';
     const png=await book.render({sheetName:name,range,scale:1.4,format:'png'});
-    await fs.writeFile(path.join(previewDir,`${name.replaceAll(' ','-')}.png`),new Uint8Array(await png.arrayBuffer()));
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
+    await fs.writeFile(path.join(previewDir,`${name.replaceAll(' ','-')}.png`),new Uint8Array(await png.arrayBuffer())); // nosemgrep: javascript.pathtraversal.rule-non-literal-fs-filename
   }
   for(const [name,range,label] of [['Mixed loan','L15:AC20','mixed-balances'],['Mixed loan','AD15:AQ20','mixed-allocations'],['Amortisation','L8:U14','amortisation-closing']]) {
     const png=await book.render({sheetName:name,range,scale:1.4,format:'png'});
-    await fs.writeFile(path.join(previewDir,`${label}.png`),new Uint8Array(await png.arrayBuffer()));
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
+    await fs.writeFile(path.join(previewDir,`${label}.png`),new Uint8Array(await png.arrayBuffer())); // nosemgrep: javascript.pathtraversal.rule-non-literal-fs-filename
   }
   console.log(`Rendered ${names.length} sheet previews`);
 }
