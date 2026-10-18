@@ -27,6 +27,7 @@ repository root to use their usual path defaults.
 | `verify_cover` | Resolve the displayed version label and compare its date and function count |
 | `verify_help_spills` | Report help caches that differ from the definitions |
 | `verify_workbook` | Check workbook structure, content, add-ins and references |
+| `verify_native_evidence` | Check retained comparison and installation records against their inputs |
 
 Normal positional paths and existing flags retain their spelling. Replace
 `python tools/<name>.py` with `ozzit <name>`. Usage and help identify the native
@@ -40,18 +41,24 @@ The default released-name baseline is embedded in the executable. An explicit
 baseline path still reads that file. The generated module banner retains its
 original text so that `oz.txt` remains byte identical.
 
+The retained-evidence command locates repository inputs beside the executable
+or in its ancestors, falling back to the working directory. It checks the
+recorded runner hashes and fixture results without executing Excel or pyxirr.
+Its evidence JSON rejects duplicate keys at every object level. Other JSON
+consumers retain their original last-value behaviour.
+
 AFE commands honour `PYTHONIOENCODING` for UTF-8, ASCII, Latin-1 and CP1252,
 escaping unrepresentable characters as the Python tools do. Other codec
 overrides fail before a writer runs. Python's other codecs and locale-based
-defaults remain a compatibility gap. Other commands write UTF-8, matching their
-Python tools' explicit stream configuration.
+defaults remain a compatibility gap. Other commands write UTF-8. The retained
+evidence command's Python locale and stream-encoding overrides remain unqualified.
 
 Writers replace workbooks atomically, preserve opaque parts and use the
 repository's deterministic ZIP convention. Compressed bytes target the frozen
 workbook and the tested zlib-ng baseline. Python builds linked to stock zlib
 can produce different deflate bytes for the same parts and ZIP metadata.
-Writers do not calculate formulas or
-create native recalculation evidence. Run the native Excel gates required by
+Writers do not calculate formulas or create native recalculation evidence.
+Run the native Excel gates required by
 `RELEASING.md` for any release or workbook change that needs cache validation.
 
 Checks for this crate:
@@ -63,7 +70,8 @@ cargo test --locked --manifest-path tools/ozzit/Cargo.toml
 ```
 
 The native tests include 1,117 captured parser observations, 69 workbook and
-help-cache observations, 5,461 strict base64 cases, archive byte checks and
+help-cache observations, 5,461 strict base64 cases, 1,332 retained-evidence/grid
+observations, archive byte checks and
 controlled writer failures. Large test fixtures are read from `tests/data/`
 when tests run. Differential scripts
 and their receipts are retained in the local Agent Hub evidence for this port.

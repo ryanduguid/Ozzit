@@ -134,6 +134,15 @@ enum Frame {
 
 /// `json.loads(text)` with the default dictionary constructor.
 pub fn loads(text: &str) -> Result<Json, DecodeError> {
+    load(text, false)
+}
+
+/// `json.loads` with the retained evidence's unique-object-key hook.
+pub fn loads_unique(text: &str) -> Result<Json, DecodeError> {
+    load(text, true)
+}
+
+fn load(text: &str, unique: bool) -> Result<Json, DecodeError> {
     let s: Vec<char> = text.chars().collect();
     if s.first() == Some(&'\u{feff}') {
         return Err(decode_error(
@@ -280,7 +289,9 @@ pub fn loads(text: &str) -> Result<Json, DecodeError> {
                     continue 'value;
                 }
                 Frame::Object(pairs, key) => {
-                    if let Some((_, held)) = pairs.iter_mut().find(|(k, _)| k == key) {
+                    if unique {
+                        pairs.push((std::mem::take(key), value));
+                    } else if let Some((_, held)) = pairs.iter_mut().find(|(k, _)| k == key) {
                         *held = value;
                     } else {
                         pairs.push((std::mem::take(key), value));
@@ -291,6 +302,12 @@ pub fn loads(text: &str) -> Result<Json, DecodeError> {
                         let Some(Frame::Object(pairs, _)) = stack.pop() else {
                             unreachable!()
                         };
+                        if unique {
+                            let mut keys = std::collections::HashSet::new();
+                            if !pairs.iter().all(|(key, _)| keys.insert(key)) {
+                                return Err(DecodeError("duplicate evidence key".into()));
+                            }
+                        }
                         value = Json::Object(pairs);
                         continue;
                     }

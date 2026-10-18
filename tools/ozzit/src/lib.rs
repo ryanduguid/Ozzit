@@ -7,6 +7,7 @@ pub mod formula;
 pub mod help;
 pub mod index;
 pub mod module;
+pub mod native_evidence;
 mod output;
 pub mod py;
 pub mod pyjson;
@@ -29,6 +30,7 @@ const COMMANDS: &[(&str, Handler)] = &[
     ("verify_cover", cover::verify),
     ("verify_help_spills", spills::verify),
     ("verify_workbook", workbook::verify),
+    ("verify_native_evidence", native_evidence::command),
 ];
 pub fn dispatch(args: &[String]) -> Output {
     let command = args.first().map(String::as_str);
