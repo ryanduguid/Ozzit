@@ -136,6 +136,8 @@ v3.4.2 `ozzit.xlsx` SHA-256: `0306793a7e473ce70e78149fea1e107fc0f714d61ab50960c1
 - [Repository checks](AGENTS.md) and [release and native verification](RELEASING.md)
 - [Changes](CHANGELOG.md) and [citation](CITATION.cff)
 
+Ozzit's functions were written by Ryan Duguid. Ozzit is not derived from any third-party workbook or library.
+
 Apache-2.0 licensed. See [LICENSE](LICENSE). If you redistribute this work or build on it, keep the attribution in [NOTICE](NOTICE). See [DISCLAIMER.md](DISCLAIMER.md) for scope and review requirements.
 
 </details>
