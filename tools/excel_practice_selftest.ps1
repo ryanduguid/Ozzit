@@ -60,7 +60,7 @@ function Trial([string]$Address, $Value, [scriptblock]$Checks) {
             for ($r = $old.GetLowerBound(0); $r -le $old.GetUpperBound(0); $r++) {
                 for ($c = $old.GetLowerBound(1); $c -le $old.GetUpperBound(1); $c++) {
                     $restore = $range.Cells.Item($r, $c)
-                    try { Set-TestValue $restore $old.GetValue($r, $c) }
+                    try { Write-TrialInput $restore $old.GetValue($r, $c) }
                     finally { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($restore) }
                 }
             }
@@ -70,7 +70,8 @@ function Trial([string]$Address, $Value, [scriptblock]$Checks) {
         [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($range)
     }
 }
-function Set-TestValue($Range, $Value) {
+# Writes only unsaved inputs in the read-only test workbook.
+function Write-TrialInput($Range, $Value) {
     if ($null -eq $Value) { $Range.ClearContents() | Out-Null }
     elseif ($Value -is [string]) { $Range.Value2 = [string]$Value }
     else { $Range.Value2 = [double]$Value }
@@ -80,14 +81,14 @@ function Trial-Cells([hashtable]$Values, [scriptblock]$Checks) {
     try {
         foreach ($address in $Values.Keys) {
             $range = $sheet.Range($address)
-            try { $saved[$address] = $range.Value2; Set-TestValue $range $Values[$address] }
+            try { $saved[$address] = $range.Value2; Write-TrialInput $range $Values[$address] }
             finally { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($range) }
         }
         & $Checks
     } finally {
         foreach ($address in $saved.Keys) {
             $range = $sheet.Range($address)
-            try { Set-TestValue $range $saved[$address] }
+            try { Write-TrialInput $range $saved[$address] }
             finally { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($range) }
         }
     }
