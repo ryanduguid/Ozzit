@@ -485,3 +485,19 @@ fn compiler_missing_function_column_preserves_python_error_precedence() {
     assert_eq!(result.err, vec!["FAIL: 'function'"]);
     assert_eq!(std::fs::read(&fixture.workbook).unwrap(), original);
 }
+
+#[test]
+fn csv_decoding_removes_exactly_one_signature_and_keeps_later_boms() {
+    let fixture = Fixture::new();
+    let original = std::fs::read(&fixture.index).unwrap();
+    for count in 0..=3 {
+        let mut bytes = b"\xef\xbb\xbf".repeat(count);
+        bytes.extend_from_slice(&original);
+        std::fs::write(&fixture.index, bytes).unwrap();
+        let csv = Csv::read(&fixture.index).unwrap();
+        assert_eq!(
+            csv.headers[0],
+            format!("{}function", "\u{feff}".repeat(count.saturating_sub(1)))
+        );
+    }
+}

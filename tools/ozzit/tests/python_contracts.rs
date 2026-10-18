@@ -9,10 +9,12 @@ fn text(value: &Value) -> &str {
 
 #[test]
 fn python_formula_and_help_contracts_replay_without_differences() {
-    let data: Value = serde_json::from_reader(flate2::read::GzDecoder::new(
-        &include_bytes!("data/python-contracts.json.gz")[..],
-    ))
+    let bytes = std::fs::read(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/data/python-contracts.json.gz"),
+    )
     .unwrap();
+    let data: Value = serde_json::from_reader(flate2::read::GzDecoder::new(&bytes[..])).unwrap();
     let records = data["records"].as_array().unwrap();
     assert!(
         records.len() >= 100,

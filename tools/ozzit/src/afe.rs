@@ -110,6 +110,51 @@ fn decode(encoded: &[u8]) -> Result<Json> {
     pyjson::loads(&utf16le(&base64_decode(encoded)?)?).map_err(|e| e.to_string())
 }
 
+pub fn base64_decode_strict(encoded: &[u8]) -> Result<Vec<u8>> {
+    if encoded.first() == Some(&b'=') {
+        return Err("Leading padding not allowed".into());
+    }
+    let data = encoded
+        .iter()
+        .position(|b| *b == b'=')
+        .unwrap_or(encoded.len());
+    if encoded[..data]
+        .iter()
+        .any(|b| !b.is_ascii_alphanumeric() && *b != b'+' && *b != b'/')
+    {
+        return Err("Only base64 data is allowed".into());
+    }
+    if data % 4 == 1 {
+        return Err(format!(
+            "Invalid base64-encoded string: number of data characters ({data}) cannot be 1 more than a multiple of 4"
+        ));
+    }
+    let padding = encoded[data..].iter().take_while(|b| **b == b'=').count();
+    let required = (4 - data % 4) % 4;
+    if padding > required {
+        return Err("Excess padding not allowed".into());
+    }
+    if let Some(next) = encoded.get(data + padding)
+        && !next.is_ascii_alphanumeric()
+        && *next != b'+'
+        && *next != b'/'
+    {
+        return Err("Only base64 data is allowed".into());
+    }
+    if data + padding != encoded.len() {
+        return Err(if padding < required {
+            "Discontinuous padding not allowed"
+        } else {
+            "Excess data after padding"
+        }
+        .into());
+    }
+    base64_decode(encoded)
+}
+pub fn decode_strict_blob(encoded: &[u8]) -> Result<Json> {
+    pyjson::loads(&utf16le(&base64_decode_strict(encoded)?)?).map_err(|e| e.to_string())
+}
+
 pub fn decode_store(workbook: &Path) -> Result<Json> {
     let parts = read_parts(workbook).map_err(|e| format!("cannot read AFE store: {e}"))?;
     let raw = parts.get(PART).ok_or_else(|| {

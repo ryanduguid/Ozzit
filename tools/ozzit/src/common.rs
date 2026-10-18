@@ -76,6 +76,10 @@ pub fn decode(bytes: &[u8]) -> Result<String> {
 pub fn read_raw(path: &Path) -> Result<String> {
     decode(&read_bytes(path)?)
 }
+pub fn read_sig(path: &Path) -> Result<String> {
+    let text = read_raw(path)?;
+    Ok(text.strip_prefix('\u{feff}').unwrap_or(&text).to_owned())
+}
 pub fn read_text(path: &Path) -> Result<String> {
     Ok(py::universal_newlines(&read_raw(path)?))
 }
@@ -170,7 +174,7 @@ pub struct Csv {
 }
 impl Csv {
     pub fn read(path: &Path) -> Result<Self> {
-        Self::parse(read_raw(path)?.trim_start_matches('\u{feff}'))
+        Self::parse(&read_sig(path)?)
     }
     pub fn parse(text: &str) -> Result<Self> {
         let mut records = Vec::new();

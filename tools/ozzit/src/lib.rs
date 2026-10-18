@@ -2,6 +2,7 @@ pub mod afe;
 pub mod archive;
 pub mod common;
 pub mod compiler;
+pub mod cover;
 pub mod formula;
 pub mod help;
 pub mod index;
@@ -11,6 +12,8 @@ pub mod py;
 pub mod pyjson;
 mod pyunicode;
 pub mod sources;
+pub mod spills;
+pub mod workbook;
 
 use common::Output;
 type Handler = fn(&[String]) -> Output;
@@ -23,6 +26,9 @@ const COMMANDS: &[(&str, Handler)] = &[
     ("verify_afe", afe::verify),
     ("sync_afe_store", afe::sync_command),
     ("build_module", module::command),
+    ("verify_cover", cover::verify),
+    ("verify_help_spills", spills::verify),
+    ("verify_workbook", workbook::verify),
 ];
 pub fn dispatch(args: &[String]) -> Output {
     let command = args.first().map(String::as_str);

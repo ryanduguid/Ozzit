@@ -291,7 +291,7 @@ pub fn render_index(
             desc,
         ]));
     }
-    Ok(if read_raw(path)?.trim_start_matches('\u{feff}') == after {
+    Ok(if read_sig(path)? == after {
         None
     } else {
         Some(after)

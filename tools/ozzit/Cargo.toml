@@ -23,12 +23,10 @@ flate2 = { version = "1.1.10", default-features = false, features = ["zlib-rs"] 
 indexmap = "2.14.2"
 num-bigint = "0.4.8"
 num-traits = "0.2.19"
+roxmltree = "0.21.1"
 serde_json = { version = "1.0", features = ["preserve_order"] }
 tempfile = "3.27.0"
 zip = { version = "9.0.5", default-features = false, features = ["deflate-flate2-zlib-rs"] }
-
-[dev-dependencies]
-roxmltree = "0.21.1"
 
 [profile.release]
 codegen-units = 1
