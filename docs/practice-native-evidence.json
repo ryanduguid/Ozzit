@@ -19,7 +19,7 @@
                       "Break even",
                       "Working capital"
                   ],
-    "builder_sha256":  "55abcee52d0ef5ededd58efa0bbdb781b3b8673cc0f1db4c2a22a5edc003ae55",
+    "builder_sha256":  "692ae4d84f34d078bc1e75580d50f48b6a209176a000a7ca53de37c83bc99ecd",
     "baseline_errors":  0,
     "result":  "PASS",
     "runner_sha256":  "6c52c22256ddf4537d3e6002c5aa5b1462924630950d08f0899947a134509e19"

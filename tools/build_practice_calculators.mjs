@@ -408,7 +408,7 @@ console.log(checks.ndjson);
 if(checks.ndjson.split('\n').filter(Boolean).some(line=>JSON.parse(line).kind==='match')) throw new Error('Example calculation errors; export cancelled');
 console.log((await book.inspect({kind:'table',range:'Contractor!B14:D19',include:'values,formulas',tableMaxRows:6,tableMaxCols:3})).ndjson);
 // The output is fixed relative to this script, with no external path input.
-// nosemgrep: javascript.pathtraversal.rule-non-literal-fs-filename
+// nosemgrep: javascript_pathtraversal_rule-non-literal-fs-filename
 await fs.mkdir(path.dirname(output),{recursive:true});
 await (await SpreadsheetFile.exportXlsx(book)).save(output);
 console.log(`Saved ${output}`);
@@ -416,17 +416,17 @@ if(previewDir) {
   // OZZIT_PREVIEW_DIR is the author's explicit local destination. Filenames below
   // come only from the fixed sheet list and literal labels, never workbook input.
   // eslint-disable-next-line security/detect-non-literal-fs-filename
-  await fs.mkdir(previewDir,{recursive:true}); // nosemgrep: javascript.pathtraversal.rule-non-literal-fs-filename
+  await fs.mkdir(previewDir,{recursive:true}); // nosemgrep: javascript_pathtraversal_rule-non-literal-fs-filename
   for(const name of names) {
     const range=name==='Allocation'?'B1:T19':name==='Mixed loan'?'B1:K20':name==='Amortisation'?'B1:K14':name==='Timeline'?'B1:O15':name==='Deed register'?'B1:N14':name==='Read me'?'B2:F33':name==='Vendor finance'?'B1:N26':name==='Rental'?'B1:N43':name==='Loan offers'?'B1:N23':'B1:J28';
     const png=await book.render({sheetName:name,range,scale:1.4,format:'png'});
     // eslint-disable-next-line security/detect-non-literal-fs-filename
-    await fs.writeFile(path.join(previewDir,`${name.replaceAll(' ','-')}.png`),new Uint8Array(await png.arrayBuffer())); // nosemgrep: javascript.pathtraversal.rule-non-literal-fs-filename
+    await fs.writeFile(path.join(previewDir,`${name.replaceAll(' ','-')}.png`),new Uint8Array(await png.arrayBuffer())); // nosemgrep: javascript_pathtraversal_rule-non-literal-fs-filename
   }
   for(const [name,range,label] of [['Mixed loan','L15:AC20','mixed-balances'],['Mixed loan','AD15:AQ20','mixed-allocations'],['Amortisation','L8:U14','amortisation-closing']]) {
     const png=await book.render({sheetName:name,range,scale:1.4,format:'png'});
     // eslint-disable-next-line security/detect-non-literal-fs-filename
-    await fs.writeFile(path.join(previewDir,`${label}.png`),new Uint8Array(await png.arrayBuffer())); // nosemgrep: javascript.pathtraversal.rule-non-literal-fs-filename
+    await fs.writeFile(path.join(previewDir,`${label}.png`),new Uint8Array(await png.arrayBuffer())); // nosemgrep: javascript_pathtraversal_rule-non-literal-fs-filename
   }
   console.log(`Rendered ${names.length} sheet previews`);
 }
