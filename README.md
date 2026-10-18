@@ -41,7 +41,7 @@ cell and enter last occurrences as dates. All of these are fixed on `main` for t
 release. Further changes and the DB/DDB compatibility limitations are recorded
 under [Unreleased in the changelog](CHANGELOG.md#unreleased).
 
-Synthetic example. Review aid, not professional advice; the reviewer decides the GST treatment.
+Synthetic example. The reviewer decides the GST treatment.
 
 **Input:** $1,100, assumed wholly taxable and GST-inclusive at 10%.
 
@@ -133,6 +133,6 @@ v3.4.2 `ozzit.xlsx` SHA-256: `0306793a7e473ce70e78149fea1e107fc0f714d61ab50960c1
 - [Repository checks](AGENTS.md) and [release and native verification](RELEASING.md)
 - [Changes](CHANGELOG.md) and [citation](CITATION.cff)
 
-Apache-2.0 licensed. See [LICENSE](LICENSE). If you redistribute this work or build on it, keep the attribution in [NOTICE](NOTICE). [DISCLAIMER.md](DISCLAIMER.md) states that this is not advice and names the bodies the project is not affiliated with.
+Apache-2.0 licensed. See [LICENSE](LICENSE). If you redistribute this work or build on it, keep the attribution in [NOTICE](NOTICE). See [DISCLAIMER.md](DISCLAIMER.md) for scope and review requirements.
 
 </details>
