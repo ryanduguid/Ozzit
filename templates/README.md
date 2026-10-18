@@ -2,6 +2,12 @@
 
 For a separate contract workpaper, see [Retention reconciliation](RETENTION.md).
 
+For allocations, contractor pricing, vendor finance, mixed-use loans, rental
+summaries, packaging, amortisation, timelines, deed reminders and expiring
+capacity, open [practice-calculators.xlsx](practice-calculators.xlsx). Its
+[guide and 32-product coverage report](../docs/between-spreadsheets.md) explain
+the supplied assumptions, native test and features that remain unimplemented.
+
 `13-week-cash-flow-forecast.xlsx` is a standalone weekly liquidity model for Australian FP&A practitioners, finance operators and small-business owners. It uses native Excel formulas and is intended for Microsoft 365 or Excel 2024 and later.
 
 The workbook opens with illustrative data from an Australian business so that the model, warnings and review views are visible immediately. Replace the sample values before using it for a business decision. Editable cells are marked as inputs in the workbook. Do not overwrite formula or cross-sheet-link cells.

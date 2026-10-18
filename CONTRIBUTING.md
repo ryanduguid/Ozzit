@@ -45,3 +45,10 @@ native gate after confirming no Excel process is running:
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\excel_cash_flow_selftest.ps1
 ```
+
+For `templates/practice-calculators.xlsx`, run
+`tools/excel_practice_selftest.ps1` in native Excel and refresh
+`docs/practice-native-evidence.json`. Follow the builder, native-link preparation
+and sanitising order in [the companion guide](docs/practice-improvements.md#native-preparation-and-checks).
+Its portable tests bind the saved workbook, authoring tools and native runner to
+that receipt; they do not recalculate formulas without Excel.

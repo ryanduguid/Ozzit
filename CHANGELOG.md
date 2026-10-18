@@ -5,6 +5,18 @@
 Changes on `main` since v3.4.2. They reach the published workbook in the next
 release; until then v3.4.2 behaves as it did, including the defects fixed here.
 
+### Practice calculator companion
+
+Added `templates/practice-calculators.xlsx` with thirteen standalone arithmetic
+workflows: allocation, contractor revenue, vendor finance, mixed-use loans,
+rental summaries, salary packaging, amortisation, timelines, deed reminders and
+expiring capacity, loan-offer comparisons, break-even modelling and working-capital
+cash release. The companion uses the current Mermaid palette, internal contents
+links and explicit input warnings. `docs/between-spreadsheets.md` maps all 32 public product
+listings to partial coverage or an explicit gap. Hidden vendor formulas and tax
+decision tools are not reproduced. The companion uses ordinary Excel formulas;
+the main LAMBDA workbook and its published function count are unchanged.
+
 ### Licence changed to Apache-2.0
 
 From the next release, Ozzit is licensed under the Apache License 2.0 instead of MIT.
