@@ -7,7 +7,7 @@ release; until then v3.4.2 behaves as it did, including the defects fixed here.
 
 ### Practice calculator companion
 
-Added `templates/practice-calculators.xlsx` with thirteen standalone arithmetic
+Added `templates/practice-calculators.xlsx` with twenty-one standalone arithmetic
 workflows: allocation, contractor revenue, vendor finance, mixed-use loans,
 rental summaries, salary packaging, amortisation, timelines, deed reminders and
 expiring capacity, loan-offer comparisons, break-even modelling and working-capital
@@ -16,6 +16,14 @@ links and explicit input warnings. `docs/between-spreadsheets.md` maps all 32 pu
 listings to partial coverage or an explicit gap. Hidden vendor formulas and tax
 decision tools are not reproduced. The companion uses ordinary Excel formulas;
 the main LAMBDA workbook and its published function count are unchanged.
+
+The follow-up adds construction WIP, individual KPI awards, asset disposal,
+approved exit pay, assessed-tax cash balances, investment cash flows, action
+tracking and final-value FBT gross-ups. Mixed loans accept signed purpose
+adjustments, packaging includes date reminders and amortisation supports supplied
+first-period fractions. All 22 tabs share consistent colour roles, with Rhodesian
+green for recorded completion and contrast checks for populated cells and
+conditional styles. The companion has 42 internal navigation links.
 
 ### Licence changed to Apache-2.0
 

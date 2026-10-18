@@ -29,7 +29,7 @@ try {
     $xl.EnableEvents = $false
     $xl.AutomationSecurity = 3
     $wb = $xl.Workbooks.Open($Path, 0, $false)
-    if ($wb.Worksheets.Count -ne 14 -or $wb.HasVBProject -or $wb.LinkSources(1)) {
+    if ($wb.Worksheets.Count -ne 22 -or $wb.HasVBProject -or $wb.LinkSources(1)) {
         throw 'Expected the standalone, macro-free practice companion'
     }
     $contents = $wb.Worksheets.Item('Read me')
@@ -45,7 +45,7 @@ try {
     }
     $xl.CalculateFullRebuild()
     $wb.Save()
-    Write-Output 'Prepared 26 internal hyperlinks and recalculated the companion in native Excel'
+    Write-Output 'Prepared 42 internal hyperlinks and recalculated the companion in native Excel'
 } finally {
     try { if ($wb) { $wb.Close($false) } }
     finally {

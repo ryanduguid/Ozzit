@@ -15,6 +15,27 @@ ROOT = Path(__file__).resolve().parents[2]
 NS = {"s": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
 
 
+def luminance(rgb):
+    channels = [int(rgb[i:i + 2], 16) / 255 for i in (0, 2, 4)]
+    linear = [c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in channels]
+    return sum(c * weight for c, weight in zip(linear, (0.2126, 0.7152, 0.0722)))
+
+
+def contrast(foreground, background):
+    light, dark = sorted((luminance(foreground), luminance(background)), reverse=True)
+    return (light + 0.05) / (dark + 0.05)
+
+
+def conditional_colour_pairs(style):
+    font = style.find("s:font/s:color", NS)
+    fill = style.find("s:fill/s:patternFill/s:fgColor", NS)
+    if fill is None:
+        fill = style.find("s:fill/s:patternFill/s:bgColor", NS)
+    if font is None or fill is None:
+        return []
+    return [(font, fill)]
+
+
 class PracticeTemplateTests(unittest.TestCase):
     def test_native_receipt_matches_saved_inputs(self):
         receipt = json.loads((ROOT / "docs/practice-native-evidence.json").read_text("utf-8-sig"))
@@ -70,6 +91,58 @@ class PracticeTemplateTests(unittest.TestCase):
                 else:
                     expected = {("B1", "'Read me'!B2")}
                 self.assertEqual(actual, expected, name)
+
+    def test_text_contrast_on_every_populated_cell_and_conditional_style(self):
+        with zipfile.ZipFile(ROOT / "templates/practice-calculators.xlsx") as archive:
+            styles = ET.fromstring(archive.read("xl/styles.xml"))
+            fonts = styles.findall("s:fonts/s:font", NS)
+            fills = styles.findall("s:fills/s:fill", NS)
+            formats = styles.findall("s:cellXfs/s:xf", NS)
+
+            def colour(node, fallback):
+                if node is None:
+                    return fallback
+                # The companion deliberately exports explicit colours. Unknown
+                # theme/indexed colours need review rather than a guessed pass.
+                self.assertIn("rgb", node.attrib)
+                return node.attrib["rgb"][-6:]
+
+            for part in archive.namelist():
+                if not part.startswith("xl/worksheets/sheet") or not part.endswith(".xml"):
+                    continue
+                sheet = ET.fromstring(archive.read(part))
+                for cell in sheet.findall(".//s:c", NS):
+                    value = cell.find("s:v", NS)
+                    if value is None or value.text in (None, ""):
+                        continue
+                    style = formats[int(cell.attrib.get("s", "0"))]
+                    font = fonts[int(style.attrib.get("fontId", "0"))]
+                    fill = fills[int(style.attrib.get("fillId", "0"))]
+                    foreground = colour(font.find("s:color", NS), "000000")
+                    background = colour(fill.find("s:patternFill/s:fgColor", NS), "FFFFFF")
+                    size = font.find("s:sz", NS)
+                    points = float(size.attrib["val"]) if size is not None else 11
+                    large = points >= 18 or (points >= 14 and font.find("s:b", NS) is not None)
+                    with self.subTest(cell=f"{part}!{cell.attrib['r']}"):
+                        self.assertGreaterEqual(contrast(foreground, background), 3 if large else 4.5)
+            for index, style in enumerate(styles.findall("s:dxfs/s:dxf", NS)):
+                for font, fill in conditional_colour_pairs(style):
+                    with self.subTest(conditional_style=index):
+                        self.assertGreaterEqual(contrast(colour(font, "000000"), colour(fill, "FFFFFF")), 4.5)
+
+    def test_conditional_colour_encodings_and_uncoloured_rules(self):
+        namespace = NS["s"]
+        for tag in ("fgColor", "bgColor"):
+            style = ET.fromstring(
+                f'<dxf xmlns="{namespace}"><font><color rgb="FF000000"/></font>'
+                f'<fill><patternFill><{tag} rgb="FFFFFFFF"/></patternFill></fill></dxf>'
+            )
+            actual = [(font.attrib["rgb"], fill.attrib["rgb"])
+                      for font, fill in conditional_colour_pairs(style)]
+            self.assertEqual(actual, [("FF000000", "FFFFFFFF")])
+        for content in ("", '<font><color rgb="FF000000"/></font>'):
+            style = ET.fromstring(f'<dxf xmlns="{namespace}">{content}</dxf>')
+            self.assertEqual(conditional_colour_pairs(style), [])
 
 
 if __name__ == "__main__":
