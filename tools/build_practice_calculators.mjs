@@ -312,9 +312,10 @@ for (const name of names) sheet(name, name === 'Read me' ? 'Ozzit practice calcu
     formula(s,`U${r}`,`=IF(AND(COUNT(C${r}:G${r},V${r})=6,MIN(C${r}:E${r})>=0,E${r}>0,E${r}=INT(E${r}),D${r}<=C${r},F${r}=INT(F${r}),G${r}=INT(G${r}),OR(G${r}=0,G${r}>=F${r}),COUNT($D$5)=1,$D$5=INT($D$5),F${r}>=$D$5,F${r}<=$D$5+10,V${r}>=0,V${r}<=1),"Ready","Check inputs")`);
     for(let c=8;c<=18;c++){
       const y=`${col(c)}$8`,prior=c===8?'0':`SUM(H${r}:${col(c-1)}${r})`;
-      formula(s,`${col(c)}${r}`,`=IF($U${r}="Ready",IF(OR(${y}<$F${r},${y}>$F${r}+$E${r},AND($G${r}>0,${y}>$G${r})),0,IF(AND($G${r}>0,${y}=$G${r}),$C${r}-$D${r}-${prior},MIN($C${r}-$D${r}-${prior},($C${r}-$D${r})/$E${r}*IF(${y}=$F${r},$V${r},1)))),NA())`);
+      const remaining=`MAX(0,$C${r}-$D${r}-${prior})`;
+      formula(s,`${col(c)}${r}`,`=IF($U${r}="Ready",IF(OR(${y}<$F${r},${y}>$F${r}+$E${r},AND($G${r}>0,${y}>$G${r})),0,IF(AND($G${r}>0,${y}=$G${r}),${remaining},MIN(${remaining},($C${r}-$D${r})/$E${r}*IF(${y}=$F${r},$V${r},1)))),NA())`);
     }
-    formula(s,`S${r}`,`=SUM(H${r}:R${r})`);formula(s,`T${r}`,`=C${r}-S${r}`);
+    formula(s,`S${r}`,`=SUM(H${r}:R${r})`);formula(s,`T${r}`,`=MAX(D${r},C${r}-S${r})`);
   }
   s.getRange('H9:T19').setNumberFormat(money);flag(s,'U9:U19');s.freezePanes.freezeRows(8);s.freezePanes.freezeColumns(2);
 }

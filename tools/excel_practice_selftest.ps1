@@ -47,6 +47,18 @@ function Assert-Colours([string]$Address, [int]$Font, [int]$Fill) {
         }
     }
 }
+function Assert-Nonnegative([string]$Address) {
+    $xl.CalculateFullRebuild()
+    $range = $sheet.Range($Address)
+    try {
+        foreach ($value in $range.Value2) {
+            if ($value -isnot [double] -or $value -lt 0) {
+                throw "$($sheet.Name)!$Address contains a negative allocation or book value: $value"
+            }
+            $script:checks++
+        }
+    } finally { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($range) }
+}
 function Trial([string]$Address, $Value, [scriptblock]$Checks) {
     $range = $sheet.Range($Address)
     $old = $range.Value2
@@ -244,6 +256,11 @@ try {
     Trial 'V9' 1.01 { Assert-Cell 'U9' 'Check inputs'; Assert-Cell 'H9' '#N/A' }
     Trial 'V9' $null { Assert-Cell 'U9' 'Check inputs' }
     Trial-Cells @{C19=6000.0;F19=2036.0;V19=0.5} { Assert-Cell 'R19' 1000.0; Assert-Cell 'T19' 5000.0 }
+    foreach ($cost in @(0.1,1000.0,10000.0)) {
+        foreach ($life in @(3.0,6.0,7.0,9.0)) {
+            Trial-Cells @{C9=$cost;E9=$life;V9=1.0} { Assert-Nonnegative 'H9:T9' }
+        }
+    }
 
     Select-Sheet 'Timeline'
     Assert-Cell 'E10' 273.0

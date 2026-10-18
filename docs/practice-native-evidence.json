@@ -1,8 +1,8 @@
 ﻿{
     "preparer_sha256":  "13f7ffc9c305e59a67a79f4d2352583cd7911409acdb7543508d082395a61da3",
-    "workbook_sha256":  "0538f3149ced093100ba93a66e782476a3f12347ea08e3ac3f7aca1a60cf8730",
+    "workbook_sha256":  "cf15c6e03d99ddadc1cbeec7dd74c0cbd959bef7c7983322f572a3bb3c0f222b",
     "formulas":  2766,
-    "assertions":  430,
+    "assertions":  586,
     "excel":  "16.0 build 20527",
     "workflows":  [
                       "Allocation",
@@ -27,8 +27,8 @@
                       "Action register",
                       "Benefit totals"
                   ],
-    "builder_sha256":  "980a4f0098eb3bab0bb281d58318aaba9585aac6b6094ad6fb1c707fc1a5274a",
+    "builder_sha256":  "22a23a0247650eedfe29ebf6b311429f7070573c063c83f7b1cfcb8df4101769",
     "baseline_errors":  0,
     "result":  "PASS",
-    "runner_sha256":  "7a9a8f38e29c0488cb0b70d858ff721e3e2d47878a3c47b79322d8efdbdfcce3"
+    "runner_sha256":  "90e33f60ed7eb5e278571647f8d9ebf9b7afac006914d36a73e972729cddbbec"
 }
