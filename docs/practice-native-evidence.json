@@ -1,0 +1,26 @@
+﻿{
+    "preparer_sha256":  "15976626041c45a3e65c3648979edacdc3f84785cb0c4281d359fc08a045c6bf",
+    "workbook_sha256":  "7bbbe77248ecf4529d061e2bfbb6d01416f52f471304ba26559f6ebeb4c1c0aa",
+    "formulas":  2083,
+    "assertions":  150,
+    "excel":  "16.0 build 20527",
+    "workflows":  [
+                      "Allocation",
+                      "Contractor",
+                      "Vendor finance",
+                      "Mixed loan",
+                      "Rental",
+                      "Packaging",
+                      "Amortisation",
+                      "Timeline",
+                      "Deed register",
+                      "Carry forward",
+                      "Loan offers",
+                      "Break even",
+                      "Working capital"
+                  ],
+    "builder_sha256":  "818882b9705032e83e83bc2516d4ca5ae78b28a74cf516bc75d57e2d2f759044",
+    "baseline_errors":  0,
+    "result":  "PASS",
+    "runner_sha256":  "6c52c22256ddf4537d3e6002c5aa5b1462924630950d08f0899947a134509e19"
+}

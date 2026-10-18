@@ -72,9 +72,9 @@ check above used a different workbook file.
 
 </details>
 
-## Start with three tasks
+## Start with a task
 
-You do not need all 137 functions. Most models start with one of these three.
+You do not need all 137 functions. Start with the task you need to complete.
 The loan and depreciation guides show the spilled result for a synthetic input
 you can check by hand; the lease guide explains the four lessee functions.
 
@@ -83,6 +83,7 @@ you can check by hand; the lease guide explains the four lessee functions.
 | Loan schedule | `=oz.Amortiseλ(Principals, APRs, Terms, StartDates)` | [100,000 at 5% over 60 months](docs/function-guide.md#dynamic-array-formula-walkthrough) |
 | Depreciation | `=oz.DiminishingValueλ(Cost, Life)` | [1,000 over 5 years](docs/function-guide.md#dynamic-array-formula-walkthrough) |
 | AASB 16 lease | `=oz.LeaseScheduleλ(Payments, Rate, [InAdvance])` for the liability, `=oz.ROUScheduleλ(Cost, Periods)` for the right-of-use asset | [Lessee functions and rate conversion](docs/australian-modelling.md#aasb-16-leases) |
+| Practice or business calculator | Open the [standalone companion](templates/practice-calculators.xlsx); select one of its 13 calculators | [Inputs, assumptions and coverage](docs/between-spreadsheets.md) |
 
 [Open, copy functions and use modern Excel](docs/workbook-use.md) shows how to
 copy a function into your own workbook.
@@ -113,6 +114,8 @@ The screenshot uses a disposable copy with a synthetic label, an explicit argume
 - [Modules, worksheets and formula walkthroughs](docs/function-guide.md)
 - [Australian conventions and lease modelling](docs/australian-modelling.md)
 - [Separate 13-week cash-flow template](docs/cash-flow-template.md)
+- [Practice calculators and Between The Spreadsheets coverage](docs/between-spreadsheets.md): thirteen standalone arithmetic workflows and the remaining gaps across its 32 public product listings.
+- [Similar tools, improvement decisions and Mermaid colours](docs/practice-improvements.md)
 - [Comparing a modelling schedule with an accounting carrying amount](docs/depreciation-comparison.md)
 - [Ratio definitions: the arithmetic, periods and balances each ratio expects](docs/ratio-definitions.md)
 - [Modelling conventions: where Ozzit follows or departs from the FAST Standard and the ICAEW Financial Modelling Code](docs/modelling-conventions.md)
