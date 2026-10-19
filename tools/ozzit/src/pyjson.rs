@@ -134,15 +134,42 @@ enum Frame {
 
 /// `json.loads(text)` with the default dictionary constructor.
 pub fn loads(text: &str) -> Result<Json, DecodeError> {
-    load(text, false)
+    load(text, None)
 }
 
 /// `json.loads` with the retained evidence's unique-object-key hook.
 pub fn loads_unique(text: &str) -> Result<Json, DecodeError> {
-    load(text, true)
+    load(
+        text,
+        Some(&|_| DecodeError("duplicate evidence key".into())),
+    )
 }
 
-fn load(text: &str, unique: bool) -> Result<Json, DecodeError> {
+/// Why a JSON text with unique object keys could not be read.
+#[derive(Debug, Clone, PartialEq)]
+pub enum UniqueError {
+    Decode(DecodeError),
+    /// The first repeated member name of the first object that repeats one.
+    Duplicate(String),
+}
+
+/// `json.loads` with a hook that raises on the first repeated member name.
+pub fn loads_unique_keys(text: &str) -> Result<Json, UniqueError> {
+    let repeated = std::cell::RefCell::new(None);
+    load(
+        text,
+        Some(&|key| {
+            *repeated.borrow_mut() = Some(key.to_string());
+            DecodeError(String::new())
+        }),
+    )
+    .map_err(|e| match repeated.take() {
+        Some(key) => UniqueError::Duplicate(key),
+        None => UniqueError::Decode(e),
+    })
+}
+
+fn load(text: &str, unique: Option<&dyn Fn(&str) -> DecodeError>) -> Result<Json, DecodeError> {
     let s: Vec<char> = text.chars().collect();
     if s.first() == Some(&'\u{feff}') {
         return Err(decode_error(
@@ -289,7 +316,7 @@ fn load(text: &str, unique: bool) -> Result<Json, DecodeError> {
                     continue 'value;
                 }
                 Frame::Object(pairs, key) => {
-                    if unique {
+                    if unique.is_some() {
                         pairs.push((std::mem::take(key), value));
                     } else if let Some((_, held)) = pairs.iter_mut().find(|(k, _)| k == key) {
                         *held = value;
@@ -302,10 +329,11 @@ fn load(text: &str, unique: bool) -> Result<Json, DecodeError> {
                         let Some(Frame::Object(pairs, _)) = stack.pop() else {
                             unreachable!()
                         };
-                        if unique {
+                        if let Some(duplicate) = unique {
                             let mut keys = std::collections::HashSet::new();
-                            if !pairs.iter().all(|(key, _)| keys.insert(key)) {
-                                return Err(DecodeError("duplicate evidence key".into()));
+                            if let Some((key, _)) = pairs.iter().find(|(key, _)| !keys.insert(key))
+                            {
+                                return Err(duplicate(key));
                             }
                         }
                         value = Json::Object(pairs);
@@ -569,6 +597,13 @@ pub fn dumps(value: &Json, sort_keys: bool) -> String {
 pub fn dumps_compact(value: &Json) -> String {
     let mut out = String::new();
     dump_into(value, 0, false, true, &mut out);
+    out
+}
+
+/// `json.dumps(value, ensure_ascii=False, separators=(",", ":"), sort_keys=True)`.
+pub fn dumps_sorted_compact(value: &Json) -> String {
+    let mut out = String::new();
+    dump_into(value, 0, true, true, &mut out);
     out
 }
 

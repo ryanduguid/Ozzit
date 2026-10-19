@@ -15,7 +15,9 @@ pub mod py;
 pub mod pyjson;
 mod pyunicode;
 pub mod refresh;
+pub mod release;
 pub mod sanitise;
+pub mod selftest;
 pub mod sources;
 pub mod spills;
 pub mod workbook;
@@ -39,6 +41,8 @@ const COMMANDS: &[(&str, Handler)] = &[
     ("sanitise_workbook", sanitise::command),
     ("refresh_cache", refresh::command),
     ("polish_workbook", polish::command),
+    ("generate_selftest_examples", selftest::command),
+    ("prepare_release_bundle", release::command),
 ];
 pub fn dispatch(args: &[String]) -> Output {
     let command = args.first().map(String::as_str);

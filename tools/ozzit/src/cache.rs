@@ -408,7 +408,21 @@ fn exit_code(status: std::process::ExitStatus) -> i64 {
 
 /// Run `program args`, capturing its output, and kill it once `timeout` passes.
 pub fn run_dumper(program: &str, args: &[String], timeout: Duration) -> Result<Dump> {
-    let mut child = match Command::new(program)
+    run_process(program, args, None, timeout)
+}
+
+/// [`run_dumper`] in a chosen working directory.
+pub fn run_process(
+    program: &str,
+    args: &[String],
+    cwd: Option<&Path>,
+    timeout: Duration,
+) -> Result<Dump> {
+    let mut command = Command::new(program);
+    if let Some(cwd) = cwd {
+        command.current_dir(cwd);
+    }
+    let mut child = match command
         .args(args)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
