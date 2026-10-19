@@ -1,4 +1,9 @@
 function,module,previous_name,signature,description
+oz.ATOBenchmarkRatioλ,Ratios,,"ATOBenchmarkRatioλ(Amount, Turnover)","ATO tax return benchmark ratio: an amount divided by turnover, as for rent or motor vehicle expenses to turnover"
+oz.ATOCostOfSalesRatioλ,Ratios,,"ATOCostOfSalesRatioλ(CostOfSales, Turnover, [IncludedWages])","ATO cost of sales to turnover, excluding salary and wages included in cost of sales"
+oz.ATOLabourRatioλ,Ratios,,"ATOLabourRatioλ(SalaryWages, Contractors, Turnover, [AssociatePayments], [W1])","ATO labour to turnover: salary and wages plus contractors less payments to associated persons, over turnover"
+oz.ATOTotalExpensesRatioλ,Ratios,,"ATOTotalExpensesRatioλ(TotalExpenses, Turnover, [AssociatePayments])","ATO total expenses to turnover: total expenses less payments to associated persons, over turnover"
+oz.ATOTurnoverλ,Ratios,,"ATOTurnoverλ(OtherSales, TotalBusinessIncome)",Turnover as the ATO small business benchmarks measure it: other sales unless under half of total business income
 oz.AboutDatesλ,Dates,nabla.d.Aboutλ,AboutDatesλ,Displays this module's repository URL and function list
 oz.AboutEssentialsλ,Essentials,nabla.e.Aboutλ,AboutEssentialsλ,Displays this module's repository URL and function list
 oz.AboutFinancialλ,Financial,nabla.f.Aboutλ,AboutFinancialλ,Displays this module's repository URL and function list
@@ -113,6 +118,7 @@ oz.ROUScheduleλ,Financial,,"ROUScheduleλ(Cost, Periods)","Straight-line right-
 oz.RangeToDAEλ,Essentials,nabla.e.RangeToDAλ,"RangeToDAEλ(Range, [Rows], [Columns])",Convert a range reference to a dynamic array reference
 oz.RangeToDAUλ,Utilities,nabla.u.RangeToDAλ,"RangeToDAUλ(Range, [Rows], [Columns])",Convert a range reference to a dynamic array reference
 oz.RangeToDAλ,Financial,nabla.f.RangeToDAλ,"RangeToDAλ( Cell, [Rows], [Columns])",Create a dynamic array from a static range
+oz.RateAtDateλ,Dates,,"RateAtDateλ(EffectiveDates, Rates, Dates)","Returns the rate in effect on each date from a table of effective dates and rates, refusing gaps, unsorted or repeated dates"
 oz.ReceivableDaysλ,Ratios,,"ReceivableDaysλ(Receivables, Sales, [Days])","Receivable days, or days sales outstanding (DSO): Receivables / Sales x Days"
 oz.ReceivablesTurnoverRatioλ,Ratios,nabla.r.ReceivablesTurnoverRatioλ,"ReceivablesTurnoverRatioλ( NetCreditSales, AverageAccountsReceivable)",Indicates effectiveness in collecting outstanding balances from clients and managing line of credit process (Net Credit Sales/Average Accounts Receivable)
 oz.RetentionRatioλ,Ratios,nabla.r.RetentionRatioλ,"RetentionRatioλ( RetainedEarnings, NetIncome )",Retention Ratio is the proportion of earnings kept back in the business as retained earnings (Retained Earnings/Net Income).

@@ -257,7 +257,7 @@ class IndexAndInventoryTests(unittest.TestCase):
         result = self._run("verify_index.py", WORKBOOK, ROOT / "src", index)
         self.assertEqual(result.returncode, 1)
         self.assertEqual(result.stderr, "")
-        self.assertIn("oz.AboutDatesλ is in the workbook but missing from functions.csv", result.stdout)
+        self.assertIn(f"{rows[0]['function']} is in the workbook but missing from functions.csv", result.stdout)
         self.assertIn(f"{rows[1]['function']} is in the workbook but missing from functions.csv", result.stdout)
 
     def test_index_gate_rejects_fabricated_module(self):

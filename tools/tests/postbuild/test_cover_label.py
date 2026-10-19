@@ -1,7 +1,7 @@
 """The cover-label pass moves any label it records to the current one, and only that.
 
-Cover!A3 has read "130 functions" (before v3.4.2) and "133 functions" (v3.4.2); the
-pass must carry either to the current wording, leave the current one alone, and refuse
+Cover!A3 has read "130 functions" (before v3.4.2), "133 functions" (v3.4.2) and
+"137 functions" (September 2026); the pass must carry any of them to the current wording, leave the current one alone, and refuse
 a workbook holding none or more than one of them.
 """
 
@@ -66,7 +66,7 @@ class CoverLabelTests(unittest.TestCase):
             cover_label.run(self.workbook)
 
     def test_no_recognised_label_is_refused(self):
-        self._swap(cover_label.NEW, cover_label.NEW.replace("137", "999"))
+        self._swap(cover_label.NEW, cover_label.NEW.replace("143", "999"))
         with self.assertRaises(ValueError):
             cover_label.run(self.workbook)
 

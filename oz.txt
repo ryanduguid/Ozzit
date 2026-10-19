@@ -23,6 +23,7 @@ AboutDatesλ = TRIM(
         "PeriodLabelλ           →Creates a label for a date based on period interval¶" &
         "ScheduleRatesλ         →Schedule rates that persist until replaced in a timeline.¶" &
         "ScheduleRatesByItemsλ  →Schedule rates that persist until replaced in a timeline for each item in a list.¶" &
+        "RateAtDateλ            →Return the rate in effect on each date from a checked table of effective dates¶" &
         "ScheduleValuesλ        →Schedules values in a timeline. ¶" &
         "ScheduleValuesByItemsλ →Schedules values in a timeline for each item in a list.¶" &
         "Timelineλ              →Creates a horizontal list of start or end dates for a timeline¶" &
@@ -764,6 +765,61 @@ FinancialYearλ = LAMBDA(
         Result,         IF(CvtDates = 0, "", "FY" & TEXT(YEAR(CvtDates) + (FYStart>1) * (MONTH(CvtDates) >= FYStart), "0000")),
     //  Return Result or Help
         CHOOSE( Help? + 1, Result, Help)
+    )
+);
+
+
+
+/*  FUNCTION NAME:  RateAtDateλ
+    DESCRIPTION:*//**Returns the rate in effect on each date from a table of effective dates and rates, refusing gaps, unsorted or repeated dates*/
+
+RateAtDateλ = LAMBDA(
+//  Parameter Declaration
+    [EffectiveDates],
+    [Rates],
+    [Dates],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →RateAtDateλ(EffectiveDates, Rates, Dates)¶" &
+                            "DESCRIPTION:   →Returns the rate in effect on each date from your table of effective dates and rates.¶NOTES!         →Each rate applies from its effective date until the next one. Dates may¶               →be one date or a row or column of them, and the result takes their shape.¶               →A date before the first effective date has no rate in effect and returns¶               →#N/A. The table must be complete and in order, so instead of a result it¶               →returns a message when EffectiveDates and Rates differ in length or hold¶               →a blank or text entry, when the dates are not in ascending order, or when¶               →a date repeats. A text or blank date in Dates returns #VALUE!. The¶               →library ships no rate table: supply your own, with its source and the¶               →date you checked it. ScheduleRatesλ() lays rates across a timeline¶               →without these checks.¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "VERSION:       →19 Oct 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "EffectiveDates →(Required) A row or column of dates from which each rate applies, in ascending order.¶" &
+                            "Rates          →(Required) The rate that applies from each effective date, the same length as EffectiveDates.¶" &
+                            "Dates          →(Required) The date, or a row or column of dates, to look up.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.RateAtDateλ(DATE(2026, {1;7;10}, 1), {0.04;0.045;0.05}, DATE(2026, 8, 15))¶" &
+                            "→Result¶" &
+                            "→0.045",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR(ISOMITTED(EffectiveDates), ISOMITTED(Rates), ISOMITTED(Dates)),
+    //  The table laid down one column, so a row and a column read the same
+        Starts,         TOCOL(EffectiveDates),
+        Values,         TOCOL(Rates),
+        Count,          ROWS(Starts),
+    //  Read on the arguments, not the columns: TOCOL turns a blank cell into 0, which
+    //  would pass as a date in 1900 or a nil rate
+        Complete?,      AND(Count = ROWS(Values), ISNUMBER(EffectiveDates), ISNUMBER(Rates)),
+        Steps,          IF(Count = 1, 1, DROP(Starts, 1) - DROP(Starts, -1)),
+        Unsorted?,      OR(Steps < 0),
+        Repeated?,      OR(Steps = 0),
+        GapMessage,     "RateAtDateλ needs EffectiveDates and Rates of the same length with a number "
+                        & "in every entry. A blank or text entry leaves a gap in the table.",
+        SortMessage,    "RateAtDateλ needs EffectiveDates in ascending order. Sort the table by "
+                        & "effective date.",
+        RepeatMessage,  "RateAtDateλ found an effective date that repeats. Keep one rate for each "
+                        & "date.",
+    //  Binary search is safe once the order is proven. No date at or before the lookup
+    //  date means no rate was yet in effect: #N/A.
+        Result,         IF(ISNUMBER(Dates), XLOOKUP(Dates, Starts, Values, NA(), -1, 2), #VALUE!),
+    //  Return Result, Help, or the message
+        Return,         IF(Help?, 2, IF(NOT(Complete?), 3, IF(Unsorted?, 4, IF(Repeated?, 5, 1)))),
+        CHOOSE( Return, Result, Help, GapMessage, SortMessage, RepeatMessage)
     )
 );
 
@@ -4063,6 +4119,13 @@ AboutRatiosλ = TRIM(
         "DividendYieldRatioλ        →Dividend yield ratio shows how much a company pays out in dividends¶" &
         "EPSλ                       →Earnings per share measures profitability indicating how much profit each outstanding share of common stock has earned ¶" &
         "RetentionRatioλ            →Retention Ratio is the proportion of earnings kept back in the business as retained earnings¶" &
+        "→¶" &
+        "ATO Small Business Benchmark Ratios→¶" &
+        "ATOTurnoverλ               →Turnover excluding GST as the ATO benchmarks measure it¶" &
+        "ATOBenchmarkRatioλ         →An amount over turnover, as for ATO rent or motor vehicle expenses to turnover¶" &
+        "ATOTotalExpensesRatioλ     →ATO total expenses to turnover, less payments to associated persons¶" &
+        "ATOCostOfSalesRatioλ       →ATO cost of sales to turnover, excluding labour¶" &
+        "ATOLabourRatioλ            →ATO labour to turnover: wages and contractors less payments to associated persons¶" &
         "→¶" & 
         "*                          →These are considered 'Key Ratios'¶" &
         "→", "→", "¶"
@@ -5498,6 +5561,211 @@ RetentionRatioλ = LAMBDA(
         Result,         RetainedEarnings/NetIncome,
     //  Return Result
         CHOOSE(Help? + 1, Result, Help)        
+    )
+);
+
+
+/*  FUNCTION NAME:  ATOTurnoverλ
+    DESCRIPTION:*//**Turnover as the ATO small business benchmarks measure it: other sales unless under half of total business income*/
+
+ATOTurnoverλ = LAMBDA(
+//  Parameter Declaration
+    [OtherSales],
+    [TotalBusinessIncome],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →ATOTurnoverλ(OtherSales, TotalBusinessIncome)¶" &
+                            "DESCRIPTION:   →Turnover excluding GST, the denominator of every ATO tax return benchmark ratio.¶NOTES!         →Returns OtherSales, unless it is zero, blank or less than half of¶               →TotalBusinessIncome, when it returns TotalBusinessIncome instead. That is¶               →the ATO's rule. OtherSales is the other sales of goods and services¶               →amount on the return. Where total business income is blank or¶               →incomplete, the ATO adds up the business income items it lists for the¶               →return type: pass that total as TotalBusinessIncome. Pass both amounts¶               →excluding GST. Text in either argument returns #VALUE!. Arithmetic only:¶               →the reviewer decides what belongs in each amount. ATO benchmark ratio¶               →calculations checked 19 October 2026.¶" &
+                            "WEBPAGE:       →https://www.ato.gov.au/businesses-and-organisations/income-deductions-and-concessions/small-business-benchmarks/small-business-benchmarks-methodology-and-ratio-calculations/how-we-calculate-benchmark-ratios¶" &
+                            "VERSION:       →19 Oct 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "OtherSales     →(Required) Other sales of goods and services, excluding GST.¶" &
+                            "TotalBusinessIncome→(Required) Total business income, excluding GST.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.ATOTurnoverλ(480000, 500000)¶" &
+                            "→Result¶" &
+                            "→480000¶" &
+                            "→=oz.ATOTurnoverλ(200000, 500000)¶" &
+                            "→Result¶" &
+                            "→500000",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR(ISOMITTED(OtherSales), ISOMITTED(TotalBusinessIncome)),
+    //  Procedure
+    //  A blank OtherSales cell or an empty string is nil, row by row, which the rule
+    //  replaces with total business income; any other text is #VALUE!
+        Sales,          IF(OtherSales = "", 0, IF(ISNUMBER(OtherSales), OtherSales, #VALUE!)),
+        Income,         IF(ISNUMBER(TotalBusinessIncome), TotalBusinessIncome, #VALUE!),
+        Result,         IF((Sales = 0) + (Sales < Income / 2), Income, Sales),
+    //  Return Result or Help
+        CHOOSE( Help? + 1, Result, Help)
+    )
+);
+
+
+/*  FUNCTION NAME:  ATOBenchmarkRatioλ
+    DESCRIPTION:*//**ATO tax return benchmark ratio: an amount divided by turnover, as for rent or motor vehicle expenses to turnover*/
+
+ATOBenchmarkRatioλ = LAMBDA(
+//  Parameter Declaration
+    [Amount],
+    [Turnover],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →ATOBenchmarkRatioλ(Amount, Turnover)¶" &
+                            "DESCRIPTION:   →ATO tax return benchmark ratio: Amount / Turnover.¶NOTES!         →The ATO's basic formula for a tax return benchmark ratio, and the whole¶               →of its rent expenses to turnover and motor vehicle expenses to turnover¶               →ratios: pass the rent or motor vehicle expenses amount from the return.¶               →Returns a fraction; format it as a percentage, as the ATO's figure is the¶               →same quotient multiplied by 100. Take Turnover from ATOTurnoverλ(). Use¶               →ATOTotalExpensesRatioλ(), ATOCostOfSalesRatioλ() and ATOLabourRatioλ()¶               →for the 3 ratios whose amounts the ATO adjusts. Turnover of 0 returns¶               →#DIV/0!. Arithmetic only. ATO benchmark ratio calculations checked¶               →19 October 2026.¶" &
+                            "WEBPAGE:       →https://www.ato.gov.au/businesses-and-organisations/income-deductions-and-concessions/small-business-benchmarks/small-business-benchmarks-methodology-and-ratio-calculations/how-we-calculate-benchmark-ratios¶" &
+                            "VERSION:       →19 Oct 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "Amount         →(Required) The expense amount, excluding GST.¶" &
+                            "Turnover       →(Required) Turnover excluding GST, for example from ATOTurnoverλ().¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.ATOBenchmarkRatioλ(24000, 480000)¶" &
+                            "→Result¶" &
+                            "→5%",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR(ISOMITTED(Amount), ISOMITTED(Turnover)),
+    //  Procedure
+        Result,         Amount / Turnover,
+    //  Return Result or Help
+        CHOOSE( Help? + 1, Result, Help)
+    )
+);
+
+
+/*  FUNCTION NAME:  ATOTotalExpensesRatioλ
+    DESCRIPTION:*//**ATO total expenses to turnover: total expenses less payments to associated persons, over turnover*/
+
+ATOTotalExpensesRatioλ = LAMBDA(
+//  Parameter Declaration
+    [TotalExpenses],
+    [Turnover],
+    [AssociatePayments],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →ATOTotalExpensesRatioλ(TotalExpenses, Turnover, [AssociatePayments])¶" &
+                            "DESCRIPTION:   →ATO total expenses to turnover benchmark ratio.¶NOTES!         →(TotalExpenses - AssociatePayments) / Turnover. The ATO deducts payments¶               →to associated persons from total expenses before dividing. Where total¶               →expenses is blank or incomplete, it adds up the expense items it lists¶               →for the return type: pass that total as TotalExpenses. OperatingRatioλ()¶               →gives the same quotient only when its expenses already exclude those¶               →payments and its net sales equal this Turnover. Returns a fraction, as¶               →ATOBenchmarkRatioλ() does. An omitted or blank AssociatePayments counts¶               →as 0. Turnover of 0 returns #DIV/0!. Arithmetic only. ATO benchmark ratio¶               →calculations checked 19 October 2026.¶" &
+                            "WEBPAGE:       →https://www.ato.gov.au/businesses-and-organisations/income-deductions-and-concessions/small-business-benchmarks/small-business-benchmarks-methodology-and-ratio-calculations/how-we-calculate-benchmark-ratios¶" &
+                            "VERSION:       →19 Oct 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "TotalExpenses  →(Required) Total expenses from the return, excluding GST.¶" &
+                            "Turnover       →(Required) Turnover excluding GST, for example from ATOTurnoverλ().¶" &
+                            "AssociatePayments→(Optional: Default = 0) Payments to associated persons.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.ATOTotalExpensesRatioλ(410000, 480000, 30000)¶" &
+                            "→Result¶" &
+                            "→0.7917",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR(ISOMITTED(TotalExpenses), ISOMITTED(Turnover)),
+    //  Procedure
+    //  An omitted AssociatePayments, a blank cell or an empty string is 0, row by row;
+    //  any other text is #VALUE!
+        Associates,     IF(ISOMITTED(AssociatePayments), 0,
+                            IF(AssociatePayments = "", 0,
+                                IF(ISNUMBER(AssociatePayments), AssociatePayments, #VALUE!))),
+        Result,         (TotalExpenses - Associates) / Turnover,
+    //  Return Result or Help
+        CHOOSE( Help? + 1, Result, Help)
+    )
+);
+
+
+/*  FUNCTION NAME:  ATOCostOfSalesRatioλ
+    DESCRIPTION:*//**ATO cost of sales to turnover, excluding salary and wages included in cost of sales*/
+
+ATOCostOfSalesRatioλ = LAMBDA(
+//  Parameter Declaration
+    [CostOfSales],
+    [Turnover],
+    [IncludedWages],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →ATOCostOfSalesRatioλ(CostOfSales, Turnover, [IncludedWages])¶" &
+                            "DESCRIPTION:   →ATO cost of sales to turnover benchmark ratio, excluding labour.¶NOTES!         →(CostOfSales - IncludedWages) / Turnover. The ATO's cost of sales excludes¶               →salary and wages: where the return's total salary and wages code is C,¶               →meaning they are included in cost of sales, it deducts the total salary¶               →and wages expenses. Pass that total as IncludedWages only when the code is¶               →C, and leave it out otherwise. GrossMarginλ() is a different measure:¶               →it keeps wages in cost of sales. Returns a fraction, as¶               →ATOBenchmarkRatioλ() does. An omitted or blank IncludedWages counts as 0.¶               →Turnover of 0 returns #DIV/0!. Arithmetic only. ATO benchmark ratio¶               →calculations checked 19 October 2026.¶" &
+                            "WEBPAGE:       →https://www.ato.gov.au/businesses-and-organisations/income-deductions-and-concessions/small-business-benchmarks/small-business-benchmarks-methodology-and-ratio-calculations/how-we-calculate-benchmark-ratios¶" &
+                            "VERSION:       →19 Oct 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "CostOfSales    →(Required) Cost of sales from the return, excluding GST.¶" &
+                            "Turnover       →(Required) Turnover excluding GST, for example from ATOTurnoverλ().¶" &
+                            "IncludedWages  →(Optional: Default = 0) Total salary and wages expenses, only when the return's code is C.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.ATOCostOfSalesRatioλ(260000, 480000, 60000)¶" &
+                            "→Result¶" &
+                            "→0.4167",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR(ISOMITTED(CostOfSales), ISOMITTED(Turnover)),
+    //  Procedure
+    //  An omitted IncludedWages, a blank cell or an empty string is 0, row by row;
+    //  any other text is #VALUE!
+        Wages,          IF(ISOMITTED(IncludedWages), 0,
+                            IF(IncludedWages = "", 0,
+                                IF(ISNUMBER(IncludedWages), IncludedWages, #VALUE!))),
+        Result,         (CostOfSales - Wages) / Turnover,
+    //  Return Result or Help
+        CHOOSE( Help? + 1, Result, Help)
+    )
+);
+
+
+/*  FUNCTION NAME:  ATOLabourRatioλ
+    DESCRIPTION:*//**ATO labour to turnover: salary and wages plus contractors less payments to associated persons, over turnover*/
+
+ATOLabourRatioλ = LAMBDA(
+//  Parameter Declaration
+    [SalaryWages],
+    [Contractors],
+    [Turnover],
+    [AssociatePayments],
+    [W1],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →ATOLabourRatioλ(SalaryWages, Contractors, Turnover, [AssociatePayments], [W1])¶" &
+                            "DESCRIPTION:   →ATO labour to turnover benchmark ratio.¶NOTES!         →(Wages + Contractors - AssociatePayments) / Turnover, where Wages is¶               →SalaryWages, or W1 when W1 is greater. The ATO adds total salary and¶               →wages expenses to contractor, subcontractor and commission expenses and¶               →deducts payments to associated persons. Where the activity statements'¶               →label W1 (total salary, wages and other payments) for the year exceeds¶               →the return's salary and wages, it uses W1. Returns a fraction, as¶               →ATOBenchmarkRatioλ() does. An omitted or blank AssociatePayments or W1¶               →counts as 0. Turnover of 0 returns #DIV/0!. Arithmetic only. ATO benchmark¶               →ratio calculations checked 19 October 2026.¶" &
+                            "WEBPAGE:       →https://www.ato.gov.au/businesses-and-organisations/income-deductions-and-concessions/small-business-benchmarks/small-business-benchmarks-methodology-and-ratio-calculations/how-we-calculate-benchmark-ratios¶" &
+                            "VERSION:       →19 Oct 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "SalaryWages    →(Required) Total salary and wages expenses from the return.¶" &
+                            "Contractors    →(Required) Contractor, subcontractor and commission expenses.¶" &
+                            "Turnover       →(Required) Turnover excluding GST, for example from ATOTurnoverλ().¶" &
+                            "AssociatePayments→(Optional: Default = 0) Payments to associated persons.¶" &
+                            "W1             →(Optional: Default = 0) The year's total at activity statement label W1.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.ATOLabourRatioλ(90000, 20000, 480000, 10000, 95000)¶" &
+                            "→Result¶" &
+                            "→0.21875",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR(ISOMITTED(SalaryWages), ISOMITTED(Contractors), ISOMITTED(Turnover)),
+    //  Procedure
+    //  An omitted optional argument, a blank cell or an empty string is 0, row by row;
+    //  any other text is #VALUE!
+        Associates,     IF(ISOMITTED(AssociatePayments), 0,
+                            IF(AssociatePayments = "", 0,
+                                IF(ISNUMBER(AssociatePayments), AssociatePayments, #VALUE!))),
+        Activity,       IF(ISOMITTED(W1), 0, IF(W1 = "", 0, IF(ISNUMBER(W1), W1, #VALUE!))),
+    //  The larger of the 2 wage figures, row by row: MAX() would reduce a column to one
+        Wages,          IF(Activity > SalaryWages, Activity, SalaryWages),
+        Result,         (Wages + Contractors - Associates) / Turnover,
+    //  Return Result or Help
+        CHOOSE( Help? + 1, Result, Help)
     )
 );
 

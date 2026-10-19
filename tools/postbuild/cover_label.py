@@ -6,7 +6,8 @@ Cover!A3 is a typed shared string, "Version <date>  -  <n> functions  -
 <compatibility>". It read "20 August 2026" and "130 functions" after three
 cuts had added functions and moved the date, because no gate read the cell.
 This pass records the swap to the v3.4.2 wording, then to the count after the
-four working-capital days functions of September 2026; `tools/verify_cover.py`
+four working-capital days functions of September 2026, and then to the v3.5.0 cut
+with the six ATO benchmark and rate functions of October 2026; `tools/verify_cover.py`
 then keeps the cell equal to functions.csv and the changelog. Pure text
 surgery on xl/sharedStrings.xml: no COM, no recalculation, no cached value
 depends on the cell.
@@ -27,8 +28,9 @@ STRINGS = "xl/sharedStrings.xml"
 OLD = (
     "Version 20 August 2026    -    130 functions    -    Microsoft 365 or Excel 2024 and later",
     "Version 16 September 2026    -    133 functions    -    Microsoft 365 or Excel 2024 and later",
+    "Version 16 September 2026    -    137 functions    -    Microsoft 365 or Excel 2024 and later",
 )
-NEW = "Version 16 September 2026    -    137 functions    -    Microsoft 365 or Excel 2024 and later"
+NEW = "Version 19 October 2026    -    143 functions    -    Microsoft 365 or Excel 2024 and later"
 
 
 def run(workbook: Path) -> list[str]:

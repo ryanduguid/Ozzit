@@ -62,9 +62,9 @@ class ModellingConventionsTest(unittest.TestCase):
     page = " ".join(DOCUMENT.read_text(encoding="utf-8").split())
 
     def test_the_function_and_help_table_counts(self) -> None:
-        self.assertEqual(len(function_bodies()), 137)
-        self.assertIn("a library of 137 LAMBDA functions and 5 help tables", self.page)
-        self.assertIn("Ozzit's 137 functions exist to be called from cells", self.page)
+        self.assertEqual(len(function_bodies()), 143)
+        self.assertIn("a library of 143 LAMBDA functions and 5 help tables", self.page)
+        self.assertIn("Ozzit's 143 functions exist to be called from cells", self.page)
         tables = set()
         for path in (ROOT / "src").glob("*.txt"):
             tables |= set(re.findall(r"^(About\w+λ)\s*=", path.read_text(encoding="utf-8"), re.MULTILINE))
@@ -83,10 +83,10 @@ class ModellingConventionsTest(unittest.TestCase):
         self.assertIn("Utilities repeats the 16 Essentials functions with a `U` suffix", self.page)
 
     def test_if_and_nested_if(self) -> None:
-        self.assertEqual(len(calling(r"\bIF\(")), 63)
+        self.assertEqual(len(calling(r"\bIF\(")), 68)
         nested = {n for n, lines in function_bodies().items() if any(len(re.findall(r"\bIF\(", line)) > 1 for line in lines)}
         self.assertGreaterEqual(len(nested), 22)
-        self.assertIn("63 functions call `IF`", self.page)
+        self.assertIn("68 functions call `IF`", self.page)
         self.assertIn("At least 22 functions nest one `IF` inside another", self.page)
 
     def test_help_tables_and_the_closing_choose(self) -> None:

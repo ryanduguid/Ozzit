@@ -959,6 +959,38 @@ Near 'CashConversionCycle: suppliers paid last'     "$cc(10, 5, 30)"            
 Near 'CashConversionCycle: an error propagates'     "--ISERROR($cc(NA(), 30, 25))"             '1'
 Near 'CashConversionCycle: composes the parts'      "$cc(oz.DSI$L(54.9, 490), $rd(125000, 1200000), $pd(64000, 780000))" '48.9670133438' '0.0000001'
 
+# --- ATO benchmark ratios and the dated rate lookup. Turnover falls back to total
+# business income when other sales are nil, blank or under half of it, and exactly half
+# is not under half. Blank optional amounts count as 0. RateAtDate refuses an incomplete,
+# unsorted or repeating table with a message, and a date before the first effective date
+# is #N/A. ERROR.TYPE: 2 is #DIV/0!, 3 #VALUE!, 7 #N/A.
+$atu = "oz.ATOTurnover$L"
+$abr = "oz.ATOBenchmarkRatio$L"
+$ate = "oz.ATOTotalExpensesRatio$L"
+$acs = "oz.ATOCostOfSalesRatio$L"
+$alr = "oz.ATOLabourRatio$L"
+$rad = "oz.RateAtDate$L"
+$radTable = "DATE(2026,{1;7;10},1), {0.04;0.045;0.05}"
+Near 'ATOTurnover: exactly half keeps other sales'  "$atu(250000, 500000)"                     '250000'
+Near 'ATOTurnover: nil other sales'                 "$atu(0, 500000)"                          '500000'
+Near 'ATOTurnover: blank other sales cell'          "$atu(Z1, 500000)"                         '500000'
+Near 'ATOTurnover: text income is #VALUE!'          "ERROR.TYPE($atu(480000, `"500000`"))"     '3' '0.1'
+Near 'ATOTurnover: row by row'                      "SUMPRODUCT(ABS($atu({480000,200000},{500000,500000}) - {480000,500000}))" '0'
+Near 'ATOBenchmarkRatio: zero turnover is #DIV/0!'  "ERROR.TYPE($abr(24000, 0))"               '2' '0.1'
+Near 'ATOTotalExpensesRatio: blank associates'      "$ate(410000, 480000, Z1)"                 '0.8541666667' '0.0000001'
+Near 'ATOCostOfSalesRatio: wages not in cost'       "$acs(260000, 480000)"                     '0.5416666667' '0.0000001'
+Near 'ATOLabourRatio: W1 below wages is ignored'    "$alr(90000, 20000, 480000, 10000, 85000)" '0.2083333333' '0.0000001'
+Near 'ATOLabourRatio: W1 row by row'                "SUMPRODUCT(ABS($alr({100,100}, 0, {1000,1000}, 0, {150,50}) - {0.15,0.1}))" '0' '0.0000001'
+Near 'RateAtDate: on an effective date'             "$rad($radTable, DATE(2026,7,1))"          '0.045' '0.0000001'
+Near 'RateAtDate: after the last date'              "$rad($radTable, DATE(2030,1,1))"          '0.05' '0.0000001'
+Near 'RateAtDate: before the first date is #N/A'    "ERROR.TYPE($rad($radTable, DATE(2025,12,31)))" '7' '0.1'
+Near 'RateAtDate: a row table and a row of dates'   "SUMPRODUCT(ABS($rad(DATE(2026,{1,7,10},1), {0.04,0.045,0.05}, DATE(2026,{2,8,11},1)) - {0.04,0.045,0.05}))" '0' '0.0000001'
+Near 'RateAtDate: text date is #VALUE!'             "ERROR.TYPE($rad($radTable, `"2026-08-01`"))" '3' '0.1'
+Near 'RateAtDate: blank rate cells are a gap'       "--ISNUMBER(SEARCH(`"gap in the table`", $rad(DATE(2026,{1;7},1), Z1:Z2, DATE(2026,8,1))))" '1'
+Near 'RateAtDate: lengths that differ are a gap'    "--ISNUMBER(SEARCH(`"gap in the table`", $rad(DATE(2026,{1;7;10},1), {0.04;0.045}, DATE(2026,8,1))))" '1'
+Near 'RateAtDate: unsorted dates'                   "--ISNUMBER(SEARCH(`"ascending order`", $rad(DATE(2026,{7;1},1), {0.04;0.045}, DATE(2026,8,1))))" '1'
+Near 'RateAtDate: repeated date'                    "--ISNUMBER(SEARCH(`"repeats`", $rad(DATE(2026,{7;7},1), {0.04;0.045}, DATE(2026,8,1))))" '1'
+
 # --- Randomised checks. Each trial draws fresh inputs, compares the function with an
 # independent Excel formula and, on a miss, reports the inputs that produced it so the
 # case can be reproduced by hand. A run with no failing trial reads OK. Excel has no
