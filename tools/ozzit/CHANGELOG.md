@@ -11,7 +11,7 @@ Dependency qualification: Rust flate2 1.1.10 with zlib-rs 0.6.8 reproduces all
 169 deflated members of the base workbook byte for byte on Windows. The writer
 also reproduces Python zipfile's sorted directory, fixed date and attributes.
 ZIP reading uses zip 9.0.5. JSON, CSV, formula and HTML compatibility use local
-helpers. The first sixteen commands are implemented; see README.md for their
+helpers. Eighteen commands are implemented; see README.md for their
 scope and remaining encoding limits. Unused inherited dependencies were removed
 from this checkpoint; later commands will add dependencies only when needed.
 The optional pyxirr comparator's fixed-case reference outputs must be pinned
@@ -62,5 +62,19 @@ shared-string parts natively: a DOCTYPE is refused and parser errors name the
 native reason, where ElementTree accepted an internal DTD and reported its own
 position. Unexpected Python exceptions in these writers become one error line
 and exit 1.
+
+The self-test example generator writes the committed
+`tools/selftest_examples.ps1` byte for byte; printed totals use exact
+decimals rounded to Python's 28-digit context. The release bundle tool keeps
+its argument handling, checks, messages and provenance schema. Its seven
+static gates run as native child commands in the checkout but are still
+recorded under the `python tools/...` command names the provenance schema
+fixes, so bundles from either tool verify with the other. Help and usage text
+is fixed at 80 columns where argparse followed the terminal width, and the
+Git blob SHA-1 is computed locally rather than through a new dependency.
+
+`tools/pyxirr_comparison.py` stays in Python: it exists to compare Ozzit with
+pyxirr, an independent Python library, and a native runner would have to
+replace that live computation with pinned reference values.
 
 These notes do not claim the port or its differential qualification is complete.

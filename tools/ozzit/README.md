@@ -32,6 +32,8 @@ repository root to use their usual path defaults.
 | `refresh_cache` | Recalculate and save the workbook in Excel, then sanitise the saved file |
 | `sanitise_workbook` | Remove what an Excel save adds and rewrite the archive deterministically |
 | `polish_workbook` | Apply the presentation rules to straplines, cover wording and styles |
+| `generate_selftest_examples` | Turn the help's worked examples into native self-test assertions |
+| `prepare_release_bundle` | Create or verify the copy-only release bundle and its provenance |
 
 Normal positional paths and existing flags retain their spelling. Replace
 `python tools/<name>.py` with `ozzit <name>`. Usage and help identify the native
@@ -79,11 +81,12 @@ cargo test --locked --manifest-path tools/ozzit/Cargo.toml
 ```
 
 The native tests include 1,117 captured parser observations, 76 recorded
-cache-gate findings, 64 recorded sanitiser and presentation-pass results, 69 workbook and
+cache-gate findings, 64 recorded sanitiser and presentation-pass results, 834 recorded generator
+observations, 146 release-bundle argument and verification cases, 69 workbook and
 help-cache observations, 5,461 strict base64 cases, 1,332 retained-evidence/grid
 observations, archive byte checks and
 controlled writer failures. Large test fixtures are read from `tests/data/`
 when tests run. Differential scripts
 and their receipts are retained in the local Agent Hub evidence for this port.
-The remaining verifiers, postbuild passes, release tooling
+The postbuild passes, the optional pyxirr comparison
 and callers still use Python or their existing platform runtime.
