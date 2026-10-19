@@ -11,6 +11,7 @@ pub mod module;
 pub mod native_evidence;
 mod output;
 pub mod polish;
+pub mod postbuild;
 pub mod py;
 pub mod pyjson;
 mod pyunicode;
@@ -43,6 +44,31 @@ const COMMANDS: &[(&str, Handler)] = &[
     ("polish_workbook", polish::command),
     ("generate_selftest_examples", selftest::command),
     ("prepare_release_bundle", release::command),
+    ("cover_label", postbuild::cover_label::command),
+    ("sheet_names", postbuild::sheet_names::command),
+    ("help_links", postbuild::help_links::command),
+    ("fy27_help_text", postbuild::fy27_help_text::command),
+    ("gst_help_text", postbuild::gst_help_text::command),
+    (
+        "strip_revision_history",
+        postbuild::strip_revision_history::command,
+    ),
+    ("remove_residue", postbuild::remove_residue::command),
+    ("workbook_palette", postbuild::workbook_palette::command),
+    ("help_corrections", postbuild::help_corrections::command),
+    ("aasb16_leases", postbuild::aasb16_leases::command),
+    (
+        "working_capital_days",
+        postbuild::function_pass::working_capital_days,
+    ),
+    (
+        "rate_date_helpers",
+        postbuild::function_pass::rate_date_helpers,
+    ),
+    (
+        "ato_benchmarks_rate_lookup",
+        postbuild::function_pass::ato_benchmarks_rate_lookup,
+    ),
 ];
 pub fn dispatch(args: &[String]) -> Output {
     let command = args.first().map(String::as_str);

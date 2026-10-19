@@ -11,7 +11,7 @@ Dependency qualification: Rust flate2 1.1.10 with zlib-rs 0.6.8 reproduces all
 169 deflated members of the base workbook byte for byte on Windows. The writer
 also reproduces Python zipfile's sorted directory, fixed date and attributes.
 ZIP reading uses zip 9.0.5. JSON, CSV, formula and HTML compatibility use local
-helpers. Eighteen commands are implemented; see README.md for their
+helpers. Thirty-one commands are implemented; see README.md for their
 scope and remaining encoding limits. Unused inherited dependencies were removed
 from this checkpoint; later commands will add dependencies only when needed.
 The optional pyxirr comparator's fixed-case reference outputs must be pinned
@@ -76,5 +76,14 @@ Git blob SHA-1 is computed locally rather than through a new dependency.
 `tools/pyxirr_comparison.py` stays in Python: it exists to compare Ozzit with
 pyxirr, an independent Python library, and a native runner would have to
 replace that live computation with pinned reference values.
+
+The thirteen postbuild passes run as `ozzit <pass>` with their usual
+arguments. Their text tables (swap anchors, function sources, About rows and
+palette maps) are exported once from the Python passes into
+`src/data/postbuild/*.json` and embedded, so no anchor is retyped. The palette's
+hue remap reproduces Python's `colorsys` arithmetic and half-even rounding. The
+lease pass's signature pattern uses atomic groups in place of possessive
+quantifiers. Python exceptions these passes did not catch (a missing
+relationship, part or list entry) become one FAIL line and exit 1.
 
 These notes do not claim the port or its differential qualification is complete.
