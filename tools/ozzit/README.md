@@ -89,5 +89,6 @@ observations, archive byte checks and
 controlled writer failures. Large test fixtures are read from `tests/data/`
 when tests run. Differential scripts
 and their receipts are retained in the local Agent Hub evidence for this port.
-The optional pyxirr comparison stays in Python. CI, `RELEASING.md` and the
-postbuild run order still call the Python tools until the switch-over.
+CI, `RELEASING.md` and the postbuild run order call this binary. The Python tools
+remain under test as the reference implementation until they are retired; the
+optional pyxirr comparison stays in Python.

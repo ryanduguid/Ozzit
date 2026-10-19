@@ -45,7 +45,7 @@ Every source archive must still include `LICENSE` and `NOTICE`.
 
 ## Approval and tag
 
-A human maintainer explicitly approves the exact candidate commit and release version after all 14 gates pass.
+A human maintainer explicitly approves the exact candidate commit and release version after all 17 gates pass.
 Create an annotated, cryptographically signed tag for that exact commit. Run
 `git verify-tag` and record the tag object SHA, peeled commit SHA and
 verification result.
@@ -63,13 +63,13 @@ The uploaded bundle contains exactly 3 files:
 
 The signed tag and GitHub's generated source archive remain the source distribution. Inspect that archive as the equivalent of `git archive` for the exact tag; do not upload a redundant custom source archive. The standalone workbook and tagged workbook must have the same SHA-256.
 
-After all 14 gates pass in a clean candidate, stage and independently verify the bundle in 2 fresh directories outside the repository:
+After all 17 gates pass in a clean candidate, stage and independently verify the bundle in 2 fresh directories outside the repository:
 
 ```powershell
-python tools/prepare_release_bundle.py create --version X.Y.Z --source-commit <full-commit-sha> --output <first-new-directory>
-python tools/prepare_release_bundle.py verify --bundle <first-new-directory> --version X.Y.Z --source-commit <full-commit-sha>
-python tools/prepare_release_bundle.py create --version X.Y.Z --source-commit <full-commit-sha> --output <second-new-directory>
-python tools/prepare_release_bundle.py verify --bundle <second-new-directory> --version X.Y.Z --source-commit <full-commit-sha>
+tools/ozzit/target/release/ozzit prepare_release_bundle create --version X.Y.Z --source-commit <full-commit-sha> --output <first-new-directory>
+tools/ozzit/target/release/ozzit prepare_release_bundle verify --bundle <first-new-directory> --version X.Y.Z --source-commit <full-commit-sha>
+tools/ozzit/target/release/ozzit prepare_release_bundle create --version X.Y.Z --source-commit <full-commit-sha> --output <second-new-directory>
+tools/ozzit/target/release/ozzit prepare_release_bundle verify --bundle <second-new-directory> --version X.Y.Z --source-commit <full-commit-sha>
 ```
 
 Require all 3 files in both directories to be byte-identical. The tool refuses a dirty checkout, a mismatched workbook base, non-canonical version or commit values, an output inside the source repository and any existing output path. It runs commands as argument lists without a shell, stages under a fresh sibling directory and exposes the final name only after structural verification succeeds. It never tags, uploads or publishes anything.
@@ -78,39 +78,45 @@ The independent verifier must record and compare GitHub's API `digest` for the u
 
 ## Verification gates
 
-Install the pinned linter, type checker and citation parser in the clean candidate:
+Install the pinned linter, type checker and citation parser, and the pinned Rust
+toolchain, in the clean candidate, then build the native tools once:
 
 ```powershell
 python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-ruff.txt
 python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-mypy.txt
 python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-citation.txt
+rustup toolchain install
+cargo build --locked --release --manifest-path tools/ozzit/Cargo.toml
 ```
 
-Then run the following 12 static and repository gates, the same commands CI runs:
+Then run the following 15 static and repository gates, the same commands CI runs:
 
 ```powershell
 python -m ruff check .
 python -m mypy --config-file mypy.ini
-python tools/verify_workbook.py ozzit.xlsx
-python tools/verify_sources.py ozzit.xlsx src
-python tools/verify_signatures.py src
-python tools/verify_previous_names.py functions.csv
-python tools/verify_index.py ozzit.xlsx src functions.csv
-python tools/verify_cover.py ozzit.xlsx functions.csv CHANGELOG.md
-python tools/verify_afe.py ozzit.xlsx src
-python tools/verify_help_spills.py ozzit.xlsx
-python tools/verify_native_evidence.py
 python -m unittest discover -s tools/tests -v
+cargo fmt --manifest-path tools/ozzit/Cargo.toml --check
+cargo clippy --locked --manifest-path tools/ozzit/Cargo.toml --all-targets -- -D warnings
+cargo test --locked --manifest-path tools/ozzit/Cargo.toml
+tools/ozzit/target/release/ozzit verify_workbook ozzit.xlsx
+tools/ozzit/target/release/ozzit verify_sources ozzit.xlsx src
+tools/ozzit/target/release/ozzit verify_signatures src
+tools/ozzit/target/release/ozzit verify_previous_names functions.csv
+tools/ozzit/target/release/ozzit verify_index ozzit.xlsx src functions.csv
+tools/ozzit/target/release/ozzit verify_cover ozzit.xlsx functions.csv CHANGELOG.md
+tools/ozzit/target/release/ozzit verify_afe ozzit.xlsx src
+tools/ozzit/target/release/ozzit verify_help_spills ozzit.xlsx
+tools/ozzit/target/release/ozzit verify_native_evidence
 ```
 
-All 12 gate commands must exit zero. Record the lint result and substantive type-check, function,
+All 15 gate commands must exit zero. Record the lint result and substantive type-check, function,
 signature, table, example, index, module and test counts rather than only their
 exit status.
 
-`tools/verify_help_spills.py` is the one static gate that predicts an Excel result: it
+`ozzit verify_help_spills` is the one static gate that predicts an Excel result: it
 lists, without Excel, the cached helps that a source change has left stale. It only
-reads. A stale help means the cached-value gate will fail until `tools/refresh_cache.py`
-has run in Excel and `tools/sanitise_workbook.py` after it; a clean report does not
+reads. A stale help means the cached-value gate will fail until `ozzit refresh_cache`
+has run in Excel and `ozzit sanitise_workbook` after it; a clean report does not
 replace the cached-value gate.
 
 Before either native gate, prove that no user Excel process is running. Do not
@@ -118,10 +124,10 @@ close or attach to a user's Excel session. Then run:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\excel_selftest.ps1 -Path .\ozzit.xlsx
-python tools/verify_cache.py ozzit.xlsx
+tools/ozzit/target/release/ozzit verify_cache ozzit.xlsx
 ```
 
-The current acceptance baseline is 1,129 formulas recalculated with zero error cells and 1,065 assertions run with zero failures: the 741 hand-written assertions, 23 of them randomised checks that draw fresh inputs on every run and name the inputs behind any miss, and the 324 that `tools/generate_selftest_examples.py` derives from the help. The generated count is a static count of the fragment; record the number the script prints.
+The current acceptance baseline is 1,129 formulas recalculated with zero error cells and 1,065 assertions run with zero failures: the 741 hand-written assertions, 23 of them randomised checks that draw fresh inputs on every run and name the inputs behind any miss, and the 324 that `ozzit generate_selftest_examples` derives from the help. The generated count is a static count of the fragment; record the number the script prints.
 The cached-value gate must pass and report its actual comparison count. Record
 the Excel version and build. Hash the workbook immediately before and after
 both native gates and require the bytes to be byte-identical.

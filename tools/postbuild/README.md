@@ -29,36 +29,41 @@ updates from concurrent edits.
 
 ## Run order
 
+The passes run through the native tools. Build them once with
+`cargo build --locked --release --manifest-path tools/ozzit/Cargo.toml`; each command
+below keeps the arguments of the Python pass it replaces. The Python passes in this
+directory stay as the reference implementation until they are retired.
+
 ```bash
-python tools/postbuild/fy27_help_text.py ozzit.xlsx src
-python tools/postbuild/workbook_palette.py ozzit.xlsx
-python tools/postbuild/gst_help_text.py ozzit.xlsx src
-python tools/postbuild/strip_revision_history.py ozzit.xlsx src
-python tools/postbuild/help_corrections.py ozzit.xlsx src
-python tools/postbuild/aasb16_leases.py ozzit.xlsx src functions.csv
-python tools/postbuild/rate_date_helpers.py ozzit.xlsx src functions.csv
-python tools/postbuild/working_capital_days.py ozzit.xlsx src functions.csv
-python tools/postbuild/ato_benchmarks_rate_lookup.py ozzit.xlsx src functions.csv
-python tools/postbuild/cover_label.py ozzit.xlsx
-python tools/compile_sources.py ozzit.xlsx src --index=functions.csv
-python tools/build_module.py src oz.txt
-python tools/postbuild/remove_residue.py ozzit.xlsx
-python tools/sync_afe_store.py ozzit.xlsx src
-python tools/generate_selftest_examples.py src
-python tools/postbuild/help_links.py ozzit.xlsx src
-python tools/postbuild/sheet_names.py ozzit.xlsx
-python tools/sanitise_workbook.py ozzit.xlsx   # always last, after any Excel save
+tools/ozzit/target/release/ozzit fy27_help_text ozzit.xlsx src
+tools/ozzit/target/release/ozzit workbook_palette ozzit.xlsx
+tools/ozzit/target/release/ozzit gst_help_text ozzit.xlsx src
+tools/ozzit/target/release/ozzit strip_revision_history ozzit.xlsx src
+tools/ozzit/target/release/ozzit help_corrections ozzit.xlsx src
+tools/ozzit/target/release/ozzit aasb16_leases ozzit.xlsx src functions.csv
+tools/ozzit/target/release/ozzit rate_date_helpers ozzit.xlsx src functions.csv
+tools/ozzit/target/release/ozzit working_capital_days ozzit.xlsx src functions.csv
+tools/ozzit/target/release/ozzit ato_benchmarks_rate_lookup ozzit.xlsx src functions.csv
+tools/ozzit/target/release/ozzit cover_label ozzit.xlsx
+tools/ozzit/target/release/ozzit compile_sources ozzit.xlsx src --index=functions.csv
+tools/ozzit/target/release/ozzit build_module src oz.txt
+tools/ozzit/target/release/ozzit remove_residue ozzit.xlsx
+tools/ozzit/target/release/ozzit sync_afe_store ozzit.xlsx src
+tools/ozzit/target/release/ozzit generate_selftest_examples src
+tools/ozzit/target/release/ozzit help_links ozzit.xlsx src
+tools/ozzit/target/release/ozzit sheet_names ozzit.xlsx
+tools/ozzit/target/release/ozzit sanitise_workbook ozzit.xlsx   # always last, after any Excel save
 ```
 
 The templates take the colour roles alone, without the Ozzit-specific folds:
 
 ```bash
-python tools/postbuild/workbook_palette.py --template templates/13-week-cash-flow-forecast.xlsx
-python tools/postbuild/workbook_palette.py --template templates/retention-reconciliation.xlsx
+tools/ozzit/target/release/ozzit workbook_palette --template templates/13-week-cash-flow-forecast.xlsx
+tools/ozzit/target/release/ozzit workbook_palette --template templates/retention-reconciliation.xlsx
 ```
 
-After `tools/refresh_cache.py` has saved the workbook through Excel, run
-`tools/postbuild/remove_residue.py` again and then `tools/sanitise_workbook.py`:
+After `ozzit refresh_cache` has saved the workbook through Excel, run
+`ozzit remove_residue` again and then `ozzit sanitise_workbook`:
 an Excel save leaves named cell styles unused, renumbers the worksheet parts and
 splits long string literals, and those 2 passes put the file back into the
 state every gate expects.
@@ -69,26 +74,26 @@ fails loudly rather than writing a partial result.
 
 ## Changing a function
 
-Edit its definition in `src/`, then run `tools/compile_sources.py`. It renders every
+Edit its definition in `src/`, then run `ozzit compile_sources`. It renders every
 published definition into the form the workbook stores, proves the rendering
-reproduces its source through `verify_sources.py`'s own comparison, writes only the
+reproduces its source through `verify_sources`'s own comparison, writes only the
 definitions that changed over the defined names that ship, sets each Name Manager
 comment from the source header, and with `--index` regenerates `functions.csv`. The
 compiler never touches a cached value: a change that alters what a demonstration cell
-computes still needs `tools/refresh_cache.py`, and `tools/verify_cache.py` is the gate
+computes still needs `ozzit refresh_cache`, and `ozzit verify_cache` is the gate
 that proves it. `--check` reports what would change without writing. A help change is a
 cached-value change too: the table each demonstration sheet's `=oz.Nameλ()` anchor spills
 is cached on the sheet, and the compiler leaves that cache as Excel last wrote it.
-`tools/verify_help_spills.py` reports, without Excel, which cached helps no longer match
-their definitions; `tools/refresh_cache.py` in Excel is what refreshes them, and
-`tools/verify_cache.py` proves the result.
+`ozzit verify_help_spills` reports, without Excel, which cached helps no longer match
+their definitions; `ozzit refresh_cache` in Excel is what refreshes them, and
+`ozzit verify_cache` proves the result.
 
-`remove_residue.py` drops what nothing in the workbook reads (the hidden FMTs sheet, the
+`remove_residue` drops what nothing in the workbook reads (the hidden FMTs sheet, the
 per-sheet custom properties, the stale custom-function declaration on the Excel Labs
 reference, unused differential formats and named styles) and freezes the label columns
-on the 6 wide demonstration sheets. `sync_afe_store.py` then copies all 6 `src/`
+on the 6 wide demonstration sheets. `sync_afe_store` then copies all 6 `src/`
 modules into the workbook's Advanced Formula Environment store; this step is required
-after any pass that changes `src/`. `generate_selftest_examples.py` rewrites the native
+after any pass that changes `src/`. `generate_selftest_examples` rewrites the native
 self-test's generated assertions from the help, and the tool tests fail when that
 fragment is stale. The FY27 and palette passes
 record the v3.0.0 → v3.1.0 swaps. The GST help pass records a later insert against the
@@ -117,7 +122,7 @@ a new heading in the Ratios About table, and `oz.RateAtDateλ` to the Dates grou
 blocks go before the ones the two earlier passes appended, so their own contract tests
 still find them at the end of each module. The cover-label pass is one swap in `xl/sharedStrings.xml`:
 Cover!A3 kept reading 20 August 2026 and 130 functions after three cuts, and
-`tools/verify_cover.py` now keeps that label equal to `functions.csv` and the
+`ozzit verify_cover` now keeps that label equal to `functions.csv` and the
 changelog's current cut. The pass accepts any earlier label it records, so it also
 carries the count from 133 to 137 for the working-capital functions, and to 143 with the
 v3.5.0 cut date for the ATO benchmark and rate functions.

@@ -58,35 +58,56 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           allow-prereleases: true
-      - name: Check workbook integrity
-        run: python tools/verify_workbook.py ozzit.xlsx
-      - name: Check src/ reproduces the shipped functions
-        run: python tools/verify_sources.py ozzit.xlsx src
-      - name: Check each function's help describes its own parameters
-        run: python tools/verify_signatures.py src
-      - name: Check the published index records what each function replaced
-        run: python tools/verify_previous_names.py functions.csv
-      - name: Check the published index matches the current artefacts
-        run: python tools/verify_index.py ozzit.xlsx src functions.csv
-      - name: Check the cover label states the current cut and function count
-        run: python tools/verify_cover.py ozzit.xlsx functions.csv CHANGELOG.md
-      - name: Check the Advanced Formula Environment store matches src/
-        run: python tools/verify_afe.py ozzit.xlsx src
-      - name: Check each cached help spill matches its definition
-        run: python tools/verify_help_spills.py ozzit.xlsx
-      - name: Check retained native evidence and its provenance
-        run: python tools/verify_native_evidence.py
       - name: Install the pinned citation parser
         run: python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-citation.txt
       - name: Run tool regression tests
         run: python -m unittest discover -s tools/tests -v
+
+  # The gates run through the native tools in tools/ozzit, built once with the
+  # toolchain rust-toolchain.toml pins. The Python tools stay under test above.
+  rust:
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Install the pinned Rust toolchain
+        run: rustup toolchain install
+      - name: Check the native tools' formatting
+        run: cargo fmt --manifest-path tools/ozzit/Cargo.toml --check
+      - name: Lint the native tools
+        run: cargo clippy --locked --manifest-path tools/ozzit/Cargo.toml --all-targets -- -D warnings
+      - name: Run the native tools' tests
+        run: cargo test --locked --manifest-path tools/ozzit/Cargo.toml
+      - name: Build the native tools
+        run: cargo build --locked --release --manifest-path tools/ozzit/Cargo.toml
+      - name: Check workbook integrity
+        run: tools/ozzit/target/release/ozzit verify_workbook ozzit.xlsx
+      - name: Check src/ reproduces the shipped functions
+        run: tools/ozzit/target/release/ozzit verify_sources ozzit.xlsx src
+      - name: Check each function's help describes its own parameters
+        run: tools/ozzit/target/release/ozzit verify_signatures src
+      - name: Check the published index records what each function replaced
+        run: tools/ozzit/target/release/ozzit verify_previous_names functions.csv
+      - name: Check the published index matches the current artefacts
+        run: tools/ozzit/target/release/ozzit verify_index ozzit.xlsx src functions.csv
+      - name: Check the cover label states the current cut and function count
+        run: tools/ozzit/target/release/ozzit verify_cover ozzit.xlsx functions.csv CHANGELOG.md
+      - name: Check the Advanced Formula Environment store matches src/
+        run: tools/ozzit/target/release/ozzit verify_afe ozzit.xlsx src
+      - name: Check each cached help spill matches its definition
+        run: tools/ozzit/target/release/ozzit verify_help_spills ozzit.xlsx
+      - name: Check retained native evidence and its provenance
+        run: tools/ozzit/target/release/ozzit verify_native_evidence
 
   verify-gates:
     # The one context branch protection requires from this workflow. It fails
     # unless every job it needs succeeded, when a job in this file is missing
     # from needs, or when a pull request removes a job without adding a
     # "# removed-jobs: <job>" comment to this file.
-    needs: [lint, verify, coverage]
+    needs: [lint, verify, rust, coverage]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5

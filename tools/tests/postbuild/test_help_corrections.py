@@ -255,11 +255,11 @@ class HelpCorrectionsTests(PassContractMixin, unittest.TestCase):
 
     def test_documented_run_order_syncs_afe_after_this_pass(self):
         instructions = POSTBUILD_README.read_text(encoding="utf-8")
-        command = "python tools/postbuild/help_corrections.py ozzit.xlsx src"
+        command = "tools/ozzit/target/release/ozzit help_corrections ozzit.xlsx src"
         self.assertIn(command, instructions, "the pass is missing from the run order")
         corrections = instructions.index(command)
-        afe = instructions.index("python tools/sync_afe_store.py ozzit.xlsx src")
-        sanitise = instructions.index("python tools/sanitise_workbook.py ozzit.xlsx")
+        afe = instructions.index("tools/ozzit/target/release/ozzit sync_afe_store ozzit.xlsx src")
+        sanitise = instructions.index("tools/ozzit/target/release/ozzit sanitise_workbook ozzit.xlsx")
         self.assertLess(corrections, afe)
         self.assertLess(afe, sanitise)
 

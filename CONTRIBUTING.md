@@ -13,7 +13,9 @@ or attach to one. Follow the evidence, hash and Excel-version requirements in
 `RELEASING.md`.
 
 Run the CI sequence exactly before submitting a change. The first 4 commands
-are the `lint` job; the rest run on Python 3.14 and 3.15. Install the git
+are the `lint` job; the next 2 run on Python 3.14 and 3.15; the rest are the
+`rust` job, which builds the native tools in `tools/ozzit` once and runs the
+gates with them. Install the git
 hooks once with `python -m pip install pre-commit && pre-commit install`; they
 run the pinned ruff check on staged files.
 
@@ -22,17 +24,22 @@ python -m pip install --only-binary ':all:' --require-hashes --requirement requi
 python -m ruff check .
 python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-mypy.txt
 python -m mypy --config-file mypy.ini
-python tools/verify_workbook.py ozzit.xlsx
-python tools/verify_sources.py ozzit.xlsx src
-python tools/verify_signatures.py src
-python tools/verify_previous_names.py functions.csv
-python tools/verify_index.py ozzit.xlsx src functions.csv
-python tools/verify_cover.py ozzit.xlsx functions.csv CHANGELOG.md
-python tools/verify_afe.py ozzit.xlsx src
-python tools/verify_help_spills.py ozzit.xlsx
-python tools/verify_native_evidence.py
 python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-citation.txt
 python -m unittest discover -s tools/tests -v
+rustup toolchain install
+cargo fmt --manifest-path tools/ozzit/Cargo.toml --check
+cargo clippy --locked --manifest-path tools/ozzit/Cargo.toml --all-targets -- -D warnings
+cargo test --locked --manifest-path tools/ozzit/Cargo.toml
+cargo build --locked --release --manifest-path tools/ozzit/Cargo.toml
+tools/ozzit/target/release/ozzit verify_workbook ozzit.xlsx
+tools/ozzit/target/release/ozzit verify_sources ozzit.xlsx src
+tools/ozzit/target/release/ozzit verify_signatures src
+tools/ozzit/target/release/ozzit verify_previous_names functions.csv
+tools/ozzit/target/release/ozzit verify_index ozzit.xlsx src functions.csv
+tools/ozzit/target/release/ozzit verify_cover ozzit.xlsx functions.csv CHANGELOG.md
+tools/ozzit/target/release/ozzit verify_afe ozzit.xlsx src
+tools/ozzit/target/release/ozzit verify_help_spills ozzit.xlsx
+tools/ozzit/target/release/ozzit verify_native_evidence
 ```
 
 For a workbook change, also run the native Excel self-test and cached-value
