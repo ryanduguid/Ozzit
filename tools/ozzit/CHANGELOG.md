@@ -11,7 +11,7 @@ Dependency qualification: Rust flate2 1.1.10 with zlib-rs 0.6.8 reproduces all
 169 deflated members of the base workbook byte for byte on Windows. The writer
 also reproduces Python zipfile's sorted directory, fixed date and attributes.
 ZIP reading uses zip 9.0.5. JSON, CSV, formula and HTML compatibility use local
-helpers. The first thirteen commands are implemented; see README.md for their
+helpers. The first sixteen commands are implemented; see README.md for their
 scope and remaining encoding limits. Unused inherited dependencies were removed
 from this checkpoint; later commands will add dependencies only when needed.
 The optional pyxirr comparator's fixed-case reference outputs must be pinned
@@ -52,5 +52,15 @@ reported ahead of an earlier malformed row, counted from the start of the file.
 Captured dumper output that is not UTF-8 is shown with replacement characters
 where Python ended with a traceback. `powershell.exe` is not looked up in the
 working directory.
+
+The Excel-save sanitiser, the cache refresh and the presentation pass write
+through the same deterministic archive writer and reproduce the Python tools'
+bytes for the committed workbook, an Excel save of it and every recorded
+fixture. The refresh still drives Excel through `tools/refresh_cache.ps1` and
+then sanitises the saved file. The presentation pass parses the workbook and
+shared-string parts natively: a DOCTYPE is refused and parser errors name the
+native reason, where ElementTree accepted an internal DTD and reported its own
+position. Unexpected Python exceptions in these writers become one error line
+and exit 1.
 
 These notes do not claim the port or its differential qualification is complete.

@@ -10,9 +10,12 @@ pub mod index;
 pub mod module;
 pub mod native_evidence;
 mod output;
+pub mod polish;
 pub mod py;
 pub mod pyjson;
 mod pyunicode;
+pub mod refresh;
+pub mod sanitise;
 pub mod sources;
 pub mod spills;
 pub mod workbook;
@@ -33,6 +36,9 @@ const COMMANDS: &[(&str, Handler)] = &[
     ("verify_workbook", workbook::verify),
     ("verify_native_evidence", native_evidence::command),
     ("verify_cache", cache::verify),
+    ("sanitise_workbook", sanitise::command),
+    ("refresh_cache", refresh::command),
+    ("polish_workbook", polish::command),
 ];
 pub fn dispatch(args: &[String]) -> Output {
     let command = args.first().map(String::as_str);

@@ -451,16 +451,16 @@ pub fn run_dumper(program: &str, args: &[String], timeout: Duration) -> Result<D
     })
 }
 
-/// The repository whose `tools/dump_values.ps1` drives Excel: beside the
-/// executable or in one of its ancestors, falling back to the working directory.
-fn repository_root() -> PathBuf {
+/// The repository holding `script`: beside the executable or in one of its
+/// ancestors, falling back to the working directory.
+pub fn repository_root(script: &str) -> PathBuf {
     std::env::current_exe()
         .ok()
         .and_then(|exe| {
             exe.parent()
                 .into_iter()
                 .flat_map(Path::ancestors)
-                .find(|d| d.join(DUMPER).is_file())
+                .find(|d| d.join(script).is_file())
                 .map(Path::to_owned)
         })
         .or_else(|| std::env::current_dir().ok())
@@ -490,7 +490,7 @@ pub fn verify(args: &[String]) -> Output {
             "-ExecutionPolicy".into(),
             "Bypass".into(),
             "-File".into(),
-            repository_root().join(DUMPER).display().to_string(),
+            repository_root(DUMPER).join(DUMPER).display().to_string(),
             "-Path".into(),
             absolute.display().to_string(),
             "-Out".into(),
