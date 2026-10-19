@@ -25,7 +25,12 @@ GATE = re.compile(r"^\s*run:\s*(tools/ozzit/target/release/ozzit\s+verify_\w+.*?
 def run(command: list[str]) -> subprocess.CompletedProcess[str]:
     # UTF-8 mode makes the Python tools write UTF-8 on Windows, as the binary does.
     env = {**os.environ, "PYTHONUTF8": "1"}
-    return subprocess.run(command, capture_output=True, text=True, encoding="utf-8", env=env, check=False)
+    # The commands are argument lists without a shell: this interpreter or the
+    # built binary, a gate name and its arguments from the checked-in workflow.
+    # nosemgrep: python.lang.security.audit.dangerous-subprocess-use-audit.dangerous-subprocess-use-audit
+    return subprocess.run(  # nosec B603
+        command, capture_output=True, text=True, encoding="utf-8", env=env, check=False
+    )
 
 
 def main() -> int:
