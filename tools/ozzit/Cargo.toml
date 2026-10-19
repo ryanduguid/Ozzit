@@ -32,3 +32,8 @@ zip = { version = "9.0.5", default-features = false, features = ["deflate-flate2
 [profile.release]
 codegen-units = 1
 lto = true
+
+# Dependencies are optimised in test builds; the crate itself stays at
+# debug opt-level so its own panics and overflow checks keep their detail.
+[profile.dev.package."*"]
+opt-level = 3
