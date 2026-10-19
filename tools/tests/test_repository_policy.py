@@ -268,9 +268,16 @@ class RepositoryPolicyTests(unittest.TestCase):
         self.assertEqual(text.count(".draft == true"), 3)
         self.assertNotIn("gh release edit", text)
         self.assertNotIn("--clobber", text)
+        # The signed name must match the ref, and the upload must reach the verified
+        # release by ID, after the draft and its assets are compared with the snapshot.
+        self.assertIn(".tag == $tag", text)
+        self.assertNotIn("gh release upload", text)
+        self.assertIn("releases/$RELEASE_ID/assets", text)
+        self.assertEqual(text.count("cmp -s - snapshot.json"), 2)
         releasing = read_utf8(RELEASING)
         self.assertIn("gh workflow run attest-release.yml --ref vX.Y.Z", releasing)
         self.assertIn("sits outside the checksum set", releasing)
+        self.assertIn("gh api repos/ryanduguid/Ozzit/immutable-releases", releasing)
 
     def test_production_type_check_is_pinned_and_rejects_untyped_definitions(self):
         workflow = read_utf8(VERIFY_WORKFLOW)
