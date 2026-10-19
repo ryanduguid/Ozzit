@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "This metadata describes Ozzit 3.5.0, cut on 19 October 2026. Cite its exact commit until the v3.5.0 tag is published. v3.4.2 and earlier remain MIT licensed."
+message: "This metadata describes Ozzit 3.5.0, published on 19 October 2026 from the signed tag v3.5.0. v3.4.2 and earlier remain MIT licensed."
 title: Ozzit
 abstract: >-
   A library of native Microsoft Excel LAMBDA functions for building
