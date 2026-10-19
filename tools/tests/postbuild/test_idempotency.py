@@ -26,6 +26,7 @@ XML_PASSES = [
     (TOOLS / "postbuild" / "aasb16_leases.py", True),
     (TOOLS / "postbuild" / "rate_date_helpers.py", True),
     (TOOLS / "postbuild" / "working_capital_days.py", True),
+    (TOOLS / "postbuild" / "ato_benchmarks_rate_lookup.py", True),
     (TOOLS / "postbuild" / "cover_label.py", False),
     (TOOLS / "postbuild" / "help_corrections.py", True),
     (TOOLS / "postbuild" / "remove_residue.py", False),

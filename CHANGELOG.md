@@ -1,9 +1,42 @@
 # Changelog
 
-## Unreleased: v3.5.0 candidate
+## v3.5.0, 19 October 2026, ATO benchmark ratios, a dated rate lookup and Apache-2.0
 
-Changes on `main` since v3.4.2. They reach the published workbook in the next
-release; until then v3.4.2 behaves as it did, including the defects fixed here.
+Cut on 19 October 2026 from the changes on `main` since v3.4.2. It is not yet tagged
+or published; until it is, v3.4.2 behaves as it did, including the defects fixed here.
+
+### ATO benchmark ratios and a dated rate lookup
+
+Six functions take the library from 137 to 143. `oz.ATOTurnoverλ`,
+`oz.ATOBenchmarkRatioλ`, `oz.ATOTotalExpensesRatioλ`, `oz.ATOCostOfSalesRatioλ` and
+`oz.ATOLabourRatioλ` restate the ATO's tax return small business benchmark ratios,
+re-derived from its "How we calculate benchmark ratios" page (last updated 16 March
+2026, read 19 October 2026): turnover falls back to total business income when other
+sales are nil or under half of it, total expenses exclude payments to associated
+persons, cost of sales excludes salary and wages the return includes in it, and labour
+uses W1 where it exceeds the return's salary and wages. They return fractions, as every
+Ozzit ratio does, take amounts rather than return labels and ship no benchmark ranges.
+`docs/ratio-definitions.md` records where `oz.OperatingRatioλ` and `oz.GrossMarginλ`
+differ. The activity statement ratios are left out because the ATO stopped producing
+them from 1 July 2017.
+
+`oz.RateAtDateλ` returns the rate in effect on each date from a table of effective dates
+and rates the user supplies. It returns a message for a table with a gap, unsorted dates
+or a repeated date, and `#N/A` for a date before the first effective date. No rate
+table ships, so the library still carries no rate card.
+
+`tools/postbuild/ato_benchmarks_rate_lookup.py` adds all six to every store at once.
+Thirty-two native assertions cover their edges, and `tools/tests/test_cross_checks.py`
+adds 50 synthetic cross-checks for the lease, loan, benchmark and rate functions whose
+expected values are computed independently in Python and matched by a retained native
+run. Excel 16.0 build 20527 on 19 October 2026: 1,129 formulas recalculated with 0 in
+error, 1,065 assertions with 0 failures and 19,446 cached values equal to what their
+formulas produce, with the workbook byte-identical before and after both gates.
+
+### Independent authorship
+
+README and NOTICE state that Ozzit's functions were written by Ryan Duguid and that
+Ozzit is not derived from any third-party workbook or library.
 
 ### Practice calculator companion
 

@@ -1,12 +1,14 @@
 ## Ratio definitions
 
-Each of the 42 ratio functions in `src/Ratios.txt` returns one figure from the
-figures supplied: 41 divide one figure by another, and `oz.CashConversionCycleλ`
-adds and subtracts day counts. This page records the arithmetic each one performs,
-the balance or period each argument should carry, and where a definition differs
-from the one the name usually means. It was written by reading the formulas in the
-source at commit `56ef006`; no workbook value was recalculated for it. The four
-working-capital functions at the end of the table were added in September 2026.
+Each of the 47 ratio functions in `src/Ratios.txt` returns one figure from the
+figures supplied: 45 divide one figure by another, `oz.CashConversionCycleλ` adds
+and subtracts day counts, and `oz.ATOTurnoverλ` chooses between two amounts. This
+page records the arithmetic each one performs, the balance or period each argument
+should carry, and where a definition differs from the one the name usually means. It
+was written by reading the formulas in the source at commit `56ef006`; no workbook
+value was recalculated for it. The four working-capital functions in the table were
+added in September 2026, and the five ATO benchmark functions at its end in October
+2026.
 `tools/tests/test_ratio_definitions.py` fails when a formula on this page no longer
 matches the source.
 
@@ -14,7 +16,8 @@ matches the source.
 
 - **Arguments.** Every argument is required except `OpeningEquity` in `oz.ROEλ`,
   `Days` in `oz.ReceivableDaysλ`, `oz.PayableDaysλ` and `oz.WIPDaysλ`, and `WIPDays`
-  in `oz.CashConversionCycleλ`; omitting a required argument returns the function's
+  in `oz.CashConversionCycleλ`, and `AssociatePayments`, `IncludedWages` and `W1` in
+  the ATO benchmark functions; omitting a required argument returns the function's
   help text. `oz.BVPSλ` needs
   `PreferredStock` and `oz.EquityRatioλ` needs `IntangibleAssets`: pass 0 when there
   are none.
@@ -26,7 +29,9 @@ matches the source.
 - **Units.** Margins, returns, the payout and retention ratios and dividend yield
   come back as fractions (0.25 for 25%), so format them as percentages; `oz.DSIλ` and
   the four working-capital functions return days; `oz.EPSλ` and `oz.BVPSλ` return an
-  amount per share; the rest return a plain ratio such as 1.075.
+  amount per share; the four ATO benchmark ratios return fractions of turnover, which
+  the ATO prints multiplied by 100, and `oz.ATOTurnoverλ` returns an amount; the rest
+  return a plain ratio such as 1.075.
 - **Periods.** No ratio annualises. Where a flow is divided by a balance (the
   turnover ratios, the returns and `oz.DSIλ`), supply a full year's flow, or scale a
   shorter period's flow to a year first. `oz.DSIλ` multiplies by a fixed 365.
@@ -48,7 +53,7 @@ matches the source.
   GST while sales and purchases in the profit and loss usually exclude it, so put a
   balance and its flow on the same basis before passing them.
 
-### The 42 functions
+### The 47 functions
 
 | Function | Arithmetic in the source | Notes |
 | --- | --- | --- |
@@ -94,6 +99,35 @@ matches the source.
 | `oz.PayableDaysλ` | `IF(Period <= 0, #NUM!, Payables / Purchases * Period)` | Added September 2026. Days payable outstanding. Credit purchases are the matching flow; cost of sales is the common substitute. `Period` as for `oz.ReceivableDaysλ`. |
 | `oz.WIPDaysλ` | `IF(Period <= 0, #NUM!, WIP / RelatedFlow * Period)` | Added September 2026. `RelatedFlow` must share the valuation basis of `WIP`: fee revenue with WIP at charge-out value, or cost of sales with WIP at cost. `Period` as for `oz.ReceivableDaysλ`. |
 | `oz.CashConversionCycleλ` | `InventoryDays + WIPPart + ReceivableDays - PayableDays` | Added September 2026. `WIPPart` is `WIPDays`, or 0 when it is omitted, a blank cell or an empty string. The components must share one period basis. Pass `WIPDays` only where WIP is not already in the inventory behind `InventoryDays`, or it is counted twice. |
+| `oz.ATOTurnoverλ` | `IF((Sales = 0) + (Sales < Income / 2), Income, Sales)` | Added October 2026. `Sales` is `OtherSales`, with a blank cell or empty string read as 0; `Income` is `TotalBusinessIncome`. Exactly half keeps other sales. Text in either is `#VALUE!`. |
+| `oz.ATOBenchmarkRatioλ` | `Amount / Turnover` | Added October 2026. The ATO's basic formula, and the whole of its rent and motor vehicle expenses to turnover ratios. |
+| `oz.ATOTotalExpensesRatioλ` | `(TotalExpenses - Associates) / Turnover` | Added October 2026. `Associates` is `AssociatePayments`, or 0 when it is omitted, a blank cell or an empty string. |
+| `oz.ATOCostOfSalesRatioλ` | `(CostOfSales - Wages) / Turnover` | Added October 2026. `Wages` is `IncludedWages`, passed only when the return's salary and wages code is C; 0 otherwise. |
+| `oz.ATOLabourRatioλ` | `(Wages + Contractors - Associates) / Turnover` | Added October 2026. `Wages` is `SalaryWages`, or `W1` row by row when it is greater; `Associates` as for `oz.ATOTotalExpensesRatioλ`. |
+
+### ATO small business benchmark ratios
+
+The five ATO functions restate the tax return benchmark ratios on the ATO's
+[How we calculate benchmark ratios](https://www.ato.gov.au/businesses-and-organisations/income-deductions-and-concessions/small-business-benchmarks/small-business-benchmarks-methodology-and-ratio-calculations/how-we-calculate-benchmark-ratios)
+page (last updated 16 March 2026, read 19 October 2026), re-derived from its text.
+Every ratio is an amount over turnover excluding GST. The functions take amounts, not
+return labels: the reviewer decides which amount belongs at each label and which
+entity type's labels apply. They ship no benchmark ranges.
+
+Where an existing ratio looks similar, the definitions differ:
+
+- `oz.OperatingRatioλ` divides operating expenses plus cost of goods sold by net sales.
+  It gives the ATO's total expenses to turnover only when its expenses already exclude
+  payments to associated persons and its net sales equal ATO turnover.
+- `oz.GrossMarginλ` is gross profit over net sales, with wages left in cost of sales.
+  The ATO's cost of sales to turnover is a cost ratio that takes salary and wages out
+  where the return's code says they are in, so 1 minus the gross margin does not give
+  it whenever wages sit in cost of sales.
+- Turnover itself is not net sales: the ATO uses other sales of goods and services,
+  replaced by total business income when other sales are nil or under half of it.
+
+The ATO's two activity statement ratios (non-capital purchases and GST-free sales to
+total sales) are left out: the ATO has not produced them since 1 July 2017.
 
 ### Gaps
 

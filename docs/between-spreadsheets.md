@@ -35,7 +35,7 @@ images and branding have not been incorporated into the companion.
 Open the companion in desktop Excel and replace the blue inputs on platinum fills.
 The first tab links to its twenty-one calculators. It uses ordinary formulas and requires
 no LAMBDA import, macro, add-in or external workbook. The existing `ozzit.xlsx`
-library remains the authority for its 137 LAMBDAs and five help tables.
+library remains the authority for its 143 LAMBDAs and five help tables.
 
 The three additions from the wider comparison, Loan offers, Break even and Working
 capital, are documented in [the improvement report](practice-improvements.md).

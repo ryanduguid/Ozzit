@@ -18,6 +18,7 @@ AboutDatesλ = TRIM(
         "PeriodLabelλ           →Creates a label for a date based on period interval¶" &
         "ScheduleRatesλ         →Schedule rates that persist until replaced in a timeline.¶" &
         "ScheduleRatesByItemsλ  →Schedule rates that persist until replaced in a timeline for each item in a list.¶" &
+        "RateAtDateλ            →Return the rate in effect on each date from a checked table of effective dates¶" &
         "ScheduleValuesλ        →Schedules values in a timeline. ¶" &
         "ScheduleValuesByItemsλ →Schedules values in a timeline for each item in a list.¶" &
         "Timelineλ              →Creates a horizontal list of start or end dates for a timeline¶" &
@@ -759,6 +760,61 @@ FinancialYearλ = LAMBDA(
         Result,         IF(CvtDates = 0, "", "FY" & TEXT(YEAR(CvtDates) + (FYStart>1) * (MONTH(CvtDates) >= FYStart), "0000")),
     //  Return Result or Help
         CHOOSE( Help? + 1, Result, Help)
+    )
+);
+
+
+
+/*  FUNCTION NAME:  RateAtDateλ
+    DESCRIPTION:*//**Returns the rate in effect on each date from a table of effective dates and rates, refusing gaps, unsorted or repeated dates*/
+
+RateAtDateλ = LAMBDA(
+//  Parameter Declaration
+    [EffectiveDates],
+    [Rates],
+    [Dates],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →RateAtDateλ(EffectiveDates, Rates, Dates)¶" &
+                            "DESCRIPTION:   →Returns the rate in effect on each date from your table of effective dates and rates.¶NOTES!         →Each rate applies from its effective date until the next one. Dates may¶               →be one date or a row or column of them, and the result takes their shape.¶               →A date before the first effective date has no rate in effect and returns¶               →#N/A. The table must be complete and in order, so instead of a result it¶               →returns a message when EffectiveDates and Rates differ in length or hold¶               →a blank or text entry, when the dates are not in ascending order, or when¶               →a date repeats. A text or blank date in Dates returns #VALUE!. The¶               →library ships no rate table: supply your own, with its source and the¶               →date you checked it. ScheduleRatesλ() lays rates across a timeline¶               →without these checks.¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "VERSION:       →19 Oct 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "EffectiveDates →(Required) A row or column of dates from which each rate applies, in ascending order.¶" &
+                            "Rates          →(Required) The rate that applies from each effective date, the same length as EffectiveDates.¶" &
+                            "Dates          →(Required) The date, or a row or column of dates, to look up.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.RateAtDateλ(DATE(2026, {1;7;10}, 1), {0.04;0.045;0.05}, DATE(2026, 8, 15))¶" &
+                            "→Result¶" &
+                            "→0.045",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR(ISOMITTED(EffectiveDates), ISOMITTED(Rates), ISOMITTED(Dates)),
+    //  The table laid down one column, so a row and a column read the same
+        Starts,         TOCOL(EffectiveDates),
+        Values,         TOCOL(Rates),
+        Count,          ROWS(Starts),
+    //  Read on the arguments, not the columns: TOCOL turns a blank cell into 0, which
+    //  would pass as a date in 1900 or a nil rate
+        Complete?,      AND(Count = ROWS(Values), ISNUMBER(EffectiveDates), ISNUMBER(Rates)),
+        Steps,          IF(Count = 1, 1, DROP(Starts, 1) - DROP(Starts, -1)),
+        Unsorted?,      OR(Steps < 0),
+        Repeated?,      OR(Steps = 0),
+        GapMessage,     "RateAtDateλ needs EffectiveDates and Rates of the same length with a number "
+                        & "in every entry. A blank or text entry leaves a gap in the table.",
+        SortMessage,    "RateAtDateλ needs EffectiveDates in ascending order. Sort the table by "
+                        & "effective date.",
+        RepeatMessage,  "RateAtDateλ found an effective date that repeats. Keep one rate for each "
+                        & "date.",
+    //  Binary search is safe once the order is proven. No date at or before the lookup
+    //  date means no rate was yet in effect: #N/A.
+        Result,         IF(ISNUMBER(Dates), XLOOKUP(Dates, Starts, Values, NA(), -1, 2), #VALUE!),
+    //  Return Result, Help, or the message
+        Return,         IF(Help?, 2, IF(NOT(Complete?), 3, IF(Unsorted?, 4, IF(Repeated?, 5, 1)))),
+        CHOOSE( Return, Result, Help, GapMessage, SortMessage, RepeatMessage)
     )
 );
 
