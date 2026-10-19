@@ -32,9 +32,7 @@ tables' help changes, so a cached spill of either needs tools/refresh_cache.py i
 
 from __future__ import annotations
 
-import csv
 import sys
-import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -45,7 +43,14 @@ from compile_sources import (  # noqa: E402
     update_index,
 )
 from sanitise_workbook import read_text, write_deterministic, write_text  # noqa: E402
-from workbook import read_book, read_parts  # noqa: E402
+from workbook import index_state as shared_index_state  # noqa: E402
+from workbook import (  # noqa: E402
+    insert_about_rows,
+    read_book,
+    read_parts,
+    run_function_pass,
+    source_state,
+)
 from workbook import workbook_state as book_state  # noqa: E402
 
 NAMESPACE = "oz"
@@ -407,59 +412,20 @@ def about_row(module: str, name: str, about: str) -> str:
 
 def src_state(module: str, text: str) -> str:
     """"absent", "applied", or an error when the module holds only part of the change."""
-    functions = module_functions(module)
-    present = sum(1 for name, _about, _src in functions if f"\n{name} = LAMBDA(" in text)
-    rows = sum(1 for name, about, _src in functions if about_row(module, name, about) in text)
-    if present == 0 and rows == 0:
-        return "absent"
-    if present == len(functions) and rows == len(functions):
-        return "applied"
-    raise ValueError(
-        f"src/{module}.txt holds {present} of {len(functions)} functions and {rows} "
-        f"About rows; it is neither state this pass recognises"
-    )
+    rows = [(name, about_row(module, name, about)) for name, about, _src in module_functions(module)]
+    return source_state(f"src/{module}.txt", text, rows)
 
 
 def index_state(index: Path | None) -> str | None:
-    """"absent", "applied", or None when no index is supplied, raising on a partial one.
-
-    A supplied index that does not exist is an error, not "no index", as in
-    working_capital_days.py: otherwise the pass could write src/ and the workbook and
-    exit 0 with the index left behind.
-    """
-    if index is None:
-        return None
-    if not index.is_file():
-        raise ValueError(f"{index}: no such index; supply an existing functions.csv or none")
-    # Build tool; the path is the repository's own file or the maintainer's argument.
-    with index.open(encoding="utf-8-sig", newline="") as handle:  # NOSONAR
-        listed = {row.get("function", "") for row in csv.DictReader(handle)}
-    present = sum(1 for name in QUALIFIED if name in listed)
-    if present == 0:
-        return "absent"
-    if present == len(QUALIFIED):
-        return "applied"
-    raise ValueError(
-        f"{index.name} holds {present} of {len(QUALIFIED)} benchmark and rate rows; "
-        "it is neither state this pass recognises"
-    )
+    """"absent", "applied", or None when no index is supplied, raising on a partial one."""
+    return shared_index_state(index, QUALIFIED, "benchmark and rate")
 
 
 def add_to_src(module: str, text: str) -> str:
     """The module with its About rows after the anchor and its blocks before the follower."""
     anchor, heading, _width, follower = ABOUT[module]
-    hits = text.count(anchor)
-    if hits != 1:
-        raise ValueError(f"src/{module}.txt: About anchor found {hits} times, expected 1")
-    line_start = text.rfind("\n", 0, text.index(anchor)) + 1
-    indent = text[line_start : text.index(anchor)]
-    # A heading gets the blank spacer row the older groups carry above them.
-    rows = [f'{indent}"→¶" &', f'{indent}"{heading}¶" &'] if heading else []
-    rows.extend(
-        f"{indent}{about_row(module, name, about)} &"
-        for name, about, _src in module_functions(module)
-    )
-    text = text.replace(anchor + " &", anchor + " &\n" + "\n".join(rows), 1)
+    rows = [about_row(module, name, about) for name, about, _src in module_functions(module)]
+    text = insert_about_rows(text, f"src/{module}.txt", anchor, rows, heading)
 
     # The blocks go before the first one an earlier pass appended (working_capital_days.py
     # in Ratios, rate_date_helpers.py in Dates), followed by the same run of blank lines
@@ -534,28 +500,7 @@ def run(workbook: Path, src: Path, index: Path | None) -> list[str]:
 
 
 def main() -> None:
-    if len(sys.argv) > 4:
-        sys.exit(
-            "FAIL: usage: python tools/postbuild/ato_benchmarks_rate_lookup.py "
-            "[workbook] [src dir] [functions.csv]"
-        )
-    workbook = Path(sys.argv[1] if len(sys.argv) > 1 else "ozzit.xlsx")
-    src = Path(sys.argv[2] if len(sys.argv) > 2 else "src")
-    # A named index must exist; the default beside the workbook is used when it does,
-    # which leaves a bare workbook and src/ (the idempotency test's copy) runnable.
-    default = workbook.parent / "functions.csv"
-    index = Path(sys.argv[3]) if len(sys.argv) > 3 else (default if default.is_file() else None)
-    if not workbook.is_file():
-        sys.exit(f"FAIL: no such workbook: {workbook}")
-    try:
-        changed = run(workbook, src, index)
-    except (OSError, ValueError, KeyError, zipfile.BadZipFile) as exc:
-        sys.exit(f"FAIL: {exc}")
-    if changed:
-        print(f"added the benchmark and rate functions to: {', '.join(changed)}")
-    else:
-        print("benchmark and rate functions already applied; no changes")
-    print(f"OK: {workbook}")
+    run_function_pass(sys.argv, "ato_benchmarks_rate_lookup.py", run, "benchmark and rate functions")
 
 
 if __name__ == "__main__":
