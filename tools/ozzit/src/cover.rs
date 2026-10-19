@@ -4,14 +4,14 @@ use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use std::path::Path;
 
-pub fn cover_label(workbook: &Path) -> Result<(String, BigInt)> {
-    let mut archive = open_zip(workbook)?;
-    let book = member_text(&mut archive, BOOK)?;
+/// The worksheet part behind the sheet named Cover.
+fn cover_part(archive: &mut ZipReader) -> Result<String> {
+    let book = member_text(archive, BOOK)?;
     let sheet = captures(r#"<sheet [^>]*name="Cover"[^>]*r:id="(rId\d+)""#, &book);
     let sheet = sheet
         .first()
         .ok_or("xl/workbook.xml declares no sheet named Cover")?;
-    let rels = member_text(&mut archive, "xl/_rels/workbook.xml.rels")?;
+    let rels = member_text(archive, "xl/_rels/workbook.xml.rels")?;
     let target = captures(
         &format!(
             r#"<Relationship [^>]*Id="{}"[^>]*Target="([^"]+)""#,
@@ -24,6 +24,12 @@ pub fn cover_label(workbook: &Path) -> Result<(String, BigInt)> {
         .ok_or("the Cover sheet has no relationship target")?;
     let target = target[1].trim_start_matches('/');
     let part = format!("xl/{}", target.strip_prefix("xl/").unwrap_or(target));
+    Ok(part)
+}
+
+pub fn cover_label(workbook: &Path) -> Result<(String, BigInt)> {
+    let mut archive = open_zip(workbook)?;
+    let part = cover_part(&mut archive)?;
     let sheet = member_text(&mut archive, &part)?;
     let cell = captures(r#"(?s)<c r="A3"([^>]*)>(.*?)</c>"#, &sheet);
     let cell = cell

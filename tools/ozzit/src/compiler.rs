@@ -13,6 +13,49 @@ pub struct Compiled {
     pub stored: String,
     pub comment: String,
 }
+/// One declaration rendered into the form the workbook stores, proved to reproduce its source.
+fn compile_one(
+    bare: String,
+    module: &str,
+    body: String,
+    comment: String,
+    library: &BTreeSet<String>,
+) -> Result<Compiled> {
+    let stored = if body.contains("LAMBDA(") {
+        render(&body, library)
+    } else {
+        render(&format!("LAMBDA({body})"), library)
+            .map(|s| py::strip(&s[13..s.len() - 1]).to_string())
+    }
+    .map_err(|e| format!("{bare}: {e}"))?;
+    let length = stored.chars().count();
+    if length > 8192 {
+        return Err(format!(
+            "{bare}: the stored definition is {length} characters and Excel refuses to open a workbook with a defined name over 8192"
+        ));
+    }
+    let want = canonical(&qualify(&body, "oz", library));
+    let got = canonical(&stored);
+    if want != got {
+        let cut = want
+            .chars()
+            .zip(got.chars())
+            .position(|(a, b)| a != b)
+            .unwrap_or(want.chars().count().min(got.chars().count()));
+        return Err(format!(
+            "{bare}: the rendering does not reproduce its source at character {cut}\n  src   : {}\n  stored: {}",
+            char_slice(&want, cut.saturating_sub(40), cut + 60),
+            char_slice(&got, cut.saturating_sub(40), cut + 60)
+        ));
+    }
+    Ok(Compiled {
+        name: format!("oz.{bare}"),
+        module: module.into(),
+        body,
+        stored,
+        comment,
+    })
+}
 pub fn compile_sources(src: &Path) -> Result<Vec<Compiled>> {
     let mut declared = Vec::new();
     for module in MODULES {
@@ -39,44 +82,10 @@ pub fn compile_sources(src: &Path) -> Result<Vec<Compiled>> {
         .iter()
         .map(|(bare, _, _, _)| bare.clone())
         .collect::<BTreeSet<_>>();
-    let mut out = Vec::new();
-    for (bare, module, body, comment) in declared {
-        let stored = if body.contains("LAMBDA(") {
-            render(&body, &library)
-        } else {
-            render(&format!("LAMBDA({body})"), &library)
-                .map(|s| py::strip(&s[13..s.len() - 1]).to_string())
-        }
-        .map_err(|e| format!("{bare}: {e}"))?;
-        let length = stored.chars().count();
-        if length > 8192 {
-            return Err(format!(
-                "{bare}: the stored definition is {length} characters and Excel refuses to open a workbook with a defined name over 8192"
-            ));
-        }
-        let want = canonical(&qualify(&body, "oz", &library));
-        let got = canonical(&stored);
-        if want != got {
-            let cut = want
-                .chars()
-                .zip(got.chars())
-                .position(|(a, b)| a != b)
-                .unwrap_or(want.chars().count().min(got.chars().count()));
-            return Err(format!(
-                "{bare}: the rendering does not reproduce its source at character {cut}\n  src   : {}\n  stored: {}",
-                char_slice(&want, cut.saturating_sub(40), cut + 60),
-                char_slice(&got, cut.saturating_sub(40), cut + 60)
-            ));
-        }
-        out.push(Compiled {
-            name: format!("oz.{bare}"),
-            module: module.into(),
-            body,
-            stored,
-            comment,
-        });
-    }
-    Ok(out)
+    declared
+        .into_iter()
+        .map(|(bare, module, body, comment)| compile_one(bare, module, body, comment, &library))
+        .collect()
 }
 pub fn shipped_names(book: &str) -> IndexMap<String, (String, String)> {
     captures(NAME_RE, book)
@@ -134,12 +143,10 @@ pub fn insert_names(book: &str, compiled: &[Compiled]) -> Result<String> {
     }
     Ok(book)
 }
-pub fn apply(book: &str, compiled: &[Compiled]) -> Result<(String, Vec<String>)> {
-    let shipped = shipped_names(book);
-    let declared = compiled
-        .iter()
-        .map(|c| c.name.as_str())
-        .collect::<BTreeSet<_>>();
+fn undeclared(
+    shipped: &IndexMap<String, (String, String)>,
+    declared: &BTreeSet<&str>,
+) -> Result<()> {
     let missing = shipped
         .keys()
         .filter(|n| !declared.contains(n.as_str()))
@@ -151,6 +158,15 @@ pub fn apply(book: &str, compiled: &[Compiled]) -> Result<(String, Vec<String>)>
             missing.into_iter().collect::<Vec<_>>().join(", ")
         ));
     }
+    Ok(())
+}
+pub fn apply(book: &str, compiled: &[Compiled]) -> Result<(String, Vec<String>)> {
+    let shipped = shipped_names(book);
+    let declared = compiled
+        .iter()
+        .map(|c| c.name.as_str())
+        .collect::<BTreeSet<_>>();
+    undeclared(&shipped, &declared)?;
     let mut book = book.to_string();
     let mut changed = Vec::new();
     for item in compiled {
@@ -239,21 +255,7 @@ pub fn source_modules(src: &Path) -> Result<BTreeMap<String, String>> {
     }
     Ok(modules)
 }
-pub fn render_index(
-    path: &Path,
-    book: &str,
-    modules: &BTreeMap<String, String>,
-) -> Result<Option<String>> {
-    let csv = Csv::read(path)?;
-    let fields = [
-        "function",
-        "module",
-        "previous_name",
-        "signature",
-        "description",
-    ]
-    .map(String::from)
-    .to_vec();
+fn index_header(csv: &Csv, fields: &[String], path: &Path) -> Result<()> {
     // DictReader's previous-name map is read before Python validates the header.
     if !csv.rows.is_empty() && !csv.headers.iter().any(|h| h == "function") {
         return Err(py::repr_str("function"));
@@ -269,6 +271,24 @@ pub fn render_index(
                 .join(", ")
         ));
     }
+    Ok(())
+}
+pub fn render_index(
+    path: &Path,
+    book: &str,
+    modules: &BTreeMap<String, String>,
+) -> Result<Option<String>> {
+    let csv = Csv::read(path)?;
+    let fields = [
+        "function",
+        "module",
+        "previous_name",
+        "signature",
+        "description",
+    ]
+    .map(String::from)
+    .to_vec();
+    index_header(&csv, &fields, path)?;
     let previous = csv
         .rows
         .iter()
@@ -324,6 +344,35 @@ pub fn run(workbook: &Path, src: &Path, check: bool, index: Option<&Path>) -> Re
     }
     Ok(changed)
 }
+fn summary(changed: &[String], check: bool, workbook: &Path, src: &Path) -> Vec<String> {
+    let first = if changed.is_empty() {
+        if check {
+            "every defined name already matches src/".into()
+        } else {
+            "every defined name already matches src/; no changes".into()
+        }
+    } else {
+        format!(
+            "{}: {}",
+            if check {
+                "would recompile"
+            } else {
+                "recompiled"
+            },
+            changed.join(", ")
+        )
+    };
+    let last = if check {
+        format!(
+            "OK: {} checked against {}/",
+            display(workbook),
+            display(src)
+        )
+    } else {
+        format!("OK: {}", display(workbook))
+    };
+    vec![first, last]
+}
 pub fn command(args: &[String]) -> Output {
     let mut paths = Vec::new();
     let mut check = false;
@@ -351,34 +400,6 @@ pub fn command(args: &[String]) -> Output {
     }
     match run(workbook, src, check, index) {
         Err(e) => Output::stderr(format!("FAIL: {e}")),
-        Ok(changed) => {
-            let first = if changed.is_empty() {
-                if check {
-                    "every defined name already matches src/".into()
-                } else {
-                    "every defined name already matches src/; no changes".into()
-                }
-            } else {
-                format!(
-                    "{}: {}",
-                    if check {
-                        "would recompile"
-                    } else {
-                        "recompiled"
-                    },
-                    changed.join(", ")
-                )
-            };
-            let last = if check {
-                format!(
-                    "OK: {} checked against {}/",
-                    display(workbook),
-                    display(src)
-                )
-            } else {
-                format!("OK: {}", display(workbook))
-            };
-            Output::ok(vec![first, last])
-        }
+        Ok(changed) => Output::ok(summary(&changed, check, workbook, src)),
     }
 }

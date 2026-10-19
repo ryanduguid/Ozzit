@@ -254,19 +254,117 @@ fn ivory_text(styles: &str) -> (String, usize) {
     (text, count)
 }
 
+const PASSED_OLD: &str = r#"rgb="FF008000""#;
+
+/// An xf's `fontId="…"` attribute text and its font and fill indices.
+fn xf_ids(element: &str) -> Option<(String, usize, usize)> {
+    let font = captures(r#"fontId="(\d+)""#, element).into_iter().next();
+    let fill = captures(r#"fillId="(\d+)""#, element).into_iter().next();
+    let (font, fill) = (font?, fill?);
+    let index = |s: &str| {
+        py::parse_int(s, 10)
+            .ok()
+            .and_then(|n| usize::try_from(n).ok())
+    };
+    let (fill_id, font_id) = (index(&fill[1])?, index(&font[1])?);
+    Some((font[0].clone(), font_id, fill_id))
+}
+
+/// Points each xf with a passed fill and green font at a recoloured copy of
+/// that font, appended to `fonts`. Returns the xfs, the count and whether
+/// any copy was made.
+fn passed_xfs(
+    xfs_text: &str,
+    passed: &[usize],
+    fonts: &mut Vec<String>,
+    new: &str,
+) -> Result<(String, usize, bool)> {
+    let wb = py::word_boundary();
+    let mut count = 0;
+    let mut copies: Vec<(usize, usize)> = Vec::new();
+    let mut failure = None;
+    let xfs = sub_fn(
+        &format!(r"(?s)<{P}xf{wb}[^>]*?(?:/>|>.*?</{P}xf>)"),
+        xfs_text,
+        |m| {
+            let element = &m[0];
+            let Some((font_attr, font_id, fill_id)) = xf_ids(element) else {
+                return element.to_string();
+            };
+            if !passed.contains(&fill_id) {
+                return element.to_string();
+            }
+            let Some(font_text) = fonts.get(font_id) else {
+                failure.get_or_insert_with(|| "list index out of range".to_string());
+                return element.to_string();
+            };
+            if !font_text.contains(PASSED_OLD) {
+                return element.to_string();
+            }
+            let copy = match copies.iter().find(|(f, _)| *f == font_id) {
+                Some((_, copy)) => *copy,
+                None => {
+                    let copy = fonts.len();
+                    fonts.push(font_text.replace(PASSED_OLD, new));
+                    copies.push((font_id, copy));
+                    copy
+                }
+            };
+            count += 1;
+            element.replace(&font_attr, &format!("fontId=\"{copy}\""))
+        },
+    );
+    match failure {
+        Some(failure) => Err(failure),
+        None => Ok((xfs, count, !copies.is_empty())),
+    }
+}
+
+/// The fonts element rebuilt around `fonts`, keeping its opening tag but its count.
+fn rebuilt_fonts(fonts_text: &str, fonts: &[String]) -> Result<String> {
+    let wb = py::word_boundary();
+    let head = captures(&format!(r"^<{P}fonts{wb}[^>]*>"), fonts_text)
+        .into_iter()
+        .next()
+        .ok_or("fonts element has no opening tag")?;
+    let tag = head[0][1..]
+        .split_whitespace()
+        .next()
+        .unwrap_or_default()
+        .trim_end_matches('>');
+    let opening = sub(
+        r#"count="\d+""#,
+        &head[0],
+        &format!("count=\"{}\"", fonts.len()),
+    );
+    Ok(format!("{opening}{}</{tag}>", fonts.concat()))
+}
+
+/// The index of each fill carrying the passed tint.
+fn passed_fills(fills_text: &str, tint: &str) -> Vec<usize> {
+    captures(
+        &format!(r"(?s)<{P}fill\s*/>|<{P}fill>.*?</{P}fill>"),
+        fills_text,
+    )
+    .iter()
+    .enumerate()
+    .filter(|(_, f)| f[0].contains(tint))
+    .map(|(i, _)| i)
+    .collect()
+}
+
 /// Green text on the passed tint is a passed check: recolour it, giving a
 /// cell style whose green font is shared with links its own copy.
 fn passed_green(styles: &str) -> Result<(String, usize)> {
     let mut count = 0;
-    let old = r#"rgb="FF008000""#;
     let new = format!("rgb=\"FF{GREEN}\"");
     let tint = format!("FF{GREEN_TINT}");
     let styles = sub_fn(&format!(r"(?s)<{P}dxf>.*?</{P}dxf>"), styles, |m| {
         if !m[0].contains(&tint) {
             return m[0].to_string();
         }
-        count += m[0].matches(old).count();
-        m[0].replace(old, &new)
+        count += m[0].matches(PASSED_OLD).count();
+        m[0].replace(PASSED_OLD, &new)
     });
     let wb = py::word_boundary();
     let span = |pattern: String| {
@@ -290,80 +388,14 @@ fn passed_green(styles: &str) -> Result<(String, usize)> {
     .into_iter()
     .map(|m| m[0].clone())
     .collect::<Vec<_>>();
-    let fills = captures(
-        &format!(r"(?s)<{P}fill\s*/>|<{P}fill>.*?</{P}fill>"),
-        &styles[fills_at.0..fills_at.1],
-    );
-    let passed = fills
-        .iter()
-        .enumerate()
-        .filter(|(_, f)| f[0].contains(&tint))
-        .map(|(i, _)| i)
-        .collect::<Vec<_>>();
-    let mut copies: Vec<(usize, usize)> = Vec::new();
-    let mut failure = None;
-    let xfs = sub_fn(
-        &format!(r"(?s)<{P}xf{wb}[^>]*?(?:/>|>.*?</{P}xf>)"),
-        &styles[xfs_at.0..xfs_at.1],
-        |m| {
-            let element = &m[0];
-            let font = captures(r#"fontId="(\d+)""#, element).into_iter().next();
-            let fill = captures(r#"fillId="(\d+)""#, element).into_iter().next();
-            let (Some(font), Some(fill)) = (font, fill) else {
-                return element.to_string();
-            };
-            let index = |s: &str| {
-                py::parse_int(s, 10)
-                    .ok()
-                    .and_then(|n| usize::try_from(n).ok())
-            };
-            let (Some(fill_id), Some(font_id)) = (index(&fill[1]), index(&font[1])) else {
-                return element.to_string();
-            };
-            if !passed.contains(&fill_id) {
-                return element.to_string();
-            }
-            let Some(font_text) = fonts.get(font_id) else {
-                failure.get_or_insert_with(|| "list index out of range".to_string());
-                return element.to_string();
-            };
-            if !font_text.contains(old) {
-                return element.to_string();
-            }
-            let copy = match copies.iter().find(|(f, _)| *f == font_id) {
-                Some((_, copy)) => *copy,
-                None => {
-                    let copy = fonts.len();
-                    fonts.push(font_text.replace(old, &new));
-                    copies.push((font_id, copy));
-                    copy
-                }
-            };
-            count += 1;
-            element.replace(&font[0], &format!("fontId=\"{copy}\""))
-        },
-    );
-    if let Some(failure) = failure {
-        return Err(failure);
-    }
-    if copies.is_empty() {
+    let passed = passed_fills(&styles[fills_at.0..fills_at.1], &tint);
+    let (xfs, recoloured, copied) =
+        passed_xfs(&styles[xfs_at.0..xfs_at.1], &passed, &mut fonts, &new)?;
+    count += recoloured;
+    if !copied {
         return Ok((styles, count));
     }
-    let head = captures(&format!(r"^<{P}fonts{wb}[^>]*>"), fonts_text)
-        .into_iter()
-        .next()
-        .ok_or("fonts element has no opening tag")?;
-    let tag = head[0][1..]
-        .split_whitespace()
-        .next()
-        .unwrap_or_default()
-        .trim_end_matches('>');
-    let opening = sub(
-        r#"count="\d+""#,
-        &head[0],
-        &format!("count=\"{}\"", fonts.len()),
-    );
-    let new_fonts = format!("{opening}{}</{tag}>", fonts.concat());
+    let new_fonts = rebuilt_fonts(fonts_text, &fonts)?;
     Ok((
         format!(
             "{}{new_fonts}{}{xfs}{}",
@@ -379,14 +411,11 @@ fn sheet_part(name: &str) -> bool {
     matches(r"^xl/worksheets/sheet\d+\.xml$", name)
 }
 
-pub fn run(workbook: &Path, template: bool) -> Result<Vec<String>> {
-    let mut parts = read_parts(workbook)?;
-    let order = parts.keys().cloned().collect::<Vec<_>>();
-    let mut changes = Vec::new();
-
+/// Tab colours, theme slots and the palette remap shared by the workbook and templates.
+fn colour_parts(parts: &mut Parts, order: &[String], changes: &mut Vec<String>) -> Result<()> {
     let mut tabs = 0;
     for name in order.iter().filter(|n| sheet_part(n)) {
-        let (text, found) = tab_colours(&part_text(&parts, name)?);
+        let (text, found) = tab_colours(&part_text(parts, name)?);
         if found > 0 {
             parts.insert(name.clone(), text.into_bytes());
             tabs += found;
@@ -399,7 +428,7 @@ pub fn run(workbook: &Path, template: bool) -> Result<Vec<String>> {
         .iter()
         .filter(|n| matches(r"^xl/theme/theme\d+\.xml$", n))
     {
-        let text = part_text(&parts, name)?;
+        let text = part_text(parts, name)?;
         let slotted = theme_slots(&text);
         if slotted != text {
             parts.insert(name.clone(), slotted.into_bytes());
@@ -422,40 +451,37 @@ pub fn run(workbook: &Path, template: bool) -> Result<Vec<String>> {
         if !parts.contains_key(&name) {
             continue;
         }
-        let text = part_text(&parts, &name)?;
+        let text = part_text(parts, &name)?;
         let (recoloured, found) = recolour(&text)?;
         if recoloured != text {
             parts.insert(name.clone(), recoloured.into_bytes());
             changes.push(format!("{name}: {found} colours remapped"));
         }
     }
+    Ok(())
+}
 
-    let mut styles = part_text(&parts, "xl/styles.xml")?;
-    let (text, found) = ivory_text(&styles);
-    styles = text;
+/// Ivory white text and green passed checks in styles.xml, which is returned.
+fn text_colours(parts: &mut Parts, changes: &mut Vec<String>) -> Result<String> {
+    let styles = part_text(parts, "xl/styles.xml")?;
+    let (styles, found) = ivory_text(&styles);
     if found > 0 {
         changes.push(format!("white text made ivory ({found} entries)"));
     }
-    let (text, found) = passed_green(&styles)?;
-    styles = text;
+    let (styles, found) = passed_green(&styles)?;
     if found > 0 {
         changes.push(format!("passed checks made green ({found} entries)"));
     }
     parts.insert("xl/styles.xml".into(), styles.clone().into_bytes());
+    Ok(styles)
+}
 
-    if template {
-        if changes.is_empty() {
-            return Ok(vec![]);
-        }
-        write_deterministic(workbook, &parts)?;
-        return Ok(changes);
-    }
-
+fn drawing_outlines(parts: &mut Parts, order: &[String], changes: &mut Vec<String>) -> Result<()> {
     for name in order
         .iter()
         .filter(|n| matches(r"^xl/drawings/drawing\d+\.xml$", n))
     {
-        let text = part_text(&parts, name)?;
+        let text = part_text(parts, name)?;
         if text.contains(r#"<a:prstClr val="green"/>"#) {
             parts.insert(
                 name.clone(),
@@ -468,14 +494,17 @@ pub fn run(workbook: &Path, template: bool) -> Result<Vec<String>> {
             changes.push(format!("{name}: green outline made platinum"));
         }
     }
+    Ok(())
+}
 
+fn font_families(parts: &mut Parts, styles: &mut String, changes: &mut Vec<String>) -> Result<()> {
     for (old, new) in &TABLES.font_families {
         if styles.contains(old.as_str()) {
-            styles = styles.replace(old, new);
+            *styles = styles.replace(old, new);
             changes.push(format!("font family {old} -> {new}"));
         }
     }
-    let mut shared = part_text(&parts, "xl/sharedStrings.xml")?;
+    let mut shared = part_text(parts, "xl/sharedStrings.xml")?;
     for (old, new) in &TABLES.rfont_families {
         if shared.contains(old.as_str()) {
             shared = shared.replace(old, new);
@@ -483,32 +512,37 @@ pub fn run(workbook: &Path, template: bool) -> Result<Vec<String>> {
         }
     }
     parts.insert("xl/sharedStrings.xml".into(), shared.into_bytes());
+    Ok(())
+}
 
-    let (pre, mut fonts, post) = section(&styles, "fonts")?;
+/// Replaces each `rgb="old"` in `text` with its `rgb="new"`; returns the hits.
+fn remap_rgb(text: &mut String, remap: &[(String, String)]) -> usize {
     let mut folded = 0;
-    for (old, new) in &TABLES.font_remap {
-        let hits = count(&fonts, &format!("rgb=\"{old}\""));
+    for (old, new) in remap {
+        let hits = count(text, &format!("rgb=\"{old}\""));
         if hits > 0 {
-            fonts = fonts.replace(&format!("rgb=\"{old}\""), &format!("rgb=\"{new}\""));
+            *text = text.replace(&format!("rgb=\"{old}\""), &format!("rgb=\"{new}\""));
             folded += hits;
         }
     }
+    folded
+}
+
+fn fold_fonts(styles: &mut String, changes: &mut Vec<String>) -> Result<()> {
+    let (pre, mut fonts, post) = section(styles, "fonts")?;
+    let folded = remap_rgb(&mut fonts, &TABLES.font_remap);
     if folded > 0 {
         changes.push(format!(
             "help-label fonts folded to palette ({folded} entries)"
         ));
     }
-    styles = format!("{pre}{fonts}{post}");
+    *styles = format!("{pre}{fonts}{post}");
+    Ok(())
+}
 
-    let (pre, mut fills, post) = section(&styles, "fills")?;
-    let mut folded = 0;
-    for (old, new) in &TABLES.fill_remap {
-        let hits = count(&fills, &format!("rgb=\"{old}\""));
-        if hits > 0 {
-            fills = fills.replace(&format!("rgb=\"{old}\""), &format!("rgb=\"{new}\""));
-            folded += hits;
-        }
-    }
+fn fold_fills(styles: &mut String, changes: &mut Vec<String>) -> Result<()> {
+    let (pre, mut fills, post) = section(styles, "fills")?;
+    let mut folded = remap_rgb(&mut fills, &TABLES.fill_remap);
     let hits = count(&fills, r#"<fgColor indexed="42"/>"#);
     if hits > 0 {
         fills = fills.replace(
@@ -530,7 +564,29 @@ pub fn run(workbook: &Path, template: bool) -> Result<Vec<String>> {
         );
         changes.push(format!("input fills made platinum ({hits} entries)"));
     }
-    styles = format!("{pre}{fills}{post}");
+    *styles = format!("{pre}{fills}{post}");
+    Ok(())
+}
+
+pub fn run(workbook: &Path, template: bool) -> Result<Vec<String>> {
+    let mut parts = read_parts(workbook)?;
+    let order = parts.keys().cloned().collect::<Vec<_>>();
+    let mut changes = Vec::new();
+    colour_parts(&mut parts, &order, &mut changes)?;
+    let mut styles = text_colours(&mut parts, &mut changes)?;
+
+    if template {
+        if changes.is_empty() {
+            return Ok(vec![]);
+        }
+        write_deterministic(workbook, &parts)?;
+        return Ok(changes);
+    }
+
+    drawing_outlines(&mut parts, &order, &mut changes)?;
+    font_families(&mut parts, &mut styles, &mut changes)?;
+    fold_fonts(&mut styles, &mut changes)?;
+    fold_fills(&mut styles, &mut changes)?;
     parts.insert("xl/styles.xml".into(), styles.clone().into_bytes());
 
     // Guard: the TOC length warning keeps its warning role, now in crimson.

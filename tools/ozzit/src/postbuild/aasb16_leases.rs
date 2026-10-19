@@ -210,8 +210,7 @@ fn add_to_workbook(book: &str, definitions: &[Definition]) -> Result<String> {
     Ok(book)
 }
 
-fn update_index(path: &Path, definitions: &[Definition]) -> Result<bool> {
-    let csv = Csv::read(path)?;
+fn check_columns(csv: &Csv, path: &Path) -> Result<()> {
     let expected = [
         "function",
         "module",
@@ -235,6 +234,59 @@ fn update_index(path: &Path, definitions: &[Definition]) -> Result<bool> {
                 .join(", ")
         ));
     }
+    Ok(())
+}
+
+/// The index row of each lease function, in name order.
+fn lease_rows(definitions: &[Definition]) -> Result<Vec<Vec<(String, String)>>> {
+    let mut rows = Vec::new();
+    let signature = r"FUNCTION:(?>\s*)(?:→(?>\s*))?(.*?)¶";
+    let mut sorted = definitions.iter().collect::<Vec<_>>();
+    sorted.sort_by(|a, b| a.name.cmp(&b.name));
+    for d in sorted {
+        let found = captures(signature, &d.stored);
+        let Some(m) = found.first() else {
+            return Err(format!(
+                "{}: stored definition has no FUNCTION line",
+                d.name
+            ));
+        };
+        rows.push(vec![
+            ("function".into(), d.name.clone()),
+            ("module".into(), MODULE.into()),
+            ("previous_name".into(), String::new()),
+            ("signature".into(), py::strip(&m[1]).into()),
+            ("description".into(), sub(r"\s{2,}", &d.comment, " ")),
+        ]);
+    }
+    Ok(rows)
+}
+
+/// Writes the rows sorted by function, in the header's column order.
+fn write_index(
+    path: &Path,
+    headers: &[String],
+    mut rows: Vec<Vec<(String, String)>>,
+) -> Result<()> {
+    let field = |row: &Vec<(String, String)>, key: &str| {
+        row.iter()
+            .rev()
+            .find(|(k, _)| k == key)
+            .map_or(String::new(), |(_, v)| v.clone())
+    };
+    rows.sort_by_key(|row| field(row, "function"));
+    let mut text = csv_row(headers);
+    for row in &rows {
+        let values = headers.iter().map(|h| field(row, h)).collect::<Vec<_>>();
+        text.push_str(&csv_row(&values));
+    }
+    write_bytes(path, text.as_bytes())?;
+    Ok(())
+}
+
+fn update_index(path: &Path, definitions: &[Definition]) -> Result<bool> {
+    let csv = Csv::read(path)?;
+    check_columns(&csv, path)?;
     // DictReader rows: the last column of a repeated name wins, short rows read empty.
     let rows = csv
         .rows
@@ -269,43 +321,23 @@ fn update_index(path: &Path, definitions: &[Definition]) -> Result<bool> {
         ));
     }
     let mut rows = rows?;
-    let signature = r"FUNCTION:(?>\s*)(?:→(?>\s*))?(.*?)¶";
-    let mut sorted = definitions.iter().collect::<Vec<_>>();
-    sorted.sort_by(|a, b| a.name.cmp(&b.name));
-    for d in sorted {
-        let found = captures(signature, &d.stored);
-        let Some(m) = found.first() else {
-            return Err(format!(
-                "{}: stored definition has no FUNCTION line",
-                d.name
-            ));
-        };
-        rows.push(vec![
-            ("function".into(), d.name.clone()),
-            ("module".into(), MODULE.into()),
-            ("previous_name".into(), String::new()),
-            ("signature".into(), py::strip(&m[1]).into()),
-            ("description".into(), sub(r"\s{2,}", &d.comment, " ")),
-        ]);
-    }
-    let field = |row: &Vec<(String, String)>, key: &str| {
-        row.iter()
-            .rev()
-            .find(|(k, _)| k == key)
-            .map_or(String::new(), |(_, v)| v.clone())
-    };
-    rows.sort_by_key(|row| field(row, "function"));
-    let mut text = csv_row(&csv.headers);
-    for row in &rows {
-        let values = csv
-            .headers
-            .iter()
-            .map(|h| field(row, h))
-            .collect::<Vec<_>>();
-        text.push_str(&csv_row(&values));
-    }
-    write_bytes(path, text.as_bytes())?;
+    rows.extend(lease_rows(definitions)?);
+    write_index(path, &csv.headers, rows)?;
     Ok(true)
+}
+
+/// Every function src/ declares, with the lease functions this pass adds.
+fn library(src: &py::PyPath) -> Result<BTreeSet<String>> {
+    let mut library = BTreeSet::new();
+    for path in txt_files(&src.fs())? {
+        for statement in formula::statements(&read_text(&path)?) {
+            if let Some(m) = captures(formula::NAME, &statement).first() {
+                library.insert(m[1].clone());
+            }
+        }
+    }
+    library.extend(TABLES.functions.iter().map(|f| f.name.clone()));
+    Ok(library)
 }
 
 pub fn run(
@@ -334,15 +366,7 @@ pub fn run(
         ));
     }
 
-    let mut library = BTreeSet::new();
-    for path in txt_files(&src.fs())? {
-        for statement in formula::statements(&read_text(&path)?) {
-            if let Some(m) = captures(formula::NAME, &statement).first() {
-                library.insert(m[1].clone());
-            }
-        }
-    }
-    library.extend(TABLES.functions.iter().map(|f| f.name.clone()));
+    let library = library(src)?;
     let definitions = build_definitions(&library)?;
 
     let mut changed = Vec::new();

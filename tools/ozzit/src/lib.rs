@@ -98,6 +98,9 @@ pub fn dispatch(args: &[String]) -> Output {
 }
 pub fn run() -> std::process::ExitCode {
     use std::io::Write;
+    // The arguments only select a command and its operands; the program
+    // name (argument 0) is skipped and never trusted.
+    // nosemgrep: rust.lang.security.args.args
     let args = std::env::args().skip(1).collect::<Vec<_>>();
     let encoding = if matches!(
         args.first().map(String::as_str),

@@ -41,6 +41,58 @@ fn corpus(name: &str) -> Value {
     serde_json::from_reader(flate2::read::GzDecoder::new(&bytes[..])).unwrap()
 }
 
+/// Creates the recorded input: a directory, a workbook, or nothing.
+fn write_input(data: &Value, record: &Value, path: &Path) {
+    if record["directory"].as_bool().unwrap() {
+        std::fs::create_dir(path).unwrap();
+    } else if let Some(id) = record["input"].as_str() {
+        let bytes = base64::engine::general_purpose::STANDARD
+            .decode(data["blobs"][id].as_str().unwrap())
+            .unwrap();
+        std::fs::write(path, bytes).unwrap();
+    }
+}
+
+/// Whether the run printed what the recorder saw, allowing the native ZIP reason.
+fn same_output(code: u8, out: &str, err: &str, expected: &Value) -> bool {
+    let mut same = i64::from(code) == expected["code"].as_i64().unwrap()
+        && out == expected["stdout"].as_str().unwrap()
+        && err == expected["stderr"].as_str().unwrap();
+    // Only the native ZIP reason differs; the refusal, stream and exit are kept.
+    if !same && let Some((prefix, _)) = err.split_once(": invalid ZIP: ") {
+        same = code == 1
+            && out.is_empty()
+            && expected["stderr"].as_str().unwrap()
+                == format!("{prefix}: File is not a zip file\n");
+    }
+    same
+}
+
+/// Compares the written bytes and a second run with the recorder's.
+fn result_differences(
+    name: &str,
+    expected: &Value,
+    path: &Path,
+    run: impl Fn() -> (u8, String, String),
+    differences: &mut Vec<String>,
+) {
+    if let Some(sha) = expected.get("sha256").and_then(Value::as_str) {
+        let bytes = std::fs::read(path).unwrap();
+        if hex(&bytes) != sha {
+            differences.push(format!(
+                "{name}: result bytes differ (parts same: {})",
+                part_hashes(&bytes).map(Value::Object).as_ref() == Some(&expected["parts"])
+            ));
+        }
+        if let Some(second) = expected["second"].as_str() {
+            let (_, again, _) = run();
+            if again != second {
+                differences.push(format!("{name}: second run {again:?} != {second:?}"));
+            }
+        }
+    }
+}
+
 /// Replay a writer's recorded CLI results: output text, result bytes and a second run.
 fn replay(
     corpus_name: &str,
@@ -58,14 +110,7 @@ fn replay(
         let dir = tempfile::tempdir().unwrap();
         let path_name = record["path"].as_str().unwrap_or("book.xlsx");
         let path = dir.path().join(path_name);
-        if record["directory"].as_bool().unwrap() {
-            std::fs::create_dir(&path).unwrap();
-        } else if let Some(id) = record["input"].as_str() {
-            let bytes = base64::engine::general_purpose::STANDARD
-                .decode(data["blobs"][id].as_str().unwrap())
-                .unwrap();
-            std::fs::write(&path, bytes).unwrap();
-        }
+        write_input(&data, record, &path);
         let shown = path.display().to_string();
         let args = match record["args"].as_array() {
             Some(args) => args
@@ -84,37 +129,14 @@ fn replay(
             (output.code, hide(&output.out), hide(&output.err))
         };
         let (code, out, err) = run();
-        let mut same = i64::from(code) == expected["code"].as_i64().unwrap()
-            && out == expected["stdout"].as_str().unwrap()
-            && err == expected["stderr"].as_str().unwrap();
-        // Only the native ZIP reason differs; the refusal, stream and exit are kept.
-        if !same && let Some((prefix, _)) = err.split_once(": invalid ZIP: ") {
-            same = code == 1
-                && out.is_empty()
-                && expected["stderr"].as_str().unwrap()
-                    == format!("{prefix}: File is not a zip file\n");
-        }
+        let same = same_output(code, &out, &err, expected);
         if !same {
             differences.push(format!(
                 "{name}: got {code} {out:?} {err:?}, expected {expected}"
             ));
             continue;
         }
-        if let Some(sha) = expected.get("sha256").and_then(Value::as_str) {
-            let bytes = std::fs::read(&path).unwrap();
-            if hex(&bytes) != sha {
-                differences.push(format!(
-                    "{name}: result bytes differ (parts same: {})",
-                    part_hashes(&bytes).map(Value::Object).as_ref() == Some(&expected["parts"])
-                ));
-            }
-            if let Some(second) = expected["second"].as_str() {
-                let (_, again, _) = run();
-                if again != second {
-                    differences.push(format!("{name}: second run {again:?} != {second:?}"));
-                }
-            }
-        }
+        result_differences(name, expected, &path, run, &mut differences);
     }
     assert!(
         differences.is_empty(),

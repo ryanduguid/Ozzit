@@ -331,28 +331,23 @@ fn reference_npv(rate: f64) -> Result<f64> {
     Ok(fsum3([-100.0, 230.0 / base, -132.0 / denominator]).abs())
 }
 
-pub fn verify(
-    root: &Path,
-    workbook: Option<&Path>,
-    destination: Option<&Path>,
-) -> Result<Vec<String>> {
-    let trial = read_record(&root.join(COMPARISON))?;
-    let install = read_record(&root.join(INSTALLATION))?;
+/// The records name the retained workbook, pyxirr and the current runners.
+fn check_identity(root: &Path, trial: &Json, install: &Json) -> Result<()> {
     require(
-        key(&trial, "workbook_sha256")? == key(&trial, "expected_sha256")?
-            && key(&trial, "expected_sha256")? == key(&install, "source_sha256")?
-            && is_text(key(&install, "source_sha256")?, RELEASE_SHA256),
+        key(trial, "workbook_sha256")? == key(trial, "expected_sha256")?
+            && key(trial, "expected_sha256")? == key(install, "source_sha256")?
+            && is_text(key(install, "source_sha256")?, RELEASE_SHA256),
         "evidence does not identify the retained v3.4.2 workbook",
     )?;
     require(
-        is_text(key(&trial, "pyxirr")?, "0.10.8"),
+        is_text(key(trial, "pyxirr")?, "0.10.8"),
         "pyxirr version changed",
     )?;
     require(
-        digest_text(key(&trial, "runner_commit")?, 40),
+        digest_text(key(trial, "runner_commit")?, 40),
         "invalid runner commit",
     )?;
-    for item in [&trial, &install] {
+    for item in [trial, install] {
         require(
             key(item, "excel")?
                 .as_str()
@@ -360,7 +355,7 @@ pub fn verify(
             "missing Excel build",
         )?;
     }
-    let runners = key(&trial, "runner_files")?;
+    let runners = key(trial, "runner_files")?;
     require(
         runner_inventory(runners)?,
         "comparison runner inventory changed",
@@ -373,13 +368,67 @@ pub fn verify(
     }
     require(
         is_text(
-            key(&install, "runner_sha256")?,
+            key(install, "runner_sha256")?,
             &sha256(&root.join(INSTALL_RUNNER))?,
         ),
         &format!("runner evidence is stale: {INSTALL_RUNNER}"),
     )?;
+    Ok(())
+}
 
-    let Json::Array(cases) = key(&trial, "cases")? else {
+fn check_two_roots(case: &Json) -> Result<()> {
+    require(
+        key(case, "agrees")? == &Json::Bool(false)
+            && is_text(key(case, "ozzit")?, "#NUM!")
+            && finite(key(case, "pyxirr")?)?
+            && finite(key(case, "pyxirr_npv")?)?
+            && number(key(case, "pyxirr_npv")?)? >= 0.0
+            && number(key(case, "pyxirr_npv")?)? <= MONEY
+            && key(case, "max_abs_diff")? == &Json::Null
+            && is_text(key(case, "note")?, ROOT_NOTE),
+        "comparison has an unsupported difference",
+    )?;
+    let rate = number(key(case, "pyxirr")?)?;
+    require(
+        rate > -1.0,
+        "reference rate is outside the real-valued XNPV domain",
+    )?;
+    let npv = reference_npv(rate)?;
+    require(
+        npv <= MONEY && (npv - number(key(case, "pyxirr_npv")?)?).abs() <= MONEY,
+        "reference rate does not reproduce the recorded near-zero NPV",
+    )?;
+    Ok(())
+}
+
+fn check_tolerance(case: &Json, defined: &Case) -> Result<()> {
+    require(
+        key(case, "agrees")?.truthy()
+            && finite(key(case, "max_abs_diff")?)?
+            && number(key(case, "max_abs_diff")?)? >= 0.0
+            && number(key(case, "max_abs_diff")?)? <= defined.tolerance
+            && matches!(key(case,"tolerance")?, Json::Float(f) if *f == defined.tolerance)
+            && key(case, "note")? == &Json::Null,
+        "comparison difference exceeds its declared tolerance",
+    )?;
+    if defined.count == 1 {
+        require(
+            finite(key(case, "ozzit")?)? && finite(key(case, "pyxirr")?)?,
+            "non-numeric comparison result",
+        )?;
+        require(
+            ((number(key(case, "ozzit")?)? - number(key(case, "pyxirr")?)?).abs()
+                - number(key(case, "max_abs_diff")?)?)
+            .abs()
+                <= 1e-15,
+            "comparison difference contradicts its results",
+        )?;
+    }
+    Ok(())
+}
+
+fn check_comparison(trial: &Json) -> Result<()> {
+    let Json::Array(cases) = key(trial, "cases")? else {
         return Err("comparison cases are missing, duplicated or changed".into());
     };
     let inventory = cases
@@ -404,63 +453,70 @@ pub fn verify(
             "comparison agreement must be boolean",
         )?;
         if defined.id == "irr-two-roots" {
-            require(
-                key(case, "agrees")? == &Json::Bool(false)
-                    && is_text(key(case, "ozzit")?, "#NUM!")
-                    && finite(key(case, "pyxirr")?)?
-                    && finite(key(case, "pyxirr_npv")?)?
-                    && number(key(case, "pyxirr_npv")?)? >= 0.0
-                    && number(key(case, "pyxirr_npv")?)? <= MONEY
-                    && key(case, "max_abs_diff")? == &Json::Null
-                    && is_text(key(case, "note")?, ROOT_NOTE),
-                "comparison has an unsupported difference",
-            )?;
-            let rate = number(key(case, "pyxirr")?)?;
-            require(
-                rate > -1.0,
-                "reference rate is outside the real-valued XNPV domain",
-            )?;
-            let npv = reference_npv(rate)?;
-            require(
-                npv <= MONEY && (npv - number(key(case, "pyxirr_npv")?)?).abs() <= MONEY,
-                "reference rate does not reproduce the recorded near-zero NPV",
-            )?;
+            check_two_roots(case)?;
         } else {
-            require(
-                key(case, "agrees")?.truthy()
-                    && finite(key(case, "max_abs_diff")?)?
-                    && number(key(case, "max_abs_diff")?)? >= 0.0
-                    && number(key(case, "max_abs_diff")?)? <= defined.tolerance
-                    && matches!(key(case,"tolerance")?, Json::Float(f) if *f == defined.tolerance)
-                    && key(case, "note")? == &Json::Null,
-                "comparison difference exceeds its declared tolerance",
-            )?;
-            if defined.count == 1 {
-                require(
-                    finite(key(case, "ozzit")?)? && finite(key(case, "pyxirr")?)?,
-                    "non-numeric comparison result",
-                )?;
-                require(
-                    ((number(key(case, "ozzit")?)? - number(key(case, "pyxirr")?)?).abs()
-                        - number(key(case, "max_abs_diff")?)?)
-                    .abs()
-                        <= 1e-15,
-                    "comparison difference contradicts its results",
-                )?;
-            }
+            check_tolerance(case, defined)?;
         }
     }
+    Ok(())
+}
+
+fn check_install_case(case: &Json, defined: &InstallCase) -> Result<()> {
     require(
-        is_true(key(&install, "passed")?)
-            && is_true(key(&install, "source_unchanged")?)
-            && integer(key(&install, "external_links")?, 0),
+        is_true(key(case, "passed")?) && texts(key(case, "required_names")?, defined.names),
+        "installation case failed or required names changed",
+    )?;
+    let inputs = [
+        key(case, "copied_from")?,
+        key(case, "formula")?,
+        key(case, "changed_formula")?,
+    ];
+    require(
+        inputs
+            .iter()
+            .zip([defined.source, defined.formula, defined.changed_formula])
+            .all(|(a, b)| is_text(a, b)),
+        "installation inputs changed",
+    )?;
+    let before = key(case, "reopened")?;
+    let after = key(case, "changed_input")?;
+    check_grid(before)?;
+    check_grid(after)?;
+    require(
+        integer(key(before, "rows")?, defined.rows)
+            && key(before, "rows")? == key(after, "rows")?
+            && integer(key(before, "columns")?, defined.columns)
+            && key(before, "columns")? == key(after, "columns")?,
+        "installation spill shape changed",
+    )?;
+    let expected = installation_values(defined.id);
+    for (grid, scale) in [(before, 1.0), (after, 2.0)] {
+        let Json::Array(values) = key(grid, "values")? else {
+            unreachable!()
+        };
+        require(
+            values
+                .iter()
+                .zip(&expected)
+                .all(|(v, t)| number(v).is_ok_and(|n| (n - scale * t).abs() <= MONEY)),
+            "installation values contradict the fixture inputs",
+        )?;
+    }
+    Ok(())
+}
+
+fn check_installation(install: &Json) -> Result<()> {
+    require(
+        is_true(key(install, "passed")?)
+            && is_true(key(install, "source_unchanged")?)
+            && integer(key(install, "external_links")?, 0),
         "installation did not pass without source changes or external links",
     )?;
     require(
-        digest_text(key(&install, "destination_sha256")?, 64),
+        digest_text(key(install, "destination_sha256")?, 64),
         "invalid installed workbook digest",
     )?;
-    let Json::Array(cases) = key(&install, "cases")? else {
+    let Json::Array(cases) = key(install, "cases")? else {
         return Err("installation case inventory changed".into());
     };
     let inventory = cases
@@ -476,47 +532,21 @@ pub fn verify(
         "installation case inventory changed",
     )?;
     for (case, defined) in cases.iter().zip(INSTALL_CASES) {
-        require(
-            is_true(key(case, "passed")?) && texts(key(case, "required_names")?, defined.names),
-            "installation case failed or required names changed",
-        )?;
-        let inputs = [
-            key(case, "copied_from")?,
-            key(case, "formula")?,
-            key(case, "changed_formula")?,
-        ];
-        require(
-            inputs
-                .iter()
-                .zip([defined.source, defined.formula, defined.changed_formula])
-                .all(|(a, b)| is_text(a, b)),
-            "installation inputs changed",
-        )?;
-        let before = key(case, "reopened")?;
-        let after = key(case, "changed_input")?;
-        check_grid(before)?;
-        check_grid(after)?;
-        require(
-            integer(key(before, "rows")?, defined.rows)
-                && key(before, "rows")? == key(after, "rows")?
-                && integer(key(before, "columns")?, defined.columns)
-                && key(before, "columns")? == key(after, "columns")?,
-            "installation spill shape changed",
-        )?;
-        let expected = installation_values(defined.id);
-        for (grid, scale) in [(before, 1.0), (after, 2.0)] {
-            let Json::Array(values) = key(grid, "values")? else {
-                unreachable!()
-            };
-            require(
-                values
-                    .iter()
-                    .zip(&expected)
-                    .all(|(v, t)| number(v).is_ok_and(|n| (n - scale * t).abs() <= MONEY)),
-                "installation values contradict the fixture inputs",
-            )?;
-        }
+        check_install_case(case, defined)?;
     }
+    Ok(())
+}
+
+pub fn verify(
+    root: &Path,
+    workbook: Option<&Path>,
+    destination: Option<&Path>,
+) -> Result<Vec<String>> {
+    let trial = read_record(&root.join(COMPARISON))?;
+    let install = read_record(&root.join(INSTALLATION))?;
+    check_identity(root, &trial, &install)?;
+    check_comparison(&trial)?;
+    check_installation(&install)?;
     let mut messages = vec!["Retained v3.4.2 evidence: 8 comparison cases and 2 installation cases checked; runners match.".into()];
     messages.push(if sha256(&root.join("ozzit.xlsx"))? == RELEASE_SHA256 {"The retained workbook matches this checkout."}
         else {"Historical release evidence: the checkout workbook differs; these records do not validate it."}.into());
@@ -546,6 +576,9 @@ pub fn verify(
 }
 
 fn default_root() -> Result<PathBuf> {
+    // The path only locates the checkout holding the evidence records, which
+    // are then verified by hash; nothing is executed from it.
+    // nosemgrep: rust.lang.security.current-exe.current-exe
     if let Ok(exe) = std::env::current_exe() {
         for directory in exe.parent().into_iter().flat_map(Path::ancestors) {
             if directory.join(COMPARISON).is_file()
@@ -558,18 +591,59 @@ fn default_root() -> Result<PathBuf> {
     std::env::current_dir().map_err(|e| e.to_string())
 }
 const USAGE: &str = "usage: ozzit verify_native_evidence [-h] [--workbook WORKBOOK]\n                                    [--destination DESTINATION]";
-pub fn command(args: &[String]) -> Output {
-    let mut workbook = None;
-    let mut destination = None;
-    let mut unknown = Vec::new();
-    let mut i = 0;
-    let argument_error = |message: String| Output {
+fn argument_error(message: String) -> Output {
+    Output {
         code: 2,
         out: vec![],
         err: vec![format!(
             "{USAGE}\nozzit verify_native_evidence: error: {message}"
         )],
-    };
+    }
+}
+/// The help text, or the error for a help option given a value.
+fn help(name: &str, inline: Option<&str>, option: Option<&str>) -> Option<Output> {
+    if (name.starts_with("-h") && !name.starts_with("--")) || option == Some("--help") {
+        if let Some(v) = inline.filter(|_| name == "-h" || option == Some("--help")) {
+            return Some(argument_error(format!(
+                "argument -h/--help: ignored explicit argument {}",
+                py::repr_str(v)
+            )));
+        }
+        return Some(Output::ok(vec![format!(
+            "{USAGE}\n\nCheck the retained v3.4.2 native evidence without running Excel or pyxirr.\n\noptions:\n  -h, --help            show this help message and exit\n  --workbook WORKBOOK   optional exact v3.4.2 release workbook\n  --destination DESTINATION\n                        optional workbook from the recorded installation"
+        )]));
+    }
+    None
+}
+/// The value of `option`: inline after `=`, or the next argument, advancing `i`.
+fn option_value(
+    args: &[String],
+    i: &mut usize,
+    inline: Option<&str>,
+    option: &str,
+) -> std::result::Result<String, Output> {
+    Ok(if let Some(value) = inline {
+        value.to_owned()
+    } else {
+        *i += 1;
+        let Some(value) = args
+            .get(*i)
+            .filter(|v| v.as_str() == "-" || !v.starts_with('-') || matches(r"^-\.?\d", v))
+        else {
+            return Err(argument_error(format!(
+                "argument {option}: expected one argument"
+            )));
+        };
+        value.clone()
+    })
+}
+type Paths = (Option<PathBuf>, Option<PathBuf>);
+/// `--workbook` and `--destination` as argparse reads them.
+fn parse_options(args: &[String]) -> std::result::Result<Paths, Output> {
+    let mut workbook = None;
+    let mut destination = None;
+    let mut unknown = Vec::new();
+    let mut i = 0;
     while i < args.len() {
         let arg = &args[i];
         if arg == "--" {
@@ -580,37 +654,18 @@ pub fn command(args: &[String]) -> Output {
             .split_once('=')
             .map_or((arg.as_str(), None), |(n, v)| (n, Some(v)));
         if name == "--" {
-            return argument_error(format!(
+            return Err(argument_error(format!(
                 "ambiguous option: {arg} could match --help, --workbook, --destination"
-            ));
+            )));
         }
         let option = ["--help", "--workbook", "--destination"]
             .into_iter()
             .find(|o| name.starts_with("--") && o.starts_with(name));
-        if (name.starts_with("-h") && !name.starts_with("--")) || option == Some("--help") {
-            if let Some(v) = inline.filter(|_| name == "-h" || option == Some("--help")) {
-                return argument_error(format!(
-                    "argument -h/--help: ignored explicit argument {}",
-                    py::repr_str(v)
-                ));
-            }
-            return Output::ok(vec![format!(
-                "{USAGE}\n\nCheck the retained v3.4.2 native evidence without running Excel or pyxirr.\n\noptions:\n  -h, --help            show this help message and exit\n  --workbook WORKBOOK   optional exact v3.4.2 release workbook\n  --destination DESTINATION\n                        optional workbook from the recorded installation"
-            )]);
+        if let Some(output) = help(name, inline, option) {
+            return Err(output);
         }
         if let Some(option) = option {
-            let value = if let Some(value) = inline {
-                value.to_owned()
-            } else {
-                i += 1;
-                let Some(value) = args
-                    .get(i)
-                    .filter(|v| v.as_str() == "-" || !v.starts_with('-') || matches(r"^-\.?\d", v))
-                else {
-                    return argument_error(format!("argument {option}: expected one argument"));
-                };
-                value.clone()
-            };
+            let value = option_value(args, &mut i, inline, option)?;
             let value = py::PyPath::new(&value).fs();
             if option == "--workbook" {
                 workbook = Some(value);
@@ -623,8 +678,18 @@ pub fn command(args: &[String]) -> Output {
         i += 1;
     }
     if !unknown.is_empty() {
-        return argument_error(format!("unrecognized arguments: {}", unknown.join(" ")));
+        return Err(argument_error(format!(
+            "unrecognized arguments: {}",
+            unknown.join(" ")
+        )));
     }
+    Ok((workbook, destination))
+}
+pub fn command(args: &[String]) -> Output {
+    let (workbook, destination) = match parse_options(args) {
+        Ok(paths) => paths,
+        Err(refusal) => return refusal,
+    };
     match default_root().and_then(|root| verify(&root, workbook.as_deref(), destination.as_deref()))
     {
         Ok(messages) => Output::ok(messages),

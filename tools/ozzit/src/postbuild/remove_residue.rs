@@ -27,7 +27,9 @@ fn set_text(parts: &mut Parts, name: &str, text: String) {
     parts.insert(name.into(), text.into_bytes());
 }
 
-fn drop_sheet(parts: &mut Parts, name: &str, log: &mut Vec<String>) -> Result<()> {
+/// Removes sheet `name` from workbook.xml and returns its relationship id,
+/// or `None` when the workbook has no such sheet.
+fn remove_from_book(parts: &mut Parts, name: &str) -> Result<Option<String>> {
     let book = part_text(parts, BOOK)?;
     let sheets = captures(&bounded(r"<sheet\b[^>]*/>"), &book)
         .into_iter()
@@ -37,7 +39,7 @@ fn drop_sheet(parts: &mut Parts, name: &str, log: &mut Vec<String>) -> Result<()
         .iter()
         .position(|s| s.contains(&format!("name=\"{name}\"")))
     else {
-        return Ok(());
+        return Ok(None);
     };
     let element = &sheets[position];
     let rid = captures(r#"r:id="([^"]+)""#, element)
@@ -51,7 +53,11 @@ fn drop_sheet(parts: &mut Parts, name: &str, log: &mut Vec<String>) -> Result<()
         format!("localSheetId=\"{}\"", n - i64::from(n > position))
     });
     set_text(parts, BOOK, book);
+    Ok(Some(rid))
+}
 
+/// Removes relationship `rid` from the workbook's relationships and returns its target part.
+fn remove_relationship(parts: &mut Parts, name: &str, rid: &str) -> Result<String> {
     let rels_name = "xl/_rels/workbook.xml.rels";
     let rels = part_text(parts, rels_name)?;
     let relationship = captures(&format!(r#"<Relationship Id="{rid}"[^>]*/>"#), &rels)
@@ -68,7 +74,12 @@ fn drop_sheet(parts: &mut Parts, name: &str, log: &mut Vec<String>) -> Result<()
         rels_name,
         rels.replacen(relationship[0].as_str(), "", 1),
     );
+    Ok(target)
+}
 
+/// Removes the sheet part `target`, its relationships and its tables, with
+/// their content types, and returns the table part names.
+fn remove_sheet_parts(parts: &mut Parts, target: &str) -> Result<Vec<String>> {
     let sheet_rels = format!(
         "{}.rels",
         target.replace("worksheets/", "worksheets/_rels/")
@@ -85,8 +96,8 @@ fn drop_sheet(parts: &mut Parts, name: &str, log: &mut Vec<String>) -> Result<()
         parts.shift_remove(&sheet_rels);
     }
     parts
-        .shift_remove(&target)
-        .ok_or_else(|| py::repr_str(&target))?;
+        .shift_remove(target)
+        .ok_or_else(|| py::repr_str(target))?;
     for table in &tables {
         let table = format!("xl/tables/{table}");
         parts
@@ -99,7 +110,7 @@ fn drop_sheet(parts: &mut Parts, name: &str, log: &mut Vec<String>) -> Result<()
     ct = sub(
         &format!(
             r#"<Override PartName="/{}"[^>]*/>"#,
-            fancy_regex::escape(&target)
+            fancy_regex::escape(target)
         ),
         &ct,
         "",
@@ -115,7 +126,11 @@ fn drop_sheet(parts: &mut Parts, name: &str, log: &mut Vec<String>) -> Result<()
         );
     }
     set_text(parts, types, ct);
+    Ok(tables)
+}
 
+/// Removes sheet `name` from the titles and worksheet count in docProps/app.xml.
+fn remove_title(parts: &mut Parts, name: &str) -> Result<()> {
     let app_name = "docProps/app.xml";
     let app = part_text(parts, app_name)?;
     let needle = format!("<vt:lpstr>{name}</vt:lpstr>");
@@ -137,6 +152,16 @@ fn drop_sheet(parts: &mut Parts, name: &str, log: &mut Vec<String>) -> Result<()
     );
     let app = decrement(r#"(<TitlesOfParts><vt:vector size=")(\d+)(")"#, &app);
     set_text(parts, app_name, app);
+    Ok(())
+}
+
+fn drop_sheet(parts: &mut Parts, name: &str, log: &mut Vec<String>) -> Result<()> {
+    let Some(rid) = remove_from_book(parts, name)? else {
+        return Ok(());
+    };
+    let target = remove_relationship(parts, name, &rid)?;
+    let tables = remove_sheet_parts(parts, &target)?;
+    remove_title(parts, name)?;
     log.push(format!(
         "removed the hidden {name} sheet, its table and its {} table part(s)",
         tables.len()
@@ -144,18 +169,8 @@ fn drop_sheet(parts: &mut Parts, name: &str, log: &mut Vec<String>) -> Result<()
     Ok(())
 }
 
-fn drop_custom_properties(parts: &mut Parts, log: &mut Vec<String>) -> Result<()> {
-    let bins = parts
-        .keys()
-        .filter(|n| fullmatch(r"xl/customProperty\d+\.bin", n))
-        .cloned()
-        .collect::<Vec<_>>();
-    if bins.is_empty() {
-        return Ok(());
-    }
-    for name in &bins {
-        parts.shift_remove(name);
-    }
+/// Drops the custom-property relationships and elements from every worksheet.
+fn strip_sheet_properties(parts: &mut Parts) -> Result<()> {
     let rels = parts
         .keys()
         .filter(|n| n.starts_with("xl/worksheets/_rels/"))
@@ -189,6 +204,22 @@ fn drop_custom_properties(parts: &mut Parts, log: &mut Vec<String>) -> Result<()
             set_text(parts, &name, new);
         }
     }
+    Ok(())
+}
+
+fn drop_custom_properties(parts: &mut Parts, log: &mut Vec<String>) -> Result<()> {
+    let bins = parts
+        .keys()
+        .filter(|n| fullmatch(r"xl/customProperty\d+\.bin", n))
+        .cloned()
+        .collect::<Vec<_>>();
+    if bins.is_empty() {
+        return Ok(());
+    }
+    for name in &bins {
+        parts.shift_remove(name);
+    }
+    strip_sheet_properties(parts)?;
     let types = "[Content_Types].xml";
     let mut ct = part_text(parts, types)?;
     if !parts.keys().any(|n| n.to_lowercase().ends_with(".bin")) {
@@ -218,8 +249,8 @@ fn drop_custom_function_declaration(parts: &mut Parts, log: &mut Vec<String>) ->
     Ok(())
 }
 
-fn prune_styles(parts: &mut Parts, log: &mut Vec<String>) -> Result<()> {
-    let mut styles = part_text(parts, "xl/styles.xml")?;
+/// The worksheet and table parts in archive order, and the text of each.
+fn style_users(parts: &Parts) -> Result<(Vec<String>, Vec<String>)> {
     let mut sheets = BTreeMap::new();
     let mut tables = BTreeMap::new();
     let mut order = Vec::new();
@@ -238,7 +269,65 @@ fn prune_styles(parts: &mut Parts, log: &mut Vec<String>) -> Result<()> {
             tables.insert(name.clone(), text);
         }
     }
+    // Sheets before tables, each in name order, as Python scanned them.
+    let texts = sheets.into_values().chain(tables.into_values()).collect();
+    Ok((order.into_iter().map(|(_, name)| name).collect(), texts))
+}
 
+/// Every differential format index the sheets, tables and table styles use.
+fn used_dxfs(texts: &[String], table_styles: Option<&String>) -> Result<BTreeSet<i64>> {
+    let dxf_ref = bounded(r#"\b[A-Za-z]*[dD]xfId="(\d+)""#);
+    let mut used = BTreeSet::new();
+    for text in texts.iter().chain(table_styles) {
+        for m in captures(&dxf_ref, text) {
+            used.insert(int(&m[1])?);
+        }
+    }
+    Ok(used)
+}
+
+/// Rewrites every dxfId in the parts and table styles to its position in `keep`.
+fn renumber_dxfs(
+    parts: &mut Parts,
+    styles: &mut String,
+    order: &[String],
+    table_styles: Option<&String>,
+    keep: &[i64],
+) -> Result<()> {
+    let renumber = keep
+        .iter()
+        .enumerate()
+        .map(|(new, old)| (*old, new))
+        .collect::<BTreeMap<_, _>>();
+    let dxf_attr = bounded(r#"\b([A-Za-z]*[dD]xfId)="(\d+)""#);
+    let rewrite = |text: &str| {
+        sub_fn(&dxf_attr, text, |m| {
+            format!(
+                "{}=\"{}\"",
+                &m[1],
+                renumber[&int(&m[2]).unwrap_or_default()]
+            )
+        })
+    };
+    for name in order {
+        let text = part_text(parts, name)?;
+        let new = rewrite(&text);
+        if new != text {
+            set_text(parts, name, new);
+        }
+    }
+    if let Some(found) = table_styles {
+        *styles = styles.replacen(found.as_str(), &rewrite(found), 1);
+    }
+    Ok(())
+}
+
+fn prune_dxfs(
+    parts: &mut Parts,
+    styles: &mut String,
+    (order, texts): &(Vec<String>, Vec<String>),
+    log: &mut Vec<String>,
+) -> Result<()> {
     let dxfs = re(r#"(?s)<dxfs count="(\d+)">(.*?)</dxfs>"#)
         .captures(styles.as_str())
         .ok()
@@ -257,52 +346,18 @@ fn prune_styles(parts: &mut Parts, log: &mut Vec<String>) -> Result<()> {
         .ok()
         .flatten()
         .map(|m| m.as_str().to_string());
-    let dxf_ref = bounded(r#"\b[A-Za-z]*[dD]xfId="(\d+)""#);
-    let mut used = BTreeSet::new();
-    for text in sheets
-        .values()
-        .chain(tables.values())
-        .chain(table_styles.iter())
-    {
-        for m in captures(&dxf_ref, text) {
-            used.insert(int(&m[1])?);
-        }
-    }
+    let used = used_dxfs(texts, table_styles.as_ref())?;
     if used.last().is_some_and(|max| *max >= entries.len() as i64) {
         return Err("a dxfId points past the dxfs collection".into());
     }
     let keep = used.iter().copied().collect::<Vec<_>>();
     if keep.len() != entries.len() {
-        let renumber = keep
-            .iter()
-            .enumerate()
-            .map(|(new, old)| (*old, new))
-            .collect::<BTreeMap<_, _>>();
-        let dxf_attr = bounded(r#"\b([A-Za-z]*[dD]xfId)="(\d+)""#);
-        let rewrite = |text: &str| {
-            sub_fn(&dxf_attr, text, |m| {
-                format!(
-                    "{}=\"{}\"",
-                    &m[1],
-                    renumber[&int(&m[2]).unwrap_or_default()]
-                )
-            })
-        };
-        for (_, name) in &order {
-            let text = part_text(parts, name)?;
-            let new = rewrite(&text);
-            if new != text {
-                set_text(parts, name, new);
-            }
-        }
-        if let Some(found) = &table_styles {
-            styles = styles.replacen(found.as_str(), &rewrite(found), 1);
-        }
+        renumber_dxfs(parts, styles, order, table_styles.as_ref(), &keep)?;
         let kept = keep
             .iter()
             .map(|i| entries[*i as usize].as_str())
             .collect::<String>();
-        styles = styles.replacen(
+        *styles = styles.replacen(
             &dxfs.0,
             &format!("<dxfs count=\"{}\">{kept}</dxfs>", keep.len()),
             1,
@@ -312,23 +367,97 @@ fn prune_styles(parts: &mut Parts, log: &mut Vec<String>) -> Result<()> {
             entries.len() - keep.len()
         ));
     }
+    Ok(())
+}
 
-    let first = |pattern: &str, text: &str| {
-        re(pattern).captures(text).ok().flatten().map(|m| {
-            (0..m.len())
-                .map(|i| m.get(i).map_or(String::new(), |g| g.as_str().to_string()))
-                .collect::<Vec<_>>()
-        })
-    };
-    let xfs = first(
+/// The whole match and every group of `pattern`'s first match, unmatched groups empty.
+fn first_match(pattern: &str, text: &str) -> Option<Vec<String>> {
+    re(pattern).captures(text).ok().flatten().map(|m| {
+        (0..m.len())
+            .map(|i| m.get(i).map_or(String::new(), |g| g.as_str().to_string()))
+            .collect::<Vec<_>>()
+    })
+}
+
+/// The named cell styles whose format is kept, renumbered to its new position.
+fn kept_style_names(
+    style_names: &[String],
+    renumber: &BTreeMap<i64, usize>,
+) -> Result<Vec<String>> {
+    let mut kept_names = Vec::new();
+    for element in style_names {
+        let id = captures(r#"xfId="(\d+)""#, element)
+            .first()
+            .map(|m| m[1].clone())
+            .ok_or("'NoneType' object has no attribute 'group'")?;
+        let id = int(&id)?;
+        if let Some(new) = renumber.get(&id) {
+            kept_names.push(element.replacen(
+                &format!("xfId=\"{id}\""),
+                &format!("xfId=\"{new}\""),
+                1,
+            ));
+        }
+    }
+    Ok(kept_names)
+}
+
+/// The cell style collections: cellStyleXfs, cellStyles and cellXfs matches,
+/// each with its groups.
+type StyleCollections = (Vec<String>, Vec<String>, Vec<String>);
+
+/// Keeps only the cell style formats in `keep_xf`, renumbering their users.
+fn rewrite_named_styles(
+    styles: &mut String,
+    (xfs, names, cell_xfs): &StyleCollections,
+    style_xfs: &[String],
+    style_names: &[String],
+    keep_xf: &[i64],
+) -> Result<()> {
+    let renumber = keep_xf
+        .iter()
+        .enumerate()
+        .map(|(new, old)| (*old, new))
+        .collect::<BTreeMap<_, _>>();
+    let kept_names = kept_style_names(style_names, &renumber)?;
+    let new_cell_xfs = sub_fn(r#"xfId="(\d+)""#, &cell_xfs[0], |m| {
+        format!("xfId=\"{}\"", renumber[&int(&m[1]).unwrap_or_default()])
+    });
+    *styles = styles.replacen(&cell_xfs[0], &new_cell_xfs, 1);
+    let kept_xfs = keep_xf
+        .iter()
+        .map(|i| style_xfs[*i as usize].as_str())
+        .collect::<String>();
+    *styles = styles.replacen(
+        &xfs[0],
+        &format!(
+            "<cellStyleXfs count=\"{}\">{kept_xfs}</cellStyleXfs>",
+            keep_xf.len()
+        ),
+        1,
+    );
+    *styles = styles.replacen(
+        &names[0],
+        &format!(
+            "<cellStyles count=\"{}\">{}</cellStyles>",
+            kept_names.len(),
+            kept_names.concat()
+        ),
+        1,
+    );
+    Ok(())
+}
+
+fn prune_named_styles(styles: &mut String, log: &mut Vec<String>) -> Result<()> {
+    let xfs = first_match(
         r#"(?s)<cellStyleXfs count="(\d+)">(.*?)</cellStyleXfs>"#,
-        &styles,
+        styles,
     );
-    let names = first(
+    let names = first_match(
         r#"(?s)<cellStyles count="(\d+)">(.*?)</cellStyles>"#,
-        &styles,
+        styles,
     );
-    let cell_xfs = first(&bounded(r"(?s)<cellXfs\b.*?</cellXfs>"), &styles);
+    let cell_xfs = first_match(&bounded(r"(?s)<cellXfs\b.*?</cellXfs>"), styles);
     let (Some(xfs), Some(names), Some(cell_xfs)) = (xfs, names, cell_xfs) else {
         return Err("styles.xml lacks a cell style collection".into());
     };
@@ -352,56 +481,21 @@ fn prune_styles(parts: &mut Parts, log: &mut Vec<String>) -> Result<()> {
     }
     let keep_xf = used_xf.iter().copied().collect::<Vec<_>>();
     if keep_xf.len() != style_xfs.len() {
-        let renumber = keep_xf
-            .iter()
-            .enumerate()
-            .map(|(new, old)| (*old, new))
-            .collect::<BTreeMap<_, _>>();
-        let mut kept_names = Vec::new();
-        for element in &style_names {
-            let id = captures(r#"xfId="(\d+)""#, element)
-                .first()
-                .map(|m| m[1].clone())
-                .ok_or("'NoneType' object has no attribute 'group'")?;
-            let id = int(&id)?;
-            if let Some(new) = renumber.get(&id) {
-                kept_names.push(element.replacen(
-                    &format!("xfId=\"{id}\""),
-                    &format!("xfId=\"{new}\""),
-                    1,
-                ));
-            }
-        }
-        let new_cell_xfs = sub_fn(r#"xfId="(\d+)""#, &cell_xfs[0], |m| {
-            format!("xfId=\"{}\"", renumber[&int(&m[1]).unwrap_or_default()])
-        });
-        styles = styles.replacen(&cell_xfs[0], &new_cell_xfs, 1);
-        let kept_xfs = keep_xf
-            .iter()
-            .map(|i| style_xfs[*i as usize].as_str())
-            .collect::<String>();
-        styles = styles.replacen(
-            &xfs[0],
-            &format!(
-                "<cellStyleXfs count=\"{}\">{kept_xfs}</cellStyleXfs>",
-                keep_xf.len()
-            ),
-            1,
-        );
-        styles = styles.replacen(
-            &names[0],
-            &format!(
-                "<cellStyles count=\"{}\">{}</cellStyles>",
-                kept_names.len(),
-                kept_names.concat()
-            ),
-            1,
-        );
+        let collections = (xfs, names, cell_xfs);
+        rewrite_named_styles(styles, &collections, &style_xfs, &style_names, &keep_xf)?;
         log.push(format!(
             "dropped {} unused named cell styles",
             style_xfs.len() - keep_xf.len()
         ));
     }
+    Ok(())
+}
+
+fn prune_styles(parts: &mut Parts, log: &mut Vec<String>) -> Result<()> {
+    let mut styles = part_text(parts, "xl/styles.xml")?;
+    let users = style_users(parts)?;
+    prune_dxfs(parts, &mut styles, &users, log)?;
+    prune_named_styles(&mut styles, log)?;
     set_text(parts, "xl/styles.xml", styles);
     Ok(())
 }

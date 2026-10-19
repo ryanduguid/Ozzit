@@ -391,6 +391,27 @@ pub fn normalise_gate_output(text: &str, root: &Path, workbook: &Path) -> String
 }
 
 /// Run the seven static gates against the staged workbook, index and changelog.
+/// One gate's exit code and combined output.
+fn run_gate(exe: &str, args: Vec<String>, root: &Path) -> Result<(i64, String)> {
+    match cache::run_process(exe, &args, Some(root), GATE_TIMEOUT)? {
+        Dump::NotFound => Err(not_found(exe)),
+        Dump::TimedOut => {
+            let mut command = vec![exe.to_string()];
+            command.extend(args);
+            Err(format!(
+                "Command '{}' timed out after 120 seconds",
+                command_repr(&command)
+            ))
+        }
+        // The Python gates wrote stderr unbuffered ahead of their buffered stdout.
+        Dump::Exited {
+            code,
+            stdout,
+            stderr,
+        } => Ok((code, format!("{stderr}{stdout}"))),
+    }
+}
+
 pub fn run_semantic_gates(root: &Path, workbook: &Path) -> Result<Vec<(String, String)>> {
     let workbook = py::resolve(workbook);
     let w = workbook.display().to_string();
@@ -410,29 +431,16 @@ pub fn run_semantic_gates(root: &Path, workbook: &Path) -> Result<Vec<(String, S
         ),
         ("verify_afe", vec![w.clone(), r("src")]),
     ];
+    // The gates run as this same binary in child processes, as the Python
+    // tool ran each gate script; no path from input chooses the program.
+    // nosemgrep: rust.lang.security.current-exe.current-exe
     let exe = std::env::current_exe().map_err(|e| e.to_string())?;
     let exe = exe.display().to_string();
     let mut results = Vec::new();
     for ((gate, arguments), display) in specifications.into_iter().zip(GATE_COMMANDS) {
         let mut args = vec![gate.to_string()];
         args.extend(arguments);
-        let (code, output) = match cache::run_process(&exe, &args, Some(root), GATE_TIMEOUT)? {
-            Dump::NotFound => return Err(not_found(&exe)),
-            Dump::TimedOut => {
-                let mut command = vec![exe.clone()];
-                command.extend(args);
-                return Err(format!(
-                    "Command '{}' timed out after 120 seconds",
-                    command_repr(&command)
-                ));
-            }
-            // The Python gates wrote stderr unbuffered ahead of their buffered stdout.
-            Dump::Exited {
-                code,
-                stdout,
-                stderr,
-            } => (code, format!("{stderr}{stdout}")),
-        };
+        let (code, output) = run_gate(&exe, args, root)?;
         let output = normalise_gate_output(&output, root, &workbook);
         if code != 0 {
             let detail = if output.is_empty() {
@@ -564,8 +572,8 @@ fn parse_ascii_checksums(data: &[u8]) -> Result<Vec<(String, String)>> {
     Ok(checksums)
 }
 
-/// Verify exact inventory, hashes, provenance and optionally every workbook gate.
-pub fn verify_bundle(bundle: &Path, root: &Path, check_semantics: bool) -> Result<Json> {
+/// The bundle must hold exactly the three reviewed assets as regular files.
+fn check_inventory(bundle: &Path) -> Result<()> {
     if !bundle.is_dir() || bundle.is_symlink() {
         return Err("bundle must be a regular non-symlink directory".into());
     }
@@ -586,20 +594,13 @@ pub fn verify_bundle(bundle: &Path, root: &Path, check_semantics: bool) -> Resul
     if names != assets {
         return Err("bundle inventory does not match the three reviewed assets".into());
     }
+    Ok(())
+}
 
-    for (name, expected) in parse_checksums(&bundle.join("SHA256SUMS"))? {
-        if sha256(&bundle.join(&name))? != expected {
-            return Err(format!("checksum mismatch for {name}"));
-        }
-    }
-
-    let path = bundle.join("provenance.json");
-    let document = load_json_object(&path)?;
-    if read_bytes(&path)? != canonical_json(&document) {
-        return Err("provenance.json is not canonical JSON".into());
-    }
+/// The provenance identity, assets, version and source.
+fn check_provenance_source(document: &Json) -> Result<()> {
     if !has_keys(
-        &document,
+        document,
         &[
             "assets",
             "project",
@@ -634,17 +635,11 @@ pub fn verify_bundle(bundle: &Path, root: &Path, check_semantics: bool) -> Resul
     if source.get("workbook_path").and_then(Json::as_str) != Some("ozzit.xlsx") {
         return Err("provenance workbook path is invalid".into());
     }
+    Ok(())
+}
 
-    let base = verify_base_workbook(&bundle.join("ozzit.xlsx"), &root.join(BASE_MANIFEST))?;
-    let workbook = get("workbook").expect("checked keys");
-    if !py_eq(workbook, &workbook_evidence(&base)) {
-        return Err("provenance workbook evidence does not match the base workbook".into());
-    }
-    if !matches!(workbook.get("copy_only"), Some(Json::Bool(_))) {
-        return Err("provenance workbook copy-only claim is invalid".into());
-    }
-
-    let verification = get("verification").expect("checked keys");
+/// The recorded static gates, as (command, output) pairs in the expected order.
+fn static_gates(verification: &Json) -> Result<Vec<(String, String)>> {
     if !matches!(verification, Json::Object(_)) {
         return Err("provenance verification evidence is invalid".into());
     }
@@ -670,6 +665,11 @@ pub fn verify_bundle(bundle: &Path, root: &Path, check_semantics: bool) -> Resul
     if gates.iter().map(|(c, _)| c.as_str()).ne(GATE_COMMANDS) {
         return Err("provenance static gate sequence is invalid".into());
     }
+    Ok(gates)
+}
+
+/// The limitations and native-gate claims are exactly the reviewed ones.
+fn check_claims(verification: &Json) -> Result<()> {
     if !has_keys(
         verification,
         &["limitations", "native_gates", "static_gates"],
@@ -689,10 +689,66 @@ pub fn verify_bundle(bundle: &Path, root: &Path, check_semantics: bool) -> Resul
     {
         return Err("provenance native gate claims must be Boolean".into());
     }
+    Ok(())
+}
+
+/// Verify exact inventory, hashes, provenance and optionally every workbook gate.
+pub fn verify_bundle(bundle: &Path, root: &Path, check_semantics: bool) -> Result<Json> {
+    check_inventory(bundle)?;
+    for (name, expected) in parse_checksums(&bundle.join("SHA256SUMS"))? {
+        if sha256(&bundle.join(&name))? != expected {
+            return Err(format!("checksum mismatch for {name}"));
+        }
+    }
+
+    let path = bundle.join("provenance.json");
+    let document = load_json_object(&path)?;
+    if read_bytes(&path)? != canonical_json(&document) {
+        return Err("provenance.json is not canonical JSON".into());
+    }
+    check_provenance_source(&document)?;
+
+    let base = verify_base_workbook(&bundle.join("ozzit.xlsx"), &root.join(BASE_MANIFEST))?;
+    let workbook = document.get("workbook").expect("checked keys");
+    if !py_eq(workbook, &workbook_evidence(&base)) {
+        return Err("provenance workbook evidence does not match the base workbook".into());
+    }
+    if !matches!(workbook.get("copy_only"), Some(Json::Bool(_))) {
+        return Err("provenance workbook copy-only claim is invalid".into());
+    }
+
+    let verification = document.get("verification").expect("checked keys");
+    let gates = static_gates(verification)?;
+    check_claims(verification)?;
     if check_semantics && run_semantic_gates(root, &bundle.join("ozzit.xlsx"))? != gates {
         return Err("semantic gate evidence does not match an independent run".into());
     }
     Ok(document)
+}
+
+/// The absolute bundle destination and its parent directory, refusing one
+/// inside the repository, one that exists, or a parent that is not a directory.
+fn bundle_destination(output: &py::PyPath, root: &Path) -> Result<(py::PyPath, PathBuf)> {
+    let output = if output.is_absolute() {
+        output.clone()
+    } else {
+        let cwd = std::env::current_dir().map_err(|e| e.to_string())?;
+        py::PyPath::new(&cwd.display().to_string()).join(&output.display())
+    };
+    let output_path = output.fs();
+    if resolve_lenient(&output_path).starts_with(root) {
+        return Err("release bundle output must be outside the source repository".into());
+    }
+    if output_path.symlink_metadata().is_ok() {
+        return Err(format!(
+            "release bundle destination already exists: {output}"
+        ));
+    }
+    let parent = output.parent().fs();
+    if !parent.is_dir() || parent.is_symlink() {
+        return Err("release bundle parent must be an existing non-symlink directory".into());
+    }
+    Ok((output, parent))
 }
 
 /// Stage, verify and atomically name one deterministic no-overwrite bundle.
@@ -709,25 +765,8 @@ pub fn create_bundle(
     let root = py::resolve(root);
     let workbook = py::resolve(workbook);
     let base_manifest = py::resolve(base_manifest);
-    let output = if output.is_absolute() {
-        output.clone()
-    } else {
-        let cwd = std::env::current_dir().map_err(|e| e.to_string())?;
-        py::PyPath::new(&cwd.display().to_string()).join(&output.display())
-    };
+    let (output, parent) = bundle_destination(output, &root)?;
     let output_path = output.fs();
-    if resolve_lenient(&output_path).starts_with(&root) {
-        return Err("release bundle output must be outside the source repository".into());
-    }
-    if output_path.symlink_metadata().is_ok() {
-        return Err(format!(
-            "release bundle destination already exists: {output}"
-        ));
-    }
-    let parent = output.parent().fs();
-    if !parent.is_dir() || parent.is_symlink() {
-        return Err("release bundle parent must be an existing non-symlink directory".into());
-    }
 
     let base = verify_base_workbook(&workbook, &base_manifest)?;
     let staging = tempfile::Builder::new()
@@ -894,12 +933,16 @@ fn help_refused(arg: &str, value: &str) -> bool {
     arg.starts_with("--") || arg.as_bytes().get(2) == Some(&b'=') || value.starts_with('-')
 }
 
-pub fn parse(args: &[String]) -> std::result::Result<Arguments, Output> {
+/// The subcommand, read past any top-level options, and the index after it.
+/// Unrecognised top-level options are added to `extras`.
+fn parse_command(
+    args: &[String],
+    extras: &mut Vec<String>,
+) -> std::result::Result<(String, usize), Output> {
     let top_options = ["-h", "--help"];
-    let mut extras: Vec<String> = Vec::new();
     let mut i = 0;
     let mut literal = false;
-    let command = loop {
+    loop {
         let Some(arg) = args.get(i) else {
             return Err(usage_error(
                 TOP_USAGE,
@@ -930,125 +973,169 @@ pub fn parse(args: &[String]) -> std::result::Result<Arguments, Output> {
             }
             continue;
         }
-        break arg.clone();
-    };
-    let (usage, options): (&str, &[&str]) = match command.as_str() {
-        "create" => (
-            CREATE_USAGE,
-            &["-h", "--help", "--version", "--source-commit", "--output"],
-        ),
-        "verify" => (
-            VERIFY_USAGE,
-            &["-h", "--help", "--bundle", "--version", "--source-commit"],
-        ),
-        _ => {
-            return Err(usage_error(
-                TOP_USAGE,
-                PROG,
-                &format!(
-                    "argument command: invalid choice: {} (choose from 'create', 'verify')",
-                    py::repr_str(&command)
-                ),
-            ));
-        }
-    };
-    let prog = format!("{PROG} {command}");
-    // A `--` before the subcommand is consumed with it.
-    literal = false;
-    let mut parsed = Arguments {
-        command: command.clone(),
-        ..Arguments::default()
-    };
-    let mut sub_extras = Vec::new();
-    while let Some(arg) = args.get(i) {
-        i += 1;
-        if literal || arg == "--" {
-            if !literal {
-                literal = true;
-                // argparse keeps the first `--` among unrecognised arguments.
-                sub_extras.push(arg.clone());
-                continue;
-            }
-            sub_extras.push(arg.clone());
-            continue;
-        }
-        if !is_option(arg, options) {
-            sub_extras.push(arg.clone());
-            continue;
-        }
-        let (name, explicit) = match match_option(arg, options) {
-            Err(message) => return Err(usage_error(usage, &prog, &message)),
-            Ok(None) => {
-                sub_extras.push(arg.clone());
-                continue;
-            }
-            Ok(Some(found)) => found,
-        };
-        if name == "-h" || name == "--help" {
-            if let Some(value) = explicit.filter(|v| help_refused(arg, v)) {
+        return Ok((arg.clone(), i));
+    }
+}
+
+/// The subcommand being parsed: its name, usage, options and program name.
+struct Sub {
+    command: String,
+    usage: &'static str,
+    options: &'static [&'static str],
+    prog: String,
+}
+
+impl Sub {
+    fn new(command: String) -> std::result::Result<Self, Output> {
+        let (usage, options): (&str, &[&str]) = match command.as_str() {
+            "create" => (
+                CREATE_USAGE,
+                &["-h", "--help", "--version", "--source-commit", "--output"],
+            ),
+            "verify" => (
+                VERIFY_USAGE,
+                &["-h", "--help", "--bundle", "--version", "--source-commit"],
+            ),
+            _ => {
                 return Err(usage_error(
-                    usage,
-                    &prog,
+                    TOP_USAGE,
+                    PROG,
                     &format!(
-                        "argument -h/--help: ignored explicit argument {}",
-                        py::repr_str(&value)
+                        "argument command: invalid choice: {} (choose from 'create', 'verify')",
+                        py::repr_str(&command)
                     ),
                 ));
             }
-            let options_text = if command == "create" {
-                CREATE_OPTIONS
-            } else {
-                VERIFY_OPTIONS
-            };
-            return Err(help_output(format!("{usage}\n\n{options_text}")));
-        }
-        let value = match explicit {
-            Some(value) => value,
-            None => match args.get(i) {
-                Some(next) if next != "--" && !is_option(next, options) => {
-                    i += 1;
-                    next.clone()
-                }
-                _ => {
-                    return Err(usage_error(
-                        usage,
-                        &prog,
-                        &format!("argument {name}: expected one argument"),
-                    ));
-                }
-            },
         };
-        let slot = match name.as_str() {
-            "--version" => &mut parsed.version,
-            "--source-commit" => &mut parsed.source_commit,
-            "--output" => &mut parsed.output,
-            _ => &mut parsed.bundle,
-        };
-        *slot = Some(value);
-    }
-    let required: &[(&str, bool)] = if command == "create" {
-        &[
-            ("--version", parsed.version.is_some()),
-            ("--output", parsed.output.is_some()),
-        ]
-    } else {
-        &[("--bundle", parsed.bundle.is_some())]
-    };
-    let missing = required
-        .iter()
-        .filter(|(_, present)| !present)
-        .map(|(name, _)| *name)
-        .collect::<Vec<_>>();
-    if !missing.is_empty() {
-        return Err(usage_error(
+        let prog = format!("{PROG} {command}");
+        Ok(Self {
+            command,
             usage,
-            &prog,
-            &format!(
+            options,
+            prog,
+        })
+    }
+
+    fn error(&self, message: &str) -> Output {
+        usage_error(self.usage, &self.prog, message)
+    }
+
+    /// The help text, or the error for a help option given a refused value.
+    fn help(&self, arg: &str, explicit: Option<String>) -> Output {
+        if let Some(value) = explicit.filter(|v| help_refused(arg, v)) {
+            return self.error(&format!(
+                "argument -h/--help: ignored explicit argument {}",
+                py::repr_str(&value)
+            ));
+        }
+        let options_text = if self.command == "create" {
+            CREATE_OPTIONS
+        } else {
+            VERIFY_OPTIONS
+        };
+        help_output(format!("{}\n\n{options_text}", self.usage))
+    }
+
+    /// The value of option `name`: attached, or the next argument, advancing `i`.
+    fn value(
+        &self,
+        args: &[String],
+        i: &mut usize,
+        name: &str,
+        explicit: Option<String>,
+    ) -> std::result::Result<String, Output> {
+        if let Some(value) = explicit {
+            return Ok(value);
+        }
+        match args.get(*i) {
+            Some(next) if next != "--" && !is_option(next, self.options) => {
+                *i += 1;
+                Ok(next.clone())
+            }
+            _ => Err(self.error(&format!("argument {name}: expected one argument"))),
+        }
+    }
+
+    /// Reads the subcommand's options from `args[i..]` into `parsed`;
+    /// returns the arguments it does not recognise.
+    fn options(
+        &self,
+        args: &[String],
+        mut i: usize,
+        parsed: &mut Arguments,
+    ) -> std::result::Result<Vec<String>, Output> {
+        // A `--` before the subcommand is consumed with it.
+        let mut literal = false;
+        let mut sub_extras = Vec::new();
+        while let Some(arg) = args.get(i) {
+            i += 1;
+            if literal || arg == "--" {
+                // argparse keeps the first `--` among unrecognised arguments.
+                literal = true;
+                sub_extras.push(arg.clone());
+                continue;
+            }
+            if !is_option(arg, self.options) {
+                sub_extras.push(arg.clone());
+                continue;
+            }
+            let (name, explicit) = match match_option(arg, self.options) {
+                Err(message) => return Err(self.error(&message)),
+                Ok(None) => {
+                    sub_extras.push(arg.clone());
+                    continue;
+                }
+                Ok(Some(found)) => found,
+            };
+            if name == "-h" || name == "--help" {
+                return Err(self.help(arg, explicit));
+            }
+            let value = self.value(args, &mut i, &name, explicit)?;
+            let slot = match name.as_str() {
+                "--version" => &mut parsed.version,
+                "--source-commit" => &mut parsed.source_commit,
+                "--output" => &mut parsed.output,
+                _ => &mut parsed.bundle,
+            };
+            *slot = Some(value);
+        }
+        Ok(sub_extras)
+    }
+
+    fn check_required(&self, parsed: &Arguments) -> std::result::Result<(), Output> {
+        let required: &[(&str, bool)] = if self.command == "create" {
+            &[
+                ("--version", parsed.version.is_some()),
+                ("--output", parsed.output.is_some()),
+            ]
+        } else {
+            &[("--bundle", parsed.bundle.is_some())]
+        };
+        let missing = required
+            .iter()
+            .filter(|(_, present)| !present)
+            .map(|(name, _)| *name)
+            .collect::<Vec<_>>();
+        if !missing.is_empty() {
+            return Err(self.error(&format!(
                 "the following arguments are required: {}",
                 missing.join(", ")
-            ),
-        ));
+            )));
+        }
+        Ok(())
     }
+}
+
+pub fn parse(args: &[String]) -> std::result::Result<Arguments, Output> {
+    let mut extras: Vec<String> = Vec::new();
+    let (command, i) = parse_command(args, &mut extras)?;
+    let sub = Sub::new(command)?;
+    let mut parsed = Arguments {
+        command: sub.command.clone(),
+        ..Arguments::default()
+    };
+    let sub_extras = sub.options(args, i, &mut parsed)?;
+    sub.check_required(&parsed)?;
     extras.extend(sub_extras);
     if !extras.is_empty() {
         return Err(usage_error(
@@ -1071,43 +1158,39 @@ fn current_commit(root: &Path) -> Result<String> {
     validate_source_commit(&git_output(root, &["rev-parse", "--verify", "HEAD"])?)
 }
 
-fn run(arguments: &Arguments) -> Result<String> {
-    let root = py::resolve(&cache::repository_root(BASE_MANIFEST));
-    ensure_clean_checkout(&root)?;
-    let head = current_commit(&root)?;
-    let base = verify_base_workbook(&root.join("ozzit.xlsx"), &root.join(BASE_MANIFEST))?;
-    verify_repository_base(&root, &base)?;
-    if arguments.command == "create" {
-        let source_commit = match &arguments.source_commit {
-            None => head.clone(),
-            Some(requested) => validate_source_commit(requested)?,
-        };
-        if source_commit != head {
-            return Err("source commit must equal the candidate checkout HEAD".into());
-        }
-        let output = py::PyPath::new(arguments.output.as_deref().expect("required"));
-        let version = arguments.version.as_deref().expect("required");
-        let document = create_bundle(
-            &root,
-            &root.join("ozzit.xlsx"),
-            &root.join(BASE_MANIFEST),
-            &output,
-            version,
-            &source_commit,
-        )?;
-        let version = document
-            .get("version")
-            .and_then(Json::as_str)
-            .unwrap_or_default();
-        return Ok(format!("OK: created Ozzit {version} bundle at {output}"));
+fn run_create(arguments: &Arguments, root: &Path, head: String) -> Result<String> {
+    let source_commit = match &arguments.source_commit {
+        None => head.clone(),
+        Some(requested) => validate_source_commit(requested)?,
+    };
+    if source_commit != head {
+        return Err("source commit must equal the candidate checkout HEAD".into());
     }
+    let output = py::PyPath::new(arguments.output.as_deref().expect("required"));
+    let version = arguments.version.as_deref().expect("required");
+    let document = create_bundle(
+        root,
+        &root.join("ozzit.xlsx"),
+        &root.join(BASE_MANIFEST),
+        &output,
+        version,
+        &source_commit,
+    )?;
+    let version = document
+        .get("version")
+        .and_then(Json::as_str)
+        .unwrap_or_default();
+    Ok(format!("OK: created Ozzit {version} bundle at {output}"))
+}
+
+fn run_verify(arguments: &Arguments, root: &Path, head: &str) -> Result<String> {
     let bundle = py::PyPath::new(arguments.bundle.as_deref().expect("required"));
-    let document = verify_bundle(&bundle.fs(), &root, true)?;
+    let document = verify_bundle(&bundle.fs(), root, true)?;
     let source = document
         .get("source")
         .and_then(|s| s.get("commit"))
         .and_then(Json::as_str);
-    if source != Some(head.as_str()) {
+    if source != Some(head) {
         return Err("bundle source commit does not match the candidate checkout HEAD".into());
     }
     let version = document
@@ -1125,6 +1208,19 @@ fn run(arguments: &Arguments) -> Result<String> {
         return Err("bundle source commit does not match --source-commit".into());
     }
     Ok(format!("OK: verified Ozzit {version} bundle at {bundle}"))
+}
+
+fn run(arguments: &Arguments) -> Result<String> {
+    let root = py::resolve(&cache::repository_root(BASE_MANIFEST));
+    ensure_clean_checkout(&root)?;
+    let head = current_commit(&root)?;
+    let base = verify_base_workbook(&root.join("ozzit.xlsx"), &root.join(BASE_MANIFEST))?;
+    verify_repository_base(&root, &base)?;
+    if arguments.command == "create" {
+        run_create(arguments, &root, head)
+    } else {
+        run_verify(arguments, &root, &head)
+    }
 }
 
 pub fn command(args: &[String]) -> Output {

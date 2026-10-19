@@ -62,6 +62,68 @@ fn sha256_streaming_matches_standard_vectors_and_reports_directories() {
     );
 }
 
+/// Recreates one recorded tree under `root` and runs the observation on it.
+fn observe(
+    record: &Value,
+    root: &Path,
+    assets: &std::collections::HashMap<&str, Vec<u8>>,
+) -> Result<Value, String> {
+    match record["kind"].as_str().unwrap() {
+        "verify" => {
+            for (name, hash) in record["files"].as_object().unwrap() {
+                assert!(
+                    Path::new(name)
+                        .components()
+                        .all(|c| matches!(c, Component::Normal(_)))
+                );
+                let path = root.join(name);
+                std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+                std::fs::write(&path, &assets[hash.as_str().unwrap()]).unwrap();
+                assert_eq!(evidence::sha256(&path).unwrap(), hash.as_str().unwrap());
+            }
+            for name in record["directories"].as_array().unwrap() {
+                std::fs::create_dir_all(root.join(name.as_str().unwrap())).unwrap();
+            }
+            let workbook = record["options"]["workbook"].as_str().map(|p| root.join(p));
+            let destination = record["options"]["destination"]
+                .as_str()
+                .map(|p| root.join(p));
+            evidence::verify(root, workbook.as_deref(), destination.as_deref()).map(|v| json!(v))
+        }
+        "grid" => {
+            evidence::check_grid(&pyjson::loads(record["argument"].as_str().unwrap()).unwrap())
+                .map(|()| Value::Null)
+        }
+        other => panic!("unknown observation {other}"),
+    }
+}
+
+/// The observation's result with the temporary root replaced by {ROOT}.
+fn actual_of(result: Result<Value, String>, root: &Path) -> Value {
+    match result {
+        Ok(value) => json!({"expected":value}),
+        Err(error) => {
+            let name = ozzit::common::display(root);
+            let quoted = ozzit::py::repr_str(&name);
+            json!({"error":error.replace(&quoted[1..quoted.len()-1],"{ROOT}").replace(&name,"{ROOT}")})
+        }
+    }
+}
+
+/// The recorded result, preferring a Linux-specific error on Linux.
+fn expected_of(record: &Value) -> Value {
+    let error = if cfg!(target_os = "linux") {
+        record.get("linux_error").or_else(|| record.get("error"))
+    } else {
+        record.get("error")
+    };
+    if let Some(error) = error {
+        json!({"error":error})
+    } else {
+        json!({"expected":record["expected"]})
+    }
+}
+
 #[test]
 fn python_evidence_and_grid_observations_replay_without_differences() {
     let bytes = std::fs::read(
@@ -87,53 +149,9 @@ fn python_evidence_and_grid_observations_replay_without_differences() {
     for (i, record) in records.iter().enumerate() {
         let temporary = tempfile::tempdir().unwrap();
         let root = temporary.path();
-        let result = match record["kind"].as_str().unwrap() {
-            "verify" => {
-                for (name, hash) in record["files"].as_object().unwrap() {
-                    assert!(
-                        Path::new(name)
-                            .components()
-                            .all(|c| matches!(c, Component::Normal(_)))
-                    );
-                    let path = root.join(name);
-                    std::fs::create_dir_all(path.parent().unwrap()).unwrap();
-                    std::fs::write(&path, &assets[hash.as_str().unwrap()]).unwrap();
-                    assert_eq!(evidence::sha256(&path).unwrap(), hash.as_str().unwrap());
-                }
-                for name in record["directories"].as_array().unwrap() {
-                    std::fs::create_dir_all(root.join(name.as_str().unwrap())).unwrap();
-                }
-                let workbook = record["options"]["workbook"].as_str().map(|p| root.join(p));
-                let destination = record["options"]["destination"]
-                    .as_str()
-                    .map(|p| root.join(p));
-                evidence::verify(root, workbook.as_deref(), destination.as_deref())
-                    .map(|v| json!(v))
-            }
-            "grid" => {
-                evidence::check_grid(&pyjson::loads(record["argument"].as_str().unwrap()).unwrap())
-                    .map(|()| Value::Null)
-            }
-            other => panic!("unknown observation {other}"),
-        };
-        let actual = match result {
-            Ok(value) => json!({"expected":value}),
-            Err(error) => {
-                let name = ozzit::common::display(root);
-                let quoted = ozzit::py::repr_str(&name);
-                json!({"error":error.replace(&quoted[1..quoted.len()-1],"{ROOT}").replace(&name,"{ROOT}")})
-            }
-        };
-        let error = if cfg!(target_os = "linux") {
-            record.get("linux_error").or_else(|| record.get("error"))
-        } else {
-            record.get("error")
-        };
-        let expected = if let Some(error) = error {
-            json!({"error":error})
-        } else {
-            json!({"expected":record["expected"]})
-        };
+        let result = observe(record, root, &assets);
+        let actual = actual_of(result, root);
+        let expected = expected_of(record);
         if actual != expected {
             mismatches.push(format!(
                 "observation {i}: expected {expected}, actual {actual}"

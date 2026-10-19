@@ -92,6 +92,46 @@ fn letters(mut number: BigInt) -> String {
     chars.into_iter().rev().collect()
 }
 
+/// Why the cached spill differs from the help table, or `None` when it matches.
+fn stale_detail(
+    table: &[Vec<String>],
+    cached: &BTreeMap<(BigInt, BigInt), String>,
+    top: &BigInt,
+    left: &BigInt,
+    rows: &BigInt,
+    cols: &BigInt,
+) -> Result<Option<String>> {
+    if *rows == BigInt::from(table.len()) && *cols == BigInt::from(table[0].len()) {
+        let first = table.iter().enumerate().find_map(|(r, row)| {
+            row.iter().enumerate().find_map(|(c, value)| {
+                let key = (top + r, left + c);
+                (cached.get(&key).map_or("", String::as_str) != value).then_some((r, c))
+            })
+        });
+        let Some((row, col)) = first else {
+            return Ok(None);
+        };
+        return Ok(Some(format!(
+            "first difference at {}{}",
+            letters(left + col),
+            py::int_repr(&(top + row))?
+        )));
+    }
+    let mut detail = format!(
+        "{} cached rows against {} in the definition",
+        py::int_repr(rows)?,
+        table.len()
+    );
+    if *cols != BigInt::from(table[0].len()) {
+        detail.push_str(&format!(
+            ", {} cached columns against {}",
+            py::int_repr(cols)?,
+            table[0].len()
+        ));
+    }
+    Ok(Some(detail))
+}
+
 pub fn check(parts: &Parts) -> Result<(Vec<String>, usize)> {
     let names = defined_names(&decode(parts.get(BOOK).ok_or_else(|| py::repr_str(BOOK))?)?);
     let mut stale = Vec::new();
@@ -122,35 +162,9 @@ pub fn check(parts: &Parts) -> Result<(Vec<String>, usize)> {
             // Compare sparse cached cells only over a matching help shape. This
             // retains every cell's validation without allocating a corrupt range.
             let cached = cached_values(&sheet, &top, &left, &rows, &cols)?;
-            let detail =
-                if rows == BigInt::from(table.len()) && cols == BigInt::from(table[0].len()) {
-                    let first = table.iter().enumerate().find_map(|(r, row)| {
-                        row.iter().enumerate().find_map(|(c, value)| {
-                            let key = (&top + r, &left + c);
-                            (cached.get(&key).map_or("", String::as_str) != value).then_some((r, c))
-                        })
-                    });
-                    let Some((row, col)) = first else { continue };
-                    format!(
-                        "first difference at {}{}",
-                        letters(&left + col),
-                        py::int_repr(&(&top + row))?
-                    )
-                } else {
-                    let mut detail = format!(
-                        "{} cached rows against {} in the definition",
-                        py::int_repr(&rows)?,
-                        table.len()
-                    );
-                    if cols != BigInt::from(table[0].len()) {
-                        detail.push_str(&format!(
-                            ", {} cached columns against {}",
-                            py::int_repr(&cols)?,
-                            table[0].len()
-                        ));
-                    }
-                    detail
-                };
+            let Some(detail) = stale_detail(&table, &cached, &top, &left, &rows, &cols)? else {
+                continue;
+            };
             stale.push(format!("{part}: the {name} help is stale, {detail}"));
         }
     }

@@ -88,7 +88,10 @@ fn replace_bytes(haystack: &[u8], needle: &[u8], with: &[u8]) -> Vec<u8> {
     out
 }
 
-pub fn apply(workbook: &Path, src: &py::PyPath) -> Result<Vec<String>> {
+type Stripped = (&'static str, py::PyPath, String, String, usize);
+
+/// Each module that still carries REVISIONS blocks, before and after stripping.
+fn stripped_modules(src: &py::PyPath) -> Result<Vec<Stripped>> {
     let mut stripped = Vec::new();
     for (module, expected) in EXPECTED_BLOCKS {
         let path = src.join(&format!("{module}.txt"));
@@ -105,16 +108,22 @@ pub fn apply(workbook: &Path, src: &py::PyPath) -> Result<Vec<String>> {
         }
         stripped.push((module, path, before, after, blocks));
     }
+    Ok(stripped)
+}
+
+fn restore_sources(stripped: &[Stripped]) -> Result<()> {
+    for (_, path, before, _, _) in stripped {
+        write_text(&path.fs(), before)?;
+    }
+    Ok(())
+}
+
+pub fn apply(workbook: &Path, src: &py::PyPath) -> Result<Vec<String>> {
+    let stripped = stripped_modules(src)?;
 
     let original = read_bytes(workbook)?;
     let mut parts = read_parts(workbook)?;
     let core = part(&parts, "docProps/core.xml")?.to_vec();
-    let restore_sources = |stripped: &[(&str, py::PyPath, String, String, usize)]| -> Result<()> {
-        for (_, path, before, _, _) in stripped {
-            write_text(&path.fs(), before)?;
-        }
-        Ok(())
-    };
     let mut changes = Vec::new();
     for (module, path, _, after, blocks) in &stripped {
         if let Err(e) = write_text(&path.fs(), after) {

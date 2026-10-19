@@ -21,14 +21,7 @@ fn strings(value: &Value) -> Vec<String> {
         .collect()
 }
 
-#[test]
-fn generator_functions_match_the_python_tool() {
-    let data = corpus();
-    let library = strings(&data["library"])
-        .into_iter()
-        .collect::<BTreeSet<_>>();
-    let mut differences = Vec::new();
-
+fn number_differences(data: &Value, differences: &mut Vec<String>) {
     for record in data["numbers"].as_array().unwrap() {
         let text = record["text"].as_str().unwrap();
         let got = selftest::number(text).map(|(v, t)| json!([v.shown(), t.shown()]));
@@ -37,7 +30,9 @@ fn generator_functions_match_the_python_tool() {
         }
     }
     assert_eq!(data["numbers"].as_array().unwrap().len(), 42);
+}
 
+fn body_differences(data: &Value, library: &BTreeSet<String>, differences: &mut Vec<String>) {
     let bodies = data["bodies"].as_array().unwrap();
     assert_eq!(bodies.len(), 600);
     for (i, record) in bodies.iter().enumerate() {
@@ -61,7 +56,7 @@ fn generator_functions_match_the_python_tool() {
         let checks = examples
             .iter()
             .enumerate()
-            .map(|(n, e)| selftest::checks_for(&format!("Fn{i}λ"), e, n + 1, &library, &bindings))
+            .map(|(n, e)| selftest::checks_for(&format!("Fn{i}λ"), e, n + 1, library, &bindings))
             .collect::<Vec<_>>();
         if json!(checks) != record["checks"] {
             differences.push(format!("checks {i}: {checks:?} != {}", record["checks"]));
@@ -72,10 +67,12 @@ fn generator_functions_match_the_python_tool() {
             differences.push(format!("help {i}: {help:?} != {}", record["help"]));
         }
     }
+}
 
+fn formula_differences(data: &Value, library: &BTreeSet<String>, differences: &mut Vec<String>) {
     for record in data["qualify"].as_array().unwrap() {
         let formula = record["formula"].as_str().unwrap();
-        let got = selftest::qualify(formula, &library);
+        let got = selftest::qualify(formula, library);
         if got != record["qualified"].as_str().unwrap() {
             differences.push(format!("qualify {formula:?}: {got:?}"));
         }
@@ -84,11 +81,25 @@ fn generator_functions_match_the_python_tool() {
         let formula = record["formula"].as_str().unwrap();
         let bound = strings(&record["bound"]);
         let bound = bound.iter().map(String::as_str).collect::<BTreeSet<_>>();
-        let got = selftest::stands_alone(formula, &library, &bound);
+        let got = selftest::stands_alone(formula, library, &bound);
         if got != record["alone"].as_bool().unwrap() {
             differences.push(format!("stands_alone {formula:?} {bound:?}: {got}"));
         }
     }
+}
+
+#[test]
+fn generator_functions_match_the_python_tool() {
+    let data = corpus();
+    let library = strings(&data["library"])
+        .into_iter()
+        .collect::<BTreeSet<_>>();
+    let mut differences = Vec::new();
+    number_differences(&data, &mut differences);
+
+    body_differences(&data, &library, &mut differences);
+
+    formula_differences(&data, &library, &mut differences);
     assert!(
         differences.is_empty(),
         "{} differences:\n{}",

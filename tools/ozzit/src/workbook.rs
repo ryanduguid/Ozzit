@@ -100,7 +100,22 @@ fn web_extensions(
     if targets != extensions {
         failures.push("the task pane does not resolve to the one web extension part".into());
     }
-    for name in &extensions {
+    extension_references(&extensions, docs, failures);
+    let tasks = elements(docs, PANES)
+        .into_iter()
+        .filter(|e| e.tag_name().name() == "taskpane")
+        .collect::<Vec<_>>();
+    if tasks.len() != 1 || tasks[0].attribute("visibility") != Some("0") {
+        failures.push("expected one hidden task pane for the Advanced Formula Environment".into());
+    }
+    custom_function_declarations(&extensions, docs, failures);
+}
+fn extension_references(
+    extensions: &[String],
+    docs: &BTreeMap<&str, Document<'_>>,
+    failures: &mut Vec<String>,
+) {
+    for name in extensions {
         let refs = elements(docs, name)
             .into_iter()
             .filter(|e| e.tag_name().name() == "reference")
@@ -115,13 +130,12 @@ fn web_extensions(
             ));
         }
     }
-    let tasks = elements(docs, PANES)
-        .into_iter()
-        .filter(|e| e.tag_name().name() == "taskpane")
-        .collect::<Vec<_>>();
-    if tasks.len() != 1 || tasks[0].attribute("visibility") != Some("0") {
-        failures.push("expected one hidden task pane for the Advanced Formula Environment".into());
-    }
+}
+fn custom_function_declarations(
+    extensions: &[String],
+    docs: &BTreeMap<&str, Document<'_>>,
+    failures: &mut Vec<String>,
+) {
     for name in extensions
         .iter()
         .map(String::as_str)
@@ -148,13 +162,18 @@ pub struct Report {
     pub failures: Vec<String>,
     pub functions: usize,
 }
-pub fn check(parts: &Parts, names: &[String]) -> Report {
-    let mut failures = Vec::new();
+fn forbidden_parts(names: &[String], failures: &mut Vec<String>) {
     for name in names {
         if name == "xl/vbaProject.bin" || FORBIDDEN.iter().any(|prefix| name.starts_with(prefix)) {
             failures.push(format!("forbidden workbook part {name}"));
         }
     }
+}
+fn parse_documents<'a>(
+    parts: &'a Parts,
+    names: &'a [String],
+    failures: &mut Vec<String>,
+) -> BTreeMap<&'a str, Document<'a>> {
     let mut docs = BTreeMap::new();
     for name in names {
         if name.ends_with(".xml") || name.ends_with(".rels") {
@@ -166,12 +185,20 @@ pub fn check(parts: &Parts, names: &[String]) -> Report {
             }
         }
     }
-    web_extensions(names, &docs, &mut failures);
+    docs
+}
+/// Banned tokens in every XML part except the AFE store, and in the binary parts.
+fn banned_in_parts(
+    parts: &Parts,
+    names: &[String],
+    docs: &BTreeMap<&str, Document<'_>>,
+    failures: &mut Vec<String>,
+) {
     for name in names {
         let text = if (name.ends_with(".xml") || name.ends_with(".rels"))
             && name != "customXml/item1.xml"
         {
-            xml_text(&docs, name).to_owned()
+            xml_text(docs, name).to_owned()
         } else if name.ends_with(".bin") {
             // Python's errors="ignore" drops incomplete and unpaired units.
             char::decode_utf16(
@@ -190,25 +217,22 @@ pub fn check(parts: &Parts, names: &[String]) -> Report {
             failures.push(format!("banned token {} in {name}", py::repr_str(&token)));
         }
     }
+}
+/// Banned tokens in the decoded AFE store; false when the store cannot be read.
+fn banned_in_store(docs: &BTreeMap<&str, Document<'_>>, failures: &mut Vec<String>) -> bool {
     let blobs = captures(
         r">([A-Za-z0-9+/=]{100,})<",
-        xml_text(&docs, "customXml/item1.xml"),
+        xml_text(docs, "customXml/item1.xml"),
     );
     let Some(blob) = blobs.first() else {
         failures.push("AFE project store missing".into());
-        return Report {
-            failures,
-            functions: 0,
-        };
+        return false;
     };
     let store = match afe::decode_strict_blob(blob[1].as_bytes()) {
         Ok(store) => store,
         Err(e) => {
             failures.push(format!("invalid AFE project store: {e}"));
-            return Report {
-                failures,
-                functions: 0,
-            };
+            return false;
         }
     };
     // The banned patterns do not depend on JSON separator whitespace.
@@ -218,12 +242,20 @@ pub fn check(parts: &Parts, names: &[String]) -> Report {
             py::repr_str(&token)
         ));
     }
-    let book = xml_text(&docs, BOOK);
+    true
+}
+/// The defined names and sheets, and the checks on each defined name's text.
+struct Names {
+    defined: BTreeSet<String>,
+    sheets: Vec<String>,
+    known: BTreeSet<String>,
+}
+fn defined_names(book: &str, failures: &mut Vec<String>) -> Names {
     let defined = captures(
         r#"<definedName name="([^"]+)"[^>]*>([^<]*)</definedName>"#,
         book,
     );
-    let defined_names = defined
+    let names = defined
         .iter()
         .map(|m| m[1].clone())
         .collect::<BTreeSet<_>>();
@@ -231,7 +263,7 @@ pub fn check(parts: &Parts, names: &[String]) -> Report {
         .into_iter()
         .map(|m| m[1].clone())
         .collect::<Vec<_>>();
-    let known = defined_names
+    let known = names
         .union(&sheets.iter().cloned().collect())
         .cloned()
         .collect::<BTreeSet<_>>();
@@ -239,43 +271,77 @@ pub fn check(parts: &Parts, names: &[String]) -> Report {
         failures.push("no defined names found".into());
     }
     for m in defined {
-        let (name, source) = (&m[1], unescape(&m[2]));
-        if source.chars().count() > 8192 {
-            failures.push(format!(
-                "{name} is {} characters; Excel refuses a defined name over 8192",
-                source.chars().count()
-            ));
-        }
-        if source.matches('"').count() % 2 != 0 {
-            failures.push(format!("unbalanced quotes in {name}"));
-        }
-        let code = sub(r#""(?:[^"]|"")*""#, &source, "\"\"");
-        if code.matches('(').count() != code.matches(')').count() {
-            failures.push(format!("unbalanced parentheses in {name}"));
-        }
-        for token in tokens(&source).difference(&known) {
-            failures.push(format!("{name} references undefined {token}"));
-        }
+        check_defined_name(&m[1], &unescape(&m[2]), &known, failures);
     }
+    Names {
+        defined: names,
+        sheets,
+        known,
+    }
+}
+fn check_defined_name(
+    name: &str,
+    source: &str,
+    known: &BTreeSet<String>,
+    failures: &mut Vec<String>,
+) {
+    if source.chars().count() > 8192 {
+        failures.push(format!(
+            "{name} is {} characters; Excel refuses a defined name over 8192",
+            source.chars().count()
+        ));
+    }
+    if !source.matches('"').count().is_multiple_of(2) {
+        failures.push(format!("unbalanced quotes in {name}"));
+    }
+    let code = sub(r#""(?:[^"]|"")*""#, source, "\"\"");
+    if code.matches('(').count() != code.matches(')').count() {
+        failures.push(format!("unbalanced parentheses in {name}"));
+    }
+    for token in tokens(source).difference(known) {
+        failures.push(format!("{name} references undefined {token}"));
+    }
+}
+fn sheet_formulas(
+    names: &[String],
+    docs: &BTreeMap<&str, Document<'_>>,
+    known: &BTreeSet<String>,
+    failures: &mut Vec<String>,
+) {
     for name in names
         .iter()
         .filter(|n| matches(r"^xl/worksheets/sheet\d+\.xml$", n))
     {
-        let text = xml_text(&docs, name);
+        let text = xml_text(docs, name);
         if text.contains("#REF!") {
             failures.push(format!("#REF! present in {name}"));
         }
         for formula in captures(r"<f[^>]*>([^<]*)</f>", text) {
-            for token in tokens(&formula[1]).difference(&known) {
+            for token in tokens(&formula[1]).difference(known) {
                 failures.push(format!("{name} uses undefined {token}"));
             }
         }
     }
+}
+const VOLATILE: [&str; 7] = [
+    "RANDBETWEEN(",
+    "RANDARRAY(",
+    "RAND()",
+    "NOW()",
+    "TODAY()",
+    "OFFSET(",
+    "INDIRECT(",
+];
+fn volatile_formulas(
+    names: &[String],
+    docs: &BTreeMap<&str, Document<'_>>,
+    failures: &mut Vec<String>,
+) {
     for name in names
         .iter()
         .filter(|n| matches(r"^xl/worksheets/sheet\d+\.xml$", n) || n.starts_with("xl/tables/"))
     {
-        let text = xml_text(&docs, name);
+        let text = xml_text(docs, name);
         let formulas = captures(r"(?s)<f[^>]*>(.*?)</f>", text)
             .into_iter()
             .chain(captures(
@@ -283,15 +349,7 @@ pub fn check(parts: &Parts, names: &[String]) -> Report {
                 text,
             ));
         for formula in formulas {
-            for volatile in [
-                "RANDBETWEEN(",
-                "RANDARRAY(",
-                "RAND()",
-                "NOW()",
-                "TODAY()",
-                "OFFSET(",
-                "INDIRECT(",
-            ] {
+            for volatile in VOLATILE {
                 if formula[1].contains(volatile) {
                     failures.push(format!("volatile {volatile} in a formula in {name}"));
                 }
@@ -309,6 +367,8 @@ pub fn check(parts: &Parts, names: &[String]) -> Report {
             }
         }
     }
+}
+fn shared_string_count(docs: &BTreeMap<&str, Document<'_>>, failures: &mut Vec<String>) {
     let shared = docs.get("xl/sharedStrings.xml").map(Document::root_element);
     let unique_count = shared.and_then(|s| s.attribute("uniqueCount"));
     let declared = match unique_count {
@@ -333,34 +393,45 @@ pub fn check(parts: &Parts, names: &[String]) -> Report {
             "sharedStrings uniqueCount {declared} != {entries} entries"
         ));
     }
-    if !book.contains("fullCalcOnLoad=\"1\"") && !names.iter().any(|n| n == "xl/calcChain.xml") {
-        failures.push("neither fullCalcOnLoad nor a calculation chain. Run tools/refresh_cache.py, or set fullCalcOnLoad".into());
+}
+fn sheet_titles(
+    docs: &BTreeMap<&str, Document<'_>>,
+    sheets: &[String],
+    failures: &mut Vec<String>,
+) {
+    if !docs.contains_key("docProps/app.xml") {
+        return;
     }
-    if docs.contains_key("docProps/app.xml") {
-        let titles = captures(
-            r"(?s)<TitlesOfParts>(.*?)</TitlesOfParts>",
-            xml_text(&docs, "docProps/app.xml"),
-        );
-        let listed = captures(
-            r"<vt:lpstr>([^<]*)</vt:lpstr>",
-            titles.first().map_or("", |m| &m[1]),
-        )
-        .into_iter()
-        .map(|m| m[1].clone())
-        .collect::<Vec<_>>();
-        if listed.iter().take(sheets.len()).ne(sheets.iter()) {
-            let first = listed
-                .iter()
-                .zip(&sheets)
-                .find(|(a, b)| a != b)
-                .map_or("the end", |(a, _)| a);
-            failures.push(format!("docProps/app.xml lists {} sheet titles that do not match the workbook's {}, first difference at {}", listed.len(), sheets.len(), py::repr_str(first)));
-        }
+    let titles = captures(
+        r"(?s)<TitlesOfParts>(.*?)</TitlesOfParts>",
+        xml_text(docs, "docProps/app.xml"),
+    );
+    let listed = captures(
+        r"<vt:lpstr>([^<]*)</vt:lpstr>",
+        titles.first().map_or("", |m| &m[1]),
+    )
+    .into_iter()
+    .map(|m| m[1].clone())
+    .collect::<Vec<_>>();
+    if listed.iter().take(sheets.len()).ne(sheets.iter()) {
+        let first = listed
+            .iter()
+            .zip(sheets)
+            .find(|(a, b)| a != b)
+            .map_or("the end", |(a, _)| a);
+        failures.push(format!("docProps/app.xml lists {} sheet titles that do not match the workbook's {}, first difference at {}", listed.len(), sheets.len(), py::repr_str(first)));
     }
+}
+fn slicer_caches(
+    names: &[String],
+    docs: &BTreeMap<&str, Document<'_>>,
+    book: &str,
+    failures: &mut Vec<String>,
+) {
     for name in names.iter().filter(|n| n.starts_with("xl/slicerCaches/")) {
         for cache in captures(
             r#"<slicerCacheDefinition[^>]*name="([^"]+)""#,
-            xml_text(&docs, name),
+            xml_text(docs, name),
         ) {
             if !book.contains(&format!(
                 "<definedName name=\"{}\">#N/A</definedName>",
@@ -373,7 +444,31 @@ pub fn check(parts: &Parts, names: &[String]) -> Report {
             }
         }
     }
-    let functions = defined_names
+}
+pub fn check(parts: &Parts, names: &[String]) -> Report {
+    let mut failures = Vec::new();
+    forbidden_parts(names, &mut failures);
+    let docs = parse_documents(parts, names, &mut failures);
+    web_extensions(names, &docs, &mut failures);
+    banned_in_parts(parts, names, &docs, &mut failures);
+    if !banned_in_store(&docs, &mut failures) {
+        return Report {
+            failures,
+            functions: 0,
+        };
+    }
+    let book = xml_text(&docs, BOOK);
+    let defined = defined_names(book, &mut failures);
+    sheet_formulas(names, &docs, &defined.known, &mut failures);
+    volatile_formulas(names, &docs, &mut failures);
+    shared_string_count(&docs, &mut failures);
+    if !book.contains("fullCalcOnLoad=\"1\"") && !names.iter().any(|n| n == "xl/calcChain.xml") {
+        failures.push("neither fullCalcOnLoad nor a calculation chain. Run tools/refresh_cache.py, or set fullCalcOnLoad".into());
+    }
+    sheet_titles(&docs, &defined.sheets, &mut failures);
+    slicer_caches(names, &docs, book, &mut failures);
+    let functions = defined
+        .defined
         .iter()
         .filter(|n| matches(&format!("^(?:{TOKEN})$"), n))
         .count();

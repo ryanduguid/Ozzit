@@ -99,6 +99,221 @@ fn list_or_none(mut names: Vec<String>) -> String {
     }
 }
 
+/// What `verify` has found so far across the declarations it has read.
+#[derive(Default)]
+struct Tally {
+    failures: Vec<String>,
+    no_signature: Vec<String>,
+    no_table: Vec<String>,
+    not_lambda: Vec<String>,
+    signatures: usize,
+    tables: usize,
+    examples: usize,
+    read: usize,
+}
+
+impl Tally {
+    fn statement(&mut self, statement: &str, declared_names: &BTreeSet<String>) {
+        let matched = captures(formula::NAME, statement);
+        let Some(m) = matched.first() else {
+            return;
+        };
+        self.read += 1;
+        let name = &m[1];
+        let body = py::strip(&m[2]);
+        let rows = rows(body);
+        for (label, text) in &rows {
+            if label.starts_with("WEBPAGE") && text.to_lowercase().contains("coming soon") {
+                self.failures
+                    .push(format!("{name}: its WEBPAGE still says Coming Soon"));
+            }
+        }
+        if name.starts_with("About") {
+            self.about_table(name, &rows, declared_names);
+        }
+        let calls = captures(CALL, &literals(body))
+            .into_iter()
+            .map(|m| m[1].clone())
+            .collect::<BTreeSet<_>>();
+        for called in calls.difference(declared_names) {
+            self.failures.push(format!(
+                "{name}'s help calls {called}, which the library does not declare"
+            ));
+        }
+        if !body.starts_with("LAMBDA(") {
+            self.not_lambda.push(name.clone());
+            return;
+        }
+        let real = declared(body);
+        let without_internal = real
+            .iter()
+            .filter(|p| p.as_str() != "DoNotUse")
+            .cloned()
+            .collect::<Vec<_>>();
+        self.signature(name, &rows, &without_internal);
+        self.worked_examples(name, body);
+        self.parameter_table(name, body, &real, &without_internal);
+    }
+
+    fn about_table(
+        &mut self,
+        name: &str,
+        rows: &[(String, String)],
+        declared_names: &BTreeSet<String>,
+    ) {
+        let mut seen = BTreeMap::new();
+        for (label, text) in rows {
+            let matched = captures(LABEL, label);
+            if let Some(named) = matched.first()
+                && !declared_names.contains(&named[1])
+            {
+                self.failures.push(format!(
+                    "{name}'s table lists {label}, which the library does not declare"
+                ));
+            }
+            let bare = matched.first().map_or(label.as_str(), |m| m[1].as_str());
+            if !declared_names.contains(bare) || bare == name {
+                continue;
+            }
+            let key = py::strip(&sub(r"\s+", text, " ")).to_lowercase();
+            if key.is_empty() {
+                continue;
+            }
+            if let Some(previous) = seen.get(&key) {
+                self.failures.push(format!(
+                    "{name}: {previous} and {label} share the same About-table description"
+                ));
+            } else {
+                seen.insert(key, label);
+            }
+        }
+    }
+
+    fn signature(&mut self, name: &str, rows: &[(String, String)], without_internal: &[String]) {
+        let Some((_, row)) = rows.iter().find(|(label, _)| label == "FUNCTION:") else {
+            self.no_signature.push(name.into());
+            return;
+        };
+        self.signatures += 1;
+        let signature = captures(SIGNATURE, py::strip(row));
+        if let Some(sig) = signature.first() {
+            if sig[1] != name {
+                self.failures
+                    .push(format!("{name}: its help names {}", sig[1]));
+            }
+            let claimed = names(&sig[2]);
+            if claimed != without_internal {
+                self.failures.push(format!(
+                    "{name}: its signature says ({}) but it takes ({})",
+                    claimed.join(", "),
+                    without_internal.join(", ")
+                ));
+            }
+        } else {
+            self.failures.push(format!(
+                "{name}: the help's FUNCTION line is not a signature: {}",
+                py::repr_str(prefix(py::strip(row), 70))
+            ));
+        }
+    }
+
+    fn worked_examples(&mut self, name: &str, body: &str) {
+        let calls = worked_examples(body);
+        if calls.is_empty() {
+            return;
+        }
+        self.examples += 1;
+        if !calls.iter().any(|c| c == name) {
+            self.failures.push(format!(
+                "{name}'s worked examples never call it, they call {}",
+                calls
+                    .into_iter()
+                    .collect::<BTreeSet<_>>()
+                    .into_iter()
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ));
+        }
+    }
+
+    fn parameter_table(
+        &mut self,
+        name: &str,
+        body: &str,
+        real: &[String],
+        without_internal: &[String],
+    ) {
+        let Some(listed) = parameter_table(body) else {
+            self.no_table.push(name.into());
+            return;
+        };
+        self.tables += 1;
+        if listed != real && listed != without_internal {
+            self.failures.push(format!(
+                "{name}: its parameter table describes ({}) but it takes ({})",
+                if listed.is_empty() {
+                    "nothing".into()
+                } else {
+                    listed.join(", ")
+                },
+                real.join(", ")
+            ));
+        }
+    }
+
+    fn finish(self, modules: usize) -> Output {
+        let Self {
+            failures,
+            no_signature,
+            no_table,
+            not_lambda,
+            signatures,
+            tables,
+            examples,
+            read,
+        } = self;
+        let out = vec![
+            format!(
+                "{read} declarations read: {signatures} signatures, {tables} parameter tables and {examples} example blocks checked"
+            ),
+            format!(
+                "   no FUNCTION line ({}): {}",
+                no_signature.len(),
+                list_or_none(no_signature)
+            ),
+            format!(
+                "   no parameter table ({}): {}",
+                no_table.len(),
+                list_or_none(no_table)
+            ),
+            format!(
+                "   not a LAMBDA ({}): {}",
+                not_lambda.len(),
+                list_or_none(not_lambda)
+            ),
+        ];
+        if signatures < 100 || tables < 100 {
+            return Output {
+                code: 1,
+                out,
+                err: vec![format!(
+                    "only {signatures} signatures and {tables} tables parsed from {modules} module(s): the parser is not reading them"
+                )],
+            };
+        }
+        let bad = format!("FAIL: {} help problem(s)", failures.len());
+        let mut result = Output::report(
+            failures,
+            bad,
+            format!(
+                "OK: all {signatures} signatures, {tables} parameter tables and {examples} example blocks describe their own function"
+            ),
+        );
+        result.out.splice(0..0, out);
+        result
+    }
+}
+
 pub fn verify(args: &[String]) -> Output {
     if args.len() > 1 {
         return Output::stderr("FAIL: usage: ozzit verify_signatures [src dir]");
@@ -125,164 +340,9 @@ pub fn verify(args: &[String]) -> Output {
         .flat_map(|st| captures(formula::NAME, st))
         .map(|m| m[1].clone())
         .collect::<BTreeSet<_>>();
-    let mut failures = Vec::new();
-    let (mut no_signature, mut no_table, mut not_lambda) = (Vec::new(), Vec::new(), Vec::new());
-    let (mut signatures, mut tables, mut examples, mut read) = (0, 0, 0, 0);
+    let mut tally = Tally::default();
     for statement in modules.into_iter().flatten() {
-        let matched = captures(formula::NAME, &statement);
-        let Some(m) = matched.first() else {
-            continue;
-        };
-        read += 1;
-        let name = &m[1];
-        let body = py::strip(&m[2]);
-        let rows = rows(body);
-        for (label, text) in &rows {
-            if label.starts_with("WEBPAGE") && text.to_lowercase().contains("coming soon") {
-                failures.push(format!("{name}: its WEBPAGE still says Coming Soon"));
-            }
-        }
-        if name.starts_with("About") {
-            let mut seen = BTreeMap::new();
-            for (label, text) in &rows {
-                let matched = captures(LABEL, label);
-                if let Some(named) = matched.first()
-                    && !declared_names.contains(&named[1])
-                {
-                    failures.push(format!(
-                        "{name}'s table lists {label}, which the library does not declare"
-                    ));
-                }
-                let bare = matched.first().map_or(label.as_str(), |m| m[1].as_str());
-                if !declared_names.contains(bare) || bare == name {
-                    continue;
-                }
-                let key = py::strip(&sub(r"\s+", text, " ")).to_lowercase();
-                if key.is_empty() {
-                    continue;
-                }
-                if let Some(previous) = seen.get(&key) {
-                    failures.push(format!(
-                        "{name}: {previous} and {label} share the same About-table description"
-                    ));
-                } else {
-                    seen.insert(key, label);
-                }
-            }
-        }
-        let calls = captures(CALL, &literals(body))
-            .into_iter()
-            .map(|m| m[1].clone())
-            .collect::<BTreeSet<_>>();
-        for called in calls.difference(&declared_names) {
-            failures.push(format!(
-                "{name}'s help calls {called}, which the library does not declare"
-            ));
-        }
-        if !body.starts_with("LAMBDA(") {
-            not_lambda.push(name.clone());
-            continue;
-        }
-        let real = declared(body);
-        let without_internal = real
-            .iter()
-            .filter(|p| p.as_str() != "DoNotUse")
-            .cloned()
-            .collect::<Vec<_>>();
-        if let Some((_, row)) = rows.iter().find(|(label, _)| label == "FUNCTION:") {
-            signatures += 1;
-            let signature = captures(SIGNATURE, py::strip(row));
-            if let Some(sig) = signature.first() {
-                if &sig[1] != name {
-                    failures.push(format!("{name}: its help names {}", sig[1]));
-                }
-                let claimed = names(&sig[2]);
-                if claimed != without_internal {
-                    failures.push(format!(
-                        "{name}: its signature says ({}) but it takes ({})",
-                        claimed.join(", "),
-                        without_internal.join(", ")
-                    ));
-                }
-            } else {
-                failures.push(format!(
-                    "{name}: the help's FUNCTION line is not a signature: {}",
-                    py::repr_str(prefix(py::strip(row), 70))
-                ));
-            }
-        } else {
-            no_signature.push(name.clone());
-        }
-        let calls = worked_examples(body);
-        if !calls.is_empty() {
-            examples += 1;
-            if !calls.contains(name) {
-                failures.push(format!(
-                    "{name}'s worked examples never call it, they call {}",
-                    calls
-                        .into_iter()
-                        .collect::<BTreeSet<_>>()
-                        .into_iter()
-                        .collect::<Vec<_>>()
-                        .join(", ")
-                ));
-            }
-        }
-        if let Some(listed) = parameter_table(body) {
-            tables += 1;
-            if listed != real && listed != without_internal {
-                failures.push(format!(
-                    "{name}: its parameter table describes ({}) but it takes ({})",
-                    if listed.is_empty() {
-                        "nothing".into()
-                    } else {
-                        listed.join(", ")
-                    },
-                    real.join(", ")
-                ));
-            }
-        } else {
-            no_table.push(name.clone());
-        }
+        tally.statement(&statement, &declared_names);
     }
-    let out = vec![
-        format!(
-            "{read} declarations read: {signatures} signatures, {tables} parameter tables and {examples} example blocks checked"
-        ),
-        format!(
-            "   no FUNCTION line ({}): {}",
-            no_signature.len(),
-            list_or_none(no_signature)
-        ),
-        format!(
-            "   no parameter table ({}): {}",
-            no_table.len(),
-            list_or_none(no_table)
-        ),
-        format!(
-            "   not a LAMBDA ({}): {}",
-            not_lambda.len(),
-            list_or_none(not_lambda)
-        ),
-    ];
-    if signatures < 100 || tables < 100 {
-        return Output {
-            code: 1,
-            out,
-            err: vec![format!(
-                "only {signatures} signatures and {tables} tables parsed from {} module(s): the parser is not reading them",
-                paths.len()
-            )],
-        };
-    }
-    let bad = format!("FAIL: {} help problem(s)", failures.len());
-    let mut result = Output::report(
-        failures,
-        bad,
-        format!(
-            "OK: all {signatures} signatures, {tables} parameter tables and {examples} example blocks describe their own function"
-        ),
-    );
-    result.out.splice(0..0, out);
-    result
+    tally.finish(paths.len())
 }

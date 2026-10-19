@@ -99,6 +99,72 @@ fn pairs_of(table: &[(String, String, String)]) -> Vec<(String, String)> {
         .collect()
 }
 
+type Sources = Vec<(&'static str, py::PyPath, String)>;
+
+/// Each store must hold every correction exactly once, old or new.
+fn anchor_failures(
+    book: &str,
+    originals: &Sources,
+    sheets: &[(String, String)],
+    strings: &str,
+    failures: &mut Vec<String>,
+) {
+    validate_store(book, "workbook", failures);
+    let library = originals
+        .iter()
+        .map(|(_, _, t)| t.as_str())
+        .collect::<Vec<_>>()
+        .join("\n");
+    validate_store(&library, "src", failures);
+    for (what, old, new) in &TABLES.cells {
+        let before = sheets.iter().map(|(_, t)| count(t, old)).sum::<usize>();
+        let after = sheets.iter().map(|(_, t)| count(t, new)).sum::<usize>();
+        if before + after != 1 {
+            failures.push(format!(
+                "worksheets: {what} expected 1 recognised anchor, got {} ({})",
+                before + after,
+                states(before, after)
+            ));
+        }
+    }
+    for (what, old, new) in &TABLES.strings {
+        let (before, after) = (count(strings, old), count(strings, new));
+        if before + after != 1 {
+            failures.push(format!(
+                "sharedStrings: {what} expected 1 recognised anchor, got {} ({})",
+                before + after,
+                states(before, after)
+            ));
+        }
+    }
+}
+
+/// Applies the swaps to the workbook parts; true when any part changed.
+fn apply_workbook_swaps(
+    parts: &mut Parts,
+    book: &str,
+    sheets: &[(String, String)],
+    strings: &str,
+) -> Result<bool> {
+    let updated_book = apply_swaps(book, &swap_pairs("workbook")).into_bytes();
+    let mut rewritten = updated_book != part(parts, BOOK)?;
+    parts.insert(BOOK.into(), updated_book);
+    let cell_pairs = pairs_of(&TABLES.cells);
+    for (name, text) in sheets {
+        let updated = apply_swaps(text, &cell_pairs).into_bytes();
+        if updated != part(parts, name)? {
+            parts.insert(name.clone(), updated);
+            rewritten = true;
+        }
+    }
+    let updated = apply_swaps(strings, &pairs_of(&TABLES.strings)).into_bytes();
+    if updated != part(parts, "xl/sharedStrings.xml")? {
+        parts.insert("xl/sharedStrings.xml".into(), updated);
+        rewritten = true;
+    }
+    Ok(rewritten)
+}
+
 pub fn run(workbook: &Path, src: &py::PyPath) -> Result<Vec<String>> {
     let mut failures = Vec::new();
     let mut originals = Vec::new();
@@ -122,54 +188,12 @@ pub fn run(workbook: &Path, src: &py::PyPath) -> Result<Vec<String>> {
     }
     let strings = part_text(&parts, "xl/sharedStrings.xml")?;
 
-    validate_store(&book, "workbook", &mut failures);
-    let library = originals
-        .iter()
-        .map(|(_, _, t)| t.as_str())
-        .collect::<Vec<_>>()
-        .join("\n");
-    validate_store(&library, "src", &mut failures);
-    for (what, old, new) in &TABLES.cells {
-        let before = sheets.iter().map(|(_, t)| count(t, old)).sum::<usize>();
-        let after = sheets.iter().map(|(_, t)| count(t, new)).sum::<usize>();
-        if before + after != 1 {
-            failures.push(format!(
-                "worksheets: {what} expected 1 recognised anchor, got {} ({})",
-                before + after,
-                states(before, after)
-            ));
-        }
-    }
-    for (what, old, new) in &TABLES.strings {
-        let (before, after) = (count(&strings, old), count(&strings, new));
-        if before + after != 1 {
-            failures.push(format!(
-                "sharedStrings: {what} expected 1 recognised anchor, got {} ({})",
-                before + after,
-                states(before, after)
-            ));
-        }
-    }
+    anchor_failures(&book, &originals, &sheets, &strings, &mut failures);
     if !failures.is_empty() {
         return Err(failures.join("; "));
     }
 
-    let updated_book = apply_swaps(&book, &swap_pairs("workbook")).into_bytes();
-    let mut rewritten = updated_book != part(&parts, BOOK)?;
-    parts.insert(BOOK.into(), updated_book);
-    let cell_pairs = pairs_of(&TABLES.cells);
-    for (name, text) in &sheets {
-        let updated = apply_swaps(text, &cell_pairs).into_bytes();
-        if updated != part(&parts, name)? {
-            parts.insert(name.clone(), updated);
-            rewritten = true;
-        }
-    }
-    let updated = apply_swaps(&strings, &pairs_of(&TABLES.strings)).into_bytes();
-    if updated != part(&parts, "xl/sharedStrings.xml")? {
-        parts.insert("xl/sharedStrings.xml".into(), updated);
-        rewritten = true;
-    }
+    let rewritten = apply_workbook_swaps(&mut parts, &book, &sheets, &strings)?;
 
     // Stage every changed output before any destination is replaced.
     let mut changed = Vec::new();

@@ -28,8 +28,8 @@ pub fn declared_names(text: &str) -> Vec<String> {
         .collect()
 }
 
-pub fn check(text: &str, workbook: &Path, index: &Path) -> Result<Vec<String>> {
-    let mut failures = BTreeSet::new();
+/// Problems visible in the module text alone.
+fn text_failures(text: &str, declared: &[String], failures: &mut BTreeSet<String>) {
     if text.contains('\r') {
         failures.insert("module text contains a carriage return".into());
     }
@@ -39,7 +39,6 @@ pub fn check(text: &str, workbook: &Path, index: &Path) -> Result<Vec<String>> {
     if text.contains("oz.oz.") {
         failures.insert("module text contains a doubled oz. prefix".into());
     }
-    let declared = declared_names(text);
     for statement in formula::statements(text) {
         if !py::strip(&statement).is_empty() && !matches(formula::NAME, &statement) {
             failures.insert(format!(
@@ -49,11 +48,11 @@ pub fn check(text: &str, workbook: &Path, index: &Path) -> Result<Vec<String>> {
         }
     }
     let mut counts = BTreeMap::new();
-    for name in &declared {
+    for name in declared {
         *counts.entry(name).or_insert(0) += 1;
     }
     let mut folded = BTreeMap::new();
-    for name in &declared {
+    for name in declared {
         let earlier = folded.entry(py::casefold(name)).or_insert(name);
         if *earlier != name || counts[name] > 1 {
             failures.insert(format!(
@@ -61,6 +60,12 @@ pub fn check(text: &str, workbook: &Path, index: &Path) -> Result<Vec<String>> {
             ));
         }
     }
+}
+
+pub fn check(text: &str, workbook: &Path, index: &Path) -> Result<Vec<String>> {
+    let mut failures = BTreeSet::new();
+    let declared = declared_names(text);
+    text_failures(text, &declared, &mut failures);
     let shipped = compiler::workbook_names(workbook)?
         .into_iter()
         .map(|s| s[3..].to_owned())
@@ -108,7 +113,8 @@ pub fn check(text: &str, workbook: &Path, index: &Path) -> Result<Vec<String>> {
     Ok(failures.into_iter().collect())
 }
 
-pub fn command(args: &[String]) -> Output {
+/// The positional arguments and `--check`, or the help or usage error to print.
+fn parse_args(args: &[String]) -> std::result::Result<(Vec<&str>, bool), Output> {
     let mut positional = Vec::new();
     let mut check_only = false;
     let mut end_options = false;
@@ -119,9 +125,9 @@ pub fn command(args: &[String]) -> Output {
         } else if !end_options && arg == "--check" {
             check_only = true;
         } else if !end_options && matches!(arg.as_str(), "-h" | "--help") {
-            return Output::ok(vec![format!(
+            return Err(Output::ok(vec![format!(
                 "{USAGE}\n\nPublish src/ as one Advanced Formula Environment module.\n\npositional arguments:\n  src         source directory (default: src)\n  output      output module (default: oz.txt)\n  workbook    authoritative workbook (default: ozzit.xlsx)\n  index       function index (default: functions.csv)\n\noptions:\n  -h, --help  show this help message and exit\n  --check     check the output without writing (default: False)"
-            )]);
+            )]));
         } else if !end_options
             && arg.starts_with('-')
             && !matches(r"^-\d+$|^-\d*\.\d+$", arg)
@@ -134,7 +140,7 @@ pub fn command(args: &[String]) -> Output {
     }
     unknown.extend(positional.iter().skip(4).copied());
     if !unknown.is_empty() {
-        return Output {
+        return Err(Output {
             code: 2,
             out: vec![],
             err: vec![
@@ -144,28 +150,12 @@ pub fn command(args: &[String]) -> Output {
                     unknown.join(" ")
                 ),
             ],
-        };
+        });
     }
-    let src = Path::new(positional.first().copied().unwrap_or("src"));
-    let output = Path::new(positional.get(1).copied().unwrap_or("oz.txt"));
-    let workbook = Path::new(positional.get(2).copied().unwrap_or("ozzit.xlsx"));
-    let index = Path::new(positional.get(3).copied().unwrap_or("functions.csv"));
-    let text = match build(src) {
-        Ok(text) => text,
-        Err(e) => return Output::stderr(e),
-    };
-    let failures = match check(&text, workbook, index) {
-        Ok(failures) => failures,
-        Err(e) => return Output::stderr(e),
-    };
-    if !failures.is_empty() {
-        return Output {
-            code: 1,
-            out: failures.into_iter().map(|f| format!("FAIL: {f}")).collect(),
-            err: vec![],
-        };
-    }
-    let names = declared_names(&text).len();
+    Ok((positional, check_only))
+}
+
+fn publish(text: &str, output: &Path, check_only: bool, names: usize) -> Output {
     if check_only {
         let current = if output.is_file() {
             match read_bytes(output) {
@@ -195,4 +185,32 @@ pub fn command(args: &[String]) -> Output {
             text.len()
         )])
     }
+}
+
+pub fn command(args: &[String]) -> Output {
+    let (positional, check_only) = match parse_args(args) {
+        Ok(parsed) => parsed,
+        Err(refusal) => return refusal,
+    };
+    let src = Path::new(positional.first().copied().unwrap_or("src"));
+    let output = Path::new(positional.get(1).copied().unwrap_or("oz.txt"));
+    let workbook = Path::new(positional.get(2).copied().unwrap_or("ozzit.xlsx"));
+    let index = Path::new(positional.get(3).copied().unwrap_or("functions.csv"));
+    let text = match build(src) {
+        Ok(text) => text,
+        Err(e) => return Output::stderr(e),
+    };
+    let failures = match check(&text, workbook, index) {
+        Ok(failures) => failures,
+        Err(e) => return Output::stderr(e),
+    };
+    if !failures.is_empty() {
+        return Output {
+            code: 1,
+            out: failures.into_iter().map(|f| format!("FAIL: {f}")).collect(),
+            err: vec![],
+        };
+    }
+    let names = declared_names(&text).len();
+    publish(&text, output, check_only, names)
 }

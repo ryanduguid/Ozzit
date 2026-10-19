@@ -336,6 +336,30 @@ fn number_text(s: &str) -> Option<String> {
     Some(out)
 }
 
+/// The digits of an `int()` body without its underscores, or `None` when
+/// invalid. An underscore may follow a digit, or a base prefix, and must
+/// precede a digit.
+fn int_digits(body: &str, base: u32, after_prefix: bool) -> Option<String> {
+    let mut digits = String::new();
+    let mut previous_digit = false;
+    let mut previous_underscore = false;
+    for (i, c) in body.chars().enumerate() {
+        if c == '_' {
+            if previous_underscore || !(previous_digit || i == 0 && after_prefix) {
+                return None;
+            }
+            previous_underscore = true;
+            previous_digit = false;
+            continue;
+        }
+        c.to_digit(base)?;
+        digits.push(c);
+        previous_digit = true;
+        previous_underscore = false;
+    }
+    (!digits.is_empty() && !previous_underscore).then_some(digits)
+}
+
 /// `int(s, base)`; the error is the `ValueError` message.
 pub fn parse_int(s: &str, base: u32) -> Result<BigInt, String> {
     let invalid = || {
@@ -373,34 +397,35 @@ pub fn parse_int(s: &str, base: u32) -> Result<BigInt, String> {
             }
         }
     }
-    // An underscore may follow a digit, or a base prefix, and must precede a digit.
-    let mut digits = String::new();
-    let mut previous_digit = false;
-    let mut previous_underscore = false;
-    for (i, c) in body.chars().enumerate() {
-        if c == '_' {
-            if previous_underscore || !(previous_digit || i == 0 && after_prefix) {
-                return Err(invalid());
-            }
-            previous_underscore = true;
-            previous_digit = false;
-            continue;
-        }
-        if c.to_digit(base).is_none() {
-            return Err(invalid());
-        }
-        digits.push(c);
-        previous_digit = true;
-        previous_underscore = false;
-    }
-    if digits.is_empty() || previous_underscore {
-        return Err(invalid());
-    }
+    let digits = int_digits(body, base, after_prefix).ok_or_else(invalid)?;
     if base == 10 && digits.len() > INT_MAX_STR_DIGITS {
         return Err(int_digits_error(digits.len()));
     }
     let value = BigInt::parse_bytes(digits.as_bytes(), base).ok_or_else(invalid)?;
     Ok(if negative { -value } else { value })
+}
+
+/// Copies a run of digits from `bytes[*i..]` to `clean`, skipping single
+/// underscores between digits; true when the run is not empty.
+fn float_digits(bytes: &[u8], i: &mut usize, clean: &mut String) -> bool {
+    let start = *i;
+    while *i < bytes.len() {
+        let b = bytes[*i];
+        if b.is_ascii_digit() {
+            clean.push(b as char);
+            *i += 1;
+        } else if b == b'_'
+            && *i > start
+            && bytes[*i - 1].is_ascii_digit()
+            && *i + 1 < bytes.len()
+            && bytes[*i + 1].is_ascii_digit()
+        {
+            *i += 1;
+        } else {
+            break;
+        }
+    }
+    *i > start
 }
 
 /// `float(s)`; the error is the `ValueError` message.
@@ -425,26 +450,7 @@ pub fn parse_float(s: &str) -> Result<f64, String> {
     let bytes = body.as_bytes();
     let mut i = 0;
     let mut clean = String::from(sign);
-    let digit_run = |i: &mut usize, clean: &mut String| -> bool {
-        let start = *i;
-        while *i < bytes.len() {
-            let b = bytes[*i];
-            if b.is_ascii_digit() {
-                clean.push(b as char);
-                *i += 1;
-            } else if b == b'_'
-                && *i > start
-                && bytes[*i - 1].is_ascii_digit()
-                && *i + 1 < bytes.len()
-                && bytes[*i + 1].is_ascii_digit()
-            {
-                *i += 1;
-            } else {
-                break;
-            }
-        }
-        *i > start
-    };
+    let digit_run = |i: &mut usize, clean: &mut String| float_digits(bytes, i, clean);
     let whole = digit_run(&mut i, &mut clean);
     let mut fraction = false;
     if i < bytes.len() && bytes[i] == b'.' {

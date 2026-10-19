@@ -192,19 +192,66 @@ pub fn decode_store(workbook: &Path) -> Result<Json> {
     Ok(store)
 }
 
-pub fn check(workbook: &Path, src: &Path) -> Vec<String> {
-    let store = match decode_store(workbook) {
-        Ok(store) => store,
-        Err(e) => return vec![e],
-    };
-    let mut failures = Vec::new();
-    let schema = store
-        .get("schema")
-        .and_then(Json::as_str)
-        .expect("validated schema");
-    if schema != SCHEMA {
-        failures.push(format!("AFE schema is {}", py::repr_str(schema)));
+fn duplicates(label: &str, values: Vec<&str>, failures: &mut Vec<String>) {
+    let mut counts = BTreeMap::new();
+    for value in values {
+        *counts.entry(value).or_insert(0) += 1;
     }
+    for (value, count) in counts {
+        if count > 1 {
+            failures.push(format!("AFE {label} {value} appears {count} times"));
+        }
+    }
+}
+
+fn compare_module(
+    module: &str,
+    files: &BTreeMap<&str, &str>,
+    src: &Path,
+    failures: &mut Vec<String>,
+) {
+    let path = format!("/projects/{module}");
+    let expected_path = src.join(format!("{module}.txt"));
+    let Some(actual) = files.get(path.as_str()) else {
+        failures.push(format!("AFE module {path} missing"));
+        return;
+    };
+    let expected = match py::read_text(&expected_path) {
+        Ok(expected) => expected,
+        Err(py::ReadError::Os(e)) if e.kind() == std::io::ErrorKind::NotFound => {
+            failures.push(format!("source module {} missing", display(&expected_path)));
+            return;
+        }
+        Err(e) => {
+            let reason = match e {
+                py::ReadError::Os(e) => io_error(&e, &expected_path),
+                py::ReadError::Decode(e) => e.to_string(),
+            };
+            failures.push(format!(
+                "cannot read source module {}: {reason}",
+                display(&expected_path)
+            ));
+            return;
+        }
+    };
+    if *actual != expected {
+        let first = actual
+            .chars()
+            .zip(expected.chars())
+            .position(|(a, b)| a != b)
+            .unwrap_or(actual.chars().count().min(expected.chars().count()));
+        let a = char_slice(actual, first.saturating_sub(30), first + 50).replace('\n', " ");
+        let b = char_slice(&expected, first.saturating_sub(30), first + 50).replace('\n', " ");
+        failures.push(format!(
+            "AFE module {path} differs from src/{module}.txt at character {first}: {} != {}",
+            py::repr_str(&a),
+            py::repr_str(&b)
+        ));
+    }
+}
+
+/// The (path, text) files and the project names of a store `decode_store` validated.
+fn store_entries(store: &Json) -> (Vec<(&str, &str)>, Vec<&str>) {
     let Some(Json::Array(files)) = store.get("files") else {
         unreachable!()
     };
@@ -228,63 +275,32 @@ pub fn check(workbook: &Path, src: &Path) -> Vec<String> {
             )
         })
         .collect::<Vec<_>>();
-    for (label, values) in [
-        (
-            "file path",
-            files.iter().map(|(path, _)| *path).collect::<Vec<_>>(),
-        ),
-        ("projectNames entry", names.clone()),
-    ] {
-        let mut counts = BTreeMap::new();
-        for value in values {
-            *counts.entry(value).or_insert(0) += 1;
-        }
-        for (value, count) in counts {
-            if count > 1 {
-                failures.push(format!("AFE {label} {value} appears {count} times"));
-            }
-        }
+    (files, names)
+}
+
+pub fn check(workbook: &Path, src: &Path) -> Vec<String> {
+    let store = match decode_store(workbook) {
+        Ok(store) => store,
+        Err(e) => return vec![e],
+    };
+    let mut failures = Vec::new();
+    let schema = store
+        .get("schema")
+        .and_then(Json::as_str)
+        .expect("validated schema");
+    if schema != SCHEMA {
+        failures.push(format!("AFE schema is {}", py::repr_str(schema)));
     }
+    let (files, names) = store_entries(&store);
+    duplicates(
+        "file path",
+        files.iter().map(|(path, _)| *path).collect(),
+        &mut failures,
+    );
+    duplicates("projectNames entry", names.clone(), &mut failures);
     let files = files.into_iter().collect::<BTreeMap<_, _>>();
     for module in formula::MODULES {
-        let path = format!("/projects/{module}");
-        let expected_path = src.join(format!("{module}.txt"));
-        let Some(actual) = files.get(path.as_str()) else {
-            failures.push(format!("AFE module {path} missing"));
-            continue;
-        };
-        let expected = match py::read_text(&expected_path) {
-            Ok(expected) => expected,
-            Err(py::ReadError::Os(e)) if e.kind() == std::io::ErrorKind::NotFound => {
-                failures.push(format!("source module {} missing", display(&expected_path)));
-                continue;
-            }
-            Err(e) => {
-                let reason = match e {
-                    py::ReadError::Os(e) => io_error(&e, &expected_path),
-                    py::ReadError::Decode(e) => e.to_string(),
-                };
-                failures.push(format!(
-                    "cannot read source module {}: {reason}",
-                    display(&expected_path)
-                ));
-                continue;
-            }
-        };
-        if *actual != expected {
-            let first = actual
-                .chars()
-                .zip(expected.chars())
-                .position(|(a, b)| a != b)
-                .unwrap_or(actual.chars().count().min(expected.chars().count()));
-            let a = char_slice(actual, first.saturating_sub(30), first + 50).replace('\n', " ");
-            let b = char_slice(&expected, first.saturating_sub(30), first + 50).replace('\n', " ");
-            failures.push(format!(
-                "AFE module {path} differs from src/{module}.txt at character {first}: {} != {}",
-                py::repr_str(&a),
-                py::repr_str(&b)
-            ));
-        }
+        compare_module(module, &files, src, &mut failures);
     }
     let expected = match compiler::workbook_names(workbook) {
         Ok(names) => names,
@@ -400,6 +416,23 @@ pub fn sync(workbook: &Path, src: &Path) -> Result<Vec<String>> {
     let Some(Json::Array(files)) = store.get_mut("files") else {
         return Err("'files'".into());
     };
+    sync_modules(files, src, &mut changes)?;
+    sync_project_names(&mut store, workbook, src, &mut changes)?;
+    let bytes = pyjson::dumps_compact(&store)
+        .encode_utf16()
+        .flat_map(u16::to_le_bytes)
+        .collect::<Vec<_>>();
+    let replacement = base64::engine::general_purpose::STANDARD.encode(bytes);
+    if replacement.as_bytes() == encoded && changes.is_empty() {
+        return Ok(vec!["AFE store already matches src/".into()]);
+    }
+    let new = replace_bytes(raw, encoded, replacement.as_bytes());
+    parts.insert(PART.into(), new);
+    write_deterministic(workbook, &parts)?;
+    Ok(changes)
+}
+
+fn sync_modules(files: &mut Vec<Json>, src: &Path, changes: &mut Vec<String>) -> Result<()> {
     for file in files.iter() {
         if !matches!(file, Json::Object(_)) {
             return Err(format!(
@@ -430,6 +463,15 @@ pub fn sync(workbook: &Path, src: &Path) -> Result<Vec<String>> {
             changes.push(format!("added AFE module {path}"));
         }
     }
+    Ok(())
+}
+
+fn sync_project_names(
+    store: &mut Json,
+    workbook: &Path,
+    src: &Path,
+    changes: &mut Vec<String>,
+) -> Result<()> {
     let shipped = compiler::workbook_names(workbook)?;
     let current = match store.get("projectNames") {
         Some(Json::Array(names)) => names.clone(),
@@ -460,20 +502,9 @@ pub fn sync(workbook: &Path, src: &Path) -> Result<Vec<String>> {
             before.difference(&after).count(),
             wanted.len()
         ));
-        set_object(&mut store, "projectNames", Json::Array(wanted))?;
+        set_object(store, "projectNames", Json::Array(wanted))?;
     }
-    let bytes = pyjson::dumps_compact(&store)
-        .encode_utf16()
-        .flat_map(u16::to_le_bytes)
-        .collect::<Vec<_>>();
-    let replacement = base64::engine::general_purpose::STANDARD.encode(bytes);
-    if replacement.as_bytes() == encoded && changes.is_empty() {
-        return Ok(vec!["AFE store already matches src/".into()]);
-    }
-    let new = replace_bytes(raw, encoded, replacement.as_bytes());
-    parts.insert(PART.into(), new);
-    write_deterministic(workbook, &parts)?;
-    Ok(changes)
+    Ok(())
 }
 
 pub fn sync_command(args: &[String]) -> Output {

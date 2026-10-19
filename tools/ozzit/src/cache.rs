@@ -84,20 +84,7 @@ fn column(letters: &str) -> BigInt {
 /// parts when it saves, so sheet4.xml is not the fourth sheet in a file it has written.
 pub fn cached_values(path: &Path) -> std::result::Result<Cached, CachedError> {
     let mut zip = open_zip(path)?;
-    let book = member_text(&mut zip, BOOK)?;
-    let mut rels = std::collections::HashMap::new();
-    for m in captures(
-        r#"Id="([^"]+)"[^>]*Target="([^"]+)""#,
-        &member_text(&mut zip, "xl/_rels/workbook.xml.rels")?,
-    ) {
-        rels.insert(m[1].clone(), m[2].clone());
-    }
-    let mut order = Vec::new();
-    for m in captures(r#"<sheet name="([^"]+)"[^>]*r:id="([^"]+)""#, &book) {
-        let target = rels.get(&m[2]).ok_or_else(|| py::repr_str(&m[2]))?;
-        order.push((m[1].clone(), resolve_target(BOOK, target)));
-    }
-
+    let order = sheet_order(&mut zip)?;
     let mut shared = Vec::new();
     let has_shared = zip
         .file_names()
@@ -132,41 +119,70 @@ pub fn cached_values(path: &Path) -> std::result::Result<Cached, CachedError> {
         let pos = index + 1;
         names.insert(pos, name.clone());
         let text = member_text(&mut zip, target)?;
-        for m in captures(
-            r#"(?s)<c r="([A-Z]+)(\d+)"([^>]*)>((?:(?!<c[ /]).)*?)</c>"#,
-            &text,
-        ) {
-            let (attrs, inner) = (&m[3], &m[4]);
-            let kind = captures(r#"t="([^"]+)""#, attrs)
-                .first()
-                .map_or_else(|| "n".to_string(), |k| k[1].clone());
-            let value = if kind == "inlineStr" {
-                captures(r"(?s)<t[^>]*>(.*?)</t>", inner)
-                    .first()
-                    .map(|t| unescape(&t[1]))
-            } else {
-                let Some(got) = captures(r"(?s)<v>(.*?)</v>", inner).into_iter().next() else {
-                    continue;
-                };
-                let raw = unescape(&got[1]);
-                Some(match kind.as_str() {
-                    "s" => shared_string(&shared, &raw)?,
-                    "b" => if raw == "1" { "True" } else { "False" }.into(),
-                    _ => raw,
-                })
-            };
-            if let Some(text) = value {
-                out.insert(
-                    (BigInt::from(pos), py::parse_int(&m[2], 10)?, column(&m[1])),
-                    CellValue {
-                        text,
-                        is_error: kind == "e",
-                    },
-                );
-            }
-        }
+        sheet_values(&text, pos, &shared, &mut out)?;
     }
     Ok((out, names))
+}
+
+/// Each sheet's name and part, in tab order.
+fn sheet_order(zip: &mut ZipReader) -> std::result::Result<Vec<(String, String)>, CachedError> {
+    let book = member_text(zip, BOOK)?;
+    let mut rels = std::collections::HashMap::new();
+    for m in captures(
+        r#"Id="([^"]+)"[^>]*Target="([^"]+)""#,
+        &member_text(zip, "xl/_rels/workbook.xml.rels")?,
+    ) {
+        rels.insert(m[1].clone(), m[2].clone());
+    }
+    let mut order = Vec::new();
+    for m in captures(r#"<sheet name="([^"]+)"[^>]*r:id="([^"]+)""#, &book) {
+        let target = rels.get(&m[2]).ok_or_else(|| py::repr_str(&m[2]))?;
+        order.push((m[1].clone(), resolve_target(BOOK, target)));
+    }
+    Ok(order)
+}
+
+/// The cached values of the sheet at tab position `pos`, added to `out`.
+fn sheet_values(
+    text: &str,
+    pos: usize,
+    shared: &[String],
+    out: &mut BTreeMap<Key, CellValue>,
+) -> Result<()> {
+    for m in captures(
+        r#"(?s)<c r="([A-Z]+)(\d+)"([^>]*)>((?:(?!<c[ /]).)*?)</c>"#,
+        text,
+    ) {
+        let (attrs, inner) = (&m[3], &m[4]);
+        let kind = captures(r#"t="([^"]+)""#, attrs)
+            .first()
+            .map_or_else(|| "n".to_string(), |k| k[1].clone());
+        let value = if kind == "inlineStr" {
+            captures(r"(?s)<t[^>]*>(.*?)</t>", inner)
+                .first()
+                .map(|t| unescape(&t[1]))
+        } else {
+            let Some(got) = captures(r"(?s)<v>(.*?)</v>", inner).into_iter().next() else {
+                continue;
+            };
+            let raw = unescape(&got[1]);
+            Some(match kind.as_str() {
+                "s" => shared_string(shared, &raw)?,
+                "b" => if raw == "1" { "True" } else { "False" }.into(),
+                _ => raw,
+            })
+        };
+        if let Some(text) = value {
+            out.insert(
+                (BigInt::from(pos), py::parse_int(&m[2], 10)?, column(&m[1])),
+                CellValue {
+                    text,
+                    is_error: kind == "e",
+                },
+            );
+        }
+    }
+    Ok(())
 }
 
 /// `shared[int(raw)]`, including Python's negative indices.
@@ -271,54 +287,111 @@ fn location(names: &BTreeMap<usize, String>, (pos, row, col): &Key) -> String {
 }
 
 /// The finding for `workbook` once the dumper has finished and written `dump_path`.
-pub fn outcome(workbook: &str, dump: Result<Dump>, dump_path: &Path) -> Output {
-    let fail = |lines: Vec<String>| Output {
+fn fail(lines: Vec<String>) -> Output {
+    Output {
         code: 1,
         out: lines,
         err: vec![],
-    };
-    match dump {
-        Err(error) => return Output::failure(format!("FAIL: {error}")),
+    }
+}
+
+/// The failure for a dumper that did not finish cleanly.
+fn dump_failure(dump: Result<Dump>) -> Option<Output> {
+    Some(match dump {
+        Err(error) => Output::failure(format!("FAIL: {error}")),
         Ok(Dump::NotFound) => {
-            return Output::failure(
-                "FAIL: powershell.exe was not found, so Excel could not be driven",
-            );
+            Output::failure("FAIL: powershell.exe was not found, so Excel could not be driven")
         }
-        Ok(Dump::TimedOut) => {
-            return Output::failure(format!(
-                "FAIL: Excel did not finish reading the workbook within {DUMP_TIMEOUT_SECONDS}s; check for a modal dialog and close any Excel process before retrying"
-            ));
-        }
+        Ok(Dump::TimedOut) => Output::failure(format!(
+            "FAIL: Excel did not finish reading the workbook within {DUMP_TIMEOUT_SECONDS}s; check for a modal dialog and close any Excel process before retrying"
+        )),
         Ok(Dump::Exited {
             code,
             stdout,
             stderr,
         }) if code != 0 => {
             let detail = if stdout.is_empty() { stderr } else { stdout };
-            return fail(vec![
+            fail(vec![
                 format!("FAIL: could not read the workbook in Excel (exit {code})"),
                 py::prefix_chars(py::strip(&detail), 2000).into(),
-            ]);
+            ])
         }
-        Ok(Dump::Exited { .. }) => {}
+        Ok(Dump::Exited { .. }) => return None,
+    })
+}
+
+fn missing_report(missing: &[&Key], names: &BTreeMap<usize, String>) -> Output {
+    let mut out = vec![format!(
+        "FAIL: {} cached value(s) are missing from the Excel dump",
+        missing.len()
+    )];
+    out.extend(
+        missing
+            .iter()
+            .take(20)
+            .map(|k| format!("  - {}", location(names, k))),
+    );
+    if missing.len() > 20 {
+        out.push(format!("  ... and {} more", missing.len() - 20));
+    }
+    fail(out)
+}
+
+fn stale_report(
+    stale: &[&Key],
+    both: usize,
+    (cached, names): &Cached,
+    live: &BTreeMap<Key, CellValue>,
+) -> Output {
+    let sheets = stale.iter().map(|k| &k.0).collect::<BTreeSet<_>>();
+    let mut out = vec![format!(
+        "FAIL: {} of {} cached values are not what the formula produces, on {} sheet(s)",
+        stale.len(),
+        both,
+        sheets.len()
+    )];
+    let kind = |v: &CellValue| if v.is_error { "error" } else { "value" };
+    for key in stale.iter().take(20) {
+        let (was, now) = (&cached[*key], &live[*key]);
+        out.push(format!(
+            "  - {}: cached {} ({}), calculates to {} ({})",
+            location(names, key),
+            py::prefix_chars(&was.text, 40),
+            kind(was),
+            py::prefix_chars(&now.text, 40),
+            kind(now)
+        ));
+    }
+    if stale.len() > 20 {
+        out.push(format!("  ... and {} more", stale.len() - 20));
+    }
+    out.push("Run: python tools/refresh_cache.py".into());
+    fail(out)
+}
+
+pub fn outcome(workbook: &str, dump: Result<Dump>, dump_path: &Path) -> Output {
+    if let Some(failure) = dump_failure(dump) {
+        return failure;
     }
     let live = match read_dump(dump_path) {
         Ok(live) => live,
         Err(error) => return Output::failure(format!("FAIL: cannot read Excel dump: {error}")),
     };
 
-    let (cached, names) = match cached_values(Path::new(workbook)) {
+    let values = match cached_values(Path::new(workbook)) {
         Ok(values) => values,
         Err(CachedError::Refused(message)) => return Output::stderr(message),
         Err(CachedError::Error(message)) => return Output::failure(format!("FAIL: {message}")),
     };
+    let cached = &values.0;
     let both = cached
         .keys()
         .filter(|k| live.contains_key(*k))
         .collect::<Vec<_>>();
     let stale = both
         .iter()
-        .filter(|k| !agree(&cached[**k], &live[**k]))
+        .copied()
+        .filter(|k| !agree(&cached[*k], &live[*k]))
         .collect::<Vec<_>>();
 
     // A total or a per-sheet check can still pass when individual cells are missing.
@@ -327,20 +400,7 @@ pub fn outcome(workbook: &str, dump: Result<Dump>, dump_path: &Path) -> Output {
         .filter(|k| !live.contains_key(*k))
         .collect::<Vec<_>>();
     if !missing.is_empty() {
-        let mut out = vec![format!(
-            "FAIL: {} cached value(s) are missing from the Excel dump",
-            missing.len()
-        )];
-        out.extend(
-            missing
-                .iter()
-                .take(20)
-                .map(|k| format!("  - {}", location(&names, k))),
-        );
-        if missing.len() > 20 {
-            out.push(format!("  ... and {} more", missing.len() - 20));
-        }
-        return fail(out);
+        return missing_report(&missing, &values.1);
     }
 
     if both.len() < FLOOR {
@@ -351,30 +411,7 @@ pub fn outcome(workbook: &str, dump: Result<Dump>, dump_path: &Path) -> Output {
     }
 
     if !stale.is_empty() {
-        let sheets = stale.iter().map(|k| &k.0).collect::<BTreeSet<_>>();
-        let mut out = vec![format!(
-            "FAIL: {} of {} cached values are not what the formula produces, on {} sheet(s)",
-            stale.len(),
-            both.len(),
-            sheets.len()
-        )];
-        let kind = |v: &CellValue| if v.is_error { "error" } else { "value" };
-        for key in stale.iter().take(20) {
-            let (was, now) = (&cached[**key], &live[**key]);
-            out.push(format!(
-                "  - {}: cached {} ({}), calculates to {} ({})",
-                location(&names, key),
-                py::prefix_chars(&was.text, 40),
-                kind(was),
-                py::prefix_chars(&now.text, 40),
-                kind(now)
-            ));
-        }
-        if stale.len() > 20 {
-            out.push(format!("  ... and {} more", stale.len() - 20));
-        }
-        out.push("Run: python tools/refresh_cache.py".into());
-        return fail(out);
+        return stale_report(&stale, both.len(), &values, &live);
     }
 
     Output::ok(vec![format!(
@@ -468,6 +505,9 @@ pub fn run_process(
 /// The repository holding `script`: beside the executable or in one of its
 /// ancestors, falling back to the working directory.
 pub fn repository_root(script: &str) -> PathBuf {
+    // The path only locates the checkout; the result must contain `script`
+    // before it is used, and nothing is executed from it.
+    // nosemgrep: rust.lang.security.current-exe.current-exe
     std::env::current_exe()
         .ok()
         .and_then(|exe| {

@@ -373,6 +373,30 @@ pub fn local_names(code: &str) -> Vec<String> {
     }
     out
 }
+/// The position after the parenthesis that closes the one at `open`, or the
+/// end of `code`, skipping string literals.
+fn after_call(code: &str, open: usize) -> usize {
+    let mut depth = 1;
+    let mut end = open + 1;
+    while end < code.len() {
+        if code.as_bytes()[end] == b'"' {
+            end = read_string(code, end).1;
+            continue;
+        }
+        match code.as_bytes()[end] {
+            b'(' => depth += 1,
+            b')' => {
+                depth -= 1;
+                if depth == 0 {
+                    return end + 1;
+                }
+            }
+            _ => {}
+        }
+        end += 1;
+    }
+    end
+}
 fn unwrap_at(code: &str) -> Result<String> {
     let mut out = String::new();
     let mut i = 0;
@@ -397,29 +421,11 @@ fn unwrap_at(code: &str) -> Result<String> {
             };
             let end = j + m.end();
             let k = end + code[end..].len() - code[end..].trim_start_matches(py::is_space).len();
-            let mut end = end;
-            if code[k..].starts_with('(') {
-                let mut depth = 1;
-                end = k + 1;
-                while end < code.len() {
-                    if code.as_bytes()[end] == b'"' {
-                        end = read_string(code, end).1;
-                        continue;
-                    }
-                    match code.as_bytes()[end] {
-                        b'(' => depth += 1,
-                        b')' => {
-                            depth -= 1;
-                            if depth == 0 {
-                                end += 1;
-                                break;
-                            }
-                        }
-                        _ => {}
-                    }
-                    end += 1;
-                }
-            }
+            let end = if code[k..].starts_with('(') {
+                after_call(code, k)
+            } else {
+                end
+            };
             out.push_str(&format!("SINGLE({})", &code[j..end]));
             i = end;
             continue;
@@ -428,6 +434,83 @@ fn unwrap_at(code: &str) -> Result<String> {
         i += c.len_utf8();
     }
     Ok(out)
+}
+/// How the stored form marks one name: a library, local, Excel or plain name.
+fn mark_name(
+    word: &str,
+    called: bool,
+    library: &BTreeSet<String>,
+    locals: &std::collections::HashMap<String, String>,
+    unknown: &mut BTreeSet<String>,
+) -> String {
+    let upper = word.to_uppercase();
+    if word
+        .strip_prefix("oz.")
+        .is_some_and(|n| library.contains(n))
+    {
+        return word.into();
+    }
+    if let Some(local) = locals.get(&word.to_lowercase())
+        && !(called && (listed(XLFN, &upper) || listed(PLAIN, &upper)))
+    {
+        return format!("\0PM\0{local}");
+    }
+    if called {
+        if upper == "SORT" || upper == "FILTER" {
+            return format!("\0FN\0\0WS\0{upper}");
+        }
+        if listed(XLFN, &upper) {
+            return format!("\0FN\0{upper}");
+        }
+        if listed(PLAIN, &upper) {
+            return upper;
+        }
+        if library.contains(word) {
+            return format!("\0LIB\0{word}");
+        }
+    }
+    if upper == "TRUE" || upper == "FALSE" {
+        return upper;
+    }
+    unknown.insert(word.to_string());
+    word.into()
+}
+/// One stretch of code outside string literals, in its stored form.
+fn render_chunk(
+    chunk: &str,
+    optional: &BTreeSet<String>,
+    library: &BTreeSet<String>,
+    locals: &std::collections::HashMap<String, String>,
+    unknown: &mut BTreeSet<String>,
+) -> String {
+    let mut chunk = chunk.to_string();
+    for param in optional {
+        chunk = sub(
+            &format!(r"\[\s*{}\s*\]", fancy_regex::escape(param)),
+            &chunk,
+            &format!("\0OP\0{param}"),
+        );
+    }
+    for (i, error) in ERRORS.iter().enumerate() {
+        chunk = sub(
+            &format!("(?i){}", fancy_regex::escape(error)),
+            &chunk,
+            &format!("\0E{i}\0"),
+        );
+    }
+    let before = chunk.clone();
+    chunk = sub_fn(
+        r"(?<![A-Za-z0-9_.λ\x00])([A-Za-z_][A-Za-z0-9_.λ]*\??)",
+        &before,
+        |m| {
+            let called = py::strip(&before[m.get(0).expect("name").end()..]).starts_with('(');
+            mark_name(&m[1], called, library, locals, unknown)
+        },
+    );
+    for (i, error) in ERRORS.iter().enumerate() {
+        chunk = chunk.replace(&format!("\0E{i}\0"), error);
+    }
+    sub(r"\s+", &chunk, " ")
 }
 pub fn render(body: &str, library: &BTreeSet<String>) -> Result<String> {
     let code = unwrap_at(&strip_comments(body))?;
@@ -449,65 +532,13 @@ pub fn render(body: &str, library: &BTreeSet<String>) -> Result<String> {
             pieces.push_str(chunk);
             continue;
         }
-        let mut chunk = chunk.to_string();
-        for param in &optional {
-            chunk = sub(
-                &format!(r"\[\s*{}\s*\]", fancy_regex::escape(param)),
-                &chunk,
-                &format!("\0OP\0{param}"),
-            );
-        }
-        for (i, error) in ERRORS.iter().enumerate() {
-            chunk = sub(
-                &format!("(?i){}", fancy_regex::escape(error)),
-                &chunk,
-                &format!("\0E{i}\0"),
-            );
-        }
-        let before = chunk.clone();
-        chunk = sub_fn(
-            r"(?<![A-Za-z0-9_.λ\x00])([A-Za-z_][A-Za-z0-9_.λ]*\??)",
-            &before,
-            |m| {
-                let word = &m[1];
-                let upper = word.to_uppercase();
-                let called = py::strip(&before[m.get(0).expect("name").end()..]).starts_with('(');
-                if word
-                    .strip_prefix("oz.")
-                    .is_some_and(|n| library.contains(n))
-                {
-                    return word.into();
-                }
-                if let Some(local) = locals.get(&word.to_lowercase())
-                    && !(called && (listed(XLFN, &upper) || listed(PLAIN, &upper)))
-                {
-                    return format!("\0PM\0{local}");
-                }
-                if called {
-                    if upper == "SORT" || upper == "FILTER" {
-                        return format!("\0FN\0\0WS\0{upper}");
-                    }
-                    if listed(XLFN, &upper) {
-                        return format!("\0FN\0{upper}");
-                    }
-                    if listed(PLAIN, &upper) {
-                        return upper;
-                    }
-                    if library.contains(word) {
-                        return format!("\0LIB\0{word}");
-                    }
-                }
-                if upper == "TRUE" || upper == "FALSE" {
-                    return upper;
-                }
-                unknown.insert(word.to_string());
-                word.into()
-            },
-        );
-        for (i, error) in ERRORS.iter().enumerate() {
-            chunk = chunk.replace(&format!("\0E{i}\0"), error);
-        }
-        pieces.push_str(&sub(r"\s+", &chunk, " "));
+        pieces.push_str(&render_chunk(
+            chunk,
+            &optional,
+            library,
+            &locals,
+            &mut unknown,
+        ));
     }
     if !unknown.is_empty() {
         return Err(format!(

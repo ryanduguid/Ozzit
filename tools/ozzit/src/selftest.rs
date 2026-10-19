@@ -74,6 +74,83 @@ pub struct Example {
     pub results: Vec<String>,
 }
 
+/// What `examples_of` has read so far from the rows after EXAMPLE.
+#[derive(Default)]
+struct ExampleReader {
+    out: Vec<Example>,
+    bindings: Vec<(String, String)>,
+    current: Option<usize>,
+    collecting: bool,
+}
+
+impl ExampleReader {
+    /// A row whose text is a formula: a named input, or a new example.
+    fn formula(&mut self, label: &str, formula: &str) {
+        self.collecting = false;
+        if !label.is_empty()
+            && matches(r"^[A-Za-z_][A-Za-z0-9_]*$", label)
+            && !constant(&label.to_uppercase())
+            && !label.starts_with("Result")
+            && !label.starts_with("Formula")
+        {
+            match self.bindings.iter_mut().find(|(k, _)| k == label) {
+                Some(binding) => binding.1 = formula.into(),
+                None => self.bindings.push((label.into(), formula.into())),
+            }
+            self.current = None;
+            return;
+        }
+        let mut example = Example {
+            formula: formula.into(),
+            results: vec![],
+        };
+        if !label.is_empty() && !label.starts_with("Formula") {
+            example.results.push(label.into());
+        }
+        self.out.push(example);
+        self.current = Some(self.out.len() - 1);
+    }
+
+    /// Any other row: a wrapped formula, a result heading or result text.
+    fn other(&mut self, label: &str, text: &str) {
+        let count = |s: &str, c: char| s.chars().filter(|x| *x == c).count();
+        if let Some(c) = self.current {
+            let formula = &self.out[c].formula;
+            if !text.is_empty() && label.is_empty() && count(formula, '(') > count(formula, ')') {
+                // A formula wrapped onto a second row.
+                self.out[c].formula = format!("{formula} {text}");
+                return;
+            }
+        }
+        if text.starts_with("Result") || text.starts_with("Formula") {
+            self.collecting = text.starts_with("Result") && self.current.is_some();
+            return;
+        }
+        if let Some(c) = self.current {
+            let results = &mut self.out[c].results;
+            if label.starts_with("Result") {
+                if !text.is_empty() {
+                    results.push(text.into());
+                }
+                self.collecting = true;
+                return;
+            }
+            if self.collecting && !text.is_empty() {
+                results.push(text.into());
+                return;
+            }
+            if !label.is_empty() && text.is_empty() && !results.is_empty() {
+                // A grid printed one row per label.
+                results.push(label.into());
+                return;
+            }
+        }
+        if label.is_empty() && text.is_empty() {
+            self.collecting = false;
+        }
+    }
+}
+
 /// The worked examples of one help, and the named inputs they rely on, in order.
 pub fn examples_of(body: &str) -> (Vec<Example>, Vec<(String, String)>) {
     let rows = help_rows(body);
@@ -83,73 +160,14 @@ pub fn examples_of(body: &str) -> (Vec<Example>, Vec<(String, String)>) {
     else {
         return (vec![], vec![]);
     };
-    let mut out: Vec<Example> = Vec::new();
-    let mut bindings: Vec<(String, String)> = Vec::new();
-    let mut current: Option<usize> = None;
-    let mut collecting = false;
-    let count = |s: &str, c: char| s.chars().filter(|x| *x == c).count();
+    let mut reader = ExampleReader::default();
     for (label, text) in &rows[start..] {
-        if let Some(formula) = text.strip_prefix('=') {
-            collecting = false;
-            if !label.is_empty()
-                && matches(r"^[A-Za-z_][A-Za-z0-9_]*$", label)
-                && !constant(&label.to_uppercase())
-                && !label.starts_with("Result")
-                && !label.starts_with("Formula")
-            {
-                match bindings.iter_mut().find(|(k, _)| k == label) {
-                    Some(binding) => binding.1 = formula.into(),
-                    None => bindings.push((label.clone(), formula.into())),
-                }
-                current = None;
-                continue;
-            }
-            let mut example = Example {
-                formula: formula.into(),
-                results: vec![],
-            };
-            if !label.is_empty() && !label.starts_with("Formula") {
-                example.results.push(label.clone());
-            }
-            out.push(example);
-            current = Some(out.len() - 1);
-            continue;
-        }
-        if let Some(c) = current {
-            let formula = &out[c].formula;
-            if !text.is_empty() && label.is_empty() && count(formula, '(') > count(formula, ')') {
-                // A formula wrapped onto a second row.
-                out[c].formula = format!("{formula} {text}");
-                continue;
-            }
-        }
-        if text.starts_with("Result") || text.starts_with("Formula") {
-            collecting = text.starts_with("Result") && current.is_some();
-            continue;
-        }
-        if let Some(c) = current {
-            if label.starts_with("Result") {
-                if !text.is_empty() {
-                    out[c].results.push(text.clone());
-                }
-                collecting = true;
-                continue;
-            }
-            if collecting && !text.is_empty() {
-                out[c].results.push(text.clone());
-                continue;
-            }
-            if !label.is_empty() && text.is_empty() && !out[c].results.is_empty() {
-                // A grid printed one row per label.
-                out[c].results.push(label.clone());
-                continue;
-            }
-        }
-        if label.is_empty() && text.is_empty() {
-            collecting = false;
+        match text.strip_prefix('=') {
+            Some(formula) => reader.formula(label, formula),
+            None => reader.other(label, text),
         }
     }
-    (out, bindings)
+    (reader.out, reader.bindings)
 }
 
 pub fn library_names(src: &Path) -> Result<BTreeSet<String>> {
@@ -349,6 +367,73 @@ pub fn number(text: &str) -> Option<(Decimal, Decimal)> {
     Some((value, five.scaleb(-decimals - 1)))
 }
 
+/// The checks a list of numbers supports: its count and its sum.
+fn list_checks(tag: &str, f: &str, rows: &[&String]) -> Vec<String> {
+    let parsed = rows
+        .iter()
+        .flat_map(|r| r.split(','))
+        .map(number)
+        .collect::<Vec<_>>();
+    let items = parsed.iter().flatten().collect::<Vec<_>>();
+    if items.len() == parsed.len() {
+        let total = items.iter().fold(Decimal::zero(), |sum, (v, _)| sum.add(v));
+        let tolerance = items.iter().fold(Decimal::zero(), |sum, (_, t)| sum.add(t));
+        vec![
+            format!("Near {tag} \"COUNT({f})\" '{}'", items.len()),
+            format!(
+                "Near {tag} \"SUM({f})\" '{}' '{}'",
+                total.shown(),
+                tolerance.shown()
+            ),
+        ]
+    } else {
+        vec![]
+    }
+}
+
+/// The self-test lines that compare formula `f` with its printed results.
+fn result_checks(tag: &str, f: &str, results: &[String]) -> Vec<String> {
+    let mut lines = Vec::new();
+    let joined = results.join(" ");
+    let printed = py::strip(&joined);
+    let rows = results
+        .iter()
+        .filter(|r| !py::strip(r).is_empty())
+        .collect::<Vec<_>>();
+    let single = if rows.len() == 1 {
+        number(printed)
+    } else {
+        None
+    };
+    let shape = captures(SHAPE, printed);
+    let date = captures(ISO_DATE, printed);
+    let int = |s: &str| py::parse_int(s, 10).map_or_else(|_| s.to_string(), |n| n.to_string());
+    if let Some(d) = date.first() {
+        let serial = format!("DATE({},{},{})", int(&d[1]), int(&d[2]), int(&d[3]));
+        lines.push(format!("Near {tag} \"{f} - {serial}\" '0' '0.5'"));
+    } else if let Some((value, tolerance)) = single {
+        lines.push(format!(
+            "Near {tag} \"{f}\" '{}' '{}'",
+            value.shown(),
+            tolerance.shown()
+        ));
+    } else if constant(&printed.to_uppercase()) {
+        let truth = u8::from(printed.to_uppercase() == "TRUE");
+        lines.push(format!("Near {tag} \"N({f})\" '{truth}'"));
+    } else if let Some(s) = shape.first() {
+        lines.push(format!("Near {tag} \"ROWS({f})\" '{}'", s[1]));
+        lines.push(format!("Near {tag} \"COLUMNS({f})\" '{}'", s[2]));
+    } else if !rows.is_empty() && rows.iter().all(|r| matches(LIST, r) || number(r).is_some()) {
+        lines.extend(list_checks(tag, f, &rows));
+    } else if rows.len() == 1 && matches(WORD, printed) {
+        lines.push(format!("Same {tag} \"{f}\" '{printed}'"));
+    }
+    if lines.is_empty() {
+        lines.push(format!("Near {tag} \"SUMPRODUCT(--ISERROR({f}))\" '0'"));
+    }
+    lines
+}
+
 pub fn checks_for(
     name: &str,
     example: &Example,
@@ -380,61 +465,7 @@ pub fn checks_for(
     }
     let tag = format!("'{}'", powershell(&format!("example: {name} #{index}")));
     let f = powershell(&formula);
-    let mut lines = Vec::new();
-    let joined = example.results.join(" ");
-    let printed = py::strip(&joined);
-    let rows = example
-        .results
-        .iter()
-        .filter(|r| !py::strip(r).is_empty())
-        .collect::<Vec<_>>();
-    let single = if rows.len() == 1 {
-        number(printed)
-    } else {
-        None
-    };
-    let shape = captures(SHAPE, printed);
-    let date = captures(ISO_DATE, printed);
-    let int = |s: &str| py::parse_int(s, 10).map_or_else(|_| s.to_string(), |n| n.to_string());
-    if let Some(d) = date.first() {
-        let serial = format!("DATE({},{},{})", int(&d[1]), int(&d[2]), int(&d[3]));
-        lines.push(format!("Near {tag} \"{f} - {serial}\" '0' '0.5'"));
-    } else if let Some((value, tolerance)) = single {
-        lines.push(format!(
-            "Near {tag} \"{f}\" '{}' '{}'",
-            value.shown(),
-            tolerance.shown()
-        ));
-    } else if constant(&printed.to_uppercase()) {
-        let truth = u8::from(printed.to_uppercase() == "TRUE");
-        lines.push(format!("Near {tag} \"N({f})\" '{truth}'"));
-    } else if let Some(s) = shape.first() {
-        lines.push(format!("Near {tag} \"ROWS({f})\" '{}'", s[1]));
-        lines.push(format!("Near {tag} \"COLUMNS({f})\" '{}'", s[2]));
-    } else if !rows.is_empty() && rows.iter().all(|r| matches(LIST, r) || number(r).is_some()) {
-        let parsed = rows
-            .iter()
-            .flat_map(|r| r.split(','))
-            .map(number)
-            .collect::<Vec<_>>();
-        let items = parsed.iter().flatten().collect::<Vec<_>>();
-        if items.len() == parsed.len() {
-            let total = items.iter().fold(Decimal::zero(), |sum, (v, _)| sum.add(v));
-            let tolerance = items.iter().fold(Decimal::zero(), |sum, (_, t)| sum.add(t));
-            lines.push(format!("Near {tag} \"COUNT({f})\" '{}'", items.len()));
-            lines.push(format!(
-                "Near {tag} \"SUM({f})\" '{}' '{}'",
-                total.shown(),
-                tolerance.shown()
-            ));
-        }
-    } else if rows.len() == 1 && matches(WORD, printed) {
-        lines.push(format!("Same {tag} \"{f}\" '{printed}'"));
-    }
-    if lines.is_empty() {
-        lines.push(format!("Near {tag} \"SUMPRODUCT(--ISERROR({f}))\" '0'"));
-    }
-    lines
+    result_checks(&tag, &f, &example.results)
 }
 
 pub fn help_check(name: &str, body: &str) -> String {

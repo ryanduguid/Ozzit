@@ -169,6 +169,201 @@ pub fn loads_unique_keys(text: &str) -> Result<Json, UniqueError> {
     })
 }
 
+/// What follows a finished value: the whole document, or another value to scan.
+enum Attached {
+    Done(Json),
+    Next,
+}
+
+/// The decoder's state: the text, the scan position and the open containers.
+struct Parser<'a> {
+    s: Vec<char>,
+    idx: usize,
+    stack: Vec<Frame>,
+    unique: Option<&'a dyn Fn(&str) -> DecodeError>,
+}
+
+impl Parser<'_> {
+    fn skip(&self, mut i: usize) -> usize {
+        while i < self.s.len() && is_ws(self.s[i]) {
+            i += 1;
+        }
+        i
+    }
+
+    fn at(&self, c: char) -> bool {
+        self.idx < self.s.len() && self.s[self.idx] == c
+    }
+
+    fn error(&self, msg: &str, pos: usize) -> DecodeError {
+        decode_error(msg, &self.s, pos)
+    }
+
+    /// Reads a key and its delimiter, leaving idx at the value.
+    fn read_key(&mut self) -> Result<String, DecodeError> {
+        if !self.at('"') {
+            return Err(self.error(
+                "Expecting property name enclosed in double quotes",
+                self.idx,
+            ));
+        }
+        let (key, next) = scanstring(&self.s, self.idx + 1)?;
+        self.idx = self.skip(next);
+        if !self.at(':') {
+            return Err(self.error("Expecting ':' delimiter", self.idx));
+        }
+        self.idx = self.skip(self.idx + 1);
+        Ok(key)
+    }
+
+    /// Scans one value starting at idx; `None` when it opened a container
+    /// whose members follow.
+    fn value(&mut self) -> Result<Option<Json>, DecodeError> {
+        if self.idx >= self.s.len() {
+            return Err(self.error("Expecting value", self.idx));
+        }
+        // shortcut: cap input at 1,000 containers while formatting and value
+        // destruction are recursive. Replace those consumers before raising it.
+        if matches!(self.s[self.idx], '{' | '[') && self.stack.len() >= 1000 {
+            return Err(DecodeError(
+                "JSON nesting exceeds the native limit of 1000".into(),
+            ));
+        }
+        Ok(Some(match self.s[self.idx] {
+            '"' => {
+                let (string, next) = scanstring(&self.s, self.idx + 1)?;
+                self.idx = next;
+                Json::Str(string)
+            }
+            '{' => {
+                self.idx = self.skip(self.idx + 1);
+                if !self.at('}') {
+                    let key = self.read_key()?;
+                    self.stack.push(Frame::Object(Vec::new(), key));
+                    return Ok(None);
+                }
+                self.idx += 1;
+                Json::Object(Vec::new())
+            }
+            '[' => {
+                self.idx = self.skip(self.idx + 1);
+                if !self.at(']') {
+                    self.stack.push(Frame::Array(Vec::new()));
+                    return Ok(None);
+                }
+                self.idx += 1;
+                Json::Array(Vec::new())
+            }
+            _ => self.literal()?,
+        }))
+    }
+
+    /// A constant or a number at idx.
+    fn literal(&mut self) -> Result<Json, DecodeError> {
+        let idx = self.idx;
+        let literal = |word: &str| {
+            self.s[idx..]
+                .iter()
+                .take(word.chars().count())
+                .copied()
+                .eq(word.chars())
+        };
+        let (value, width) = if literal("null") {
+            (Json::Null, 4)
+        } else if literal("true") {
+            (Json::Bool(true), 4)
+        } else if literal("false") {
+            (Json::Bool(false), 5)
+        } else if literal("NaN") {
+            (Json::Float(f64::NAN), 3)
+        } else if literal("Infinity") {
+            (Json::Float(f64::INFINITY), 8)
+        } else if literal("-Infinity") {
+            (Json::Float(f64::NEG_INFINITY), 9)
+        } else {
+            let (number, next) =
+                match_number(&self.s, idx).ok_or_else(|| self.error("Expecting value", idx))??;
+            self.idx = next;
+            return Ok(number);
+        };
+        self.idx += width;
+        Ok(value)
+    }
+
+    /// After a container member: true when `close` ends the container, false
+    /// after a comma that another member follows.
+    fn after_member(&mut self, close: char, what: &str) -> Result<bool, DecodeError> {
+        self.idx = self.skip(self.idx);
+        if self.at(close) {
+            self.idx += 1;
+            return Ok(true);
+        }
+        if !self.at(',') {
+            return Err(self.error("Expecting ',' delimiter", self.idx));
+        }
+        let comma = self.idx;
+        self.idx = self.skip(self.idx + 1);
+        if self.at(close) {
+            return Err(self.error(
+                &format!("Illegal trailing comma before end of {what}"),
+                comma,
+            ));
+        }
+        Ok(false)
+    }
+
+    /// Attaches a finished value to its container, closing any that end here.
+    fn attach(&mut self, mut value: Json) -> Result<Attached, DecodeError> {
+        loop {
+            let Some(frame) = self.stack.last_mut() else {
+                let end = self.skip(self.idx);
+                if end != self.s.len() {
+                    return Err(self.error("Extra data", end));
+                }
+                return Ok(Attached::Done(value));
+            };
+            match frame {
+                Frame::Array(items) => {
+                    items.push(value);
+                    if !self.after_member(']', "array")? {
+                        return Ok(Attached::Next);
+                    }
+                    let Some(Frame::Array(items)) = self.stack.pop() else {
+                        unreachable!()
+                    };
+                    value = Json::Array(items);
+                }
+                Frame::Object(pairs, key) => {
+                    if self.unique.is_some() {
+                        pairs.push((std::mem::take(key), value));
+                    } else if let Some((_, held)) = pairs.iter_mut().find(|(k, _)| k == key) {
+                        *held = value;
+                    } else {
+                        pairs.push((std::mem::take(key), value));
+                    }
+                    if !self.after_member('}', "object")? {
+                        let next_key = self.read_key()?;
+                        if let Some(Frame::Object(_, key)) = self.stack.last_mut() {
+                            *key = next_key;
+                        }
+                        return Ok(Attached::Next);
+                    }
+                    let Some(Frame::Object(pairs, _)) = self.stack.pop() else {
+                        unreachable!()
+                    };
+                    if let Some(duplicate) = self.unique {
+                        let mut keys = std::collections::HashSet::new();
+                        if let Some((key, _)) = pairs.iter().find(|(key, _)| !keys.insert(key)) {
+                            return Err(duplicate(key));
+                        }
+                    }
+                    value = Json::Object(pairs);
+                }
+            }
+        }
+    }
+}
+
 fn load(text: &str, unique: Option<&dyn Fn(&str) -> DecodeError>) -> Result<Json, DecodeError> {
     let s: Vec<char> = text.chars().collect();
     if s.first() == Some(&'\u{feff}') {
@@ -178,188 +373,36 @@ fn load(text: &str, unique: Option<&dyn Fn(&str) -> DecodeError>) -> Result<Json
             0,
         ));
     }
-    let len = s.len();
-    let skip = |mut i: usize| {
-        while i < len && is_ws(s[i]) {
-            i += 1;
-        }
-        i
+    let mut parser = Parser {
+        s,
+        idx: 0,
+        stack: Vec::new(),
+        unique,
     };
-    let mut idx = skip(0);
-    let mut stack: Vec<Frame> = Vec::new();
-    let expecting_value = |pos: usize| decode_error("Expecting value", &s, pos);
-
-    // Reads a key and its delimiter, leaving idx at the value.
-    let read_key = |idx: &mut usize| -> Result<String, DecodeError> {
-        if *idx >= len || s[*idx] != '"' {
-            return Err(decode_error(
-                "Expecting property name enclosed in double quotes",
-                &s,
-                *idx,
-            ));
-        }
-        let (key, next) = scanstring(&s, *idx + 1)?;
-        *idx = skip(next);
-        if *idx >= len || s[*idx] != ':' {
-            return Err(decode_error("Expecting ':' delimiter", &s, *idx));
-        }
-        *idx = skip(*idx + 1);
-        Ok(key)
-    };
-
-    'value: loop {
-        // Scan one value starting at idx, or open a container.
-        if idx >= len {
-            return Err(expecting_value(idx));
-        }
-        // shortcut: cap input at 1,000 containers while formatting and value
-        // destruction are recursive. Replace those consumers before raising it.
-        if matches!(s[idx], '{' | '[') && stack.len() >= 1000 {
-            return Err(DecodeError(
-                "JSON nesting exceeds the native limit of 1000".into(),
-            ));
-        }
-        let mut value = match s[idx] {
-            '"' => {
-                let (string, next) = scanstring(&s, idx + 1)?;
-                idx = next;
-                Json::Str(string)
-            }
-            '{' => {
-                idx = skip(idx + 1);
-                if idx < len && s[idx] == '}' {
-                    idx += 1;
-                    Json::Object(Vec::new())
-                } else {
-                    let key = read_key(&mut idx)?;
-                    stack.push(Frame::Object(Vec::new(), key));
-                    continue 'value;
-                }
-            }
-            '[' => {
-                idx = skip(idx + 1);
-                if idx < len && s[idx] == ']' {
-                    idx += 1;
-                    Json::Array(Vec::new())
-                } else {
-                    stack.push(Frame::Array(Vec::new()));
-                    continue 'value;
-                }
-            }
-            _ => {
-                let literal = |word: &str| {
-                    s[idx..]
-                        .iter()
-                        .take(word.chars().count())
-                        .copied()
-                        .eq(word.chars())
-                };
-                if literal("null") {
-                    idx += 4;
-                    Json::Null
-                } else if literal("true") {
-                    idx += 4;
-                    Json::Bool(true)
-                } else if literal("false") {
-                    idx += 5;
-                    Json::Bool(false)
-                } else if literal("NaN") {
-                    idx += 3;
-                    Json::Float(f64::NAN)
-                } else if literal("Infinity") {
-                    idx += 8;
-                    Json::Float(f64::INFINITY)
-                } else if literal("-Infinity") {
-                    idx += 9;
-                    Json::Float(f64::NEG_INFINITY)
-                } else {
-                    let (number, next) =
-                        match_number(&s, idx).ok_or_else(|| expecting_value(idx))??;
-                    idx = next;
-                    number
-                }
-            }
-        };
-        // Attach the finished value to its container, closing any that end here.
-        loop {
-            let Some(frame) = stack.last_mut() else {
-                let end = skip(idx);
-                if end != len {
-                    return Err(decode_error("Extra data", &s, end));
-                }
-                return Ok(value);
-            };
-            match frame {
-                Frame::Array(items) => {
-                    items.push(value);
-                    idx = skip(idx);
-                    if idx < len && s[idx] == ']' {
-                        idx += 1;
-                        let Some(Frame::Array(items)) = stack.pop() else {
-                            unreachable!()
-                        };
-                        value = Json::Array(items);
-                        continue;
-                    }
-                    if idx >= len || s[idx] != ',' {
-                        return Err(decode_error("Expecting ',' delimiter", &s, idx));
-                    }
-                    let comma = idx;
-                    idx = skip(idx + 1);
-                    if idx < len && s[idx] == ']' {
-                        return Err(decode_error(
-                            "Illegal trailing comma before end of array",
-                            &s,
-                            comma,
-                        ));
-                    }
-                    continue 'value;
-                }
-                Frame::Object(pairs, key) => {
-                    if unique.is_some() {
-                        pairs.push((std::mem::take(key), value));
-                    } else if let Some((_, held)) = pairs.iter_mut().find(|(k, _)| k == key) {
-                        *held = value;
-                    } else {
-                        pairs.push((std::mem::take(key), value));
-                    }
-                    idx = skip(idx);
-                    if idx < len && s[idx] == '}' {
-                        idx += 1;
-                        let Some(Frame::Object(pairs, _)) = stack.pop() else {
-                            unreachable!()
-                        };
-                        if let Some(duplicate) = unique {
-                            let mut keys = std::collections::HashSet::new();
-                            if let Some((key, _)) = pairs.iter().find(|(key, _)| !keys.insert(key))
-                            {
-                                return Err(duplicate(key));
-                            }
-                        }
-                        value = Json::Object(pairs);
-                        continue;
-                    }
-                    if idx >= len || s[idx] != ',' {
-                        return Err(decode_error("Expecting ',' delimiter", &s, idx));
-                    }
-                    let comma = idx;
-                    idx = skip(idx + 1);
-                    if idx < len && s[idx] == '}' {
-                        return Err(decode_error(
-                            "Illegal trailing comma before end of object",
-                            &s,
-                            comma,
-                        ));
-                    }
-                    let next_key = read_key(&mut idx)?;
-                    if let Some(Frame::Object(_, key)) = stack.last_mut() {
-                        *key = next_key;
-                    }
-                    continue 'value;
-                }
-            }
+    parser.idx = parser.skip(0);
+    loop {
+        if let Some(value) = parser.value()?
+            && let Attached::Done(json) = parser.attach(value)?
+        {
+            return Ok(json);
         }
     }
+}
+
+/// The end of an exponent starting at `idx`, when one does.
+fn exponent_end(s: &[char], mut idx: usize) -> Option<usize> {
+    let len = s.len();
+    if !(idx + 1 < len && (s[idx] == 'e' || s[idx] == 'E')) {
+        return None;
+    }
+    idx += 1;
+    if idx + 1 < len && (s[idx] == '-' || s[idx] == '+') {
+        idx += 1;
+    }
+    while idx < len && s[idx].is_ascii_digit() {
+        idx += 1;
+    }
+    s[idx - 1].is_ascii_digit().then_some(idx)
 }
 
 /// The C scanner's number match; None where it raises StopIteration.
@@ -391,20 +434,9 @@ fn match_number(s: &[char], start: usize) -> Option<Result<(Json, usize), Decode
             idx += 1;
         }
     }
-    if idx + 1 < len && (s[idx] == 'e' || s[idx] == 'E') {
-        let e_start = idx;
-        idx += 1;
-        if idx + 1 < len && (s[idx] == '-' || s[idx] == '+') {
-            idx += 1;
-        }
-        while digit(idx) {
-            idx += 1;
-        }
-        if s[idx - 1].is_ascii_digit() {
-            is_float = true;
-        } else {
-            idx = e_start;
-        }
+    if let Some(end) = exponent_end(s, idx) {
+        is_float = true;
+        idx = end;
     }
     let text: String = s[start..idx].iter().collect();
     if is_float {
@@ -416,6 +448,44 @@ fn match_number(s: &[char], start: usize) -> Option<Result<(Json, usize), Decode
                 .map(|i| (Json::Int(i), idx))
                 .map_err(DecodeError),
         )
+    }
+}
+
+/// The character a `\uXXXX` escape names, joining a surrogate pair, and the
+/// index after it; `next` is the index of the first hex digit.
+fn unicode_escape(s: &[char], next: usize) -> Result<(char, usize), DecodeError> {
+    let len = s.len();
+    let mut end = next + 4;
+    if end >= len {
+        return Err(decode_error("Invalid \\uXXXX escape", s, next - 1));
+    }
+    let hex = |from: usize, end: usize| -> Result<u32, DecodeError> {
+        let mut value = 0;
+        for &digit in &s[from..from + 4] {
+            value = value << 4
+                | digit
+                    .to_digit(16)
+                    .ok_or_else(|| decode_error("Invalid \\uXXXX escape", s, end - 5))?;
+        }
+        Ok(value)
+    };
+    let mut code = hex(next, end)?;
+    if (0xd800..=0xdbff).contains(&code) && end + 6 < len && s[end] == '\\' && s[end + 1] == 'u' {
+        let low = hex(end + 2, end + 6)?;
+        if (0xdc00..=0xdfff).contains(&low) {
+            code = 0x10000 + (((code - 0xd800) << 10) | (low - 0xdc00));
+            end += 6;
+        }
+    }
+    match char::from_u32(code) {
+        Some(ch) => Ok((ch, end)),
+        // shortcut: Python keeps a lone surrogate in the string, and the
+        // builder could never write it out; it is refused at the escape.
+        None => Err(decode_error(
+            "Unpaired surrogate in \\uXXXX escape",
+            s,
+            next - 2,
+        )),
     }
 }
 
@@ -466,42 +536,9 @@ fn scanstring(s: &[char], end: usize) -> Result<(String, usize), DecodeError> {
             out.push(replacement);
             continue;
         }
-        next += 1;
-        end = next + 4;
-        if end >= len {
-            return Err(decode_error("Invalid \\uXXXX escape", s, next - 1));
-        }
-        let hex = |from: usize, end: usize| -> Result<u32, DecodeError> {
-            let mut value = 0;
-            for &digit in &s[from..from + 4] {
-                value = value << 4
-                    | digit
-                        .to_digit(16)
-                        .ok_or_else(|| decode_error("Invalid \\uXXXX escape", s, end - 5))?;
-            }
-            Ok(value)
-        };
-        let mut code = hex(next, end)?;
-        if (0xd800..=0xdbff).contains(&code) && end + 6 < len && s[end] == '\\' && s[end + 1] == 'u'
-        {
-            let low = hex(end + 2, end + 6)?;
-            if (0xdc00..=0xdfff).contains(&low) {
-                code = 0x10000 + (((code - 0xd800) << 10) | (low - 0xdc00));
-                end += 6;
-            }
-        }
-        match char::from_u32(code) {
-            Some(ch) => out.push(ch),
-            // shortcut: Python keeps a lone surrogate in the string, and the
-            // builder could never write it out; it is refused at the escape.
-            None => {
-                return Err(decode_error(
-                    "Unpaired surrogate in \\uXXXX escape",
-                    s,
-                    next - 2,
-                ));
-            }
-        }
+        let (ch, after) = unicode_escape(s, next + 1)?;
+        out.push(ch);
+        end = after;
     }
 }
 
@@ -523,8 +560,56 @@ fn dump_str(s: &str, out: &mut String) {
     out.push('"');
 }
 
+/// A line break and indent before an item or a closing bracket, unless compact.
+fn break_line(level: usize, compact: bool, out: &mut String) {
+    if !compact {
+        out.push('\n');
+        out.push_str(&"  ".repeat(level));
+    }
+}
+
+fn dump_array(items: &[Json], level: usize, sort_keys: bool, compact: bool, out: &mut String) {
+    out.push('[');
+    for (i, item) in items.iter().enumerate() {
+        if i > 0 {
+            out.push(',');
+        }
+        break_line(level + 1, compact, out);
+        dump_into(item, level + 1, sort_keys, compact, out);
+    }
+    break_line(level, compact, out);
+    out.push(']');
+}
+
+fn dump_object(
+    pairs: &[(String, Json)],
+    level: usize,
+    sort_keys: bool,
+    compact: bool,
+    out: &mut String,
+) {
+    let mut order: Vec<&(String, Json)> = pairs.iter().collect();
+    if sort_keys {
+        order.sort_by(|a, b| a.0.cmp(&b.0));
+    }
+    out.push('{');
+    for (i, (k, v)) in order.into_iter().enumerate() {
+        if i > 0 {
+            out.push(',');
+        }
+        break_line(level + 1, compact, out);
+        dump_str(k, out);
+        out.push(':');
+        if !compact {
+            out.push(' ');
+        }
+        dump_into(v, level + 1, sort_keys, compact, out);
+    }
+    break_line(level, compact, out);
+    out.push('}');
+}
+
 fn dump_into(value: &Json, level: usize, sort_keys: bool, compact: bool, out: &mut String) {
-    let pad = |n: usize| "  ".repeat(n);
     match value {
         Json::Null => out.push_str("null"),
         Json::Bool(true) => out.push_str("true"),
@@ -537,52 +622,9 @@ fn dump_into(value: &Json, level: usize, sort_keys: bool, compact: bool, out: &m
         Json::Float(f) => out.push_str(&py::float_repr(*f)),
         Json::Str(s) => dump_str(s, out),
         Json::Array(items) if items.is_empty() => out.push_str("[]"),
-        Json::Array(items) => {
-            out.push('[');
-            for (i, item) in items.iter().enumerate() {
-                if i > 0 {
-                    out.push(',');
-                }
-                if !compact {
-                    out.push('\n');
-                    out.push_str(&pad(level + 1));
-                }
-                dump_into(item, level + 1, sort_keys, compact, out);
-            }
-            if !compact {
-                out.push('\n');
-                out.push_str(&pad(level));
-            }
-            out.push(']');
-        }
+        Json::Array(items) => dump_array(items, level, sort_keys, compact, out),
         Json::Object(pairs) if pairs.is_empty() => out.push_str("{}"),
-        Json::Object(pairs) => {
-            let mut order: Vec<&(String, Json)> = pairs.iter().collect();
-            if sort_keys {
-                order.sort_by(|a, b| a.0.cmp(&b.0));
-            }
-            out.push('{');
-            for (i, (k, v)) in order.into_iter().enumerate() {
-                if i > 0 {
-                    out.push(',');
-                }
-                if !compact {
-                    out.push('\n');
-                    out.push_str(&pad(level + 1));
-                }
-                dump_str(k, out);
-                out.push(':');
-                if !compact {
-                    out.push(' ');
-                }
-                dump_into(v, level + 1, sort_keys, compact, out);
-            }
-            if !compact {
-                out.push('\n');
-                out.push_str(&pad(level));
-            }
-            out.push('}');
-        }
+        Json::Object(pairs) => dump_object(pairs, level, sort_keys, compact, out),
     }
 }
 
@@ -642,6 +684,10 @@ mod tests {
             err("{\"a\" 1}"),
             "Expecting ':' delimiter: line 1 column 6 (char 5)"
         );
+    }
+
+    #[test]
+    fn structure_errors_match_the_c_scanner() {
         assert_eq!(err("1 2"), "Extra data: line 1 column 3 (char 2)");
         assert_eq!(err(""), "Expecting value: line 1 column 1 (char 0)");
         assert_eq!(

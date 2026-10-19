@@ -16,6 +16,37 @@ fn printed(lines: &[String]) -> String {
     lines.iter().map(|l| format!("{l}\n")).collect()
 }
 
+/// The parsed namespace as the recorder printed it.
+fn namespace(a: &release::Arguments) -> Value {
+    let mut namespace = serde_json::Map::new();
+    namespace.insert("command".into(), json!(a.command));
+    let fields: &[(&str, &Option<String>)] = if a.command == "create" {
+        &[
+            ("version", &a.version),
+            ("source_commit", &a.source_commit),
+            ("output", &a.output),
+        ]
+    } else {
+        &[
+            ("bundle", &a.bundle),
+            ("version", &a.version),
+            ("source_commit", &a.source_commit),
+        ]
+    };
+    for (name, value) in fields {
+        // argparse's type=Path prints a value through pathlib.
+        let shown = value.as_ref().map(|v| {
+            if matches!(*name, "output" | "bundle") {
+                PyPath::new(v).display()
+            } else {
+                v.clone()
+            }
+        });
+        namespace.insert((*name).into(), json!(shown));
+    }
+    json!({"code": 0, "stdout": "", "stderr": "", "namespace": namespace})
+}
+
 #[test]
 fn arguments_parse_as_argparse_does() {
     let data = corpus();
@@ -30,35 +61,7 @@ fn arguments_parse_as_argparse_does() {
             .map(|a| a.as_str().unwrap().to_string())
             .collect::<Vec<_>>();
         let got = match release::parse(&argv) {
-            Ok(a) => {
-                let mut namespace = serde_json::Map::new();
-                namespace.insert("command".into(), json!(a.command));
-                let fields: &[(&str, &Option<String>)] = if a.command == "create" {
-                    &[
-                        ("version", &a.version),
-                        ("source_commit", &a.source_commit),
-                        ("output", &a.output),
-                    ]
-                } else {
-                    &[
-                        ("bundle", &a.bundle),
-                        ("version", &a.version),
-                        ("source_commit", &a.source_commit),
-                    ]
-                };
-                for (name, value) in fields {
-                    // argparse's type=Path prints a value through pathlib.
-                    let shown = value.as_ref().map(|v| {
-                        if matches!(*name, "output" | "bundle") {
-                            PyPath::new(v).display()
-                        } else {
-                            v.clone()
-                        }
-                    });
-                    namespace.insert((*name).into(), json!(shown));
-                }
-                json!({"code": 0, "stdout": "", "stderr": "", "namespace": namespace})
-            }
+            Ok(a) => namespace(&a),
             Err(output) => json!({
                 "code": output.code,
                 "stdout": printed(&output.out),
@@ -82,6 +85,51 @@ fn arguments_parse_as_argparse_does() {
     );
 }
 
+/// Writes each recorded file, or makes the directory for a null entry.
+fn write_files(tmp: &Path, files: &Value) {
+    for (rel, data) in files.as_object().unwrap() {
+        let path = tmp.join(rel);
+        match data.as_str() {
+            None => std::fs::create_dir_all(&path).unwrap(),
+            Some(encoded) => {
+                std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+                std::fs::write(
+                    &path,
+                    base64::engine::general_purpose::STANDARD
+                        .decode(encoded)
+                        .unwrap(),
+                )
+                .unwrap();
+            }
+        }
+    }
+}
+
+/// The recorded function's result: the bundle version, if it reports one.
+fn run_case(case: &Value, tmp: &Path, args: &[String]) -> Result<Option<String>, String> {
+    let root = tmp.join("repo");
+    match case["function"].as_str().unwrap() {
+        "verify_bundle" => release::verify_bundle(&tmp.join(&args[0]), &root, false)
+            .map(|d| d.get("version").and_then(|v| v.as_str()).map(String::from)),
+        "verify_base_workbook" => {
+            release::verify_base_workbook(&tmp.join(&args[0]), &tmp.join(&args[1])).map(|_| None)
+        }
+        "parse_checksums" => release::parse_checksums(&tmp.join(&args[0])).map(|_| None),
+        _ => {
+            let output = args[0].replace("<tmp>", &tmp.display().to_string());
+            release::create_bundle(
+                &root,
+                &root.join("ozzit.xlsx"),
+                &root.join(release::BASE_MANIFEST),
+                &PyPath::new(&output),
+                "3.2.0",
+                &"a".repeat(40),
+            )
+            .map(|_| None)
+        }
+    }
+}
+
 #[test]
 fn verification_results_match_the_python_tool() {
     let data = corpus();
@@ -92,50 +140,14 @@ fn verification_results_match_the_python_tool() {
         let name = case["name"].as_str().unwrap();
         let dir = tempfile::tempdir().unwrap();
         let tmp = ozzit::py::resolve(dir.path());
-        for (rel, data) in case["files"].as_object().unwrap() {
-            let path = tmp.join(rel);
-            match data.as_str() {
-                None => std::fs::create_dir_all(&path).unwrap(),
-                Some(encoded) => {
-                    std::fs::create_dir_all(path.parent().unwrap()).unwrap();
-                    std::fs::write(
-                        &path,
-                        base64::engine::general_purpose::STANDARD
-                            .decode(encoded)
-                            .unwrap(),
-                    )
-                    .unwrap();
-                }
-            }
-        }
+        write_files(&tmp, &case["files"]);
         let args = case["args"]
             .as_array()
             .unwrap()
             .iter()
             .map(|a| a.as_str().unwrap().to_string())
             .collect::<Vec<_>>();
-        let root = tmp.join("repo");
-        let result = match case["function"].as_str().unwrap() {
-            "verify_bundle" => release::verify_bundle(&tmp.join(&args[0]), &root, false)
-                .map(|d| d.get("version").and_then(|v| v.as_str()).map(String::from)),
-            "verify_base_workbook" => {
-                release::verify_base_workbook(&tmp.join(&args[0]), &tmp.join(&args[1]))
-                    .map(|_| None)
-            }
-            "parse_checksums" => release::parse_checksums(&tmp.join(&args[0])).map(|_| None),
-            _ => {
-                let output = args[0].replace("<tmp>", &tmp.display().to_string());
-                release::create_bundle(
-                    &root,
-                    &root.join("ozzit.xlsx"),
-                    &root.join(release::BASE_MANIFEST),
-                    &PyPath::new(&output),
-                    "3.2.0",
-                    &"a".repeat(40),
-                )
-                .map(|_| None)
-            }
-        };
+        let result = run_case(case, &tmp, &args);
         let got = match result {
             Ok(version) => json!({"ok": true, "version": version}),
             Err(error) => json!({

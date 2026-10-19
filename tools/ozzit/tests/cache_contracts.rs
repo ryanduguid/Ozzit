@@ -55,6 +55,32 @@ fn printed(lines: &[String]) -> String {
     lines.iter().map(|l| format!("{l}\n")).collect()
 }
 
+/// Runs one recorded case; returns the output and its stdout and stderr
+/// with the temporary paths hidden.
+fn run_record(data: &Value, record: &Value) -> (ozzit::common::Output, String, String) {
+    let dir = tempfile::tempdir().unwrap();
+    let workbook = dir.path().join("book.xlsx");
+    let dump_path = dir.path().join("dump.tsv");
+    let shown = workbook.display().to_string();
+    let output = if record["workbook"].is_null() {
+        cache::verify(std::slice::from_ref(&shown))
+    } else {
+        std::fs::write(&workbook, blob(data, &record["workbook"])).unwrap();
+        if let Some(dump) = dump_bytes(data, &record["dump"]) {
+            std::fs::write(&dump_path, dump).unwrap();
+        }
+        cache::outcome(&shown, Ok(dumper(&record["result"])), &dump_path)
+    };
+    let dump_repr = ozzit::py::repr_str(&dump_path.display().to_string());
+    let hide = |text: String| {
+        text.replace(&dump_repr[1..dump_repr.len() - 1], "<dump>")
+            .replace(&shown, "<workbook>")
+    };
+    let out = hide(printed(&output.out));
+    let err = hide(printed(&output.err));
+    (output, out, err)
+}
+
 #[test]
 fn verify_cache_findings_match_the_python_tool() {
     let bytes = std::fs::read(
@@ -68,27 +94,8 @@ fn verify_cache_findings_match_the_python_tool() {
     let mut tracebacks = 0;
     for record in records {
         let name = record["name"].as_str().unwrap();
-        let dir = tempfile::tempdir().unwrap();
-        let workbook = dir.path().join("book.xlsx");
-        let dump_path = dir.path().join("dump.tsv");
-        let shown = workbook.display().to_string();
-        let output = if record["workbook"].is_null() {
-            cache::verify(std::slice::from_ref(&shown))
-        } else {
-            std::fs::write(&workbook, blob(&data, &record["workbook"])).unwrap();
-            if let Some(dump) = dump_bytes(&data, &record["dump"]) {
-                std::fs::write(&dump_path, dump).unwrap();
-            }
-            cache::outcome(&shown, Ok(dumper(&record["result"])), &dump_path)
-        };
+        let (output, out, err) = run_record(&data, record);
         let expected = &record["expected"];
-        let dump_repr = ozzit::py::repr_str(&dump_path.display().to_string());
-        let hide = |text: String| {
-            text.replace(&dump_repr[1..dump_repr.len() - 1], "<dump>")
-                .replace(&shown, "<workbook>")
-        };
-        let out = hide(printed(&output.out));
-        let err = hide(printed(&output.err));
         if expected["traceback"].is_string() {
             // The Python tool ends with a traceback; the port fails in a controlled way.
             tracebacks += 1;

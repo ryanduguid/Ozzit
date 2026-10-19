@@ -66,10 +66,17 @@ pub fn read_selected_inventory(
             out.insert(name, bytes);
         }
     }
-    // zip 9 keeps the last record for each raw filename. Read only the names
-    // and lengths here; the library owns decoding, decompression and CRC checks.
+    let names = directory_names(zip.into_inner(), position, &decoded)?;
+    Ok((out, names))
+}
+/// zip 9 keeps the last record for each raw filename. Read only the names
+/// and lengths here; the library owns decoding, decompression and CRC checks.
+fn directory_names(
+    mut reader: impl Read + Seek,
+    position: u64,
+    decoded: &std::collections::HashMap<Vec<u8>, String>,
+) -> Result<Vec<String>> {
     let mut names = Vec::new();
-    let mut reader = zip.into_inner();
     let length = reader.seek(SeekFrom::End(0)).map_err(|e| e.to_string())?;
     reader
         .seek(SeekFrom::Start(position))
@@ -110,7 +117,7 @@ pub fn read_selected_inventory(
             .seek(SeekFrom::Start(position))
             .map_err(|e| e.to_string())?;
     }
-    Ok((out, names))
+    Ok(names)
 }
 pub fn text(parts: &Parts, name: &str) -> Result<String> {
     decode(
@@ -137,49 +144,7 @@ pub fn deterministic_bytes(parts: &Parts) -> Result<Vec<u8>> {
         return Err("ZIP64 archive exceeds the workbook writer's member limit".into());
     }
     for name in names {
-        let data = &parts[name];
-        let mut encoder =
-            flate2::write::DeflateEncoder::new(Vec::new(), flate2::Compression::best());
-        encoder.write_all(data).map_err(|e| e.to_string())?;
-        let compressed = encoder.finish().map_err(|e| e.to_string())?;
-        let size = u32::try_from(data.len()).map_err(|_| "ZIP64 member is too large")?;
-        let csize =
-            u32::try_from(compressed.len()).map_err(|_| "ZIP64 compressed member is too large")?;
-        let offset = u32::try_from(out.len()).map_err(|_| "ZIP64 archive is too large")?;
-        let namelen = u16::try_from(name.len()).map_err(|_| "ZIP member name is too long")?;
-        let flags = if name.is_ascii() { 0 } else { 0x800 };
-        let crc = crc32fast::hash(data);
-        u32le(&mut out, 0x04034b50);
-        u16le(&mut out, 20);
-        u16le(&mut out, flags);
-        u16le(&mut out, 8);
-        u16le(&mut out, 0);
-        u16le(&mut out, 0x5c21);
-        u32le(&mut out, crc);
-        u32le(&mut out, csize);
-        u32le(&mut out, size);
-        u16le(&mut out, namelen);
-        u16le(&mut out, 0);
-        out.extend(name.as_bytes());
-        out.extend(compressed);
-        u32le(&mut central, 0x02014b50);
-        u16le(&mut central, 0x314);
-        u16le(&mut central, 20);
-        u16le(&mut central, flags);
-        u16le(&mut central, 8);
-        u16le(&mut central, 0);
-        u16le(&mut central, 0x5c21);
-        u32le(&mut central, crc);
-        u32le(&mut central, csize);
-        u32le(&mut central, size);
-        u16le(&mut central, namelen);
-        u16le(&mut central, 0);
-        u16le(&mut central, 0);
-        u16le(&mut central, 0);
-        u16le(&mut central, 0);
-        u32le(&mut central, 0o644 << 16);
-        u32le(&mut central, offset);
-        central.extend(name.as_bytes());
+        write_member(&mut out, &mut central, name, &parts[name])?;
     }
     let start = u32::try_from(out.len()).map_err(|_| "ZIP64 archive is too large")?;
     let len = u32::try_from(central.len()).map_err(|_| "ZIP64 directory is too large")?;
@@ -193,6 +158,51 @@ pub fn deterministic_bytes(parts: &Parts) -> Result<Vec<u8>> {
     u32le(&mut out, start);
     u16le(&mut out, 0);
     Ok(out)
+}
+/// Appends one member's local header and data to `out` and its directory record to `central`.
+fn write_member(out: &mut Vec<u8>, central: &mut Vec<u8>, name: &str, data: &[u8]) -> Result<()> {
+    let mut encoder = flate2::write::DeflateEncoder::new(Vec::new(), flate2::Compression::best());
+    encoder.write_all(data).map_err(|e| e.to_string())?;
+    let compressed = encoder.finish().map_err(|e| e.to_string())?;
+    let size = u32::try_from(data.len()).map_err(|_| "ZIP64 member is too large")?;
+    let csize =
+        u32::try_from(compressed.len()).map_err(|_| "ZIP64 compressed member is too large")?;
+    let offset = u32::try_from(out.len()).map_err(|_| "ZIP64 archive is too large")?;
+    let namelen = u16::try_from(name.len()).map_err(|_| "ZIP member name is too long")?;
+    let flags = if name.is_ascii() { 0 } else { 0x800 };
+    let crc = crc32fast::hash(data);
+    u32le(out, 0x04034b50);
+    u16le(out, 20);
+    u16le(out, flags);
+    u16le(out, 8);
+    u16le(out, 0);
+    u16le(out, 0x5c21);
+    u32le(out, crc);
+    u32le(out, csize);
+    u32le(out, size);
+    u16le(out, namelen);
+    u16le(out, 0);
+    out.extend(name.as_bytes());
+    out.extend(compressed);
+    u32le(central, 0x02014b50);
+    u16le(central, 0x314);
+    u16le(central, 20);
+    u16le(central, flags);
+    u16le(central, 8);
+    u16le(central, 0);
+    u16le(central, 0x5c21);
+    u32le(central, crc);
+    u32le(central, csize);
+    u32le(central, size);
+    u16le(central, namelen);
+    u16le(central, 0);
+    u16le(central, 0);
+    u16le(central, 0);
+    u16le(central, 0);
+    u32le(central, 0o644 << 16);
+    u32le(central, offset);
+    central.extend(name.as_bytes());
+    Ok(())
 }
 pub fn write_deterministic(path: &Path, parts: &Parts) -> Result<()> {
     replace_atomically(path, &deterministic_bytes(parts)?)

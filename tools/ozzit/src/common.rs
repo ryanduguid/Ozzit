@@ -182,67 +182,79 @@ pub struct Csv {
     pub headers: Vec<String>,
     pub rows: Vec<Vec<String>>,
 }
+/// The csv module's reader state, fed one character at a time.
+#[derive(Default)]
+struct CsvState {
+    records: Vec<Vec<String>>,
+    row: Vec<String>,
+    field: String,
+    quoted: bool,
+    start: bool,
+    touched: bool,
+    length: usize,
+}
+impl CsvState {
+    fn push_char(&mut self, c: char) {
+        self.field.push(c);
+        self.length += 1;
+    }
+    fn end_row(&mut self) {
+        if self.touched || !self.row.is_empty() || !self.field.is_empty() {
+            self.row.push(std::mem::take(&mut self.field));
+            self.records.push(std::mem::take(&mut self.row));
+        }
+    }
+    fn step(&mut self, c: char, chars: &mut std::iter::Peekable<std::str::Chars<'_>>) {
+        if self.quoted {
+            if c != '"' {
+                self.push_char(c);
+            } else if chars.next_if_eq(&'"').is_some() {
+                self.push_char('"');
+            } else {
+                self.quoted = false;
+            }
+        } else if c == '"' && self.start {
+            self.quoted = true;
+            self.start = false;
+            self.touched = true;
+        } else if c == ',' {
+            self.row.push(std::mem::take(&mut self.field));
+            self.start = true;
+            self.touched = true;
+            self.length = 0;
+        } else if c == '\r' || c == '\n' {
+            if c == '\r' {
+                chars.next_if_eq(&'\n');
+            }
+            self.end_row();
+            self.touched = false;
+            self.start = true;
+            self.length = 0;
+        } else {
+            self.push_char(c);
+            self.start = false;
+            self.touched = true;
+        }
+    }
+}
 impl Csv {
     pub fn read(path: &Path) -> Result<Self> {
         Self::parse(&read_sig(path)?)
     }
     pub fn parse(text: &str) -> Result<Self> {
-        let mut records = Vec::new();
-        let mut row = Vec::new();
-        let mut field = String::new();
-        let mut quoted = false;
-        let mut start = true;
-        let mut touched = false;
+        let mut state = CsvState {
+            start: true,
+            ..CsvState::default()
+        };
         let mut chars = text.chars().peekable();
-        let mut length = 0;
         while let Some(c) = chars.next() {
-            if quoted {
-                if c == '"' {
-                    if chars.peek() == Some(&'"') {
-                        chars.next();
-                        field.push('"');
-                        length += 1;
-                    } else {
-                        quoted = false;
-                    }
-                } else {
-                    field.push(c);
-                    length += 1;
-                }
-            } else if c == '"' && start {
-                quoted = true;
-                start = false;
-                touched = true;
-            } else if c == ',' {
-                row.push(std::mem::take(&mut field));
-                start = true;
-                touched = true;
-                length = 0;
-            } else if c == '\r' || c == '\n' {
-                if c == '\r' && chars.peek() == Some(&'\n') {
-                    chars.next();
-                }
-                if touched || !row.is_empty() || !field.is_empty() {
-                    row.push(std::mem::take(&mut field));
-                    records.push(std::mem::take(&mut row));
-                }
-                touched = false;
-                start = true;
-                length = 0;
-            } else {
-                field.push(c);
-                start = false;
-                touched = true;
-                length += 1;
-            }
-            if length > 131072 {
+            state.step(c, &mut chars);
+            if state.length > 131072 {
                 return Err("field larger than field limit (131072)".into());
             }
         }
-        if touched || !row.is_empty() || !field.is_empty() {
-            row.push(field);
-            records.push(row);
-        }
+        state.end_row();
+        let mut records = state.records;
         let headers = if records.is_empty() {
             vec![]
         } else {

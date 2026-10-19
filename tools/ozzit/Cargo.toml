@@ -29,6 +29,9 @@ sha2 = "0.11.1"
 tempfile = "3.27.0"
 zip = { version = "9.0.5", default-features = false, features = ["deflate-flate2-zlib-rs"] }
 
+[lints.clippy]
+too_many_lines = "warn"
+
 [profile.release]
 codegen-units = 1
 lto = true

@@ -188,15 +188,9 @@ fn add_to_src(spec: &Spec, t: &Tables, module: &str, text: &str) -> Result<Strin
     })
 }
 
-fn run(
-    spec: &Spec,
-    workbook: &Path,
-    src: &py::PyPath,
-    index: Option<&py::PyPath>,
-    notes: &mut Vec<String>,
-) -> Result<Vec<String>> {
-    let t = tables(spec);
-    let qualified = t.qualified();
+type Sources = Vec<(String, py::PyPath, String)>;
+/// Each module the pass extends: its name, its path and its current text.
+fn read_sources(t: &Tables, src: &py::PyPath) -> Result<Sources> {
     let mut texts = Vec::new();
     for (module, _) in &t.about {
         let path = src.join(&format!("{module}.txt"));
@@ -205,11 +199,15 @@ fn run(
         }
         texts.push((module.clone(), path.clone(), read_text(&path.fs())?));
     }
-    let mut parts = read_parts(workbook)?;
-    let book = read_book(&parts)?;
+    Ok(texts)
+}
 
+/// Whether the stores already hold the pass; an error when they disagree.
+fn applied(spec: &Spec, texts: &Sources, book: &str, index: Option<&py::PyPath>) -> Result<bool> {
+    let t = tables(spec);
+    let qualified = t.qualified();
     let mut states: Vec<(String, &str)> = Vec::new();
-    for (module, _, text) in &texts {
+    for (module, _, text) in texts {
         let rows = t
             .of(module)
             .iter()
@@ -222,13 +220,8 @@ fn run(
     }
     states.push((
         "workbook".into(),
-        workbook_state(&book, &qualified, None, "defined names")?,
+        workbook_state(book, &qualified, None, "defined names")?,
     ));
-    let given = index;
-    let index = match spec.index {
-        IndexRule::Optional => index.filter(|i| i.fs().is_file()),
-        IndexRule::Required => index,
-    };
     if let (Some(path), Some(state)) = (index, index_state(index, &qualified, spec.rows)?) {
         states.push((path.name().to_string(), state));
     }
@@ -242,10 +235,63 @@ fn run(
             "the stores disagree ({detail}); the views must not be applied separately"
         ));
     }
-    if states
+    Ok(states
         .iter()
-        .any(|(store, s)| store == "workbook" && *s == "applied")
-    {
+        .any(|(store, s)| store == "workbook" && *s == "applied"))
+}
+
+/// Puts back every store the failed pass may have written.
+fn restore(texts: &Sources, index: Option<&py::PyPath>, index_before: Option<&[u8]>) -> Result<()> {
+    for (_, path, text) in texts {
+        write_text(&path.fs(), text)?;
+    }
+    if let (Some(path), Some(before)) = (index, index_before) {
+        write_bytes(&path.fs(), before)?;
+    }
+    Ok(())
+}
+
+/// Regenerates the index when there is one; true when it was rewritten.
+fn refresh_index(
+    index: Option<&py::PyPath>,
+    given: Option<&py::PyPath>,
+    compiled: &[compiler::Compiled],
+    book: &str,
+    notes: &mut Vec<String>,
+) -> Result<bool> {
+    if let Some(path) = index {
+        let modules = compiled
+            .iter()
+            .map(|c| (c.name.clone(), c.module.clone()))
+            .collect();
+        if let Some(text) = compiler::render_index(&path.fs(), book, &modules)? {
+            write_bytes(&path.fs(), text.as_bytes())?;
+            return Ok(true);
+        }
+    } else if let Some(path) = given {
+        notes.push(format!("note: {path} not found, index not updated"));
+    }
+    Ok(false)
+}
+
+fn run(
+    spec: &Spec,
+    workbook: &Path,
+    src: &py::PyPath,
+    index: Option<&py::PyPath>,
+    notes: &mut Vec<String>,
+) -> Result<Vec<String>> {
+    let t = tables(spec);
+    let qualified = t.qualified();
+    let texts = read_sources(&t, src)?;
+    let mut parts = read_parts(workbook)?;
+    let book = read_book(&parts)?;
+    let given = index;
+    let index = match spec.index {
+        IndexRule::Optional => index.filter(|i| i.fs().is_file()),
+        IndexRule::Required => index,
+    };
+    if applied(spec, &texts, &book, index)? {
         return Ok(vec![]);
     }
     if spec.index == IndexRule::Required && index.is_none() {
@@ -273,28 +319,12 @@ fn run(
             .collect::<Vec<_>>();
         let book = compiler::insert_names(&book, &added)?;
         let (book, _) = compiler::apply(&book, &compiled)?;
-        if let Some(path) = index {
-            let modules = compiled
-                .iter()
-                .map(|c| (c.name.clone(), c.module.clone()))
-                .collect();
-            if let Some(text) = compiler::render_index(&path.fs(), &book, &modules)? {
-                write_bytes(&path.fs(), text.as_bytes())?;
-                indexed = true;
-            }
-        } else if let Some(path) = given {
-            notes.push(format!("note: {path} not found, index not updated"));
-        }
+        indexed = refresh_index(index, given, &compiled, &book, notes)?;
         parts.insert(BOOK.into(), book.into_bytes());
         write_deterministic(workbook, &parts)
     };
     if let Err(e) = apply() {
-        for (_, path, text) in &texts {
-            write_text(&path.fs(), text)?;
-        }
-        if let (Some(path), Some(before)) = (index, &index_before) {
-            write_bytes(&path.fs(), before)?;
-        }
+        restore(&texts, index, index_before.as_deref())?;
         return Err(e);
     }
     changed.push("workbook".into());

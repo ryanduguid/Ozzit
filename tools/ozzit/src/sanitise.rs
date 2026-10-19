@@ -58,11 +58,7 @@ fn empty_relationships(bytes: &[u8]) -> bool {
     })
 }
 
-/// Sanitise the workbook in place and return the log of what changed.
-pub fn sanitise(workbook: &Path) -> Result<Vec<String>> {
-    let mut parts = read_parts(workbook)?;
-    let mut log = Vec::new();
-
+fn drop_printers(parts: &mut Parts, log: &mut Vec<String>) -> Result<()> {
     // Printer settings: parts, then the relationships, then the pageSetup
     // attributes that referenced them.
     let printers = parts
@@ -82,7 +78,7 @@ pub fn sanitise(workbook: &Path) -> Result<Vec<String>> {
         .cloned()
         .collect::<Vec<_>>()
     {
-        let text = part(&parts, &name)?;
+        let text = part(parts, &name)?;
         let new = sub(
             r#"<Relationship[^>]*Target="[^"]*printerSettings[^"]*"[^>]*/>"#,
             &text,
@@ -92,15 +88,13 @@ pub fn sanitise(workbook: &Path) -> Result<Vec<String>> {
             parts.insert(name, new.into_bytes());
         }
     }
+    Ok(())
+}
 
-    let sheets = parts
-        .keys()
-        .filter(|n| n.starts_with("xl/worksheets/sheet"))
-        .cloned()
-        .collect::<Vec<_>>();
+fn clear_page_setup(parts: &mut Parts, sheets: &[String], log: &mut Vec<String>) -> Result<()> {
     let mut cleared = 0;
-    for name in &sheets {
-        let text = part(&parts, name)?;
+    for name in sheets {
+        let text = part(parts, name)?;
         if !text.contains("r:id=") {
             continue;
         }
@@ -117,11 +111,14 @@ pub fn sanitise(workbook: &Path) -> Result<Vec<String>> {
     if cleared > 0 {
         log.push(format!("cleared pageSetup r:id on {cleared} sheets"));
     }
+    Ok(())
+}
 
+fn pin_content_types(parts: &mut Parts, log: &mut Vec<String>) -> Result<()> {
     // Content types: printer Overrides gone, .bin default back at custom
     // properties, per-part customProperty Overrides dropped.
     let types = "[Content_Types].xml";
-    let ct = part(&parts, types)?;
+    let ct = part(parts, types)?;
     let before = py::char_len(&ct);
     let mut ct = sub(
         r#"<Override[^>]*PartName="/xl/printerSettings/[^"]*"[^>]*/>"#,
@@ -145,9 +142,12 @@ pub fn sanitise(workbook: &Path) -> Result<Vec<String>> {
     if after != before {
         log.push(format!("{types} {before} -> {after} bytes"));
     }
+    Ok(())
+}
 
+fn drop_save_path(parts: &mut Parts, log: &mut Vec<String>) -> Result<()> {
     // The save path.
-    let wb = part(&parts, BOOK)?;
+    let wb = part(parts, BOOK)?;
     let absolute = count(r"<x15ac:absPath[^>]*/>", &wb);
     if absolute > 0 {
         let wb = sub(r"<x15ac:absPath[^>]*/>", &wb, "");
@@ -159,21 +159,27 @@ pub fn sanitise(workbook: &Path) -> Result<Vec<String>> {
         parts.insert(BOOK.into(), wb.into_bytes());
         log.push(format!("removed {absolute} x15ac:absPath"));
     }
+    Ok(())
+}
 
+fn fold_book_longtext(parts: &mut Parts, log: &mut Vec<String>) -> Result<()> {
     // Long string literals Excel split on save.
-    let (wb, folded) = fold_longtext(&part(&parts, BOOK)?);
+    let (wb, folded) = fold_longtext(&part(parts, BOOK)?);
     if folded > 0 {
         parts.insert(BOOK.into(), wb.into_bytes());
         log.push(format!(
             "folded {folded} _LONGTEXT literal(s) in defined names"
         ));
     }
+    Ok(())
+}
 
+fn clear_calc_flags(parts: &mut Parts, sheets: &[String], log: &mut Vec<String>) -> Result<()> {
     // Always-calculate flags belong on CELL() formulas and nowhere else.
     let cell = bounded(r"(?s)<c\b(?:(?!</c>|<c\b).)*?</c>|<c\b[^>]*/>");
     let mut flags = 0;
-    for name in &sheets {
-        let text = part(&parts, name)?;
+    for name in sheets {
+        let text = part(parts, name)?;
         if !text.contains(r#"ca="1""#) && !text.contains(r#"aca="1""#) {
             continue;
         }
@@ -195,10 +201,13 @@ pub fn sanitise(workbook: &Path) -> Result<Vec<String>> {
     if flags > 0 {
         log.push(format!("cleared always-calculate flags on {flags} cells"));
     }
+    Ok(())
+}
 
+fn pin_session(parts: &mut Parts, log: &mut Vec<String>) -> Result<()> {
     // Session state: who saved, when, from what window, with which build.
     let mut session = 0;
-    let core = part(&parts, "docProps/core.xml")?;
+    let core = part(parts, "docProps/core.xml")?;
     // The last editor becomes the creator when the file names one and is dropped
     // when it does not; the save time is pinned either way.
     let editor = captures(r"<dc:creator>([^<]*)</dc:creator>", &core)
@@ -220,7 +229,7 @@ pub fn sanitise(workbook: &Path) -> Result<Vec<String>> {
         parts.insert("docProps/core.xml".into(), new_core.into_bytes());
         session += 1;
     }
-    let wb = part(&parts, BOOK)?;
+    let wb = part(parts, BOOK)?;
     let mut new_wb = sub(&bounded(r"<xr:revisionPtr\b[^>]*/>"), &wb, "");
     let view = re(&bounded(r"<workbookView\b[^>]*>"));
     if let Some(found) = view.find(&new_wb).ok().flatten() {
@@ -244,7 +253,10 @@ pub fn sanitise(workbook: &Path) -> Result<Vec<String>> {
     if session > 0 {
         log.push(format!("pinned session state in {session} part(s)"));
     }
+    Ok(())
+}
 
+fn drop_empty_rels(parts: &mut Parts, log: &mut Vec<String>) -> Result<()> {
     // Rels parts with nothing left in them.
     let empty = parts
         .iter()
@@ -257,7 +269,27 @@ pub fn sanitise(workbook: &Path) -> Result<Vec<String>> {
     if !empty.is_empty() {
         log.push(format!("dropped {} empty worksheet rels", empty.len()));
     }
+    Ok(())
+}
 
+/// Sanitise the workbook in place and return the log of what changed.
+pub fn sanitise(workbook: &Path) -> Result<Vec<String>> {
+    let mut parts = read_parts(workbook)?;
+    let mut log = Vec::new();
+
+    drop_printers(&mut parts, &mut log)?;
+    let sheets = parts
+        .keys()
+        .filter(|n| n.starts_with("xl/worksheets/sheet"))
+        .cloned()
+        .collect::<Vec<_>>();
+    clear_page_setup(&mut parts, &sheets, &mut log)?;
+    pin_content_types(&mut parts, &mut log)?;
+    drop_save_path(&mut parts, &mut log)?;
+    fold_book_longtext(&mut parts, &mut log)?;
+    clear_calc_flags(&mut parts, &sheets, &mut log)?;
+    pin_session(&mut parts, &mut log)?;
+    drop_empty_rels(&mut parts, &mut log)?;
     let canonical = deterministic_bytes(&parts)?;
     if log.is_empty() && read_bytes(workbook)? == canonical {
         return Ok(vec!["already clean".into()]);
