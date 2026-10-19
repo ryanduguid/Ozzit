@@ -61,6 +61,8 @@ The uploaded bundle contains exactly 3 files:
 2. `provenance.json`: canonical JSON binding the version and full candidate commit to the locked workbook hash, size, Git blob, last workbook change and deterministic workbook-gate results. It also states the copy-only build limit and the gates that remain outside the bundle.
 3. `SHA256SUMS`: canonical SHA-256 lines for `ozzit.xlsx` and `provenance.json`. It does not include itself, which avoids a checksum cycle.
 
+The release also carries one asset that is not part of the bundle: `ozzit-X.Y.Z.intoto.jsonl`, which `.github/workflows/attest-release.yml` adds to the draft. It is a Sigstore bundle holding build provenance for `ozzit.xlsx`, signed by `actions/attest` with that workflow's GitHub identity, and it names the workbook's SHA-256, the tag and the commit. `tools/prepare_release_bundle.py` neither creates nor accepts it.
+
 The signed tag and GitHub's generated source archive remain the source distribution. Inspect that archive as the equivalent of `git archive` for the exact tag; do not upload a redundant custom source archive. The standalone workbook and tagged workbook must have the same SHA-256.
 
 After all 17 gates pass in a clean candidate, stage and independently verify the bundle in 2 fresh directories outside the repository:
@@ -74,7 +76,7 @@ tools/ozzit/target/release/ozzit prepare_release_bundle verify --bundle <second-
 
 Require all 3 files in both directories to be byte-identical. The tool refuses a dirty checkout, a mismatched workbook base, non-canonical version or commit values, an output inside the source repository and any existing output path. It runs commands as argument lists without a shell, stages under a fresh sibling directory and exposes the final name only after structural verification succeeds. It never tags, uploads or publishes anything.
 
-The independent verifier must record and compare GitHub's API `digest` for the uploaded checksum file. If a detached signature is added later, define whether it sits outside the checksum set and verify it separately; do not create a checksum and signature cycle. Do not add a cosmetic SPDX or CycloneDX inventory to this workbook-only bundle.
+The independent verifier must record and compare GitHub's API `digest` for the uploaded checksum file. The attestation bundle sits outside the checksum set: it signs the workbook's digest and is created after `SHA256SUMS`, so listing it would make a checksum and signature cycle. Verify it separately, as packaging step 6 sets out. Do not add a cosmetic SPDX or CycloneDX inventory to this workbook-only bundle.
 
 ## Verification gates
 
@@ -141,8 +143,15 @@ and review that change. Do not silently weaken a floor.
 1. Build the exact 3-file bundle from the signed tag into a fresh staging directory outside the repository, then repeat it and compare every byte.
 2. Compute `provenance.json` and `SHA256SUMS` only after the workbook has its final bytes.
 3. Upload the assets to a draft release. A draft upload is not approval, publication or evidence of immutability.
-4. An independent verifier downloads every asset from GitHub rather than reading the builder's local staging directory.
-5. The independent verifier checks every checksum, API digest, filename and size; verifies the signed annotated tag; proves the standalone and tagged workbooks have the same SHA-256; inspects GitHub's source archive; and repeats the static and native gates on the downloaded candidate where the required Excel environment is available.
-6. Record the independent result in the release evidence. Only after it passes may an authorised maintainer publish the release.
-7. Re-query the published release. Claim immutability only when GitHub reports `immutable=true`. If the feature is unavailable, record that limit and retain the no-overwrite and new-version rule.
-8. After verification, do not delete or replace assets, move the tag or edit evidence to make a failed candidate appear successful. Correct an error under a new version and tag.
+4. Run the attestation workflow on the signed tag: `gh workflow run attest-release.yml --ref vX.Y.Z`. Dispatching it is a separate authorised action; it never publishes. It stops unless GitHub reports the tag as an annotated, verified signed tag on the run's commit; `verify-gates` passed in a push run of `main` for that commit; exactly one draft release for the tag holds exactly the 3 assets and their API digests match; `tools/prepare_release_bundle.py verify` passes on the downloaded draft; and the draft workbook is byte-identical to the tagged one. It then attests the tagged workbook, verifies the attestation through the API and through the bundle, and uploads `ozzit-X.Y.Z.intoto.jsonl` to the draft.
+5. An independent verifier downloads every asset from GitHub rather than reading the builder's local staging directory. Keep the 3 bundle files in their own directory for `tools/prepare_release_bundle.py verify`.
+6. The independent verifier checks every checksum, API digest, filename and size; verifies the signed annotated tag; proves the standalone and tagged workbooks have the same SHA-256; inspects GitHub's source archive; and repeats the static and native gates on the downloaded candidate where the required Excel environment is available. It also verifies the attestation twice, through the API and with the downloaded bundle:
+
+   ```powershell
+   gh attestation verify ozzit.xlsx --repo ryanduguid/Ozzit --source-digest <full-commit-sha> --source-ref refs/tags/vX.Y.Z --signer-workflow ryanduguid/Ozzit/.github/workflows/attest-release.yml
+   gh attestation verify ozzit.xlsx --bundle ozzit-X.Y.Z.intoto.jsonl --repo ryanduguid/Ozzit --source-digest <full-commit-sha> --source-ref refs/tags/vX.Y.Z --signer-workflow ryanduguid/Ozzit/.github/workflows/attest-release.yml
+   ```
+
+7. Record the independent result in the release evidence. Only after it passes may an authorised maintainer publish the release.
+8. Re-query the published release. Claim immutability only when GitHub reports `immutable=true`. If the feature is unavailable, record that limit and retain the no-overwrite and new-version rule. An immutable release accepts no new asset after publication, so a release published without the attestation bundle never gains one; v3.5.0 and earlier releases have none.
+9. After verification, do not delete or replace assets, move the tag or edit evidence to make a failed candidate appear successful. Correct an error under a new version and tag.
