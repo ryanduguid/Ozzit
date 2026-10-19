@@ -5,7 +5,7 @@ use crate::{
     pyjson::{self, Json},
 };
 use num_bigint::BigInt;
-use num_traits::ToPrimitive;
+use num_traits::{Signed, ToPrimitive};
 use sha2::{Digest, Sha256};
 use std::{
     collections::BTreeSet,
@@ -417,14 +417,27 @@ fn check_tolerance(case: &Json, defined: &Case) -> Result<()> {
             "non-numeric comparison result",
         )?;
         require(
-            ((number(key(case, "ozzit")?)? - number(key(case, "pyxirr")?)?).abs()
-                - number(key(case, "max_abs_diff")?)?)
-            .abs()
-                <= 1e-15,
+            difference_matches(
+                key(case, "ozzit")?,
+                key(case, "pyxirr")?,
+                key(case, "max_abs_diff")?,
+            )?,
             "comparison difference contradicts its results",
         )?;
     }
     Ok(())
+}
+/// `abs(abs(ozzit - pyxirr) - max_abs_diff) <= 1e-15` with Python's arithmetic:
+/// two ints subtract exactly, and an int meets a float only as a float.
+fn difference_matches(ozzit: &Json, pyxirr: &Json, max_abs_diff: &Json) -> Result<bool> {
+    let difference = match (ozzit, pyxirr) {
+        (Json::Int(a), Json::Int(b)) => Json::Int((a - b).abs()),
+        _ => Json::Float((number(ozzit)? - number(pyxirr)?).abs()),
+    };
+    Ok(match (&difference, max_abs_diff) {
+        (Json::Int(d), Json::Int(m)) => d == m,
+        _ => (number(&difference)? - number(max_abs_diff)?).abs() <= 1e-15,
+    })
 }
 
 fn check_comparison(trial: &Json) -> Result<()> {
@@ -601,19 +614,38 @@ fn argument_error(message: String) -> Output {
     }
 }
 /// The help text, or the error for a help option given a value.
-fn help(name: &str, inline: Option<&str>, option: Option<&str>) -> Option<Output> {
-    if (name.starts_with("-h") && !name.starts_with("--")) || option == Some("--help") {
-        if let Some(v) = inline.filter(|_| name == "-h" || option == Some("--help")) {
-            return Some(argument_error(format!(
-                "argument -h/--help: ignored explicit argument {}",
-                py::repr_str(v)
-            )));
+fn help(arg: &str, inline: Option<&str>, option: Option<&str>) -> Option<Output> {
+    let refused = |value: &str| {
+        Some(argument_error(format!(
+            "argument -h/--help: ignored explicit argument {}",
+            py::repr_str(value)
+        )))
+    };
+    if option == Some("--help") {
+        if let Some(value) = inline {
+            return refused(value);
         }
-        return Some(Output::ok(vec![format!(
-            "{USAGE}\n\nCheck the retained v3.4.2 native evidence without running Excel or pyxirr.\n\noptions:\n  -h, --help            show this help message and exit\n  --workbook WORKBOOK   optional exact v3.4.2 release workbook\n  --destination DESTINATION\n                        optional workbook from the recorded installation"
-        )]));
+    } else {
+        let mut rest = arg.strip_prefix("-h").filter(|_| !arg.starts_with("--"))?;
+        // Python 3.15's argparse reads text attached to -h as more short options:
+        // each further h is help again, text after = or from a - is refused, and
+        // any other character leaves help to run first.
+        loop {
+            if let Some(value) = rest.strip_prefix('=') {
+                return refused(value);
+            }
+            if rest.starts_with('-') {
+                return refused(rest);
+            }
+            match rest.strip_prefix('h') {
+                Some(more) => rest = more,
+                None => break,
+            }
+        }
     }
-    None
+    Some(Output::ok(vec![format!(
+        "{USAGE}\n\nCheck the retained v3.4.2 native evidence without running Excel or pyxirr.\n\noptions:\n  -h, --help            show this help message and exit\n  --workbook WORKBOOK   optional exact v3.4.2 release workbook\n  --destination DESTINATION\n                        optional workbook from the recorded installation"
+    )]))
 }
 /// The value of `option`: inline after `=`, or the next argument, advancing `i`.
 fn option_value(
@@ -661,7 +693,7 @@ fn parse_options(args: &[String]) -> std::result::Result<Paths, Output> {
         let option = ["--help", "--workbook", "--destination"]
             .into_iter()
             .find(|o| name.starts_with("--") && o.starts_with(name));
-        if let Some(output) = help(name, inline, option) {
+        if let Some(output) = help(arg, inline, option) {
             return Err(output);
         }
         if let Some(option) = option {

@@ -43,13 +43,13 @@ pub fn help_table(stored: &str, name: &str) -> Result<Vec<Vec<String>>> {
         })
         .collect()
 }
-pub fn defined_names(book: &str) -> BTreeMap<String, String> {
+pub fn defined_names(book: &str) -> Result<BTreeMap<String, String>> {
     captures(
         r#"(?s)<definedName name="(oz\.[^"]+)"[^>]*>(.*?)</definedName>"#,
         book,
     )
     .into_iter()
-    .map(|m| (m[1].clone(), unescape(&m[2])))
+    .map(|m| Ok((m[1].clone(), unescape(&m[2])?)))
     .collect()
 }
 fn column_index(letters: &str) -> BigInt {
@@ -72,7 +72,10 @@ fn cached_values(
             let value = captures(r"(?s)<v>(.*?)</v>", &cell[4]);
             cells.insert(
                 (row, column),
-                value.first().map_or_else(String::new, |m| unescape(&m[1])),
+                match value.first() {
+                    Some(m) => unescape(&m[1])?,
+                    None => String::new(),
+                },
             );
         }
     }
@@ -133,7 +136,7 @@ fn stale_detail(
 }
 
 pub fn check(parts: &Parts) -> Result<(Vec<String>, usize)> {
-    let names = defined_names(&decode(parts.get(BOOK).ok_or_else(|| py::repr_str(BOOK))?)?);
+    let names = defined_names(&decode(parts.get(BOOK).ok_or_else(|| py::repr_str(BOOK))?)?)?;
     let mut stale = Vec::new();
     let mut anchors = 0;
     let mut sheets = parts

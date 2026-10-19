@@ -320,20 +320,24 @@ pub fn int_repr(i: &BigInt) -> Result<String, String> {
 }
 
 /// Unicode digits to ASCII and Unicode spaces to ' ', as `int()` and `float()` first do.
+/// ASCII is left alone, so U+001C to U+001F stay invalid around a number.
 fn number_text(s: &str) -> Option<String> {
     let mut out = String::with_capacity(s.len());
     for c in s.chars() {
-        if is_space(c) {
-            out.push(' ');
-        } else if let Some(d) = decimal_value(c) {
-            out.push(char::from_digit(d, 10).expect("digit"));
-        } else if c.is_ascii() {
+        if c.is_ascii() {
             out.push(c);
+        } else if is_space(c) {
+            out.push(' ');
         } else {
-            return None;
+            out.push(char::from_digit(decimal_value(c)?, 10).expect("digit"));
         }
     }
     Some(out)
+}
+
+/// The ASCII whitespace `int()` and `float()` strip around a number.
+fn number_space(c: char) -> bool {
+    matches!(c, ' ' | '\t' | '\n' | '\x0b' | '\x0c' | '\r')
 }
 
 /// The digits of an `int()` body without its underscores, or `None` when
@@ -374,8 +378,7 @@ pub fn parse_int(s: &str, base: u32) -> Result<BigInt, String> {
         )
     };
     let text = number_text(s).ok_or_else(invalid)?;
-    let text =
-        text.trim_matches(|c: char| c.is_ascii_whitespace() || ('\x1c'..='\x1f').contains(&c));
+    let text = text.trim_matches(number_space);
     let (negative, mut body) = match text.as_bytes().first() {
         Some(b'-') => (true, &text[1..]),
         Some(b'+') => (false, &text[1..]),
@@ -432,8 +435,7 @@ fn float_digits(bytes: &[u8], i: &mut usize, clean: &mut String) -> bool {
 pub fn parse_float(s: &str) -> Result<f64, String> {
     let invalid = || format!("could not convert string to float: {}", repr_str(s));
     let text = number_text(s).ok_or_else(invalid)?;
-    let text =
-        text.trim_matches(|c: char| c.is_ascii_whitespace() || ('\x1c'..='\x1f').contains(&c));
+    let text = text.trim_matches(number_space);
     let (sign, body) = match text.as_bytes().first() {
         Some(b'-') => ("-", &text[1..]),
         Some(b'+') => ("", &text[1..]),
@@ -1038,6 +1040,24 @@ mod tests {
         assert_eq!(parse_float("1.e+5").unwrap(), 100000.0);
         assert_eq!(parse_float("1_0.5").unwrap(), 10.5);
         assert!(parse_float("1._5").is_err());
+    }
+
+    #[test]
+    fn numbers_strip_only_what_python_strips() {
+        // str.isspace() accepts U+001C to U+001F, but int() and float() do not
+        // strip them (Python 3.15).
+        for c in ['\x1c', '\x1d', '\x1e', '\x1f'] {
+            assert!(parse_float(&format!("100{c}")).is_err());
+            assert!(parse_float(&format!("{c}100")).is_err());
+            assert!(parse_int(&format!("100{c}"), 10).is_err());
+        }
+        for space in ["\x0b", "\x0c", "\t", "\r\n", "\u{85}", "\u{a0}", "\u{2003}"] {
+            assert_eq!(parse_float(&format!("{space}100{space}")).unwrap(), 100.0);
+            assert_eq!(
+                parse_int(&format!("{space}100{space}"), 10).unwrap(),
+                BigInt::from(100)
+            );
+        }
     }
 
     #[test]

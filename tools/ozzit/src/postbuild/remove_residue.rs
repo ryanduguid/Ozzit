@@ -4,6 +4,7 @@
 //! custom-function declaration and unused differential formats and named cell
 //! styles, and freezes the label columns of the wide demonstration sheets.
 use super::*;
+use num_bigint::BigInt;
 use std::collections::{BTreeMap, BTreeSet};
 
 const RESIDUE_SHEET: &str = "FMTs";
@@ -15,6 +16,14 @@ const FREEZE: [(&str, &str); 6] = [
     ("oz.SumPeriodsλ", "I"),
     ("oz.TimelineOffsetλ", "C"),
 ];
+
+/// Group `group` of every match of `pattern`, read as Python's `int()`.
+fn ints(pattern: &str, text: &str, group: usize) -> Result<Vec<BigInt>> {
+    captures(pattern, text)
+        .iter()
+        .map(|m| py::parse_int(&m[group], 10))
+        .collect()
+}
 
 fn int(text: &str) -> Result<i64> {
     use num_traits::ToPrimitive;
@@ -47,10 +56,15 @@ fn remove_from_book(parts: &mut Parts, name: &str) -> Result<Option<String>> {
         .map(|m| m[1].clone())
         .ok_or("'NoneType' object has no attribute 'group'")?;
     let book = book.replacen(element.as_str(), "", 1);
-    let position = position as i64;
-    let book = sub_fn(r#"localSheetId="(\d+)""#, &book, |m| {
-        let n = int(&m[1]).unwrap_or_default();
-        format!("localSheetId=\"{}\"", n - i64::from(n > position))
+    // Every index is read as Python's int() before any is replaced, so one it
+    // refuses fails the pass rather than becoming a different scope.
+    let pattern = r#"localSheetId="(\d+)""#;
+    let mut ids = ints(pattern, &book, 1)?.into_iter();
+    let position = BigInt::from(position);
+    let book = sub_fn(pattern, &book, |_| {
+        let n = ids.next().expect("one index per match");
+        let n = if n > position { n - 1 } else { n };
+        format!("localSheetId=\"{n}\"")
     });
     set_text(parts, BOOK, book);
     Ok(Some(rid))
@@ -141,16 +155,18 @@ fn remove_title(parts: &mut Parts, name: &str) -> Result<()> {
         ));
     }
     let app = app.replacen(&needle, "", 1);
-    let decrement = |pattern: &str, text: &str| {
-        sub_fn(pattern, text, |m| {
-            format!("{}{}{}", &m[1], int(&m[2]).unwrap_or_default() - 1, &m[3])
-        })
+    let decrement = |pattern: &str, text: &str| -> Result<String> {
+        let mut counts = ints(pattern, text, 2)?.into_iter();
+        Ok(sub_fn(pattern, text, |m| {
+            let n = counts.next().expect("one count per match");
+            format!("{}{}{}", &m[1], n - 1, &m[3])
+        }))
     };
     let app = decrement(
         r"(<vt:lpstr>Worksheets</vt:lpstr></vt:variant><vt:variant><vt:i4>)(\d+)(</vt:i4>)",
         &app,
-    );
-    let app = decrement(r#"(<TitlesOfParts><vt:vector size=")(\d+)(")"#, &app);
+    )?;
+    let app = decrement(r#"(<TitlesOfParts><vt:vector size=")(\d+)(")"#, &app)?;
     set_text(parts, app_name, app);
     Ok(())
 }

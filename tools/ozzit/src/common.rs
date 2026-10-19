@@ -132,8 +132,13 @@ pub fn escape_attr(text: &str) -> String {
 static ENTITIES: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
     serde_json::from_str(include_str!("data/html5.json")).expect("HTML entity table")
 });
-pub fn unescape(text: &str) -> String {
-    sub_fn(
+pub fn unescape(text: &str) -> Result<String> {
+    // html.unescape reads a decimal reference with int(), which refuses more
+    // than 4,300 digits, leading zeros included.
+    if let Some(m) = captures(r"&#([0-9]{4301,})", text).first() {
+        return Err(py::int_digits_error(m[1].len()));
+    }
+    Ok(sub_fn(
         r"&(#(?:[0-9]+|[xX][0-9a-fA-F]+);?|[^\t\n\f <&#;]{1,32};?)",
         text,
         |m| {
@@ -174,7 +179,7 @@ pub fn unescape(text: &str) -> String {
             }
             format!("&{s}")
         },
-    )
+    ))
 }
 
 /// DictReader preserves repeated columns, short rows and blank lines as Python did.
@@ -198,10 +203,13 @@ impl CsvState {
         self.field.push(c);
         self.length += 1;
     }
-    fn end_row(&mut self) {
+    /// Ends a record; a blank line is kept as an empty record, as csv.reader yields [].
+    fn end_row(&mut self, at_end: bool) {
         if self.touched || !self.row.is_empty() || !self.field.is_empty() {
             self.row.push(std::mem::take(&mut self.field));
             self.records.push(std::mem::take(&mut self.row));
+        } else if !at_end {
+            self.records.push(vec![]);
         }
     }
     fn step(&mut self, c: char, chars: &mut std::iter::Peekable<std::str::Chars<'_>>) {
@@ -226,7 +234,7 @@ impl CsvState {
             if c == '\r' {
                 chars.next_if_eq(&'\n');
             }
-            self.end_row();
+            self.end_row(false);
             self.touched = false;
             self.start = true;
             self.length = 0;
@@ -253,16 +261,14 @@ impl Csv {
                 return Err("field larger than field limit (131072)".into());
             }
         }
-        state.end_row();
-        let mut records = state.records;
-        let headers = if records.is_empty() {
-            vec![]
-        } else {
-            records.remove(0)
-        };
+        state.end_row(true);
+        // DictReader takes the first record as the header even when it is blank,
+        // then skips blank records.
+        let mut records = state.records.into_iter();
+        let headers = records.next().unwrap_or_default();
         Ok(Self {
             headers,
-            rows: records,
+            rows: records.filter(|r| !r.is_empty()).collect(),
         })
     }
     pub fn get<'a>(&self, row: &'a [String], key: &str) -> Option<&'a str> {
@@ -284,7 +290,7 @@ pub fn csv_row(fields: &[String]) -> String {
     let mut out = fields
         .iter()
         .map(|s| {
-            if s.contains([',', '"', '\n']) {
+            if s.contains([',', '"', '\n', '\r']) {
                 format!("\"{}\"", s.replace('"', "\"\""))
             } else {
                 s.clone()

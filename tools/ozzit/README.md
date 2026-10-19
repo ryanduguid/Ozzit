@@ -1,7 +1,8 @@
 # Ozzit Rust tooling port
 
-This crate is an unpublished migration checkpoint. The Python commands and CI
-remain authoritative while the rest of the tooling is ported and qualified.
+This crate is an unpublished migration checkpoint. CI, `RELEASING.md` and the
+postbuild run order call this binary; the Python tools stay as the reference
+implementation, and CI fails when a gate and its Python twin disagree.
 The workbook retains its native Excel formulas and ordinary `.xlsx` format.
 
 Build with the repository's pinned Rust toolchain:

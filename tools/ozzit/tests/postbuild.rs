@@ -78,6 +78,36 @@ fn every_pass_is_already_applied_to_the_committed_workbook() {
 }
 
 #[test]
+fn index_rows_read_as_dictreader_does() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::copy(root.join("ozzit.xlsx"), dir.path().join("ozzit.xlsx")).unwrap();
+    copy_dir(&root.join("src"), &dir.path().join("src"));
+    let book = dir.path().join("ozzit.xlsx").display().to_string();
+    let src = dir.path().join("src").display().to_string();
+    let index = dir.path().join("index.csv");
+    let run = |pass: &str| {
+        let argv = [pass, &book, &src, &index.display().to_string()].map(String::from);
+        ozzit::dispatch(&argv).code
+    };
+    let header = "module,previous_name,signature,description,function\n";
+    // A short row leaves its function as None, which Python cannot sort: nothing is written.
+    let short = format!("{header}Financial,,Sig,Desc\n");
+    std::fs::write(&index, &short).unwrap();
+    assert_eq!(run("aasb16_leases"), 1);
+    assert_eq!(std::fs::read_to_string(&index).unwrap(), short);
+    // An explicitly empty function sorts first and is written back.
+    std::fs::write(&index, format!("{header}Financial,,Sig,Desc,\n")).unwrap();
+    assert_eq!(run("aasb16_leases"), 0);
+    // A blank first record is DictReader's (empty) header, so the stores disagree.
+    let committed = std::fs::read(root.join("functions.csv")).unwrap();
+    std::fs::write(&index, [b"\n".as_slice(), &committed].concat()).unwrap();
+    assert_eq!(run("working_capital_days"), 1);
+    std::fs::write(&index, [&committed, b"\n\n".as_slice()].concat()).unwrap();
+    assert_eq!(run("working_capital_days"), 0);
+}
+
+#[test]
 fn the_hue_remap_matches_python_colorsys() {
     use ozzit::postbuild::workbook_palette::hue_map;
     // Python: workbook_palette.hue_map on each input.

@@ -2,10 +2,10 @@
 
 ## 4.0.0 (in progress, unpublished)
 
-The Rust port is being implemented alongside the base Python tools. The Python
-tools remain the verification authority until the port passes its acceptance
-checks. No workbook, source formula, cached result or release evidence changes
-as part of the tooling port.
+The Rust port is implemented alongside the base Python tools, which remain the
+reference implementation: CI runs the gates through this binary and fails when
+one disagrees with its Python twin. No workbook, source formula, cached result
+or release evidence changes as part of the tooling port.
 
 Dependency qualification: Rust flate2 1.1.10 with zlib-rs 0.6.8 reproduces all
 169 deflated members of the base workbook byte for byte on Windows. The writer
@@ -30,6 +30,12 @@ Excel remains the formula engine, driven by the existing PowerShell scripts.
   hash-set iteration order.
 - Compressed ZIP bytes retain the frozen workbook's zlib-ng baseline. Stock
   zlib can encode identical parts and ZIP metadata with different deflate bytes.
+- The retained-evidence JSON reader refuses a lone surrogate escape such as
+  `"\ud800"`, even in a member the verifier ignores; Python keeps the value.
+  The refusal fails closed and no retained record contains one.
+- On Windows, source discovery reads only `src/*.txt` with a lowercase
+  extension; Python's case-insensitive glob would also read `*.TXT`. The
+  repository's modules all use the lowercase extension.
 
 The shared CSV reader removes exactly one UTF-8 BOM. Workbook integrity checks
 retain duplicate central-directory entries and read only the parts the Python
@@ -49,9 +55,9 @@ value under the same tolerance, error-code map, floor and reporting limits as
 the Python gate. A dump that is not valid UTF-8 is decoded whole before rows
 are checked, so in a dump larger than one read chunk the decoding error can be
 reported ahead of an earlier malformed row, counted from the start of the file.
-Captured dumper output that is not UTF-8 is shown with replacement characters
-where Python ended with a traceback. `powershell.exe` is not looked up in the
-working directory.
+Captured dumper output that is not UTF-8 fails the run with Python's decoding
+message, whatever the exit status, where Python ended with a traceback.
+`powershell.exe` is not looked up in the working directory.
 
 The Excel-save sanitiser, the cache refresh and the presentation pass write
 through the same deterministic archive writer and reproduce the Python tools'

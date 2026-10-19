@@ -40,6 +40,78 @@ fn retained_evidence_passes_without_claiming_native_execution() {
 }
 
 #[test]
+fn integer_results_subtract_exactly_as_python_does() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let temporary = tempfile::tempdir().unwrap();
+    for name in [
+        evidence::COMPARISON,
+        evidence::INSTALLATION,
+        evidence::RUNNERS[0],
+        evidence::RUNNERS[1],
+        evidence::INSTALL_RUNNER,
+        "ozzit.xlsx",
+    ] {
+        let to = temporary.path().join(name);
+        std::fs::create_dir_all(to.parent().unwrap()).unwrap();
+        std::fs::copy(root.join(name), &to).unwrap();
+    }
+    let record = temporary.path().join(evidence::COMPARISON);
+    let original: Value = serde_json::from_slice(&std::fs::read(&record).unwrap()).unwrap();
+    // Above 2**53 two ints differ by one where their f64 values are equal.
+    let big = 9_007_199_254_740_992_u64;
+    for (ozzit, pyxirr, difference, agrees) in [
+        (json!(big), json!(big + 1), json!(0), false),
+        (json!(big), json!(big), json!(0), true),
+        (json!(big), json!(big), json!(0.0), true),
+        (
+            json!(big as f64),
+            json!((big + 2) as f64),
+            json!(0.0),
+            false,
+        ),
+    ] {
+        let mut data = original.clone();
+        let case = data["cases"]
+            .as_array_mut()
+            .unwrap()
+            .iter_mut()
+            .find(|c| c["id"] == "lease-arrears")
+            .unwrap();
+        case["ozzit"] = ozzit;
+        case["pyxirr"] = pyxirr;
+        case["max_abs_diff"] = difference;
+        std::fs::write(&record, serde_json::to_vec(&data).unwrap()).unwrap();
+        let result = evidence::verify(temporary.path(), None, None);
+        if agrees {
+            assert!(result.is_ok(), "{result:?}");
+        } else {
+            assert_eq!(
+                result.unwrap_err(),
+                "comparison difference contradicts its results"
+            );
+        }
+    }
+}
+
+#[test]
+fn help_suffixes_follow_python_argparse() {
+    // Python 3.15: attached text after -h is more short options; = or - is refused.
+    for (arg, code) in [
+        ("-h", 0),
+        ("-hh", 0),
+        ("-hgarbage", 0),
+        ("-hx=y", 0),
+        ("-h=", 2),
+        ("-h-", 2),
+        ("-hh=x", 2),
+        ("-hh-", 2),
+        ("--help=x", 2),
+    ] {
+        assert_eq!(evidence::command(&[arg.into()]).code, code, "{arg}");
+    }
+}
+
+#[test]
 fn sha256_streaming_matches_standard_vectors_and_reports_directories() {
     let temporary = tempfile::tempdir().unwrap();
     let path = temporary.path().join("input");

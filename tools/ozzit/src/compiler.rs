@@ -87,10 +87,10 @@ pub fn compile_sources(src: &Path) -> Result<Vec<Compiled>> {
         .map(|(bare, module, body, comment)| compile_one(bare, module, body, comment, &library))
         .collect()
 }
-pub fn shipped_names(book: &str) -> IndexMap<String, (String, String)> {
+pub fn shipped_names(book: &str) -> Result<IndexMap<String, (String, String)>> {
     captures(NAME_RE, book)
         .into_iter()
-        .map(|m| (m[1].clone(), (m[2].clone(), unescape(&m[3]))))
+        .map(|m| Ok((m[1].clone(), (m[2].clone(), unescape(&m[3])?))))
         .collect()
 }
 pub fn workbook_names(path: &Path) -> Result<BTreeSet<String>> {
@@ -100,6 +100,8 @@ pub fn workbook_names(path: &Path) -> Result<BTreeSet<String>> {
         captures(r#"<definedName\b[^>]*\bname="([^"]+)"[^>]*>"#, &book)
             .into_iter()
             .map(|m| unescape(&m[1]))
+            .collect::<Result<Vec<_>>>()?
+            .into_iter()
             .filter(|s| s.starts_with("oz."))
             .collect(),
     )
@@ -161,7 +163,7 @@ fn undeclared(
     Ok(())
 }
 pub fn apply(book: &str, compiled: &[Compiled]) -> Result<(String, Vec<String>)> {
-    let shipped = shipped_names(book);
+    let shipped = shipped_names(book)?;
     let declared = compiled
         .iter()
         .map(|c| c.name.as_str())
@@ -177,7 +179,10 @@ pub fn apply(book: &str, compiled: &[Compiled]) -> Result<(String, Vec<String>)>
             ));
         };
         let old = captures(r#" comment="([^"]*)""#, attrs);
-        let same_comment = old.first().is_some_and(|m| unescape(&m[1]) == item.comment);
+        let same_comment = match old.first() {
+            Some(m) => unescape(&m[1])? == item.comment,
+            None => false,
+        };
         let same = tight(current) == tight(&item.stored);
         if same && same_comment {
             continue;
@@ -206,7 +211,7 @@ pub fn apply(book: &str, compiled: &[Compiled]) -> Result<(String, Vec<String>)>
     }
     Ok((book, changed))
 }
-pub fn index_fields(attrs: &str, body: &str, bare: &str) -> (String, String) {
+pub fn index_fields(attrs: &str, body: &str, bare: &str) -> Result<(String, String)> {
     let pattern = re(r"FUNCTION:\s*+(?:→\s*+)?(.*?)¶");
     let sig = pattern.captures(body).expect("signature matching");
     let (mut text, mut end) = if let Some(m) = sig {
@@ -227,16 +232,17 @@ pub fn index_fields(attrs: &str, body: &str, bare: &str) -> (String, String) {
     }
     let comment = captures(r#"comment="([^"]*)""#, attrs);
     let fallback = captures(r"DESCRIPTION:\s*→(.*?)¶", body);
-    let blurb = comment.first().map(|m| unescape(&m[1])).unwrap_or_else(|| {
-        fallback
+    let blurb = match comment.first() {
+        Some(m) => unescape(&m[1])?,
+        None => fallback
             .first()
-            .map_or(String::new(), |m| py::strip(&m[1]).into())
-    });
+            .map_or(String::new(), |m| py::strip(&m[1]).into()),
+    };
     let blurb = blurb.replace("_x000a_", " ").replace("_x000D_", " ");
-    (
+    Ok((
         text,
         sub(r"\s{2,}", py::strip(blurb.trim_start_matches('→')), " "),
-    )
+    ))
 }
 pub fn source_modules(src: &Path) -> Result<BTreeMap<String, String>> {
     let mut modules = BTreeMap::new();
@@ -299,10 +305,10 @@ pub fn render_index(
             )
         })
         .collect::<BTreeMap<_, _>>();
-    let names = shipped_names(book).into_iter().collect::<BTreeMap<_, _>>();
+    let names = shipped_names(book)?.into_iter().collect::<BTreeMap<_, _>>();
     let mut after = csv_row(&fields);
     for (name, (attrs, body)) in names {
-        let (sig, desc) = index_fields(&attrs, &body, name.rsplit('.').next().unwrap_or(""));
+        let (sig, desc) = index_fields(&attrs, &body, name.rsplit('.').next().unwrap_or(""))?;
         after.push_str(&csv_row(&[
             name.clone(),
             modules.get(&name).cloned().unwrap_or_default(),

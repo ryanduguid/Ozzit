@@ -81,6 +81,21 @@ fn released_names(baseline: Option<&str>) -> Result<BTreeSet<String>> {
         .collect())
 }
 
+/// The module, signature and description each shipped function should list.
+fn expected_rows(
+    book: &str,
+    modules: &BTreeMap<String, String>,
+) -> Result<BTreeMap<String, [String; 3]>> {
+    let mut expected = BTreeMap::new();
+    for (name, (attrs, body)) in compiler::shipped_names(book)? {
+        let (signature, description) =
+            compiler::index_fields(&attrs, &body, name.rsplit('.').next().unwrap_or(""))?;
+        let module = modules.get(&name).cloned().unwrap_or_default();
+        expected.insert(name, [module, signature, description]);
+    }
+    Ok(expected)
+}
+
 pub fn verify(args: &[String]) -> Output {
     if args.len() > 3 {
         return Output::stderr(
@@ -107,13 +122,10 @@ pub fn verify(args: &[String]) -> Output {
         Ok(modules) => modules,
         Err(e) => return Output::failure(format!("FAIL: cannot read index inputs: {e}")),
     };
-    let mut expected = BTreeMap::new();
-    for (name, (attrs, body)) in compiler::shipped_names(&book) {
-        let (signature, description) =
-            compiler::index_fields(&attrs, &body, name.rsplit('.').next().unwrap_or(""));
-        let module = modules.get(&name).cloned().unwrap_or_default();
-        expected.insert(name, [module, signature, description]);
-    }
+    let expected = match expected_rows(&book, &modules) {
+        Ok(expected) => expected,
+        Err(e) => return Output::failure(format!("FAIL: cannot read index inputs: {e}")),
+    };
     let failures = index_mismatches(&csv, &expected, index);
     let bad = format!("FAIL: {} functions.csv problem(s)", failures.len());
     Output::report(

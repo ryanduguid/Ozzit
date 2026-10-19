@@ -156,12 +156,22 @@ fn values_agree_as_the_python_comparison_does() {
     assert!(cache::agree(&error("#N/A"), &error("-2146826246")));
     assert!(!cache::agree(&error("#N/A"), &value("-2146826246")));
     assert!(!cache::agree(&error("#N/A"), &error("#N/A")));
+    // float() strips ASCII whitespace and Unicode spaces, not U+001C to U+001F.
+    for c in ['\x1c', '\x1d', '\x1e', '\x1f'] {
+        assert!(!cache::agree(&value("100"), &value(&format!("100{c}"))));
+        assert!(!cache::agree(&value(&format!("{c}100")), &value("100")));
+    }
+    assert!(cache::agree(&value("100"), &value("100\x0b")));
+    assert!(cache::agree(&value("100"), &value("\u{a0}100")));
 }
 
 #[test]
 fn captured_output_reads_as_text_mode_does() {
-    assert_eq!(cache::captured_text(b"a\r\nb\rc\n"), "a\nb\nc\n");
-    assert_eq!(cache::captured_text(b"bad \xff byte"), "bad \u{fffd} byte");
+    assert_eq!(cache::captured_text(b"a\r\nb\rc\n").unwrap(), "a\nb\nc\n");
+    assert_eq!(
+        cache::captured_text(b"bad \xff byte").unwrap_err(),
+        "'utf-8' codec can't decode byte 0xff in position 4: invalid start byte"
+    );
 }
 
 #[cfg(windows)]
@@ -201,6 +211,14 @@ fn the_dumper_runner_reports_exit_output_and_timeouts() {
         cache::run_dumper("ozzit-no-such-dumper.exe", &[], Duration::from_secs(5)).unwrap(),
         Dump::NotFound
     ));
+    // A clean exit with output Python cannot decode is not a clean dump.
+    std::fs::write(dir.path().join("bad.bin"), b"\xff").unwrap();
+    let bad = dir.path().join("bad.cmd");
+    std::fs::write(&bad, "@type \"%~dp0bad.bin\"\r\n@exit /b 0\r\n").unwrap();
+    assert_eq!(
+        cache::run_dumper(&bad.display().to_string(), &[], Duration::from_secs(60)).unwrap_err(),
+        "'utf-8' codec can't decode byte 0xff in position 0: invalid start byte"
+    );
 }
 
 #[cfg(unix)]
@@ -238,4 +256,21 @@ fn the_dumper_runner_reports_exit_output_and_timeouts() {
         cache::run_dumper("ozzit-no-such-dumper", &[], Duration::from_secs(5)).unwrap(),
         Dump::NotFound
     ));
+    // A clean exit with output Python cannot decode is not a clean dump.
+    for script in [r"printf '\377'", r"printf '\377' >&2"] {
+        assert_eq!(
+            run_err(script),
+            "'utf-8' codec can't decode byte 0xff in position 0: invalid start byte"
+        );
+    }
+}
+
+#[cfg(unix)]
+fn run_err(script: &str) -> String {
+    cache::run_dumper(
+        "sh",
+        &["-c".into(), script.into()],
+        std::time::Duration::from_secs(60),
+    )
+    .unwrap_err()
 }

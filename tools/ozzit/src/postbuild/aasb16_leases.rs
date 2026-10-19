@@ -322,6 +322,14 @@ fn update_index(path: &Path, definitions: &[Definition]) -> Result<bool> {
     }
     let mut rows = rows?;
     rows.extend(lease_rows(definitions)?);
+    // DictReader reads a missing function field as None, which Python's sort
+    // cannot order among the names, so nothing is written.
+    if csv.rows.iter().any(|r| csv.get(r, "function").is_none()) {
+        return Err(format!(
+            "{} has a row with no function field",
+            display(path)
+        ));
+    }
     write_index(path, &csv.headers, rows)?;
     Ok(true)
 }

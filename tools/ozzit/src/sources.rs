@@ -126,11 +126,13 @@ pub fn verify(args: &[String]) -> Output {
         .into_iter()
         .map(|(name, body)| (format!("oz.{name}"), qualify(&body, "oz", &every)))
         .collect::<IndexMap<_, _>>();
-    let book = match read_parts(Path::new(workbook)).and_then(|p| read_book(&p)) {
-        Ok(book) => book,
+    let shipped = match read_parts(Path::new(workbook))
+        .and_then(|p| read_book(&p))
+        .and_then(|book| compiler::shipped_names(&book))
+    {
+        Ok(shipped) => shipped,
         Err(e) => return Output::failure(format!("FAIL: cannot read {workbook}: {e}")),
     };
-    let shipped = compiler::shipped_names(&book);
     let matched = compare(&parsed, &shipped, &mut failures);
     let bad = format!(
         "FAIL: {} problem(s) comparing {workbook} with {source}/",

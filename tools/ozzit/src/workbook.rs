@@ -271,7 +271,11 @@ fn defined_names(book: &str, failures: &mut Vec<String>) -> Names {
         failures.push("no defined names found".into());
     }
     for m in defined {
-        check_defined_name(&m[1], &unescape(&m[2]), &known, failures);
+        // html.unescape raises where this records the refusal; either way the gate fails.
+        match unescape(&m[2]) {
+            Ok(source) => check_defined_name(&m[1], &source, &known, failures),
+            Err(e) => failures.push(format!("{}: {e}", m[1])),
+        }
     }
     Names {
         defined: names,

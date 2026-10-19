@@ -94,7 +94,7 @@ pub fn cached_values(path: &Path) -> std::result::Result<Cached, CachedError> {
             r"(?s)<si>(.*?)</si>",
             &member_text(&mut zip, "xl/sharedStrings.xml")?,
         ) {
-            shared.push(unescape(&sub(r"<.*?>", &si[1], "")));
+            shared.push(unescape(&sub(r"<.*?>", &si[1], ""))?);
         }
     }
 
@@ -161,11 +161,12 @@ fn sheet_values(
             captures(r"(?s)<t[^>]*>(.*?)</t>", inner)
                 .first()
                 .map(|t| unescape(&t[1]))
+                .transpose()?
         } else {
             let Some(got) = captures(r"(?s)<v>(.*?)</v>", inner).into_iter().next() else {
                 continue;
             };
-            let raw = unescape(&got[1]);
+            let raw = unescape(&got[1])?;
             Some(match kind.as_str() {
                 "s" => shared_string(shared, &raw)?,
                 "b" => if raw == "1" { "True" } else { "False" }.into(),
@@ -422,10 +423,10 @@ pub fn outcome(workbook: &str, dump: Result<Dump>, dump_path: &Path) -> Output {
 
 /// Output captured in text mode: decoded, with `\r\n` and `\r` read as `\n`.
 ///
-/// Python decodes strictly and ends with a traceback on bytes that are not UTF-8;
-/// those bytes become replacement characters here.
-pub fn captured_text(bytes: &[u8]) -> String {
-    py::universal_newlines(&String::from_utf8_lossy(bytes))
+/// Python decodes strictly, so bytes that are not UTF-8 fail the run whatever
+/// the exit status; its `UnicodeDecodeError` is the message.
+pub fn captured_text(bytes: &[u8]) -> Result<String> {
+    Ok(py::universal_newlines(&decode(bytes)?))
 }
 
 #[cfg(windows)]
@@ -495,10 +496,11 @@ pub fn run_process(
     let text = |handle: std::thread::JoinHandle<Vec<u8>>| {
         captured_text(&handle.join().unwrap_or_default())
     };
+    let (stdout, stderr) = (text(stdout), text(stderr));
     Ok(Dump::Exited {
         code: exit_code(status),
-        stdout: text(stdout),
-        stderr: text(stderr),
+        stdout: stdout?,
+        stderr: stderr?,
     })
 }
 

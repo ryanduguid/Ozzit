@@ -59,7 +59,7 @@ pub fn cover_label(workbook: &Path) -> Result<(String, BigInt)> {
             .into_iter()
             .map(|m| m[1].clone())
             .collect::<String>(),
-    );
+    )?;
     let value = py::strip(&value);
     let label = captures(r"^Version (.+?)\s+-\s+(\d+) functions\s+-\s+.+$", value);
     let label = label

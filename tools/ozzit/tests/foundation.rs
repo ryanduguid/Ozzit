@@ -223,8 +223,8 @@ fn a_single_recompiled_definition_preserves_every_other_part_and_is_idempotent()
             assert_eq!(after.get(name), Some(bytes), "{name}");
         }
     }
-    let before_names = compiler::shipped_names(&archive::read_book(&before).unwrap());
-    let after_names = compiler::shipped_names(&archive::read_book(&after).unwrap());
+    let before_names = compiler::shipped_names(&archive::read_book(&before).unwrap()).unwrap();
+    let after_names = compiler::shipped_names(&archive::read_book(&after).unwrap()).unwrap();
     for (name, content) in &before_names {
         if name != "oz.IsInListλ" {
             assert_eq!(after_names.get(name), Some(content), "{name}");
@@ -450,15 +450,53 @@ fn repeated_consumed_headers_and_truncated_rows_cannot_pass() {
     );
 }
 #[test]
+fn csv_reads_and_writes_as_dictreader_and_dictwriter_do() {
+    let strings = |rows: &[Vec<String>]| rows.to_vec();
+    // DictReader takes a blank first record as an empty header, then skips blank records.
+    for text in ["\nfunction,module\nA,B\n", "\r\nfunction,module\r\nA,B\r\n"] {
+        let csv = Csv::parse(text).unwrap();
+        assert!(csv.headers.is_empty());
+        assert_eq!(csv.rows.len(), 2);
+        assert_eq!(csv.get(&csv.rows[1], "function"), None);
+    }
+    let csv = Csv::parse("function,module\n\nA,B\n\n").unwrap();
+    assert_eq!(csv.headers, ["function", "module"]);
+    assert_eq!(strings(&csv.rows), [vec!["A".to_string(), "B".into()]]);
+    let csv = Csv::parse("\"\"\nA\n").unwrap();
+    assert_eq!(csv.headers, [""]);
+    assert!(Csv::parse("").unwrap().headers.is_empty());
+    // A carriage return is quoted, as the csv writer does.
+    assert_eq!(
+        csv_row(&["tax\rnote".into(), "x".into()]),
+        "\"tax\rnote\",x\n"
+    );
+}
+#[test]
 fn html_entities_follow_the_python_reader() {
     assert_eq!(
-        unescape("&NegativeThinSpace;&caps;&nbsp;"),
+        unescape("&NegativeThinSpace;&caps;&nbsp;").unwrap(),
         "\u{200b}∩\u{fe00}\u{a0}"
     );
     assert_eq!(
-        unescape("&#128; &#0; &NotEqualTilde; &notinX; &unknown;"),
+        unescape("&#128; &#0; &NotEqualTilde; &notinX; &unknown;").unwrap(),
         "€ � ≂̸ ¬inX; &unknown;"
     );
+    // int() reads a decimal reference, leading zeros included, so more than
+    // 4,300 digits is refused; hexadecimal has no such limit (Python 3.15).
+    assert_eq!(
+        unescape(&format!("&#{}49;", "0".repeat(4301))).unwrap_err(),
+        "Exceeds the limit (4300 digits) for integer string conversion: value has 4303 digits; \
+         use sys.set_int_max_str_digits() to increase the limit"
+    );
+    assert_eq!(
+        unescape(&format!("&#{}49;", "0".repeat(4298))).unwrap(),
+        "1"
+    );
+    assert_eq!(
+        unescape(&format!("&#x{}31;", "0".repeat(5000))).unwrap(),
+        "1"
+    );
+    assert_eq!(unescape("&#99999999999;").unwrap(), "\u{fffd}");
 }
 #[test]
 fn failed_atomic_replacement_preserves_destinations_and_unrelated_temp_files() {
