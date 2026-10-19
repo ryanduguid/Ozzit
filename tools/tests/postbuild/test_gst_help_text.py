@@ -60,10 +60,10 @@ class GstHelpTextTests(PassContractMixin, unittest.TestCase):
     def test_documented_run_order_syncs_afe_after_text_passes(self):
         instructions = POSTBUILD_README.read_text(encoding="utf-8")
         gst = instructions.index(
-            "python tools/postbuild/gst_help_text.py ozzit.xlsx src"
+            "tools/ozzit/target/release/ozzit gst_help_text ozzit.xlsx src"
         )
-        afe = instructions.index("python tools/sync_afe_store.py ozzit.xlsx src")
-        sanitise = instructions.index("python tools/sanitise_workbook.py ozzit.xlsx")
+        afe = instructions.index("tools/ozzit/target/release/ozzit sync_afe_store ozzit.xlsx src")
+        sanitise = instructions.index("tools/ozzit/target/release/ozzit sanitise_workbook ozzit.xlsx")
         self.assertLess(gst, afe)
         self.assertLess(afe, sanitise)
 

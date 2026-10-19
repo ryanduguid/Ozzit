@@ -33,17 +33,23 @@ EXPECTED_VERIFY_COMMANDS = (
     "python -m ruff check .",
     "python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-mypy.txt",
     "python -m mypy --config-file mypy.ini",
-    "python tools/verify_workbook.py ozzit.xlsx",
-    "python tools/verify_sources.py ozzit.xlsx src",
-    "python tools/verify_signatures.py src",
-    "python tools/verify_previous_names.py functions.csv",
-    "python tools/verify_index.py ozzit.xlsx src functions.csv",
-    "python tools/verify_cover.py ozzit.xlsx functions.csv CHANGELOG.md",
-    "python tools/verify_afe.py ozzit.xlsx src",
-    "python tools/verify_help_spills.py ozzit.xlsx",
-    "python tools/verify_native_evidence.py",
     "python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-citation.txt",
     "python -m unittest discover -s tools/tests -v",
+    "rustup toolchain install",
+    "cargo fmt --manifest-path tools/ozzit/Cargo.toml --check",
+    "cargo clippy --locked --manifest-path tools/ozzit/Cargo.toml --all-targets -- -D warnings",
+    "cargo test --locked --manifest-path tools/ozzit/Cargo.toml",
+    "cargo build --locked --release --manifest-path tools/ozzit/Cargo.toml",
+    "tools/ozzit/target/release/ozzit verify_workbook ozzit.xlsx",
+    "tools/ozzit/target/release/ozzit verify_sources ozzit.xlsx src",
+    "tools/ozzit/target/release/ozzit verify_signatures src",
+    "tools/ozzit/target/release/ozzit verify_previous_names functions.csv",
+    "tools/ozzit/target/release/ozzit verify_index ozzit.xlsx src functions.csv",
+    "tools/ozzit/target/release/ozzit verify_cover ozzit.xlsx functions.csv CHANGELOG.md",
+    "tools/ozzit/target/release/ozzit verify_afe ozzit.xlsx src",
+    "tools/ozzit/target/release/ozzit verify_help_spills ozzit.xlsx",
+    "tools/ozzit/target/release/ozzit verify_native_evidence",
+    "python .github/ci/compare_gates.py",
 )
 
 
@@ -167,8 +173,8 @@ class RepositoryPolicyTests(unittest.TestCase):
         commands = workflow_commands(read_utf8(VERIFY_WORKFLOW))
         self.assertEqual(commands, EXPECTED_VERIFY_COMMANDS)
         mutated = read_utf8(VERIFY_WORKFLOW).replace(
-            "python tools/verify_afe.py ozzit.xlsx src",
-            "python tools/verify_afe.py ozzit.xlsx changed-src",
+            "tools/ozzit/target/release/ozzit verify_afe ozzit.xlsx src",
+            "tools/ozzit/target/release/ozzit verify_afe ozzit.xlsx changed-src",
             1,
         )
         self.assertNotEqual(commands, workflow_commands(mutated))
@@ -190,7 +196,7 @@ class RepositoryPolicyTests(unittest.TestCase):
 
     def test_workflow_command_parser_detects_non_python_and_multiline_gates(self):
         workflow = read_utf8(VERIFY_WORKFLOW)
-        marker = "        run: python -m unittest discover -s tools/tests -v"
+        marker = "        run: python .github/ci/compare_gates.py"
         mutated = workflow.replace(
             marker,
             marker
@@ -218,8 +224,8 @@ class RepositoryPolicyTests(unittest.TestCase):
         self.assertIn("SHA256SUMS", releasing)
         self.assertIn("git archive", releasing.lower())
         self.assertIn("exactly 3 files", releasing)
-        self.assertIn("python tools/prepare_release_bundle.py create", releasing)
-        self.assertIn("python tools/prepare_release_bundle.py verify", releasing)
+        self.assertIn("tools/ozzit/target/release/ozzit prepare_release_bundle create", releasing)
+        self.assertIn("tools/ozzit/target/release/ozzit prepare_release_bundle verify", releasing)
         self.assertNotIn("Ozzit-<version>-source.zip", releasing)
         self.assertNotIn("Ozzit-<version>-verification.txt", releasing)
 
@@ -227,8 +233,8 @@ class RepositoryPolicyTests(unittest.TestCase):
         workflow = read_utf8(VERIFY_WORKFLOW)
         self.assertIn("persist-credentials: false", workflow)
         self.assertIn("fetch-depth: 0", workflow)
-        self.assertIn("python tools/verify_workbook.py ozzit.xlsx", workflow)
-        self.assertIn("python tools/verify_sources.py ozzit.xlsx src", workflow)
+        self.assertIn("tools/ozzit/target/release/ozzit verify_workbook ozzit.xlsx", workflow)
+        self.assertIn("tools/ozzit/target/release/ozzit verify_sources ozzit.xlsx src", workflow)
         self.assertIn("python -m unittest discover -s tools/tests -v", workflow)
         self.assertEqual(read_utf8(DEPENDABOT).replace("\r\n", "\n"), DEPENDABOT_CANONICAL)
 

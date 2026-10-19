@@ -21,30 +21,39 @@ change requires recalculation or cache validation.
 
 ## Verification
 
-Run the CI sequence exactly. The first 4 commands are the `lint` job; the rest
-run on Python 3.14 and 3.15:
+Run the CI sequence exactly. The first 4 commands are the `lint` job; the next 2
+run on Python 3.14 and 3.15; the rest are the `rust` job, which builds the native
+tools in `tools/ozzit` once and runs the gates with them. Its last command reruns
+each gate with its Python reference tool, on the real inputs and on broken copies,
+and fails if exit code or output differ:
 
 ```powershell
 python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-ruff.txt
 python -m ruff check .
 python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-mypy.txt
 python -m mypy --config-file mypy.ini
-python tools/verify_workbook.py ozzit.xlsx
-python tools/verify_sources.py ozzit.xlsx src
-python tools/verify_signatures.py src
-python tools/verify_previous_names.py functions.csv
-python tools/verify_index.py ozzit.xlsx src functions.csv
-python tools/verify_cover.py ozzit.xlsx functions.csv CHANGELOG.md
-python tools/verify_afe.py ozzit.xlsx src
-python tools/verify_help_spills.py ozzit.xlsx
-python tools/verify_native_evidence.py
 python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-citation.txt
 python -m unittest discover -s tools/tests -v
+rustup toolchain install
+cargo fmt --manifest-path tools/ozzit/Cargo.toml --check
+cargo clippy --locked --manifest-path tools/ozzit/Cargo.toml --all-targets -- -D warnings
+cargo test --locked --manifest-path tools/ozzit/Cargo.toml
+cargo build --locked --release --manifest-path tools/ozzit/Cargo.toml
+tools/ozzit/target/release/ozzit verify_workbook ozzit.xlsx
+tools/ozzit/target/release/ozzit verify_sources ozzit.xlsx src
+tools/ozzit/target/release/ozzit verify_signatures src
+tools/ozzit/target/release/ozzit verify_previous_names functions.csv
+tools/ozzit/target/release/ozzit verify_index ozzit.xlsx src functions.csv
+tools/ozzit/target/release/ozzit verify_cover ozzit.xlsx functions.csv CHANGELOG.md
+tools/ozzit/target/release/ozzit verify_afe ozzit.xlsx src
+tools/ozzit/target/release/ozzit verify_help_spills ozzit.xlsx
+tools/ozzit/target/release/ozzit verify_native_evidence
+python .github/ci/compare_gates.py
 ```
 
 For native cache evidence, first ensure no user Excel process is running; never
 close or attach to one. Then use `tools/excel_selftest.ps1` and
-`tools/verify_cache.py` as specified in `RELEASING.md`, recording the required
+`ozzit verify_cache` as specified in `RELEASING.md`, recording the required
 Excel and hash evidence.
 
 ## Releases

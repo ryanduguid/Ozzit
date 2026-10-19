@@ -1,0 +1,177 @@
+{
+ "swaps": [
+  [
+   "IsBetweenEλ and IsBetweenUλ default Inclusive to TRUE",
+   [
+    "\"→\", \"¶\")), _xlpm.Help?, OR(_xlfn.ISOMITTED(_xlpm.Value), _xlfn.ISOMITTED(_xlpm.Low), _xlfn.ISOMITTED(_xlpm.Hi)),",
+    "\"→\", \"¶\")), _xlpm.Inclusive, IF(ISLOGICAL(_xlpm.Inclusive), _xlpm.Inclusive, TRUE), _xlpm.Help?, OR(_xlfn.ISOMITTED(_xlpm.Value), _xlfn.ISOMITTED(_xlpm.Low), _xlfn.ISOMITTED(_xlpm.Hi)),"
+   ],
+   [
+    "                        ),\n    //  Check inputs - Omitted required arguments\n        Help?,          OR( ISOMITTED( Value),\n                            ISOMITTED( Low),\n                            ISOMITTED( Hi)\n                        ),\n    //  Procedure\n        Result,         IF( Inclusive, \n",
+    "                        ),\n    //  Check inputs - Set optional arguments defaults\n        Inclusive,      IF( ISLOGICAL( Inclusive), Inclusive, TRUE),\n    //  Check inputs - Omitted required arguments\n        Help?,          OR( ISOMITTED( Value),\n                            ISOMITTED( Low),\n                            ISOMITTED( Hi)\n                        ),\n    //  Procedure\n        Result,         IF( Inclusive, \n"
+   ],
+   2
+  ],
+  [
+   "Movementλ's example calls it with two arguments",
+   [
+    "=oz.Movementλ(,{100,110,130,100}, 4)",
+    "=oz.Movementλ(,{100,110,130,100})"
+   ],
+   [
+    "=oz.Movementλ(,{100,110,130,100}, 4)",
+    "=oz.Movementλ(,{100,110,130,100})"
+   ],
+   1
+  ],
+  [
+   "Reversalλ's example prints the row the function returns",
+   [
+    "\"-100,-110,-130 →=oz.Reversalλ( , {100,110,130})\"",
+    "\"0,-100,-110    →=oz.Reversalλ( , {100,110,130})\""
+   ],
+   [
+    "\"-100,-110,-130 →=oz.Reversalλ( , {100,110,130})\"",
+    "\"0,-100,-110    →=oz.Reversalλ( , {100,110,130})\""
+   ],
+   1
+  ],
+  [
+   "AboutDatesλ drops the DIAGNOSTICS block for functions it never shipped",
+   [
+    "starting 1 July¶\" &amp; \"→¶\" &amp; \"DIAGNOSTICS →These functions diagnose problems in their associate function's arguments.¶\" &amp; \"→Should a function not work, it may be because there is a problem with the arguments.¶\" &amp; \"→Argument problems can include text where numbers should be, invalid dates, etc.¶\" &amp; \"→To see if you have argument problems, insert 'DV' between 'λ' and '('. ¶\" &amp; \"→Here is an example: CountDOWλDV( Start, End, 1). Hit enter to run diagnostics.¶\" &amp; \"→When finished, remove 'DV' to return the function to normal operation¶\" &amp; \"CountDOWλDV →¶\" &amp; \"IsBetweenλDV →¶\" &amp; \"IsOccurrenceDateλDV →¶\" &amp; \"OverLapDaysλDV →¶\" &amp; \"PeriodsλDV →¶\" &amp; \"PeriodLabelλDV →¶\" &amp; \"ScheduleRatesλDV →¶\" &amp; \"ScheduleRatesByItemsλDV→¶\" &amp; \"ScheduleValuesλDV →¶\" &amp; \"ScheduleValuesByItemsλDV→¶\" &amp; \"Timelineλ →\"",
+    "starting 1 July¶\" &amp; \"→\""
+   ],
+   [
+    "starting 1 July¶\" &\n        \"→¶\" &\n        \"DIAGNOSTICS            →These functions diagnose problems in their associate function's arguments.¶\" & \n                               \"→Should a function not work, it may be because there is a problem with the arguments.¶\" & \n                               \"→Argument problems can include text where numbers should be, invalid dates, etc.¶\" & \n                               \"→To see if you have argument problems, insert 'DV' between 'λ' and '('. ¶\" & \n                               \"→Here is an example: CountDOWλDV( Start, End, 1). Hit enter to run diagnostics.¶\" & \n                               \"→When finished, remove 'DV' to return the function to normal operation¶\" & \n        \"CountDOWλDV            →¶\" &\n        \"IsBetweenλDV           →¶\" &\n        \"IsOccurrenceDateλDV    →¶\" &\n        \"OverLapDaysλDV         →¶\" &\n        \"PeriodsλDV             →¶\" &\n        \"PeriodLabelλDV         →¶\" &\n        \"ScheduleRatesλDV       →¶\" &\n        \"ScheduleRatesByItemsλDV→¶\" &\n        \"ScheduleValuesλDV      →¶\" &\n        \"ScheduleValuesByItemsλDV→¶\" &\n        \"Timelineλ              →\"",
+    "starting 1 July¶\" &\n        \"→\""
+   ],
+   1
+  ],
+  [
+   "AboutRatiosλ names DSIλ as the library declares it",
+   [
+    "\"DSIRatioλ                  →Days Sales in Inventory Ratio",
+    "\"DSIλ                       →Days Sales in Inventory Ratio"
+   ],
+   [
+    "\"DSIRatioλ                  →Days Sales in Inventory Ratio",
+    "\"DSIλ                       →Days Sales in Inventory Ratio"
+   ],
+   1
+  ],
+  [
+   "AboutRatiosλ names DPRλ as the library declares it",
+   [
+    "\"DividendPayoutRatioλ       →Dividend Payout Ratio is",
+    "\"DPRλ                       →Dividend Payout Ratio is"
+   ],
+   [
+    "\"DividendPayoutRatioλ       →Dividend Payout Ratio is",
+    "\"DPRλ                       →Dividend Payout Ratio is"
+   ],
+   1
+  ],
+  [
+   "PeriodDiffλ's example prints the 2 its formula returns",
+   [
+    "\"1              →=oz.PeriodDiffλ(\"\"2026-01-01\"\"",
+    "\"2              →=oz.PeriodDiffλ(\"\"2026-01-01\"\""
+   ],
+   [
+    "\"1              →=oz.PeriodDiffλ(\"\"2026-01-01\"\"",
+    "\"2              →=oz.PeriodDiffλ(\"\"2026-01-01\"\""
+   ],
+   1
+  ],
+  [
+   "CorkscrewλDV drops the undocumented Diagnostics parameter",
+   [
+    "_xlop.Flow4,_xlop.Diagnostics, _xlfn.LET(_xlpm.ErrorsInArgs,",
+    "_xlop.Flow4, _xlfn.LET(_xlpm.ErrorsInArgs,"
+   ],
+   [
+    "    [Flow4],\n    [Diagnostics],\n\n    LET(\n    //  Check inputs - Errors in argument values\n        ErrorsInArgs,   VSTACK( \n                            OR( ISERROR( Opening)),",
+    "    [Flow4],\n\n    LET(\n    //  Check inputs - Errors in argument values\n        ErrorsInArgs,   VSTACK( \n                            OR( ISERROR( Opening)),"
+   ],
+   1
+  ],
+  [
+   "CorkscrewλDV shows its messages the way AmortiseλDV and DepreciateλDV do",
+   [
+    "_xlpm.Errors2Show, _xlfn.VSTACK(_xlpm.Diagnostics * _xlpm.ErrorsInArgs, _xlpm.Diagnostics * _xlpm.DVErrors), _xlpm.ErrMsgs, {\"Opening contains errors",
+    "_xlpm.Errors2Show, _xlfn.VSTACK(_xlpm.ErrorsInArgs, _xlpm.DVErrors), _xlpm.ErrMsgs, {\"Opening contains errors"
+   ],
+   [
+    "        Errors2Show,    VSTACK( Diagnostics * ErrorsInArgs, Diagnostics * DVErrors), \n        ErrMsgs,        {\"Opening contains errors",
+    "        Errors2Show,    VSTACK( ErrorsInArgs, DVErrors), \n        ErrMsgs,        {\"Opening contains errors"
+   ],
+   1
+  ],
+  [
+   "AboutFinancialλ stops listing Book Value among SumDepreciateλ's totals",
+   [
+    "\"SumDepreciateλ     →Create row totals for CAPEX, Depreciation, Book Value, Salvage Value, and Disposal costs in Depreciateλ results¶\"",
+    "\"SumDepreciateλ     →Create row totals for CAPEX, Depreciation, Salvage Value, and Disposal costs in Depreciateλ results¶\""
+   ],
+   [
+    "\"SumDepreciateλ     →Create row totals for CAPEX, Depreciation, Book Value, Salvage Value, and Disposal costs in Depreciateλ results¶\"",
+    "\"SumDepreciateλ     →Create row totals for CAPEX, Depreciation, Salvage Value, and Disposal costs in Depreciateλ results¶\""
+   ],
+   1
+  ]
+ ],
+ "cell_swaps": [
+  [
+   "oz.Reversalλ's cached example row",
+   "<v>-100,-110,-130</v>",
+   "<v>0,-100,-110</v>"
+  ],
+  [
+   "oz.Movementλ's cached example formula",
+   "<v>=oz.Movementλ(,{100,110,130,100}, 4)</v>",
+   "<v>=oz.Movementλ(,{100,110,130,100})</v>"
+  ],
+  [
+   "oz.FinancialRatios A61 uses retained earnings and net income",
+   "oz.RetentionRatioλ( 41.981, 22.112)</f>",
+   "oz.RetentionRatioλ( 19.869, 41.981)</f>"
+  ]
+ ],
+ "string_swaps": [
+  [
+   "oz.FinancialRatios D11 names AboutRatiosλ",
+   "<si><t>Aboutλ</t></si>",
+   "<si><t>AboutRatiosλ</t></si>"
+  ],
+  [
+   "oz.FinancialRatios D36 names DSIλ",
+   "<si><t>DSIRatioλ</t></si>",
+   "<si><t>DSIλ</t></si>"
+  ],
+  [
+   "oz.FinancialRatios D58 names DPRλ",
+   "<si><t>DividendPayoutRatioλ</t></si>",
+   "<si><t>DPRλ</t></si>"
+  ],
+  [
+   "TOC D39 and oz.SumDepreciateλ A2 drop Book Value",
+   "<si><t>Create row totals for CAPEX, Depreciation, Book Value, Salvage Value, and Disposal costs in Depreciateλ results</t></si>",
+   "<si><t>Create row totals for CAPEX, Depreciation, Salvage Value, and Disposal costs in Depreciateλ results</t></si>"
+  ],
+  [
+   "oz.IsOccurrenceDateλ K4 drops the Diagnostics argument",
+   "<si><t>IsOccurrenceDateλ(Dates, FirstOccurrence, [LastOccurrence], [Repeats], [Diagnostics])</t></si>",
+   "<si><t>IsOccurrenceDateλ(Dates, FirstOccurrence, [LastOccurrence], [Repeats])</t></si>"
+  ]
+ ],
+ "BOOK": "xl/workbook.xml",
+ "DIAGNOSTICS_LEAD": "starting 1 July¶\" ",
+ "SRC_DIAGNOSTICS": "\"→¶\" &\n        \"DIAGNOSTICS            →These functions diagnose problems in their associate function's arguments.¶\" & \n                               \"→Should a function not work, it may be because there is a problem with the arguments.¶\" & \n                               \"→Argument problems can include text where numbers should be, invalid dates, etc.¶\" & \n                               \"→To see if you have argument problems, insert 'DV' between 'λ' and '('. ¶\" & \n                               \"→Here is an example: CountDOWλDV( Start, End, 1). Hit enter to run diagnostics.¶\" & \n                               \"→When finished, remove 'DV' to return the function to normal operation¶\" & \n        \"CountDOWλDV            →¶\" &\n        \"IsBetweenλDV           →¶\" &\n        \"IsOccurrenceDateλDV    →¶\" &\n        \"OverLapDaysλDV         →¶\" &\n        \"PeriodsλDV             →¶\" &\n        \"PeriodLabelλDV         →¶\" &\n        \"ScheduleRatesλDV       →¶\" &\n        \"ScheduleRatesByItemsλDV→¶\" &\n        \"ScheduleValuesλDV      →¶\" &\n        \"ScheduleValuesByItemsλDV→¶\" &\n        \"Timelineλ              →\"",
+ "SRC_INCLUSIVE_NEW": "                        ),\n    //  Check inputs - Set optional arguments defaults\n        Inclusive,      IF( ISLOGICAL( Inclusive), Inclusive, TRUE),\n    //  Check inputs - Omitted required arguments\n        Help?,          OR( ISOMITTED( Value),\n                            ISOMITTED( Low),\n                            ISOMITTED( Hi)\n                        ),\n    //  Procedure\n        Result,         IF( Inclusive, \n",
+ "SRC_INCLUSIVE_OLD": "                        ),\n    //  Check inputs - Omitted required arguments\n        Help?,          OR( ISOMITTED( Value),\n                            ISOMITTED( Low),\n                            ISOMITTED( Hi)\n                        ),\n    //  Procedure\n        Result,         IF( Inclusive, \n",
+ "SRC_INCLUSIVE_TAIL": "    //  Check inputs - Omitted required arguments\n        Help?,          OR( ISOMITTED( Value),\n                            ISOMITTED( Low),\n                            ISOMITTED( Hi)\n                        ),\n    //  Procedure\n        Result,         IF( Inclusive, \n",
+ "WORKBOOK_DIAGNOSTICS": "&amp; \"→¶\" &amp; \"DIAGNOSTICS →These functions diagnose problems in their associate function's arguments.¶\" &amp; \"→Should a function not work, it may be because there is a problem with the arguments.¶\" &amp; \"→Argument problems can include text where numbers should be, invalid dates, etc.¶\" &amp; \"→To see if you have argument problems, insert 'DV' between 'λ' and '('. ¶\" &amp; \"→Here is an example: CountDOWλDV( Start, End, 1). Hit enter to run diagnostics.¶\" &amp; \"→When finished, remove 'DV' to return the function to normal operation¶\" &amp; \"CountDOWλDV →¶\" &amp; \"IsBetweenλDV →¶\" &amp; \"IsOccurrenceDateλDV →¶\" &amp; \"OverLapDaysλDV →¶\" &amp; \"PeriodsλDV →¶\" &amp; \"PeriodLabelλDV →¶\" &amp; \"ScheduleRatesλDV →¶\" &amp; \"ScheduleRatesByItemsλDV→¶\" &amp; \"ScheduleValuesλDV →¶\" &amp; \"ScheduleValuesByItemsλDV→¶\" &amp; \"Timelineλ →\"",
+ "WORKBOOK_INCLUSIVE_NEW": "\"→\", \"¶\")), _xlpm.Inclusive, IF(ISLOGICAL(_xlpm.Inclusive), _xlpm.Inclusive, TRUE), _xlpm.Help?, OR(_xlfn.ISOMITTED(_xlpm.Value), _xlfn.ISOMITTED(_xlpm.Low), _xlfn.ISOMITTED(_xlpm.Hi)),",
+ "WORKBOOK_INCLUSIVE_OLD": "\"→\", \"¶\")), _xlpm.Help?, OR(_xlfn.ISOMITTED(_xlpm.Value), _xlfn.ISOMITTED(_xlpm.Low), _xlfn.ISOMITTED(_xlpm.Hi)),"
+}
