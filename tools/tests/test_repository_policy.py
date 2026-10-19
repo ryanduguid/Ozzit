@@ -49,6 +49,7 @@ EXPECTED_VERIFY_COMMANDS = (
     "tools/ozzit/target/release/ozzit verify_afe ozzit.xlsx src",
     "tools/ozzit/target/release/ozzit verify_help_spills ozzit.xlsx",
     "tools/ozzit/target/release/ozzit verify_native_evidence",
+    "python .github/ci/compare_gates.py",
 )
 
 
@@ -195,7 +196,7 @@ class RepositoryPolicyTests(unittest.TestCase):
 
     def test_workflow_command_parser_detects_non_python_and_multiline_gates(self):
         workflow = read_utf8(VERIFY_WORKFLOW)
-        marker = "        run: tools/ozzit/target/release/ozzit verify_native_evidence"
+        marker = "        run: python .github/ci/compare_gates.py"
         mutated = workflow.replace(
             marker,
             marker
