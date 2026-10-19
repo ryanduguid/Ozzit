@@ -24,7 +24,8 @@ change requires recalculation or cache validation.
 Run the CI sequence exactly. The first 4 commands are the `lint` job; the next 2
 run on Python 3.14 and 3.15; the rest are the `rust` job, which builds the native
 tools in `tools/ozzit` once and runs the gates with them. Its last command reruns
-each gate with its Python reference tool and fails if exit code or output differ:
+each gate with its Python reference tool, on the real inputs and on broken copies,
+and fails if exit code or output differ:
 
 ```powershell
 python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-ruff.txt

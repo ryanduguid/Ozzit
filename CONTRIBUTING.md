@@ -16,7 +16,8 @@ Run the CI sequence exactly before submitting a change. The first 4 commands
 are the `lint` job; the next 2 run on Python 3.14 and 3.15; the rest are the
 `rust` job, which builds the native tools in `tools/ozzit` once and runs the
 gates with them. Its last command reruns each gate with its Python reference
-tool and fails if exit code or output differ. Install the git
+tool, on the real inputs and on broken copies, and fails if exit code or output
+differ. Install the git
 hooks once with `python -m pip install pre-commit && pre-commit install`; they
 run the pinned ruff check on staged files.
 
