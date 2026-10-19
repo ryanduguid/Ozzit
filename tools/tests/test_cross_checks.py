@@ -16,9 +16,10 @@ Division 7A calculator compute, with inputs of our own. Neither site's terms wer
 found, so nothing is taken from them; their results are not evidence here until a
 person enters the same inputs by hand and records the outcome.
 
-tests/fixtures/cross-checks-cases.json is this module's CASES, the input
+tools/tests/fixtures/cross-checks-cases.json is this module's CASES, the input
 tools/excel_eval_formulas.ps1 reads. cross-checks-results.json is what that native run
-returned against the committed workbook. Regenerate the cases with
+returned against the committed workbook, retained by
+tools/excel_eval_formulas_verified.ps1. Regenerate the cases with
 `python tools/tests/test_cross_checks.py --write`, then rerun the native evaluation.
 """
 
@@ -286,6 +287,14 @@ class CrossCheckTests(unittest.TestCase):
         self.assertEqual(
             results["workbook_sha256"], hashlib.sha256((ROOT / "ozzit.xlsx").read_bytes()).hexdigest()
         )
+        # Retained by tools/excel_eval_formulas_verified.ps1, which records what it ran.
+        for field, path in {
+            "cases_sha256": CASES_PATH,
+            "helper_sha256": ROOT / "tools" / "excel_eval_formulas.ps1",
+            "evidence_helper_sha256": ROOT / "tools" / "excel_eval_formulas_verified.ps1",
+        }.items():
+            self.assertEqual(results[field], hashlib.sha256(path.read_bytes()).hexdigest(), field)
+        self.assertRegex(results["excel"], r"^\d+\.\d+ build \d+$")
         self.assertEqual(sorted(results["results"]), sorted(case["id"] for case in CASES))
         for case in CASES:
             got = results["results"][case["id"]]
