@@ -25,7 +25,6 @@ value moves and verify_cache.py is unaffected.
 
 from __future__ import annotations
 
-import csv
 import sys
 import zipfile
 from pathlib import Path
@@ -38,6 +37,7 @@ from compile_sources import (  # noqa: E402
     update_index,
 )
 from sanitise_workbook import read_text, write_deterministic, write_text  # noqa: E402
+from workbook import index_state as shared_index_state  # noqa: E402
 from workbook import insert_about_rows, read_book, read_parts, source_state  # noqa: E402
 from workbook import workbook_state as book_state  # noqa: E402
 
@@ -349,20 +349,10 @@ def index_state(index: Path | None) -> str | None:
     applied-or-absent check has to read. Left out, an index missing one of the four rows
     was reported as already applied and the missing row was never written.
     """
+    # Unlike the later passes, a missing index here is "no index", not an error.
     if index is None or not index.is_file():
         return None
-    # Build tool; the path is the repository's own file or the maintainer's argument.
-    with index.open(encoding="utf-8-sig", newline="") as handle:  # NOSONAR
-        listed = {row.get("function", "") for row in csv.DictReader(handle)}
-    present = sum(1 for name in QUALIFIED if name in listed)
-    if present == 0:
-        return "absent"
-    if present == len(QUALIFIED):
-        return "applied"
-    raise ValueError(
-        f"{index.name} holds {present} of {len(QUALIFIED)} helper rows; "
-        "it is neither state this pass recognises"
-    )
+    return shared_index_state(index, QUALIFIED, "helper")
 
 
 def add_to_src(module: str, text: str) -> str:
