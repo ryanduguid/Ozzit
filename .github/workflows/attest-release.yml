@@ -22,7 +22,7 @@ permissions:
 jobs:
   checks:
     name: require the verify gates for the tagged commit
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
       contents: read
@@ -54,7 +54,7 @@ jobs:
   attest:
     needs: checks
     name: attest the tagged workbook and add the bundle to the draft
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
       attestations: write # Store the attestation for gh attestation verify.
