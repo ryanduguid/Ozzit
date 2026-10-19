@@ -2,8 +2,9 @@
 
 ## v3.5.0, 19 October 2026, ATO benchmark ratios, a dated rate lookup and Apache-2.0
 
-Cut on 19 October 2026 from the changes on `main` since v3.4.2. It is not yet tagged
-or published; until it is, v3.4.2 behaves as it did, including the defects fixed here.
+Cut on 19 October 2026 from the changes on `main` since v3.4.2, and published the same
+day from the signed tag `v3.5.0`. v3.4.2 still behaves as it did, including the defects
+fixed here.
 
 **Licence:** v3.5.0 is the first release under the Apache License 2.0, with a
 `NOTICE` file; v3.4.2 and earlier releases stay under MIT. See
@@ -110,7 +111,7 @@ the same way. Omitted, every schedule is unchanged.
 
 #### Licence changed to Apache-2.0
 
-From the next release, Ozzit is licensed under the Apache License 2.0 instead of MIT.
+From v3.5.0, Ozzit is licensed under the Apache License 2.0 instead of MIT.
 Anyone who redistributes the workbook or a derivative must keep the attribution in
 `NOTICE`. v3.4.2 and earlier releases stay under MIT. The licence text moves from
 `LICENCE` to `LICENSE`, the file name licence checkers look for.
