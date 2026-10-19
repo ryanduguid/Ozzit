@@ -5,7 +5,16 @@
 Cut on 19 October 2026 from the changes on `main` since v3.4.2. It is not yet tagged
 or published; until it is, v3.4.2 behaves as it did, including the defects fixed here.
 
-### ATO benchmark ratios and a dated rate lookup
+**Licence:** v3.5.0 is the first release under the Apache License 2.0, with a
+`NOTICE` file; v3.4.2 and earlier releases stay under MIT. See
+[Licence changed to Apache-2.0](#licence-changed-to-apache-20) below.
+
+**New templates:** `templates/practice-calculators.xlsx` and
+`templates/retention-reconciliation.xlsx` join `templates/13-week-cash-flow-forecast.xlsx`.
+
+### Added
+
+#### ATO benchmark ratios and a dated rate lookup
 
 Six functions take the library from 137 to 143. `oz.ATOTurnoverλ`,
 `oz.ATOBenchmarkRatioλ`, `oz.ATOTotalExpensesRatioλ`, `oz.ATOCostOfSalesRatioλ` and
@@ -33,56 +42,7 @@ run. Excel 16.0 build 20527 on 19 October 2026: 1,129 formulas recalculated with
 error, 1,065 assertions with 0 failures and 19,446 cached values equal to what their
 formulas produce, with the workbook byte-identical before and after both gates.
 
-### Independent authorship
-
-README and NOTICE state that Ozzit's functions were written by Ryan Duguid and that
-Ozzit is not derived from any third-party workbook or library.
-
-### Practice calculator companion
-
-Added `templates/practice-calculators.xlsx` with twenty-one standalone arithmetic
-workflows: allocation, contractor revenue, vendor finance, mixed-use loans,
-rental summaries, salary packaging, amortisation, timelines, deed reminders and
-expiring capacity, loan-offer comparisons, break-even modelling and working-capital
-cash release. The companion uses the current Mermaid palette, internal contents
-links and explicit input warnings. `docs/between-spreadsheets.md` maps all 32 public product
-listings to partial coverage or an explicit gap. Hidden vendor formulas and tax
-decision tools are not reproduced. The companion uses ordinary Excel formulas;
-the main LAMBDA workbook and its published function count are unchanged.
-
-The follow-up adds construction WIP, individual KPI awards, asset disposal,
-approved exit pay, assessed-tax cash balances, investment cash flows, action
-tracking and final-value FBT gross-ups. Mixed loans accept signed purpose
-adjustments, packaging includes date reminders and amortisation supports supplied
-first-period fractions. All 22 tabs share consistent colour roles, with Rhodesian
-green for recorded completion and contrast checks for populated cells and
-conditional styles. The companion has 42 internal navigation links.
-
-### Licence changed to Apache-2.0
-
-From the next release, Ozzit is licensed under the Apache License 2.0 instead of MIT.
-Anyone who redistributes the workbook or a derivative must keep the attribution in
-`NOTICE`. v3.4.2 and earlier releases stay under MIT. The licence text moves from
-`LICENCE` to `LICENSE`, the file name licence checkers look for.
-
-### Workbook and templates restyled to the repository palette
-
-`ozzit.xlsx` and both templates now use the colours of the README, logo, social card
-and diagrams: black `#000000`, ivory `#FFFFF0`, platinum `#E5E4E2`, Tyrian purple
-`#66023C`, crimson `#990024`, and Rhodesian green `#0F4B32` for passed checks only.
-Titles, links and function cells move from `#5C2D91` to Tyrian purple, with function
-cells on a pale Tyrian fill. Input cells are platinum, header-label bands ivory, and
-text on dark fills ivory. Warnings, failed checks and the TOC length guard are crimson
-on a pale crimson fill. Tabs follow the modules: Cover, TOC and Data Validation
-platinum, dates black, financial functions, Australian tax and ratios Tyrian purple,
-and array essentials crimson. The theme colours match, so Excel's colour picker,
-hyperlinks and charts offer the same palette. The strapline grey and the templates'
-blue input and green link text are unchanged. The cash-flow legend now reads "Blue
-text / ivory fill". Only formatting changed: no formula, value or cached result moved.
-`tools/postbuild/workbook_palette.py` applies the palette, with `--template` for the
-workbooks in `templates/`.
-
-### Four working-capital functions added
+#### Four working-capital functions added
 
 Four LAMBDA functions join the Ratios group, taking the library from 133 to 137
 LAMBDAs (138 to 142 named formulas, including 5 help tables). They fill the gaps
@@ -111,81 +71,73 @@ and the cycle composed from `oz.DSIλ` and the new functions. With the 9 generat
 assertions their help adds, all 1,033 assertions pass and all 19,446 cached values
 match in Excel 16.0 build 20430 on 29 September 2026.
 
-### Calculation changes
+#### Practice calculator companion
 
-- The retention-ratio example in `oz.FinancialRatios!A61` now passes retained
-  earnings and net income, showing 47.3% instead of 189.9%. The function and its
-  help were already correct. Native Excel refreshes both the result and the
-  formula displayed beside it.
-- `oz.Amortiseλ` allocates each loan month by the reporting period's dates.
-  A 24-month loan starting in January on a July financial-year timeline now puts
-  6, 12 and 6 payments in those years, instead of 12, 12 and none. Uneven periods
-  follow their actual dates too. Each period opens on its first monthly balance
-  and closes on its last. Multiple-loan inputs now retain every monthly payment.
-  Calendar cut-offs preserve February clipping and single-date timelines;
-  `FinalPeriodEnd` still affects only sub-monthly timelines. All 1,002 native
-  assertions and 19,446 cache comparisons pass in Excel 16.0 build 20430 on
-  29 September 2026. The 24 added assertions include independently calculated
-  annual, quarterly and multiple-loan vectors and unchanged-behaviour controls.
-- `oz.LeaseRemeasureλ` compares liabilities before the payment due at the
-  remeasurement date. With InAdvance TRUE, the adjustment includes that payment;
-  the returned unpaid liability still excludes it. Unchanged payments no longer
-  reduce the right-of-use asset. Supply CarryingLiability before paying the amount
-  due that day; stop subtracting the revised payment as the previous workaround
-  advised. Eight advance-payment regressions fail before the repair. Those cases
-  and three arrears controls pass afterwards, with all 978 native assertions and
-  19,446 cache comparisons passing in Excel 16.0 build 20430 on 29 September 2026.
-- `oz.DebtSculptVariableLRVλ` treats each negative CFADS value as zero cash for
-  debt service. A deficit no longer creates debt from a nil balance or reopens a
-  repaid loan. Existing debt still capitalises unpaid interest. CFADS must be a
-  numeric row; blanks, text and logical values now return a diagnostic instead of
-  a downstream error matrix. Twelve new native assertions cover the cash floor
-  and validation. All 967 assertions pass in Excel 16.0 build 20430 on
-  29 September 2026, and all 19,446 cached values match.
-- `oz.FinancialYearλ` defaults a blank StartMonth cell or empty text to July for
-  its own row. With a blank month, 15 August 2026 now gives FY2027 instead of FY2026.
-  Five native assertions cover blanks, mixed rows, the June/July boundary and the
-  unchanged result for an explicit zero. All 955 assertions pass in Excel 16.0
-  build 20430 on 29 September 2026; all 19,446 cached values match.
-- `oz.GSTAddλ` and `oz.GSTExtractλ` default a blank Rate cell to 10% for its own row.
-  v3.4.2 tested the whole column of rates with `OR()`, so one blank cell gave every row
-  10%, zero-rated rows included.
-- `oz.Movementλ` defaults a blank BeginningValues cell to 0 for its own row. In v3.4.2
-  one blank cell set every row's opening to 0.
-- `oz.PeriodRateλ` and `oz.AnnualRateλ` default a blank PeriodsPerYear cell to 12, and
-  `oz.DateDifλ` a blank Unit cell to days, for its own row. `oz.IsOccurrenceDateλ` reads
-  Repeats and LastOccurrence row by row too: a blank Repeats cell makes only its own row
-  a one-off, and a text last date is read as a date whatever the other rows hold. v3.4.2
-  tested each of these columns with `OR()`, as it did GST rates, so one blank cell gave
-  every row the default, and one blank or date in a LastOccurrence column left text
-  dates in the other rows unread. A column that is all blank now gives one default per
-  row. All 12 added assertions pass in the 29 September 2026 native Excel run.
-- `oz.DiminishingValueλ` and `oz.PrimeCostλ` refuse a Life that is not greater than 0
-  with a message. A negative life wrote the whole cost off in one period, and a zero
-  life divided by zero.
-- `oz.DebtSculptFixedλ` and `oz.DebtSculptVariableλ` floor each period's debt service at
-  zero. In v3.4.2 negative CFADS produced a negative payment, so the closing balance
-  rose and row 3 showed the amount as a positive receipt: with CFADS of -300 against a
-  DSCR of 1.2 it read 250 rather than 0. The rows also floor the amount owed, so a
-  negative opening balance repays nothing, as in the balance calculation.
-- `oz.Amortiseλ` takes an optional `FinalPeriodEnd`, the day after the last timeline
-  period ends, for a sub-monthly timeline that stops before the loan does. It needs a
-  supplied timeline and must fall after its last date, and `oz.AmortiseλDV` checks it
-  the same way. Omitted, every schedule is unchanged.
-- `oz.Depreciateλ` ends a month-end timeline's last period at the month end. It used
-  `EDATE`, which steps from 28 February to 28 March, so the period closed three days
-  early and an asset brought into service in those days fell into no period.
-- `oz.Amortiseλ` opens a period that holds several months on its first month's balance
-  and closes it on its last month's, as `oz.Depreciateλ` already does for its opening
-  row. A period of a sub-monthly timeline holds several months when `FinalPeriodEnd`
-  extends it, or when a longer period follows shorter ones, and the balance rows added
-  those months up: 10 weekly periods from 1 January 2026 with a final period ending on
-  1 January 2027 opened the last at 37,942.09 rather than 7,546.58 and closed a loan
-  repaid in December at 30,395.51 rather than 0. Interest and payment rows were right,
-  and a period holding one month is unchanged. All 5 added assertions pass in the
-  29 September 2026 native Excel run.
+Added `templates/practice-calculators.xlsx` with twenty-one standalone arithmetic
+workflows: allocation, contractor revenue, vendor finance, mixed-use loans,
+rental summaries, salary packaging, amortisation, timelines, deed reminders and
+expiring capacity, loan-offer comparisons, break-even modelling and working-capital
+cash release. The companion uses the current Mermaid palette, internal contents
+links and explicit input warnings. `docs/between-spreadsheets.md` maps all 32 public product
+listings to partial coverage or an explicit gap. Hidden vendor formulas and tax
+decision tools are not reproduced. The companion uses ordinary Excel formulas;
+the main LAMBDA workbook and its published function count are unchanged.
 
-### Tools, checks and documentation
+The follow-up adds construction WIP, individual KPI awards, asset disposal,
+approved exit pay, assessed-tax cash balances, investment cash flows, action
+tracking and final-value FBT gross-ups. Mixed loans accept signed purpose
+adjustments, packaging includes date reminders and amortisation supports supplied
+first-period fractions. All 22 tabs share consistent colour roles, with Rhodesian
+green for recorded completion and contrast checks for populated cells and
+conditional styles. The companion has 42 internal navigation links.
+
+#### Retention reconciliation template
+Added `templates/retention-reconciliation.xlsx`, described in `templates/RETENTION.md`:
+a standalone sheet that reconciles 3 fabricated contracts' opening retention plus
+amounts withheld, less releases, against an independently supplied ledger balance.
+It uses ordinary formulas, no macros or external links, and keeps the workpaper
+incomplete for blank inputs, duplicate contract IDs, missing evidence and invalid dates
+(#132).
+
+#### Amortisation final period end
+
+`oz.Amortiseλ` takes an optional `FinalPeriodEnd`, the day after the last timeline
+period ends, for a sub-monthly timeline that stops before the loan does. It needs a
+supplied timeline and must fall after its last date, and `oz.AmortiseλDV` checks it
+the same way. Omitted, every schedule is unchanged.
+
+### Changed
+
+#### Licence changed to Apache-2.0
+
+From the next release, Ozzit is licensed under the Apache License 2.0 instead of MIT.
+Anyone who redistributes the workbook or a derivative must keep the attribution in
+`NOTICE`. v3.4.2 and earlier releases stay under MIT. The licence text moves from
+`LICENCE` to `LICENSE`, the file name licence checkers look for.
+
+#### Independent authorship
+
+README and NOTICE state that Ozzit's functions were written by Ryan Duguid and that
+Ozzit is not derived from any third-party workbook or library.
+
+#### Workbook and templates restyled to the repository palette
+
+`ozzit.xlsx` and both templates now use the colours of the README, logo, social card
+and diagrams: black `#000000`, ivory `#FFFFF0`, platinum `#E5E4E2`, Tyrian purple
+`#66023C`, crimson `#990024`, and Rhodesian green `#0F4B32` for passed checks only.
+Titles, links and function cells move from `#5C2D91` to Tyrian purple, with function
+cells on a pale Tyrian fill. Input cells are platinum, header-label bands ivory, and
+text on dark fills ivory. Warnings, failed checks and the TOC length guard are crimson
+on a pale crimson fill. Tabs follow the modules: Cover, TOC and Data Validation
+platinum, dates black, financial functions, Australian tax and ratios Tyrian purple,
+and array essentials crimson. The theme colours match, so Excel's colour picker,
+hyperlinks and charts offer the same palette. The strapline grey and the templates'
+blue input and green link text are unchanged. The cash-flow legend now reads "Blue
+text / ivory fill". Only formatting changed: no formula, value or cached result moved.
+`tools/postbuild/workbook_palette.py` applies the palette, with `--template` for the
+workbooks in `templates/`.
+
+#### Tools, checks and documentation
 
 - `tools/postbuild/working_capital_days.py` adds the four working-capital functions
   to every store at once, on the pattern of the rate and date helpers pass. Its
@@ -242,6 +194,100 @@ match in Excel 16.0 build 20430 on 29 September 2026.
   Excel-versus-pyxirr comparison of the cash-flow functions, retained native evidence
   for the v3.4.2 examples and its verifier, a gate on the workbook's web extension, and
   CI on Python 3.14.
+
+### Fixed
+
+#### Calculation changes
+
+- The retention-ratio example in `oz.FinancialRatios!A61` now passes retained
+  earnings and net income, showing 47.3% instead of 189.9%. The function and its
+  help were already correct. Native Excel refreshes both the result and the
+  formula displayed beside it.
+- `oz.Amortiseλ` allocates each loan month by the reporting period's dates.
+  A 24-month loan starting in January on a July financial-year timeline now puts
+  6, 12 and 6 payments in those years, instead of 12, 12 and none. Uneven periods
+  follow their actual dates too. Each period opens on its first monthly balance
+  and closes on its last. Multiple-loan inputs now retain every monthly payment.
+  Calendar cut-offs preserve February clipping and single-date timelines;
+  `FinalPeriodEnd` still affects only sub-monthly timelines. All 1,002 native
+  assertions and 19,446 cache comparisons pass in Excel 16.0 build 20430 on
+  29 September 2026. The 24 added assertions include independently calculated
+  annual, quarterly and multiple-loan vectors and unchanged-behaviour controls.
+- `oz.LeaseRemeasureλ` compares liabilities before the payment due at the
+  remeasurement date. With InAdvance TRUE, the adjustment includes that payment;
+  the returned unpaid liability still excludes it. Unchanged payments no longer
+  reduce the right-of-use asset. Supply CarryingLiability before paying the amount
+  due that day; stop subtracting the revised payment as the previous workaround
+  advised. Eight advance-payment regressions fail before the repair. Those cases
+  and three arrears controls pass afterwards, with all 978 native assertions and
+  19,446 cache comparisons passing in Excel 16.0 build 20430 on 29 September 2026.
+- `oz.DebtSculptVariableLRVλ` treats each negative CFADS value as zero cash for
+  debt service. A deficit no longer creates debt from a nil balance or reopens a
+  repaid loan. Existing debt still capitalises unpaid interest. CFADS must be a
+  numeric row; blanks, text and logical values now return a diagnostic instead of
+  a downstream error matrix. Twelve new native assertions cover the cash floor
+  and validation. All 967 assertions pass in Excel 16.0 build 20430 on
+  29 September 2026, and all 19,446 cached values match.
+- `oz.FinancialYearλ` defaults a blank StartMonth cell or empty text to July for
+  its own row. With a blank month, 15 August 2026 now gives FY2027 instead of FY2026.
+  Five native assertions cover blanks, mixed rows, the June/July boundary and the
+  unchanged result for an explicit zero. All 955 assertions pass in Excel 16.0
+  build 20430 on 29 September 2026; all 19,446 cached values match.
+- `oz.GSTAddλ` and `oz.GSTExtractλ` default a blank Rate cell to 10% for its own row.
+  v3.4.2 tested the whole column of rates with `OR()`, so one blank cell gave every row
+  10%, zero-rated rows included.
+- `oz.Movementλ` defaults a blank BeginningValues cell to 0 for its own row. In v3.4.2
+  one blank cell set every row's opening to 0.
+- `oz.PeriodRateλ` and `oz.AnnualRateλ` default a blank PeriodsPerYear cell to 12, and
+  `oz.DateDifλ` a blank Unit cell to days, for its own row. `oz.IsOccurrenceDateλ` reads
+  Repeats and LastOccurrence row by row too: a blank Repeats cell makes only its own row
+  a one-off, and a text last date is read as a date whatever the other rows hold. v3.4.2
+  tested each of these columns with `OR()`, as it did GST rates, so one blank cell gave
+  every row the default, and one blank or date in a LastOccurrence column left text
+  dates in the other rows unread. A column that is all blank now gives one default per
+  row. All 12 added assertions pass in the 29 September 2026 native Excel run.
+- `oz.DiminishingValueλ` and `oz.PrimeCostλ` refuse a Life that is not greater than 0
+  with a message. A negative life wrote the whole cost off in one period, and a zero
+  life divided by zero.
+- `oz.DebtSculptFixedλ` and `oz.DebtSculptVariableλ` floor each period's debt service at
+  zero. In v3.4.2 negative CFADS produced a negative payment, so the closing balance
+  rose and row 3 showed the amount as a positive receipt: with CFADS of -300 against a
+  DSCR of 1.2 it read 250 rather than 0. The rows also floor the amount owed, so a
+  negative opening balance repays nothing, as in the balance calculation.
+- `oz.Depreciateλ` ends a month-end timeline's last period at the month end. It used
+  `EDATE`, which steps from 28 February to 28 March, so the period closed three days
+  early and an asset brought into service in those days fell into no period.
+- `oz.Amortiseλ` opens a period that holds several months on its first month's balance
+  and closes it on its last month's, as `oz.Depreciateλ` already does for its opening
+  row. A period of a sub-monthly timeline holds several months when `FinalPeriodEnd`
+  extends it, or when a longer period follows shorter ones, and the balance rows added
+  those months up: 10 weekly periods from 1 January 2026 with a final period ending on
+  1 January 2027 opened the last at 37,942.09 rather than 7,546.58 and closed a loan
+  repaid in December at 30,395.51 rather than 0. Interest and payment rows were right,
+  and a period holding one month is unchanged. All 5 added assertions pass in the
+  29 September 2026 native Excel run.
+
+### Security
+
+- CI installs ruff and mypy from hash-pinned requirement files, and the README links
+  the security policy (#196).
+- The 44 open SonarCloud findings are actioned: 4 fixed and 40 marked with their
+  reasons (#202).
+- The AFE and cached-value gates are hardened after a Qodo scan, including refusing
+  duplicate AFE file paths (#146).
+- `tools/verify_workbook.py` requires exactly one extension part in
+  `xl/webextensions/`, so a release cannot ship a second or different add-in reference
+  unnoticed (#155).
+- Workbook tools resolve relationship targets under Open Packaging Conventions rather
+  than by string prefix (#201).
+- Verifiers report malformed inputs, unreadable workbooks and non-finite cached values
+  as failures instead of tracebacks (#180, #214), and the module statement splitter and
+  help-result number parser are fuzzed (#200).
+- Workbook writes stage beside the target without touching unrelated files (#176), and
+  the function index is validated before the workbook is replaced (#210).
+- Release assets are scanned with VirusTotal (#192, #208), OpenSSF Scorecard results
+  are published (#193), and Verify and CodeQL are enforced through self-checking
+  aggregate jobs (#165).
 
 ## v3.4.2, 16 September 2026, Amortisation timelines, depreciation lives and inputs that spilled an error
 
