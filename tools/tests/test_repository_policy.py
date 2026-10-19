@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SECURITY = ROOT / "SECURITY.md"
 RELEASING = ROOT / "RELEASING.md"
 VERIFY_WORKFLOW = ROOT / ".github" / "workflows" / "verify.yml"
+ATTEST_WORKFLOW = ROOT / ".github" / "workflows" / "attest-release.yml"
 DEPENDABOT = ROOT / ".github" / "dependabot.yml"
 MYPY_CONFIG = ROOT / "mypy.ini"
 EDITORCONFIG = ROOT / ".editorconfig"
@@ -237,6 +238,46 @@ class RepositoryPolicyTests(unittest.TestCase):
         self.assertIn("tools/ozzit/target/release/ozzit verify_sources ozzit.xlsx src", workflow)
         self.assertIn("python -m unittest discover -s tools/tests -v", workflow)
         self.assertEqual(read_utf8(DEPENDABOT).replace("\r\n", "\n"), DEPENDABOT_CANONICAL)
+
+    def test_release_attestation_signs_the_tagged_workbook_on_a_draft_only(self):
+        # Scorecard's Signed-Releases check needs a provenance asset, and an
+        # immutable release accepts none once published.
+        text = read_utf8(ATTEST_WORKFLOW)
+        workflow = YAML(typ="safe", pure=True).load(text)
+        self.assertEqual(list(workflow["on"]), ["workflow_dispatch"])
+        self.assertEqual(workflow["permissions"], {"contents": "read"})
+        attest = workflow["jobs"]["attest"]
+        self.assertEqual(attest["needs"], "checks")
+        self.assertEqual(
+            attest["permissions"],
+            {"attestations": "write", "contents": "write", "id-token": "write"},
+        )
+        steps = {step.get("name", step.get("uses")): step for step in attest["steps"]}
+        attestation = steps["Attest the tagged workbook"]
+        self.assertEqual(
+            attestation["uses"], "actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6"
+        )
+        self.assertEqual(
+            attestation["with"], {"subject-path": "${{ runner.temp }}/subject/ozzit.xlsx"}
+        )
+        self.assertIn('git show "$GITHUB_SHA:ozzit.xlsx"', text)
+        self.assertIn("python tools/prepare_release_bundle.py verify", text)
+        self.assertIn(".verification.verified == true", text)
+        self.assertIn(".github/workflows/verify.yml: verify-gates", text)
+        self.assertIn("ozzit-${GITHUB_REF_NAME#v}.intoto.jsonl", text)
+        self.assertEqual(text.count(".draft == true"), 3)
+        self.assertNotIn("gh release edit", text)
+        self.assertNotIn("--clobber", text)
+        # The signed name must match the ref, and the upload must reach the verified
+        # release by ID, after the draft and its assets are compared with the snapshot.
+        self.assertIn(".tag == $tag", text)
+        self.assertNotIn("gh release upload", text)
+        self.assertIn("releases/$RELEASE_ID/assets", text)
+        self.assertEqual(text.count("cmp -s - snapshot.json"), 2)
+        releasing = read_utf8(RELEASING)
+        self.assertIn("gh workflow run attest-release.yml --ref vX.Y.Z", releasing)
+        self.assertIn("sits outside the checksum set", releasing)
+        self.assertIn("gh api repos/ryanduguid/Ozzit/immutable-releases", releasing)
 
     def test_production_type_check_is_pinned_and_rejects_untyped_definitions(self):
         workflow = read_utf8(VERIFY_WORKFLOW)
