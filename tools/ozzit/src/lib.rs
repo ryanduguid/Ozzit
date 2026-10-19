@@ -1,5 +1,6 @@
 pub mod afe;
 pub mod archive;
+pub mod cache;
 pub mod common;
 pub mod compiler;
 pub mod cover;
@@ -31,6 +32,7 @@ const COMMANDS: &[(&str, Handler)] = &[
     ("verify_help_spills", spills::verify),
     ("verify_workbook", workbook::verify),
     ("verify_native_evidence", native_evidence::command),
+    ("verify_cache", cache::verify),
 ];
 pub fn dispatch(args: &[String]) -> Output {
     let command = args.first().map(String::as_str);

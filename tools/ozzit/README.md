@@ -28,6 +28,7 @@ repository root to use their usual path defaults.
 | `verify_help_spills` | Report help caches that differ from the definitions |
 | `verify_workbook` | Check workbook structure, content, add-ins and references |
 | `verify_native_evidence` | Check retained comparison and installation records against their inputs |
+| `verify_cache` | Compare the workbook's cached values with native Excel's recalculated values |
 
 Normal positional paths and existing flags retain their spelling. Replace
 `python tools/<name>.py` with `ozzit <name>`. Usage and help identify the native
@@ -36,6 +37,10 @@ Undefined-reference findings have deterministic token order.
 Some Python tracebacks become a controlled error and exit status 1. Boundary
 qualification is still in progress. JSON inputs have a native nesting ceiling
 of 1,000 containers; deeper inputs are refused before recursive consumers run.
+
+`verify_cache` drives native Excel through `tools/dump_values.ps1`, found
+beside the executable or in its ancestors, falling back to the working
+directory. It needs Windows, Excel and `powershell.exe`, and stays a local gate.
 
 The default released-name baseline is embedded in the executable. An explicit
 baseline path still reads that file. The generated module banner retains its
@@ -69,11 +74,12 @@ cargo clippy --locked --manifest-path tools/ozzit/Cargo.toml --all-targets -- -D
 cargo test --locked --manifest-path tools/ozzit/Cargo.toml
 ```
 
-The native tests include 1,117 captured parser observations, 69 workbook and
+The native tests include 1,117 captured parser observations, 76 recorded
+cache-gate findings, 69 workbook and
 help-cache observations, 5,461 strict base64 cases, 1,332 retained-evidence/grid
 observations, archive byte checks and
 controlled writer failures. Large test fixtures are read from `tests/data/`
 when tests run. Differential scripts
 and their receipts are retained in the local Agent Hub evidence for this port.
-The remaining verifiers, workbook passes, cache orchestration, release tooling
+The remaining verifiers, workbook passes, cache refresh, release tooling
 and callers still use Python or their existing platform runtime.

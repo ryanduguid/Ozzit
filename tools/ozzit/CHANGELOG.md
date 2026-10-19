@@ -11,7 +11,7 @@ Dependency qualification: Rust flate2 1.1.10 with zlib-rs 0.6.8 reproduces all
 169 deflated members of the base workbook byte for byte on Windows. The writer
 also reproduces Python zipfile's sorted directory, fixed date and attributes.
 ZIP reading uses zip 9.0.5. JSON, CSV, formula and HTML compatibility use local
-helpers. The first twelve commands are implemented; see README.md for their
+helpers. The first thirteen commands are implemented; see README.md for their
 scope and remaining encoding limits. Unused inherited dependencies were removed
 from this checkpoint; later commands will add dependencies only when needed.
 The optional pyxirr comparator's fixed-case reference outputs must be pinned
@@ -42,5 +42,15 @@ cases, their runner hashes, fixture arithmetic and optional supplied assets.
 It preserves the distinction between historical evidence and current workbook
 validation. SHA-256 hashing uses the restored sha2 dependency and bounded file
 buffers; existing locked package versions are unchanged.
+
+The cached-value gate still drives native Excel through `tools/dump_values.ps1`
+and refuses to run while Excel is open. It compares the dump with every cached
+value under the same tolerance, error-code map, floor and reporting limits as
+the Python gate. A dump that is not valid UTF-8 is decoded whole before rows
+are checked, so in a dump larger than one read chunk the decoding error can be
+reported ahead of an earlier malformed row, counted from the start of the file.
+Captured dumper output that is not UTF-8 is shown with replacement characters
+where Python ended with a traceback. `powershell.exe` is not looked up in the
+working directory.
 
 These notes do not claim the port or its differential qualification is complete.
