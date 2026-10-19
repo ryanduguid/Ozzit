@@ -1,0 +1,212 @@
+name: Attest release
+
+# Adds a signed build provenance bundle for the tagged workbook to a draft
+# release. Run it on the signed tag after the three bundle assets are uploaded
+# and before the release is published:
+#
+#   gh workflow run attest-release.yml --ref vX.Y.Z
+#
+# An immutable release refuses new assets once published, so this cannot add a
+# bundle to a release that is already public. RELEASING.md places the step.
+on:
+  workflow_dispatch:
+
+# One run per tag at a time, and never cancelled part-way through an upload.
+concurrency:
+  group: attest-release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: require the verify gates for the tagged commit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read # Read this repository's own workflow runs for the release commit.
+    steps:
+      # The release-policy gate the archive families use, at the commit the
+      # VirusTotal workflow already pins. This job never checks out Ozzit.
+      - name: Check out release-policy at the reviewed pin
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ryanduguid/release-policy
+          ref: a601f1d8b143f92b0517f709216993660d21f480
+          path: policy
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+      - name: Require a successful verify-gates run on main for this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          printf '%s\n' '.github/workflows/verify.yml: verify-gates' \
+            | python policy/scripts/required_checks.py \
+                --repository "$GITHUB_REPOSITORY" \
+                --commit "$GITHUB_SHA" \
+                --wait-seconds 600
+
+  attest:
+    needs: checks
+    name: attest the tagged workbook and add the bundle to the draft
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      attestations: write # Store the attestation for gh attestation verify.
+      contents: write # Upload one asset to the draft release.
+      id-token: write # Sign the attestation with the workflow's OIDC identity.
+    steps:
+      - name: Require a signed annotated release tag on this commit
+        id: tag
+        # Scratch files stay out of the checkout, which the bundle verifier requires clean.
+        working-directory: ${{ runner.temp }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF_TYPE" == tag && "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] \
+            || { echo "Run this workflow on a vX.Y.Z tag, not $GITHUB_REF" >&2; exit 1; }
+          gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$GITHUB_REF_NAME" > ref.json
+          jq -e '.object.type == "tag"' ref.json >/dev/null \
+            || { echo "$GITHUB_REF_NAME is not an annotated tag" >&2; exit 1; }
+          gh api "repos/$GITHUB_REPOSITORY/git/tags/$(jq -r .object.sha ref.json)" > tag.json
+          # The signed payload names its tag; another ref could point at the same object.
+          jq -e --arg commit "$GITHUB_SHA" --arg tag "$GITHUB_REF_NAME" \
+            '.tag == $tag and .object.type == "commit" and .object.sha == $commit
+             and .verification.verified == true' \
+            tag.json >/dev/null \
+            || { echo "$GITHUB_REF_NAME is not a verified signed tag on $GITHUB_SHA" >&2; exit 1; }
+          echo "object=$(jq -r .object.sha ref.json)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # The bundle verifier checks the commit that last changed ozzit.xlsx.
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Download the draft release's three assets
+        id: draft
+        # Scratch files stay out of the checkout, which the bundle verifier requires clean.
+        working-directory: ${{ runner.temp }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # The tags endpoint does not return drafts, so read the release list.
+          gh api --paginate "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
+            | jq -s --arg tag "$GITHUB_REF_NAME" '[.[][] | select(.tag_name == $tag)]' > releases.json
+          jq -e 'length == 1 and .[0].draft == true' releases.json >/dev/null \
+            || { echo "Expected exactly one draft release for $GITHUB_REF_NAME" >&2; exit 1; }
+          jq -e '[.[0].assets[].name] | sort == ["SHA256SUMS", "ozzit.xlsx", "provenance.json"]' \
+            releases.json >/dev/null \
+            || { echo "The draft must hold exactly the three bundle assets" >&2; exit 1; }
+          mkdir "$RUNNER_TEMP/draft"
+          jq -r '.[0].assets[] | "\(.id) \(.name) \(.digest // "" | ltrimstr("sha256:"))"' releases.json \
+            | while read -r id name digest; do
+                gh api -H "Accept: application/octet-stream" \
+                  "repos/$GITHUB_REPOSITORY/releases/assets/$id" > "$RUNNER_TEMP/draft/$name"
+                printf '%s  %s\n' "$digest" "$RUNNER_TEMP/draft/$name"
+              done > digests.txt
+          sha256sum --check --strict digests.txt
+          # What the later steps verify: the upload step refuses a release that differs from it.
+          jq '.[0] | {id, tag_name, assets: ([.assets[] | {id, name, digest, size, state}] | sort_by(.name))}' \
+            releases.json > snapshot.json
+          jq -e '[.assets[].state] | all(. == "uploaded")' snapshot.json >/dev/null
+          echo "release-id=$(jq -r '.[0].id' releases.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Verify the draft bundle and that its workbook is the tagged one
+        run: |
+          set -euo pipefail
+          python tools/prepare_release_bundle.py verify \
+            --bundle "$RUNNER_TEMP/draft" \
+            --version "${GITHUB_REF_NAME#v}" \
+            --source-commit "$GITHUB_SHA"
+          mkdir "$RUNNER_TEMP/subject"
+          git show "$GITHUB_SHA:ozzit.xlsx" > "$RUNNER_TEMP/subject/ozzit.xlsx"
+          cmp "$RUNNER_TEMP/subject/ozzit.xlsx" "$RUNNER_TEMP/draft/ozzit.xlsx"
+
+      # Only the workbook is a subject: this job derives it from the tag, while
+      # provenance.json and SHA256SUMS were built elsewhere and are checked here.
+      - name: Attest the tagged workbook
+        id: provenance
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: ${{ runner.temp }}/subject/ozzit.xlsx
+
+      # The bundle is a separate asset, outside SHA256SUMS, so the reviewed
+      # three-file bundle keeps its fixed inventory.
+      - name: Write the bundle and verify it before upload
+        id: bundle
+        env:
+          BUNDLE_PATH: ${{ steps.provenance.outputs.bundle-path }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          bundle="$RUNNER_TEMP/ozzit-${GITHUB_REF_NAME#v}.intoto.jsonl"
+          cp -- "$BUNDLE_PATH" "$bundle"
+          # Exactly one Sigstore bundle on one JSON line.
+          jq -se 'length == 1' "$bundle" >/dev/null
+          test "$(wc -l < "$bundle")" -eq 1
+          signer="$GITHUB_REPOSITORY/.github/workflows/attest-release.yml"
+          for source in api bundle; do
+            extra=()
+            [ "$source" = bundle ] && extra=(--bundle "$bundle")
+            gh attestation verify "$RUNNER_TEMP/draft/ozzit.xlsx" "${extra[@]}" \
+              --repo "$GITHUB_REPOSITORY" \
+              --source-digest "$GITHUB_SHA" \
+              --source-ref "refs/tags/$GITHUB_REF_NAME" \
+              --signer-workflow "$signer"
+          done
+          echo "path=$bundle" >> "$GITHUB_OUTPUT"
+
+      # Only immutable publication stops an upload that races a maintainer publishing
+      # the draft; RELEASING.md makes the repository setting a prerequisite.
+      - name: Add the bundle to the verified draft
+        # Scratch files stay out of the checkout, which the bundle verifier requires clean.
+        working-directory: ${{ runner.temp }}
+        env:
+          BUNDLE: ${{ steps.bundle.outputs.path }}
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ steps.draft.outputs.release-id }}
+          TAG_OBJECT: ${{ steps.tag.outputs.object }}
+        run: |
+          set -euo pipefail
+          view='{id, tag_name, assets: ([.assets[] | {id, name, digest, size, state}] | sort_by(.name))}'
+          gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" > before.json
+          jq -e '.draft == true' before.json >/dev/null \
+            || { echo "The release was published while this job ran" >&2; exit 1; }
+          jq "$view" before.json | cmp -s - snapshot.json \
+            || { echo "The draft or its assets changed after verification" >&2; exit 1; }
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$GITHUB_REF_NAME" --jq .object.sha)" = "$TAG_OBJECT" \
+            || { echo "$GITHUB_REF_NAME moved after verification" >&2; exit 1; }
+          # Upload to the verified release ID rather than resolving the tag again.
+          # GitHub refuses a name that already exists, so nothing is replaced.
+          name="$(basename "$BUNDLE")"
+          upload="$(jq -r '.upload_url | sub("[{].*$"; "")' before.json)"
+          [ "$upload" = "https://uploads.github.com/repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID/assets" ] \
+            || { echo "Unexpected upload URL $upload" >&2; exit 1; }
+          umask 077
+          # Keep the token off curl's command line.
+          printf 'header = "Authorization: Bearer %s"\n' "$GH_TOKEN" > "$RUNNER_TEMP/gh.curl"
+          trap 'rm -f "$RUNNER_TEMP/gh.curl"' EXIT
+          curl --proto '=https' --fail-with-body -sS --config "$RUNNER_TEMP/gh.curl" \
+            -H "Accept: application/vnd.github+json" -H "Content-Type: application/octet-stream" \
+            --data-binary "@$BUNDLE" "$upload?name=$name" > uploaded.json
+          gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" > after.json
+          # The three verified assets are untouched and the bundle is the only addition.
+          jq --arg id "$(jq -r .id uploaded.json)" "$view | .assets |= map(select((.id | tostring) != \$id))" \
+            after.json | cmp -s - snapshot.json \
+            || { echo "The verified assets changed during upload" >&2; exit 1; }
+          jq -e --arg name "$name" --arg digest "sha256:$(sha256sum "$BUNDLE" | cut -d' ' -f1)" \
+            '.draft == true and (.assets | length) == 4
+             and ([.assets[] | select(.name == $name and .digest == $digest and .state == "uploaded")] | length) == 1' \
+            after.json >/dev/null \
+            || { echo "The uploaded bundle does not match the verified one" >&2; exit 1; }
