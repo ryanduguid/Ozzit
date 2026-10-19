@@ -16,11 +16,6 @@ const FIXED_WINDOW: &str = r#"xWindow="0" yWindow="0" windowWidth="28800" window
 /// Excel's own split of a string literal over 255 characters.
 const LONGTEXT: &str = r#"_xlfn\._LONGTEXT\(("(?:[^"]|"")*"(?:,"(?:[^"]|"")*")+)\)"#;
 
-/// A pattern with Python's `\b`, which follows a word character in every use here.
-fn bounded(pattern: &str) -> String {
-    pattern.replace(r"\b", &py::word_boundary())
-}
-
 /// `parts[name].decode("utf-8")`; a missing part fails as Python's `KeyError`.
 fn part(parts: &Parts, name: &str) -> Result<String> {
     decode(parts.get(name).ok_or_else(|| py::repr_str(name))?)

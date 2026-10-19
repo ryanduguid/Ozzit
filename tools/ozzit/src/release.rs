@@ -143,10 +143,6 @@ pub fn resolve_lenient(path: &Path) -> PathBuf {
     out
 }
 
-fn fullmatch(pattern: &str, text: &str) -> bool {
-    matches(&format!("^(?:{pattern})$"), text) && !text.ends_with('\n')
-}
-
 pub fn validate_version(value: &str) -> Result<String> {
     if !fullmatch(
         r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)",

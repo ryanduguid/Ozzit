@@ -46,11 +46,6 @@ pub const EXPECTED_STRAPLINES: [(&str, &str); 8] = [
 pub const COVER_OLD: &str = "Each function worksheet has green shaded cells. These cells contain the function whose name appears in the worksheet's title.";
 pub const COVER_NEW: &str = "Each function worksheet has pale purple shaded cells. These cells contain the function whose name appears in the worksheet's title.";
 
-/// A pattern with Python's `\b`.
-fn bounded(pattern: &str) -> String {
-    pattern.replace(r"\b", &py::word_boundary())
-}
-
 /// `parts[name]`, failing as Python's `KeyError` does.
 fn bytes<'a>(parts: &'a Parts, name: &str) -> Result<&'a [u8]> {
     parts

@@ -27,6 +27,16 @@ pub fn re(pattern: &str) -> Arc<Regex> {
         .clone()
 }
 
+/// A pattern with Python's `\b` in place of the engine's own word boundary.
+pub fn bounded(pattern: &str) -> String {
+    pattern.replace(r"\b", &py::word_boundary())
+}
+
+/// `re.fullmatch(pattern, text)`; `$` here is the end of the text, as in a full match.
+pub fn fullmatch(pattern: &str, text: &str) -> bool {
+    matches(&format!("^(?:{pattern})$"), text)
+}
+
 pub fn matches(pattern: &str, text: &str) -> bool {
     re(pattern)
         .is_match(text)

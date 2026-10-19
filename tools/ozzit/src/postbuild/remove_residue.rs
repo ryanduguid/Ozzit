@@ -16,10 +16,6 @@ const FREEZE: [(&str, &str); 6] = [
     ("oz.TimelineOffsetλ", "C"),
 ];
 
-fn bounded(pattern: &str) -> String {
-    pattern.replace(r"\b", &py::word_boundary())
-}
-
 fn int(text: &str) -> Result<i64> {
     use num_traits::ToPrimitive;
     py::parse_int(text, 10)?
@@ -146,10 +142,6 @@ fn drop_sheet(parts: &mut Parts, name: &str, log: &mut Vec<String>) -> Result<()
         tables.len()
     ));
     Ok(())
-}
-
-fn fullmatch(pattern: &str, text: &str) -> bool {
-    matches(&format!("^(?:{pattern})$"), text)
 }
 
 fn drop_custom_properties(parts: &mut Parts, log: &mut Vec<String>) -> Result<()> {

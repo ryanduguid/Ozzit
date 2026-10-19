@@ -7,7 +7,9 @@ use std::{
     path::Path,
 };
 
-const BANNED: &str = r"BX[DEFRLU]\.|BXLDebt|(?<!\w)BXL(?!\w)|ozzit\.[a-z]+\.|beyondexcel|Eloquens|dropbox|Leonardo|Starter Pack|Calibri|MACRS|Modified Accelerated|US GAAP|IRS Depreciation|x15ac:absPath|[A-Za-z]:\\{1,2}Users\\{1,2}|/Users/|/home/";
+/// Python's BANNED with `\bBXL\b` as a plain `BXL`, so the fast engine scans it;
+/// [`banned_tokens`] checks that alternative's word boundaries by hand.
+const BANNED: &str = r"BX[DEFRLU]\.|BXLDebt|BXL|ozzit\.[a-z]+\.|beyondexcel|Eloquens|dropbox|Leonardo|Starter Pack|Calibri|MACRS|Modified Accelerated|US GAAP|IRS Depreciation|x15ac:absPath|[A-Za-z]:\\{1,2}Users\\{1,2}|/Users/|/home/";
 const TOKEN: &str = r"oz\.[A-Za-z0-9_]+λ?(?:DV)?";
 const WEB: &str = "xl/webextensions/";
 const PANES: &str = "xl/webextensions/taskpanes.xml";
@@ -21,6 +23,30 @@ const FORBIDDEN: [&str; 6] = [
     "xl/dialogsheets/",
 ];
 
+/// `BANNED.finditer(text)`, leftmost first. A bare `BXL` next to a word
+/// character is not a match, and the scan resumes one character later, as
+/// Python's engine tries the next start position.
+pub fn banned_tokens(text: &str) -> Vec<String> {
+    let pattern = re(BANNED);
+    let word = |c: Option<char>| c.is_some_and(|c| matches(r"^\w$", c.encode_utf8(&mut [0; 4])));
+    let mut out = Vec::new();
+    let mut pos = 0;
+    while let Some(m) = pattern
+        .find_from_pos(text, pos)
+        .expect("regular expression execution")
+    {
+        let bare = m.as_str() == "BXL";
+        if bare
+            && (word(text[..m.start()].chars().next_back()) || word(text[m.end()..].chars().next()))
+        {
+            pos = m.start() + 1;
+            continue;
+        }
+        out.push(m.as_str().to_string());
+        pos = m.end();
+    }
+    out
+}
 pub fn xml_part<'a>(name: &str, bytes: &'a [u8]) -> Result<Document<'a>> {
     if bytes
         .windows(9)
@@ -160,8 +186,8 @@ pub fn check(parts: &Parts, names: &[String]) -> Report {
         } else {
             continue;
         };
-        for m in captures(BANNED, &text) {
-            failures.push(format!("banned token {} in {name}", py::repr_str(&m[0])));
+        for token in banned_tokens(&text) {
+            failures.push(format!("banned token {} in {name}", py::repr_str(&token)));
         }
     }
     let blobs = captures(
@@ -186,10 +212,10 @@ pub fn check(parts: &Parts, names: &[String]) -> Report {
         }
     };
     // The banned patterns do not depend on JSON separator whitespace.
-    for m in captures(BANNED, &pyjson::dumps_compact(&store)) {
+    for token in banned_tokens(&pyjson::dumps_compact(&store)) {
         failures.push(format!(
             "banned token {} in the AFE project store",
-            py::repr_str(&m[0])
+            py::repr_str(&token)
         ));
     }
     let book = xml_text(&docs, BOOK);
@@ -271,7 +297,8 @@ pub fn check(parts: &Parts, names: &[String]) -> Report {
                 }
             }
         }
-        for cell in captures(r#"(?s)<c r="[A-Z]+\d+"[^>]*>(?:(?!</c>).)*</c>"#, text) {
+        // A lazy match ends at the first </c>, exactly where Python's tempered loop stopped.
+        for cell in captures(r#"(?s)<c r="[A-Z]+\d+"[^>]*>.*?</c>"#, text) {
             if (cell[0].contains("ca=\"1\"") || cell[0].contains("aca=\"1\""))
                 && !cell[0].contains("CELL(")
             {
