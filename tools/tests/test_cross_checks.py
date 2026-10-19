@@ -171,7 +171,7 @@ def lease_cases():
 
 def loan_cases():
     cases = []
-    # Monthly principal and interest loans, Moneysmart inputs in 03-fixtures.md.
+    # Monthly principal and interest loans. The same inputs can be entered in a mortgage calculator by hand.
     for label, principal, apr, months in (("m1", 600000, 0.0624, 360), ("m2", 450000, 0.0589, 300)):
         rate = apr / 12
         payment = level_payment(principal, rate, months)
@@ -183,7 +183,7 @@ def loan_cases():
             (f"loan_{label}_final_closing", f"=ROUND(INDEX({loan},5,{months}),6)", [[0.0]]),
         ]
     # Annual level repayments, the shape of a Division 7A minimum yearly repayment, at
-    # the ATO's 8.77% benchmark for 2026-27. AussieCalcs inputs in 03-fixtures.md.
+    # the ATO's 8.77% benchmark for 2026-27. No calculator output is recorded here.
     for label, principal, years in (("d1", 85000, 7), ("d2", 240000, 22)):
         payment = level_payment(principal, 0.0877, years)
         loan = f"oz.AmortiseBλ({principal},0.0877,{years},{years},1,12)"
