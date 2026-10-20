@@ -22,6 +22,9 @@ content-type checks run beside the implementation.
 `help_corrections` is native only. Its workbook/source, example, static-string,
 temporary-sibling and command checks run in `tests/help_corrections_retirement.rs`.
 Private staging callbacks test a partial source-stage failure before any replacement.
+`workbook_palette` is native only. Workbook, template, indexed-background and
+command checks run in `tests/workbook_palette_retirement.rs`; colour, theme,
+font-sharing and fixed-point assertions run beside the implementation.
 Generated headers retain historical Python filenames to preserve published bytes.
 The workbook retains its native Excel formulas and ordinary `.xlsx` format.
 

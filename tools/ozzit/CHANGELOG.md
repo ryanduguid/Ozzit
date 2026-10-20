@@ -2,6 +2,10 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+`workbook_palette.py` is retired. Its component, workbook, template, refusal and
+command-line assertions now run in Rust, including exact change counts, warning
+colours, shared fonts, rich text, indexed backgrounds and byte no-ops.
+
 `help_corrections.py` is retired. Its workbook/source, worksheet, shared-string,
 refusal, command-line, temporary-sibling and AFE-order assertions now run in Rust.
 A private staging callback exercises a partial source-stage failure and verifies

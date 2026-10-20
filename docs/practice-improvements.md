@@ -120,7 +120,7 @@ are feasible.
 
 The palette was verified against the live
 [website tokens](https://duguid.com.au/assets/tokens.css?v=20261013) and Ozzit's
-existing `tools/postbuild/workbook_palette.py`. It uses black `#000000`, ivory
+existing `ozzit workbook_palette` command. It uses black `#000000`, ivory
 `#FFFFF0`, Tyrian purple `#66023C` and crimson `#990024`. Platinum `#E5E4E2`
 identifies inputs. Existing financial-model conventions retain blue input text;
 the companion uses `#2455A4`. Purple headers carry ivory text. Warnings use

@@ -18,7 +18,6 @@ import verify_workbook  # noqa: E402
 
 sys.path.insert(0, str(TOOLS / 'postbuild'))
 import aasb16_leases  # noqa: E402
-import workbook_palette  # noqa: E402
 
 
 class ReviewRegressionTests(unittest.TestCase):
@@ -97,16 +96,6 @@ class ReviewRegressionTests(unittest.TestCase):
         result = self.verify()
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('unbalanced parentheses in fixture', result.stdout)
-
-
-    def test_palette_does_not_claim_an_indexed_background_was_folded(self):
-        styles = self.parts['xl/styles.xml'].decode()
-        styles = styles.replace('</fills>', '<fill><patternFill><bgColor indexed="42"/></patternFill></fill></fills>')
-        self.parts['xl/styles.xml'] = styles.encode()
-        sanitise_workbook.write_deterministic(self.book, self.parts)
-        before = self.book.read_bytes()
-        self.assertEqual(workbook_palette.run(self.book), [])
-        self.assertEqual(self.book.read_bytes(), before)
 
 
     def test_lease_pass_restores_source_if_workbook_write_fails(self):

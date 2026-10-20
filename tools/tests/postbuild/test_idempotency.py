@@ -17,11 +17,10 @@ TOOLS = ROOT / "tools"
 WORKBOOK = ROOT / "ozzit.xlsx"
 
 XML_PASSES = [
-    (TOOLS / "postbuild" / "workbook_palette.py", False),
-    (TOOLS / "postbuild" / "aasb16_leases.py", True),
-    (TOOLS / "postbuild" / "rate_date_helpers.py", True),
-    (TOOLS / "postbuild" / "working_capital_days.py", True),
-    (TOOLS / "postbuild" / "ato_benchmarks_rate_lookup.py", True),
+    TOOLS / "postbuild" / "aasb16_leases.py",
+    TOOLS / "postbuild" / "rate_date_helpers.py",
+    TOOLS / "postbuild" / "working_capital_days.py",
+    TOOLS / "postbuild" / "ato_benchmarks_rate_lookup.py",
 ]
 
 
@@ -42,11 +41,9 @@ class PostbuildIdempotencyTests(unittest.TestCase):
         # pass as a no-op.
         committed = WORKBOOK.read_bytes()
         src_committed = {p.name: p.read_bytes() for p in (ROOT / "src").glob("*.txt")}
-        for script, takes_src in XML_PASSES:
+        for script in XML_PASSES:
             with self.subTest(script=script.name):
-                command = [sys.executable, str(script), str(self.workbook)]
-                if takes_src:
-                    command.append(str(self.src))
+                command = [sys.executable, str(script), str(self.workbook), str(self.src)]
                 for run in ("first", "second"):
                     result = subprocess.run(command, capture_output=True, text=True, check=False)
                     self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
