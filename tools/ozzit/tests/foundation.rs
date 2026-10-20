@@ -539,3 +539,231 @@ fn csv_decoding_removes_exactly_one_signature_and_keeps_later_boms() {
         );
     }
 }
+
+#[test]
+fn a_large_part_is_searched_without_a_backtrack_limit() {
+    // Python's `re` has no limit. The engine counts each skipped start position, so the
+    // sanitiser's pageSetup search panicked after 10 MB of sheet data.
+    let text = format!(
+        r#"{}<pageSetup scale="90" r:id="rId1"/>"#,
+        "x".repeat(11_000_000)
+    );
+    let new = sub_fn(
+        &bounded(r#"(<pageSetup\b[^>]*?)\s+r:id="[^"]*""#),
+        &text,
+        |m| m[1].to_string(),
+    );
+    assert!(new.ends_with(r#"<pageSetup scale="90"/>"#));
+}
+
+#[test]
+fn a_block_comment_ends_after_its_opening_delimiter() {
+    // Python searches for "*/" from after "/*", so "/*/" does not close a comment.
+    assert_eq!(formula::strip_comments("LAMBDA(1/*/+2/**/)"), "LAMBDA(1)");
+    assert_eq!(render("LAMBDA(1/*/+2/**/)"), "_xlfn.LAMBDA(1)");
+}
+
+#[test]
+fn bracket_trimming_matches_python_for_let_and_optional_parameters() {
+    // LET bindings keep their brackets; an optional parameter loses only its outer pair.
+    assert!(formula::local_names("LAMBDA(LET([Bound],1,Bound))").is_empty());
+    let refused =
+        "Bound reached the stored form without a marker; Excel will not read the definition";
+    for body in ["LAMBDA(LET([Bound],1,Bound))", "LAMBDA([Bound,Bound)"] {
+        assert_eq!(
+            formula::render(body, &BTreeSet::new()).unwrap_err(),
+            refused
+        );
+    }
+    assert_eq!(
+        formula::render("LAMBDA([[Bound]],Bound)", &BTreeSet::new()).unwrap(),
+        "_xlfn.LAMBDA(_xlop.[_xlpm.Bound],_xlpm.Bound)"
+    );
+}
+
+#[test]
+fn signature_discovery_skips_hidden_modules_as_glob_does() {
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::write(
+        dir.path().join(".hidden.txt"),
+        "Fλ=LAMBDA(X,\"FUNCTION:→Fλ(X)¶PARAMETERS:→¶X→input¶\");\n",
+    )
+    .unwrap();
+    let src = display(dir.path());
+    let result = help::verify(std::slice::from_ref(&src));
+    assert_eq!(result.code, 1);
+    assert_eq!(result.err, [format!("no source modules found in {src}/")]);
+}
+
+#[test]
+fn a_local_header_naming_another_member_is_refused() {
+    let parts: archive::Parts = [("xl/workbook.xml".to_string(), b"<workbook/>".to_vec())]
+        .into_iter()
+        .collect();
+    let mut bytes = archive::deterministic_bytes(&parts).unwrap();
+    // The first local header's name starts at byte 30; keep its length.
+    bytes[30..45].copy_from_slice(b"xl/workbool.xml");
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("book.xlsx");
+    std::fs::write(&path, bytes).unwrap();
+    assert_eq!(
+        archive::read_parts(&path).unwrap_err(),
+        "File name in directory 'xl/workbook.xml' and header b'xl/workbool.xml' differ."
+    );
+}
+
+fn one_member_archive(name: &str) -> Vec<u8> {
+    let parts: archive::Parts = [(name.to_string(), b"<probe/>".to_vec())]
+        .into_iter()
+        .collect();
+    archive::deterministic_bytes(&parts).unwrap()
+}
+
+#[test]
+fn a_retained_reader_reads_the_file_it_opened_as_python_does() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("book.xlsx");
+    let other = dir.path().join("other.xlsx");
+    let good = one_member_archive("xl/workbook.xml");
+    let mut bad = good.clone();
+    bad[30..45].copy_from_slice(b"xl/workbool.xml");
+    let read = |zip: &archive::ZipReader| archive::member_text(zip, "xl/workbook.xml");
+    // Another file renamed over the path: the open file is still the malformed one.
+    std::fs::write(&path, &bad).unwrap();
+    let zip = archive::open_zip(&path).unwrap();
+    std::fs::write(&other, &good).unwrap();
+    std::fs::rename(&other, &path).unwrap();
+    assert!(read(&zip).is_err());
+    // The path removed: the open file still reads.
+    let zip = archive::open_zip(&path).unwrap();
+    std::fs::remove_file(&path).unwrap();
+    assert_eq!(read(&zip).unwrap(), "<probe/>");
+    // The open file itself rewritten: later reads see the new header, either way.
+    std::fs::write(&path, &bad).unwrap();
+    let zip = archive::open_zip(&path).unwrap();
+    std::fs::write(&path, &good).unwrap();
+    assert_eq!(read(&zip).unwrap(), "<probe/>");
+    let zip = archive::open_zip(&path).unwrap();
+    std::fs::write(&path, &bad).unwrap();
+    assert!(read(&zip).is_err());
+}
+
+/// A stored archive with each entry's raw name, general-purpose flags and data;
+/// `crc` false writes a wrong CRC.
+fn stored_archive(entries: &[(&[u8], u16, &[u8], bool)]) -> Vec<u8> {
+    let (mut out, mut central) = (Vec::new(), Vec::new());
+    for &(name, flags, data, crc) in entries {
+        let offset = out.len() as u32;
+        let crc = crc32fast::hash(data) ^ if crc { 0 } else { 1 };
+        let fields = |head: &mut Vec<u8>| {
+            head.extend(flags.to_le_bytes());
+            head.extend([0, 0, 0, 0, 0x21, 0]);
+            head.extend(crc.to_le_bytes());
+            head.extend((data.len() as u32).to_le_bytes());
+            head.extend((data.len() as u32).to_le_bytes());
+            head.extend((name.len() as u16).to_le_bytes());
+            head.extend([0, 0]);
+        };
+        out.extend(b"PK\x03\x04\x14\x00");
+        fields(&mut out);
+        out.extend(name);
+        out.extend(data);
+        central.extend(b"PK\x01\x02\x14\x00\x14\x00");
+        fields(&mut central);
+        central.extend([0; 10]);
+        central.extend(offset.to_le_bytes());
+        central.extend(name);
+    }
+    let (start, size, count) = (out.len() as u32, central.len() as u32, entries.len() as u16);
+    out.extend(central);
+    out.extend(b"PK\x05\x06\x00\x00\x00\x00");
+    out.extend(count.to_le_bytes());
+    out.extend(count.to_le_bytes());
+    out.extend(size.to_le_bytes());
+    out.extend(start.to_le_bytes());
+    out.extend([0, 0]);
+    out
+}
+
+fn inventory(bytes: &[u8]) -> (archive::Parts, Vec<String>) {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("book.xlsx");
+    std::fs::write(&path, bytes).unwrap();
+    archive::read_inventory(&path).unwrap()
+}
+
+#[test]
+fn records_are_named_and_selected_as_zipfile_does() {
+    let utf8 = "é.xml".as_bytes();
+    // Equal raw bytes, different flags: two names, two payloads.
+    let (parts, names) = inventory(&stored_archive(&[
+        (utf8, 0x800, b"<first/>", true),
+        (utf8, 0, b"<second/>", true),
+    ]));
+    assert_eq!(names, ["é.xml", "├⌐.xml"]);
+    assert_eq!(parts["é.xml"], b"<first/>");
+    assert_eq!(parts["├⌐.xml"], b"<second/>");
+    // Different raw bytes, one name: the last record wins, and the bad first is never read.
+    let (parts, names) = inventory(&stored_archive(&[
+        (b"\x82.xml", 0, b"<first/>", false),
+        (utf8, 0x800, b"<second/>", true),
+    ]));
+    assert_eq!(names, ["é.xml", "é.xml"]);
+    assert_eq!(parts["é.xml"], b"<second/>");
+    // The name ends at the first NUL.
+    let (parts, names) = inventory(&stored_archive(&[(
+        b"probe.xml\0ignored",
+        0,
+        b"<p/>",
+        true,
+    )]));
+    assert_eq!(names, ["probe.xml"]);
+    assert_eq!(parts["probe.xml"], b"<p/>");
+}
+
+#[test]
+fn a_lookup_reads_only_the_selected_member() {
+    let mut bytes = stored_archive(&[
+        (b"unused.dat", 0, b"x", true),
+        (b"xl/workbook.xml", 0, b"<workbook/>", false),
+    ]);
+    bytes[..4].copy_from_slice(b"XXXX");
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("book.xlsx");
+    std::fs::write(&path, &bytes).unwrap();
+    let zip = archive::open_zip(&path).unwrap();
+    // The damaged unused header is not read; the selected member's CRC is checked.
+    assert_eq!(
+        archive::member_text(&zip, "xl/workbook.xml").unwrap_err(),
+        "Bad CRC-32 for file 'xl/workbook.xml'"
+    );
+    assert_eq!(
+        archive::member_text(&zip, "unused.dat").unwrap_err(),
+        "Bad magic number for file header"
+    );
+}
+
+#[test]
+fn member_names_decode_by_their_own_utf8_flags_as_zipfile_does() {
+    assert_eq!(ozzit::py::decode_cp437(b"a\x82\xc3\xa9\xff"), "aé├⌐\u{a0}");
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("book.xlsx");
+    // Both headers carry the UTF-8 bytes of "é.xml" and the UTF-8 flag (bit 11).
+    let flagged = one_member_archive("é.xml");
+    let central = flagged.windows(4).position(|w| w == b"PK\x01\x02").unwrap();
+    let clear = |bytes: &mut Vec<u8>, at: usize| bytes[at + 1] &= !0x08;
+    // Local flag cleared: the local name decodes as cp437 and no longer matches.
+    let mut local_only = flagged.clone();
+    clear(&mut local_only, 6);
+    std::fs::write(&path, &local_only).unwrap();
+    assert_eq!(
+        archive::read_parts(&path).unwrap_err(),
+        r"File name in directory 'é.xml' and header b'\xc3\xa9.xml' differ."
+    );
+    // Both flags cleared: both names decode as cp437 and match.
+    let mut neither = local_only;
+    clear(&mut neither, central + 8);
+    std::fs::write(&path, &neither).unwrap();
+    let parts = archive::read_parts(&path).unwrap();
+    assert_eq!(parts.keys().collect::<Vec<_>>(), ["├⌐.xml"]);
+}
