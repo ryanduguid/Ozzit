@@ -92,23 +92,23 @@ class VerifyCoverTests(unittest.TestCase):
             with self.subTest(columns=columns, bom=bom):
                 result = self._run_index(self._column_index(columns, overrides, bom=bom))
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-                self.assertIn("143 functions", result.stdout)
+                self.assertIn("148 functions", result.stdout)
 
     def test_the_committed_cover_matches_the_index_and_the_changelog(self):
         result = self.run_gate()
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn("143 functions", result.stdout)
+        self.assertIn("148 functions", result.stdout)
 
     def test_a_stale_function_count_fails(self):
-        rewrite_label(self.workbook, "143 functions", "133 functions")
+        rewrite_label(self.workbook, "148 functions", "133 functions")
         result = self.run_gate()
         self.assertEqual(result.returncode, 1)
         self.assertIn("cover says 133 functions", result.stdout)
 
     def test_the_cell_is_resolved_not_the_first_matching_string(self):
         # A current-looking label stored elsewhere must not rescue a stale cell.
-        current = "Version 19 October 2026    -    143 functions    -    Microsoft 365 or Excel 2024 and later"
-        stale = current.replace("19 October 2026", "20 August 2026").replace("143", "133")
+        current = "Version 19 October 2026    -    148 functions    -    Microsoft 365 or Excel 2024 and later"
+        stale = current.replace("19 October 2026", "20 August 2026").replace("148", "133")
         rewrite_label(self.workbook, f"<t>{current}</t>", f"<t>{stale}</t>")
         with zipfile.ZipFile(self.workbook) as archive:
             parts = {name: archive.read(name) for name in archive.namelist()}

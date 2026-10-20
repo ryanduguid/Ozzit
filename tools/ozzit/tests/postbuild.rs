@@ -26,6 +26,15 @@ fn snapshot(dir: &Path) -> Vec<(String, Vec<u8>)> {
     out
 }
 
+/// The passes that take the workbook, `src/` and functions.csv, in run order.
+const FUNCTION_PASSES: [&str; 5] = [
+    "aasb16_leases",
+    "rate_date_helpers",
+    "working_capital_days",
+    "ato_benchmarks_rate_lookup",
+    "variance_fy_periods",
+];
+
 #[test]
 fn every_pass_is_already_applied_to_the_committed_workbook() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
@@ -47,23 +56,10 @@ fn every_pass_is_already_applied_to_the_committed_workbook() {
         ("gst_help_text", vec![book.clone(), src.clone()]),
         ("strip_revision_history", vec![book.clone(), src.clone()]),
         ("help_corrections", vec![book.clone(), src.clone()]),
-        (
-            "aasb16_leases",
-            vec![book.clone(), src.clone(), index.clone()],
-        ),
-        (
-            "rate_date_helpers",
-            vec![book.clone(), src.clone(), index.clone()],
-        ),
-        (
-            "working_capital_days",
-            vec![book.clone(), src.clone(), index.clone()],
-        ),
-        (
-            "ato_benchmarks_rate_lookup",
-            vec![book.clone(), src.clone(), index.clone()],
-        ),
-    ] {
+    ]
+    .into_iter()
+    .chain(FUNCTION_PASSES.map(|pass| (pass, vec![book.clone(), src.clone(), index.clone()])))
+    {
         let mut argv = vec![pass.to_string()];
         argv.extend(args);
         let output = ozzit::dispatch(&argv);

@@ -53,7 +53,12 @@ AboutFinancialλ = TRIM(TEXTSPLIT(
                                            "RATES              →¶" &
                                            "PeriodRateλ        →Converts an effective annual rate to the equivalent rate per period¶" &
                                            "AnnualRateλ        →Converts a rate per period to the effective annual rate¶" &
-                                           "DayCountRateλ      →Interest rate for each timeline period under a day count convention¶" & 
+                                           "DayCountRateλ      →Interest rate for each timeline period under a day count convention¶" &
+                                           "→¶" &
+                                           "REPORTING          →¶" &
+                                           "Varianceλ          →Actual less budget, positive when favourable for income and expenses¶" &
+                                           "VariancePctλ       →Variance as a fraction of the budget's size, keeping its sign¶" &
+                                           "YearToDateλ        →Totals each row from the start of the financial year to an as-at date¶" & 
                                            
     "→¶" &
     "SUBROUTINES        →Functions used by other functions or general purpose functions.¶" & 
@@ -2467,6 +2472,166 @@ ROUScheduleλ = LAMBDA(
                             "ROUScheduleλ needs a numeric Cost and Periods of at least 1"),
     //  Return Result or Help
         CHOOSE( Help? + 1, Result, Help)
+    )
+);
+
+
+
+/*  FUNCTION NAME:  Varianceλ
+    DESCRIPTION:*//**Actual less budget, signed so a favourable variance is positive for income and expense lines alike*/
+
+Varianceλ = LAMBDA(
+//  Parameter Declaration
+    [Actual],
+    [Budget],
+    [Type],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →Varianceλ(Actual, Budget, [Type])¶" &
+                            "DESCRIPTION:   →Actual less budget, signed so a favourable variance is positive for income and expense lines alike.¶" &
+                            "NOTES!         →Type 1 marks income, where an actual above budget is favourable; -1 marks an¶               →expense, where an actual below budget is favourable. Enter expenses as positive¶               →costs: for a ledger that stores them as negative balances, negate both amounts¶               →first. Give one Type for all lines, one for each row or one for each cell. Actual¶               →and Budget must be the same shape and hold numbers or blank cells, which count as¶               →0; text and TRUE or FALSE return a message. Budget may also be a prior period.¶               →VariancePctλ() gives the percentage.¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "VERSION:       →20 Oct 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "Actual         →(Required) One or more actual amounts.¶" &
+                            "Budget         →(Required) The budget or comparison amounts, the same shape as Actual.¶" &
+                            "Type           →(Optional: Default = 1) 1 for income or -1 for an expense recorded as a positive cost: one value, one for each row or one for each cell.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.Varianceλ({120;90}, {100;100}, {1;-1})¶" &
+                            "→Result¶" &
+                            "→20, 10",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR(ISOMITTED(Actual), ISOMITTED(Budget)),
+    //  Set defaults. Only a single blank Type means income: a blank inside a column of
+    //  Types is a missing entry and is refused, not read as income.
+        Sign,           IF(ISOMITTED(Type), 1, IF(AND(ROWS(Type) = 1, COLUMNS(Type) = 1), IF(Type = "", 1, Type), Type)),
+    //  Arithmetic would read "120" as 120 and TRUE as 1. An error passes so it shows.
+        Amounts?,       AND(ISNUMBER(Actual) + ISBLANK(Actual) + ISERROR(Actual),
+                            ISNUMBER(Budget) + ISBLANK(Budget) + ISERROR(Budget)),
+    //  Arrays of other shapes would broadcast into a grid of plausible numbers
+        Rows,           ROWS(Actual),
+        Cols,           COLUMNS(Actual),
+        Shaped?,        AND(ROWS(Budget) = Rows, COLUMNS(Budget) = Cols,
+                            OR(AND(ROWS(Sign) = 1, COLUMNS(Sign) = 1),
+                                AND(ROWS(Sign) = Rows, OR(COLUMNS(Sign) = 1, COLUMNS(Sign) = Cols)))),
+    //  ABS(TRUE) is 1, so the type test is ISNUMBER as well as the size
+        ValidType?,     AND(IFERROR(ISNUMBER(Sign) * (ABS(Sign) = 1) = 1, FALSE)),
+        AmountMessage,  "Varianceλ needs Actual and Budget to hold numbers or blank cells; text and TRUE or FALSE are refused.",
+        ShapeMessage,   "Varianceλ needs Actual and Budget of the same shape, and Type as one value, one for each row or one for each cell.",
+        TypeMessage,    "Varianceλ needs Type to be 1 for income or -1 for an expense in every entry.",
+        Result,         (Actual - Budget) * Sign,
+    //  Return Result, Help or the message
+        Return,         IF(Help?, 2, IF(NOT(Amounts?), 3, IF(NOT(Shaped?), 4, IF(NOT(ValidType?), 5, 1)))),
+        CHOOSE( Return, Result, Help, AmountMessage, ShapeMessage, TypeMessage)
+    )
+);
+
+
+/*  FUNCTION NAME:  VariancePctλ
+    DESCRIPTION:*//**Variance as a fraction of the budget's size, so its sign always matches the variance even when the budget is negative*/
+
+VariancePctλ = LAMBDA(
+//  Parameter Declaration
+    [Actual],
+    [Budget],
+    [Type],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →VariancePctλ(Actual, Budget, [Type])¶" &
+                            "DESCRIPTION:   →The variance from Varianceλ() as a fraction of the budget's size.¶" &
+                            "NOTES!         →Dividing by the budget's absolute value keeps the sign of the variance, so a¶               →favourable variance stays positive when the budget is negative, as a work in¶               →progress movement or a loss can be. A zero budget returns #DIV/0!. Type 1 marks¶               →income and -1 an expense recorded as a positive cost, and the inputs follow the¶               →same rules as in Varianceλ().¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "VERSION:       →20 Oct 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "Actual         →(Required) One or more actual amounts.¶" &
+                            "Budget         →(Required) The budget or comparison amounts, the same shape as Actual.¶" &
+                            "Type           →(Optional: Default = 1) 1 for income or -1 for an expense recorded as a positive cost: one value, one for each row or one for each cell.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.VariancePctλ(-30, -20)¶" &
+                            "→Result¶" &
+                            "→-50%",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR(ISOMITTED(Actual), ISOMITTED(Budget)),
+    //  Set defaults and check inputs as in Varianceλ: only a single blank Type means income
+        Sign,           IF(ISOMITTED(Type), 1, IF(AND(ROWS(Type) = 1, COLUMNS(Type) = 1), IF(Type = "", 1, Type), Type)),
+        Amounts?,       AND(ISNUMBER(Actual) + ISBLANK(Actual) + ISERROR(Actual),
+                            ISNUMBER(Budget) + ISBLANK(Budget) + ISERROR(Budget)),
+        Rows,           ROWS(Actual),
+        Cols,           COLUMNS(Actual),
+        Shaped?,        AND(ROWS(Budget) = Rows, COLUMNS(Budget) = Cols,
+                            OR(AND(ROWS(Sign) = 1, COLUMNS(Sign) = 1),
+                                AND(ROWS(Sign) = Rows, OR(COLUMNS(Sign) = 1, COLUMNS(Sign) = Cols)))),
+        ValidType?,     AND(IFERROR(ISNUMBER(Sign) * (ABS(Sign) = 1) = 1, FALSE)),
+        AmountMessage,  "VariancePctλ needs Actual and Budget to hold numbers or blank cells; text and TRUE or FALSE are refused.",
+        ShapeMessage,   "VariancePctλ needs Actual and Budget of the same shape, and Type as one value, one for each row or one for each cell.",
+        TypeMessage,    "VariancePctλ needs Type to be 1 for income or -1 for an expense in every entry.",
+    //  Dividing by the budget itself would flip the sign when the budget is negative
+        Result,         (Actual - Budget) * Sign / ABS(Budget),
+    //  Return Result, Help or the message
+        Return,         IF(Help?, 2, IF(NOT(Amounts?), 3, IF(NOT(Shaped?), 4, IF(NOT(ValidType?), 5, 1)))),
+        CHOOSE( Return, Result, Help, AmountMessage, ShapeMessage, TypeMessage)
+    )
+);
+
+
+/*  FUNCTION NAME:  YearToDateλ
+    DESCRIPTION:*//**Totals each row of values from the start of the financial year to an as-at date*/
+
+YearToDateλ = LAMBDA(
+//  Parameter Declaration
+    [Values],
+    [Dates],
+    [AsAt],
+    [StartMonth],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →YearToDateλ(Values, Dates, AsAt, [StartMonth])¶" &
+                            "DESCRIPTION:   →Totals each row of Values from the start of AsAt's financial year to AsAt.¶" &
+                            "NOTES!         →A column counts when its date is on or after the first day of the financial¶               →year that contains AsAt, and on or before AsAt; a time of day is ignored. Date¶               →each column by the first day of its period, or by its last day and an AsAt at a¶               →period end. A part period counts in full, not pro rata. Values must hold numbers¶               →or blank cells, which count as 0; text and TRUE or FALSE return a message, and an¶               →error in any column shows. The result is one total for each row of Values. A¶               →financial year starting before 1 January 1900 returns #NUM!.¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "VERSION:       →20 Oct 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "Values         →(Required) A row or block of amounts, one column for each date in Dates.¶" &
+                            "Dates          →(Required) A row of dates, one for each column of Values.¶" &
+                            "AsAt           →(Required) The one date the total runs to, inclusive.¶" &
+                            "StartMonth     →(Optional: Default = 7) Month the financial year starts, one whole number from 1 to 12. Blank cells and empty text use 7.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.YearToDateλ({10,20,30,40;1,2,3,4}, DATE(2026,{5,6,7,8},1), DATE(2026,8,31))¶" &
+                            "→Result¶" &
+                            "→70, 7",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR(ISOMITTED(Values), ISOMITTED(Dates), ISOMITTED(AsAt)),
+    //  Set defaults. A range of start months would give each column its own year.
+        FYStart,        IF(ISOMITTED(StartMonth), 7, IF(StartMonth = "", 7, StartMonth)),
+        ValidStart?,    IF(AND(ROWS(FYStart) = 1, COLUMNS(FYStart) = 1), IFERROR(OR(FYStart = SEQUENCE(12)), FALSE), FALSE),
+        Shaped?,        AND(ROWS(Dates) = 1, COLUMNS(Dates) = COLUMNS(Values), ISNUMBER(Dates)),
+        OneDate?,       AND(ROWS(AsAt) = 1, COLUMNS(AsAt) = 1, ISNUMBER(AsAt)),
+    //  Values * 1 would read "10" as 10 and TRUE as 1. An error passes so it shows.
+        Numbers?,       AND(ISNUMBER(Values) + ISBLANK(Values) + ISERROR(Values)),
+        StartMessage,   "YearToDateλ needs StartMonth to be one whole number from 1 to 12.",
+        ShapeMessage,   "YearToDateλ needs Dates to be one row with a date for each column of Values.",
+        AsAtMessage,    "YearToDateλ needs AsAt to be one date.",
+        ValuesMessage,  "YearToDateλ needs Values to hold numbers or blank cells; text and TRUE or FALSE are refused.",
+    //  The first day of the financial year that contains AsAt. EDATE rather than a year
+    //  less one, which DATE reads as 3799 for 1899.
+        YearStart,      EDATE(DATE(YEAR(AsAt), FYStart, 1), -12 * (MONTH(AsAt) < FYStart)),
+        InYear,         (INT(Dates) >= YearStart) * (INT(Dates) <= INT(AsAt)),
+        Result,         MMULT(Values * 1, TRANSPOSE(InYear)),
+    //  Return Result, Help or the message
+        Return,         IF(Help?, 2, IF(NOT(ValidStart?), 3, IF(NOT(Shaped?), 4, IF(NOT(OneDate?), 5, IF(NOT(Numbers?), 6, 1))))),
+        CHOOSE( Return, Result, Help, StartMessage, ShapeMessage, AsAtMessage, ValuesMessage)
     )
 );
 

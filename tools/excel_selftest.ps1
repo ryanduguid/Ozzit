@@ -991,6 +991,87 @@ Near 'RateAtDate: lengths that differ are a gap'    "--ISNUMBER(SEARCH(`"gap in 
 Near 'RateAtDate: unsorted dates'                   "--ISNUMBER(SEARCH(`"ascending order`", $rad(DATE(2026,{7;1},1), {0.04;0.045}, DATE(2026,8,1))))" '1'
 Near 'RateAtDate: repeated date'                    "--ISNUMBER(SEARCH(`"repeats`", $rad(DATE(2026,{7;7},1), {0.04;0.045}, DATE(2026,8,1))))" '1'
 
+# --- Variance and financial-year periods. A favourable variance is positive for income
+# (Type 1) and expenses (Type -1); the percentage divides by the budget's size, so a
+# negative budget keeps the variance's sign. A blank inside a column of Types is refused,
+# and so is TRUE, which ABS would read as 1. YearToDate counts columns dated from the
+# first day of AsAt's financial year to AsAt. Months and quarters count from StartMonth.
+# ERROR.TYPE: 2 is #DIV/0!, 3 #VALUE!.
+$var = "oz.Variance$L"
+$vpc = "oz.VariancePct$L"
+$ytd = "oz.YearToDate$L"
+$fmo = "oz.FinancialMonth$L"
+$fqu = "oz.FinancialQuarter$L"
+$ytdDates = "DATE(2026,{5,6,7,8},1)"
+Near 'Variance: income above budget'                "$var(120, 100)"                           '20'
+Near 'Variance: expense below budget'               "$var(90, 100, -1)"                        '10'
+Near 'Variance: expense above budget'               "$var(110, 100, -1)"                       '-10'
+Near 'Variance: one Type for each line'             "SUMPRODUCT(ABS($var({120;90},{100;100},{1;-1}) - {20;10}))" '0'
+Near 'Variance: a single blank Type is income'      "$var(120, 100, Z1)"                       '20'
+Near 'Variance: blank Types in a column'            "--ISNUMBER(SEARCH(`"1 for income`", $var({120;90}, {100;100}, Z1:Z2)))" '1'
+Near 'Variance: Type 2 is refused'                  "--ISNUMBER(SEARCH(`"1 for income`", $var(120, 100, 2)))" '1'
+Near 'Variance: Type TRUE is refused'               "--ISNUMBER(SEARCH(`"1 for income`", $var(120, 100, TRUE)))" '1'
+Near 'Variance: text Type is refused'               "--ISNUMBER(SEARCH(`"1 for income`", $var(120, 100, `"1`")))" '1'
+Near 'Variance: text actual is refused'            "--ISNUMBER(SEARCH(`"numbers or blank`", $var(`"x`", 100)))" '1'
+Near 'VariancePct: income above budget'             "$vpc(110, 100)"                           '0.1'
+Near 'VariancePct: expense above budget'            "$vpc(110, 100, -1)"                       '-0.1'
+Near 'VariancePct: negative budget, unfavourable'   "$vpc(-30, -20)"                           '-0.5'
+Near 'VariancePct: negative budget, favourable'     "$vpc(-10, -20)"                           '0.5'
+Near 'VariancePct: zero budget is #DIV/0!'          "ERROR.TYPE($vpc(5, 0))"                   '2' '0.1'
+Near 'VariancePct: Type 0 is refused'               "--ISNUMBER(SEARCH(`"1 for income`", $vpc(110, 100, 0)))" '1'
+Near 'YearToDate: help example, row by row'         "SUMPRODUCT(ABS($ytd({10,20,30,40;1,2,3,4}, $ytdDates, DATE(2026,8,31)) - {70;7}))" '0'
+Near 'YearToDate: June closes the earlier year'     "$ytd({10,20,30,40}, $ytdDates, DATE(2026,6,30))" '30'
+Near 'YearToDate: first month of the year'          "$ytd({10,20,30,40}, $ytdDates, DATE(2026,7,31))" '30'
+Near 'YearToDate: a mid-month AsAt'                 "$ytd({10,20,30,40}, $ytdDates, DATE(2026,8,15))" '70'
+Near 'YearToDate: calendar year'                    "$ytd({10,20,30,40}, $ytdDates, DATE(2026,8,31), 1)" '100'
+Near 'YearToDate: blank values count as 0'          "$ytd(Z1:AC1, $ytdDates, DATE(2026,8,31))" '0'
+Near 'YearToDate: Dates must match Values'          "--ISNUMBER(SEARCH(`"one row with a date`", $ytd({10,20,30,40}, DATE(2026,{5,6,7},1), DATE(2026,8,31))))" '1'
+Near 'YearToDate: text in Dates'                    "--ISNUMBER(SEARCH(`"one row with a date`", $ytd({10,20}, {`"x`",46000}, DATE(2026,8,31))))" '1'
+Near 'YearToDate: AsAt must be one date'            "--ISNUMBER(SEARCH(`"one date`", $ytd({10,20,30,40}, $ytdDates, DATE(2026,{7,8},31))))" '1'
+Near 'YearToDate: StartMonth 13 is refused'         "--ISNUMBER(SEARCH(`"1 to 12`", $ytd({10,20,30,40}, $ytdDates, DATE(2026,8,31), 13)))" '1'
+Near 'FinancialMonth: July is month 1'              "$fmo(DATE(2026,7,1))"                     '1'
+Near 'FinancialMonth: June is month 12'             "$fmo(DATE(2027,6,30))"                    '12'
+Near 'FinancialMonth: April start, March'           "$fmo(DATE(2026,3,31), 4)"                 '12'
+Near 'FinancialMonth: calendar year'                "$fmo(DATE(2026,1,15), 1)"                 '1'
+Near 'FinancialMonth: blank StartMonth cell'        "$fmo(DATE(2026,7,1), Z1)"                 '1'
+Near 'FinancialMonth: a row of dates'               "SUMPRODUCT(ABS($fmo(DATE(2026,{6,7,12},1)) - {12,1,6}))" '0'
+Same 'FinancialMonth: blank is blank'               "$fmo(Z1)"                                 ''
+Near 'FinancialMonth: StartMonth 6.5 is refused'    "--ISNUMBER(SEARCH(`"1 to 12`", $fmo(DATE(2026,7,1), 6.5)))" '1'
+Near 'FinancialQuarter: September is quarter 1'     "$fqu(DATE(2026,9,30))"                    '1'
+Near 'FinancialQuarter: October is quarter 2'       "$fqu(DATE(2026,10,1))"                    '2'
+Near 'FinancialQuarter: June is quarter 4'          "$fqu(DATE(2027,6,30))"                    '4'
+Near 'FinancialQuarter: calendar year, April'       "$fqu(DATE(2026,4,1), 1)"                  '2'
+Near 'FinancialQuarter: StartMonth 0 is refused'    "--ISNUMBER(SEARCH(`"1 to 12`", $fqu(DATE(2026,7,1), 0)))" '1'
+# Inputs that arithmetic and broadcasting would otherwise turn into plausible numbers:
+# a Type row against a column of amounts, amounts of different shapes, text and logical
+# amounts, a range of start months, a time of day on a column date, and a year that
+# would start before 1900 (DATE reads 1899 as 3799; EDATE gives #NUM!, ERROR.TYPE 6).
+Near 'Variance: a Type row is a shape error'        "--ISNUMBER(SEARCH(`"same shape`", $var({120;90}, {100;100}, {1,-1})))" '1'
+Near 'Variance: amounts of different shapes'        "--ISNUMBER(SEARCH(`"same shape`", $var({120;90}, {100,80})))" '1'
+Near 'Variance: too many Types'                     "--ISNUMBER(SEARCH(`"same shape`", $var({120;90}, {100;100}, {1;-1;1})))" '1'
+Near 'Variance: a Type for each row and column'     "SUMPRODUCT(ABS($var({120,130;90,80}, {100,100;100,100}, {1,1;-1,-1}) - {20,30;10,20}))" '0'
+Near 'Variance: one Type per row across months'     "SUMPRODUCT(ABS($var({120,130;90,80}, {100,100;100,100}, {1;-1}) - {20,30;10,20}))" '0'
+Near 'Variance: TRUE amount is refused'             "--ISNUMBER(SEARCH(`"numbers or blank`", $var(TRUE, 0)))" '1'
+Near 'Variance: text amount is refused'             "--ISNUMBER(SEARCH(`"numbers or blank`", $var(`"120`", 100)))" '1'
+Near 'Variance: blank actual cell counts as 0'      "$var(Z1, 100)"                            '-100'
+Near 'Variance: an error amount shows'              "ERROR.TYPE($var(NA(), 100))"             '7' '0.1'
+Near 'VariancePct: FALSE amount is refused'         "--ISNUMBER(SEARCH(`"numbers or blank`", $vpc(FALSE, 100)))" '1'
+Near 'VariancePct: a Type row is a shape error'     "--ISNUMBER(SEARCH(`"same shape`", $vpc({120;90}, {100;100}, {1,-1})))" '1'
+Near 'FinancialMonth: a range of starts refused'    "--ISNUMBER(SEARCH(`"1 to 12`", $fmo(DATE(2026,7,1), {7,13})))" '1'
+Near 'FinancialQuarter: a range of starts refused'  "--ISNUMBER(SEARCH(`"1 to 12`", $fqu(DATE(2026,7,1), {1;7})))" '1'
+Near 'YearToDate: a range of starts refused'        "--ISNUMBER(SEARCH(`"1 to 12`", $ytd({10,20}, DATE(2026,{2,5},1), DATE(2026,8,31), {1,7})))" '1'
+Near 'YearToDate: text values are refused'          "--ISNUMBER(SEARCH(`"numbers or blank`", $ytd({`"10`",20}, DATE(2026,{7,8},1), DATE(2026,8,31))))" '1'
+Near 'YearToDate: TRUE values are refused'          "--ISNUMBER(SEARCH(`"numbers or blank`", $ytd({TRUE,20}, DATE(2026,{7,8},1), DATE(2026,8,31))))" '1'
+Near 'YearToDate: an error in an earlier column'    "ERROR.TYPE($ytd(HSTACK(NA(), 20), DATE(2026,{6,8},1), DATE(2026,8,31)))" '7' '0.1'
+Near 'YearToDate: a time of day is ignored'         "$ytd({10,20}, DATE(2026,8,31) + {0,0.5}, DATE(2026,8,31))" '30'
+Near 'YearToDate: a year before 1900 is #NUM!'      "ERROR.TYPE($ytd({10,20}, DATE(1900,{1,6},1), DATE(1900,6,30)))" '6' '0.1'
+Near 'YearToDate: a 1900 calendar year'             "$ytd({10,20}, DATE(1900,{1,6},1), DATE(1900,6,30), 1)" '30'
+Near 'Variance: a block of blank cells is 0'       "SUMPRODUCT(ABS($var(Z1:AA2, {100,100;100,100}) + 100))" '0'
+Near 'YearToDate: blank and numbers in a block'     "SUMPRODUCT(ABS($ytd(HSTACK(Z1:Z2, {20;30}), DATE(2026,{7,8},1), DATE(2026,8,31)) - {20;30}))" '0'
+Near 'FinancialMonth: text StartMonth is refused'   "--ISNUMBER(SEARCH(`"1 to 12`", $fmo(DATE(2026,7,1), `"7`")))" '1'
+Near 'FinancialQuarter: TRUE StartMonth refused'    "--ISNUMBER(SEARCH(`"1 to 12`", $fqu(DATE(2026,7,1), TRUE)))" '1'
+Near 'YearToDate: StartMonth 7.5 is refused'        "--ISNUMBER(SEARCH(`"1 to 12`", $ytd({10,20}, DATE(2026,{7,8},1), DATE(2026,8,31), 7.5)))" '1'
+
 # --- Randomised checks. Each trial draws fresh inputs, compares the function with an
 # independent Excel formula and, on a miss, reports the inputs that produced it so the
 # case can be reproduced by hand. A run with no failing trial reads OK. Excel has no

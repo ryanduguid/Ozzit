@@ -1,5 +1,46 @@
 # Changelog
 
+## Unreleased
+
+Changes on `main` since v3.5.0. They reach the published workbook in the next
+release; until then v3.5.0 behaves as it did.
+
+### Added
+
+#### Variance and financial-year periods
+
+Five functions take the library from 143 to 148.
+
+- `oz.Varianceλ(Actual, Budget, [Type])` returns actual less budget, multiplied by
+  Type: 1 for income, where an actual above budget is favourable, and -1 for an
+  expense recorded as a positive cost. A favourable variance is positive on every
+  line; a ledger that stores expenses as negative balances needs both amounts negated
+  first. Actual and Budget must be the same shape and hold numbers or blank cells,
+  which count as 0. Type may be one value, one for each row, or one for each cell; a
+  single blank Type means income. Text or logical amounts, other shapes, and a blank,
+  text, TRUE or other value inside a column of Types return a message rather than a
+  number; an error in an amount shows.
+- `oz.VariancePctλ(Actual, Budget, [Type])` divides that variance by the budget's
+  absolute value, so the percentage keeps the variance's sign when the budget is
+  negative, as a work in progress movement or a loss can be. Its inputs follow the
+  same rules. A zero budget returns #DIV/0!.
+- `oz.YearToDateλ(Values, Dates, AsAt, [StartMonth])` totals each row of Values over
+  the columns dated from the first day of AsAt's financial year to AsAt, ignoring any
+  time of day. A part period counts in full. Dates must be one numeric row matching
+  Values' columns, AsAt one date and Values numbers or blank cells; otherwise it
+  returns a message, and an error in any column shows. A financial year that would
+  start before 1 January 1900 returns #NUM!.
+- `oz.FinancialMonthλ(Dates, [StartMonth])` and `oz.FinancialQuarterλ(Dates,
+  [StartMonth])` number a date's month (1 to 12) and quarter (1 to 4) within its
+  financial year, July being month 1 by default. A StartMonth that is not one whole
+  number from 1 to 12, including a range of them, returns a message, as it does in
+  `oz.YearToDateλ`.
+
+They reach the workbook through `ozzit variance_fy_periods`, which writes
+`src/Dates.txt`, `src/Financial.txt`, their About tables, the defined names and
+`functions.csv` at once, as the earlier function passes did. The cover label moves to
+148 functions.
+
 ## v3.5.0, 19 October 2026, ATO benchmark ratios, a dated rate lookup and Apache-2.0
 
 Cut on 19 October 2026 from the changes on `main` since v3.4.2, and published the same

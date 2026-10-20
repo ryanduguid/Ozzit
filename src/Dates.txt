@@ -22,7 +22,9 @@ AboutDatesλ = TRIM(
         "ScheduleValuesλ        →Schedules values in a timeline. ¶" &
         "ScheduleValuesByItemsλ →Schedules values in a timeline for each item in a list.¶" &
         "Timelineλ              →Creates a horizontal list of start or end dates for a timeline¶" &
-        "DateDifλ               →Whole years, months or days between two dates, and the remainders¶" & 
+        "DateDifλ               →Whole years, months or days between two dates, and the remainders¶" &
+        "FinancialMonthλ        →Numbers each date's month within its financial year, from 1 to 12¶" &
+        "FinancialQuarterλ      →Numbers each date's quarter within its financial year, from 1 to 4¶" & 
         "FinancialYearλ         →Labels dates with their Australian financial year, starting 1 July¶" &
         "→",  
         "→", "¶"
@@ -760,6 +762,97 @@ FinancialYearλ = LAMBDA(
         Result,         IF(CvtDates = 0, "", "FY" & TEXT(YEAR(CvtDates) + (FYStart>1) * (MONTH(CvtDates) >= FYStart), "0000")),
     //  Return Result or Help
         CHOOSE( Help? + 1, Result, Help)
+    )
+);
+
+
+
+/*  FUNCTION NAME:  FinancialMonthλ
+    DESCRIPTION:*//**Numbers each date's month within its financial year, so July is month 1 when the year starts on 1 July*/
+
+FinancialMonthλ = LAMBDA(
+//  Parameter Declaration
+    [Dates],
+    [StartMonth],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →FinancialMonthλ(Dates, [StartMonth])¶" &
+                            "DESCRIPTION:   →Numbers each date's month within its financial year, from 1 to 12.¶" &
+                            "NOTES!         →With the default 1 July start, July is month 1 and June is month 12.¶               →Dates may be one date or a range, and the result takes their shape.¶               →FinancialYearλ() labels the year and FinancialQuarterλ() the quarter.¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "VERSION:       →20 Oct 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "Dates          →(Required) One or more dates, numeric or text. A blank cell returns a blank.¶" &
+                            "StartMonth     →(Optional: Default = 7) Month the financial year starts, one whole number from 1 to 12. Blank cells and empty text use 7.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.FinancialMonthλ(DATE(2026,8,15))¶" &
+                            "→Result¶" &
+                            "→2",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          ISOMITTED(Dates),
+    //  Set defaults
+        FYStart,        IF(ISOMITTED(StartMonth), 7, IF(StartMonth = "", 7, StartMonth)),
+    //  A range of start months would number each date against its own year
+        ValidStart?,    IF(AND(ROWS(FYStart) = 1, COLUMNS(FYStart) = 1), IFERROR(OR(FYStart = SEQUENCE(12)), FALSE), FALSE),
+        StartMessage,   "FinancialMonthλ needs StartMonth to be one whole number from 1 to 12.",
+    //  Check inputs - apply convenience conversions. A blank cell stays blank, a text date is read
+        CvtDates,       IF( ISOMITTED( Dates),
+                            FALSE,
+                            IF( ISNUMBER( Dates), Dates, IF( Dates = "", 0, DATEVALUE( Dates)))
+                        ),
+        Result,         IF(CvtDates = 0, "", MOD(MONTH(CvtDates) - FYStart, 12) + 1),
+    //  Return Result, Help or the message
+        Return,         IF(Help?, 2, IF(ValidStart?, 1, 3)),
+        CHOOSE( Return, Result, Help, StartMessage)
+    )
+);
+
+
+/*  FUNCTION NAME:  FinancialQuarterλ
+    DESCRIPTION:*//**Numbers each date's quarter within its financial year, so July to September is quarter 1 when the year starts on 1 July*/
+
+FinancialQuarterλ = LAMBDA(
+//  Parameter Declaration
+    [Dates],
+    [StartMonth],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →FinancialQuarterλ(Dates, [StartMonth])¶" &
+                            "DESCRIPTION:   →Numbers each date's quarter within its financial year, from 1 to 4.¶" &
+                            "NOTES!         →Each quarter is 3 months counted from StartMonth. With the default 1 July¶               →start, July to September is quarter 1 and April to June is quarter 4.¶               →Dates may be one date or a range, and the result takes their shape.¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "VERSION:       →20 Oct 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "Dates          →(Required) One or more dates, numeric or text. A blank cell returns a blank.¶" &
+                            "StartMonth     →(Optional: Default = 7) Month the financial year starts, one whole number from 1 to 12. Blank cells and empty text use 7.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.FinancialQuarterλ(DATE(2026,11,15))¶" &
+                            "→Result¶" &
+                            "→2",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          ISOMITTED(Dates),
+    //  Set defaults
+        FYStart,        IF(ISOMITTED(StartMonth), 7, IF(StartMonth = "", 7, StartMonth)),
+    //  A range of start months would number each date against its own year
+        ValidStart?,    IF(AND(ROWS(FYStart) = 1, COLUMNS(FYStart) = 1), IFERROR(OR(FYStart = SEQUENCE(12)), FALSE), FALSE),
+        StartMessage,   "FinancialQuarterλ needs StartMonth to be one whole number from 1 to 12.",
+    //  Check inputs - apply convenience conversions. A blank cell stays blank, a text date is read
+        CvtDates,       IF( ISOMITTED( Dates),
+                            FALSE,
+                            IF( ISNUMBER( Dates), Dates, IF( Dates = "", 0, DATEVALUE( Dates)))
+                        ),
+        Result,         IF(CvtDates = 0, "", INT(MOD(MONTH(CvtDates) - FYStart, 12) / 3) + 1),
+    //  Return Result, Help or the message
+        Return,         IF(Help?, 2, IF(ValidStart?, 1, 3)),
+        CHOOSE( Return, Result, Help, StartMessage)
     )
 );
 
