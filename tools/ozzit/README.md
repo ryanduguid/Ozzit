@@ -42,6 +42,9 @@ Python workbook helper has retired.
 argument-selection and sanitiser-delegation assertions run beside `src/refresh.rs`.
 Diagnostic hints now name `ozzit refresh_cache`; replay adapts only the 16 old
 command-hint lines in the unchanged 76-case cache corpus.
+`sync_afe_store` is native only. Its 6 former Python test contracts run in
+`tests/afe_contracts.rs`, including both physical output encodings, exact command
+status/refusals, whole-store restoration, unrelated ZIP parts and idempotency.
 Generated headers retain historical Python filenames to preserve published bytes.
 The workbook retains its native Excel formulas and ordinary `.xlsx` format.
 

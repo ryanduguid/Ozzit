@@ -1,8 +1,6 @@
 """Paths through the AFE store gate and its sync tool that the workbook tests never reach."""
 
 import base64
-import contextlib
-import io
 import json
 import shutil
 import sys
@@ -10,12 +8,10 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
-from unittest import mock
 
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
-import sync_afe_store  # noqa: E402
 import verify_afe  # noqa: E402
 
 PADDING = "x" * 80   # keeps a small store's payload over the 100-character blob floor
@@ -135,92 +131,6 @@ class CheckTests(AfeFixture):
             ],
         )
 
-
-class SyncTests(AfeFixture):
-    def sync_fixture(self):
-        src = self.write_src({
-            "Dates": "Aλ = LAMBDA(x, x);\nCλ = LAMBDA(x, x + 1);\n",
-            "Essentials": "Bλ = LAMBDA(x, x);\n",
-            "Financial": "",
-            "Ratios": "",
-            "Utilities": "not a declaration;\n",
-            "Debt": "",
-        })
-        store = {
-            "schema": verify_afe.SCHEMA,
-            "files": [
-                {"path": "/projects/Dates", "text": "stale"},
-                {"path": "/projects/Essentials", "text": "Bλ = LAMBDA(x, x);\n"},
-            ],
-            "projectNames": ["oz.Aλ", "oz.Bλ", "oz.Goneλ"],
-        }
-        workbook = self.write_store(
-            store, name="ozzit.xlsx",
-            **{"xl/workbook.xml": defined_names("oz.Aλ", "oz.Bλ", "oz.Cλ", "oz.Zλ")},
-        )
-        return workbook, src
-
-    def test_module_of_maps_only_declarations(self):
-        _workbook, src = self.sync_fixture()
-        self.assertEqual(
-            sync_afe_store.module_of(src),
-            {"oz.Aλ": "Dates", "oz.Cλ": "Dates", "oz.Bλ": "Essentials"},
-        )
-
-    def test_sync_adds_missing_modules_and_files_new_names_beside_their_module(self):
-        workbook, src = self.sync_fixture()
-
-        changes = sync_afe_store.sync(workbook, src)
-
-        self.assertEqual(
-            changes,
-            [
-                "synced AFE module /projects/Dates",
-                "added AFE module /projects/Financial",
-                "added AFE module /projects/Ratios",
-                "added AFE module /projects/Utilities",
-                "added AFE module /projects/Debt",
-                "synced AFE projectNames: 2 added, 1 dropped, 4 listed",
-            ],
-        )
-        store = verify_afe.decode_store(workbook)
-        # oz.Cλ follows the last Dates name; oz.Zλ has no module, so it goes last.
-        self.assertEqual(store["projectNames"], ["oz.Aλ", "oz.Cλ", "oz.Bλ", "oz.Zλ"])
-        self.assertEqual(verify_afe.check(workbook, src), [])
-        self.assertEqual(sync_afe_store.sync(workbook, src), ["AFE store already matches src/"])
-
-    def run_main(self, *args):
-        output = io.StringIO()
-        with mock.patch.object(sys, "argv", ["sync_afe_store.py", *map(str, args)]), \
-             contextlib.redirect_stdout(output):
-            sync_afe_store.main()
-        return output.getvalue()
-
-    def test_main_prints_each_change_and_the_synced_size(self):
-        workbook, src = self.sync_fixture()
-
-        printed = self.run_main(workbook, src).splitlines()
-
-        self.assertEqual(printed[0], "synced AFE module /projects/Dates")
-        self.assertEqual(len(printed), 7)
-        self.assertEqual(
-            printed[-1], f"OK: {workbook} AFE store synced, {workbook.stat().st_size:,} bytes"
-        )
-
-    def test_main_refuses_bad_arguments_and_unreadable_workbooks(self):
-        not_zip = self.directory / "not-a-zip.xlsx"
-        not_zip.write_bytes(b"not a zip archive")
-        missing = self.directory / "missing.xlsx"
-        cases = (
-            (("a", "b", "c"), "FAIL: usage: python tools/sync_afe_store.py [workbook] [src dir]"),
-            ((missing,), f"FAIL: no such workbook: {missing}"),
-            ((not_zip, self.directory), "FAIL: cannot sync AFE store: File is not a zip file"),
-        )
-        for args, message in cases:
-            with self.subTest(message=message):
-                with self.assertRaises(SystemExit) as caught:
-                    self.run_main(*args)
-                self.assertEqual(caught.exception.code, message)
 
 
 if __name__ == "__main__":

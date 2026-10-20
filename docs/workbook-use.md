@@ -47,7 +47,7 @@ The workbook tracked in this repository is the candidate the gates below run aga
    definition in `src/` and follow the run order in `tools/postbuild/README.md`:
    `tools/compile_sources.py` renders it into the stored form and writes it over the
    defined name that ships, `ozzit build_module` rebuilds `oz.txt`,
-   `tools/sync_afe_store.py` copies the source into the workbook's AFE store, and
+   `ozzit sync_afe_store` copies the source into the workbook's AFE store, and
    `tools/sanitise_workbook.py` runs last.
 
    Imported names can collide with names a workbook already holds, and a module

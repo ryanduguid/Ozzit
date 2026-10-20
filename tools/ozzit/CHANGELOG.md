@@ -2,6 +2,11 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+`sync_afe_store.py` is retired. Rust retains its 6 former test contracts,
+including grouped names, inline idempotency, exact status/refusals and both
+output encodings. Updated owned copies restore the complete decoded AFE store
+and preserve every unrelated archive part. Shared Python AFE helpers remain.
+
 `refresh_cache.py` is retired. Rust preserves its 8 former test contracts,
 including the exact PowerShell arguments, 600-second deadline, failure output
 and shared sanitiser call. Active diagnostics name `ozzit refresh_cache`; the
