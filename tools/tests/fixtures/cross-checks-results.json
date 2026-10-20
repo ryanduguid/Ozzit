@@ -1,6 +1,6 @@
 {
     "excel":  "16.0 build 20527",
-    "workbook_sha256":  "ecf782a14efda5ce113ddb9885876fe65c5e86f83c8e90c1ee9a0c2eb5d05c6b",
+    "workbook_sha256":  "222a5d3af9e930d787bb433acba1b278e50304be4cb72a22a0afa7ea75631b36",
     "results":  {
                     "lease_l1_liability":  [
                                                [
@@ -736,12 +736,42 @@
                                               ],
                     "financial_quarter_start_refused":  [
                                                             [
-                                                                "FinancialQuarterλ needs StartMonth to be a whole number from 1 to 12."
+                                                                "FinancialQuarterλ needs StartMonth to be one whole number from 1 to 12."
                                                             ]
-                                                        ]
+                                                        ],
+                    "variance_type_row_refused":  [
+                                                      [
+                                                          "Varianceλ needs Actual and Budget of the same shape, and Type as one value or one for each row."
+                                                      ]
+                                                  ],
+                    "variance_type_per_row_across_months":  [
+                                                                [
+                                                                    20,
+                                                                    30
+                                                                ],
+                                                                [
+                                                                    10,
+                                                                    20
+                                                                ]
+                                                            ],
+                    "variance_text_amount_refused":  [
+                                                         [
+                                                             "Varianceλ needs Actual and Budget to hold numbers or blank cells; text and TRUE or FALSE are refused."
+                                                         ]
+                                                     ],
+                    "year_to_date_start_range_refused":  [
+                                                             [
+                                                                 "YearToDateλ needs StartMonth to be one whole number from 1 to 12."
+                                                             ]
+                                                         ],
+                    "year_to_date_boolean_refused":  [
+                                                         [
+                                                             "YearToDateλ needs Values to hold numbers or blank cells; text and TRUE or FALSE are refused."
+                                                         ]
+                                                     ]
                 },
-    "cases_sha256":  "a7055523fe5a28592a196db6ee35f7c32a1f08ef224e7963cbc8d2e5ca534a22",
+    "cases_sha256":  "8a30aba9917b187f0415313ef36f1932fe6ea41dcf97c696bb5163778cacd18d",
     "helper_sha256":  "228884ebb9da01a792fd891b9fc9714bba1ebb870b6e704b291921fc66b4f6a2",
     "evidence_helper_sha256":  "4f0db804f1d5ef13ddd8f2d635b51052db175e1c634ddaee5ad6af3dd42e6f59",
-    "evaluated_at_utc":  "2026-10-20T01:24:56.4328338Z"
+    "evaluated_at_utc":  "2026-10-20T01:58:59.9387744Z"
 }
