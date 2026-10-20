@@ -620,23 +620,126 @@ fn one_member_archive(name: &str) -> Vec<u8> {
 }
 
 #[test]
-fn a_retained_reader_checks_the_bytes_it_opened() {
+fn a_retained_reader_reads_the_file_it_opened_as_python_does() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("book.xlsx");
+    let other = dir.path().join("other.xlsx");
     let good = one_member_archive("xl/workbook.xml");
     let mut bad = good.clone();
     bad[30..45].copy_from_slice(b"xl/workbool.xml");
-    // A malformed archive stays malformed after its path is replaced with a good one.
+    let read = |zip: &archive::ZipReader| archive::member_text(zip, "xl/workbook.xml");
+    // Another file renamed over the path: the open file is still the malformed one.
     std::fs::write(&path, &bad).unwrap();
-    let mut zip = archive::open_zip(&path).unwrap();
-    std::fs::write(&path, &good).unwrap();
-    assert!(archive::member_text(&mut zip, "xl/workbook.xml").is_err());
-    // A good archive stays readable after its path is removed, as an open file does.
-    let mut zip = archive::open_zip(&path).unwrap();
+    let zip = archive::open_zip(&path).unwrap();
+    std::fs::write(&other, &good).unwrap();
+    std::fs::rename(&other, &path).unwrap();
+    assert!(read(&zip).is_err());
+    // The path removed: the open file still reads.
+    let zip = archive::open_zip(&path).unwrap();
     std::fs::remove_file(&path).unwrap();
+    assert_eq!(read(&zip).unwrap(), "<probe/>");
+    // The open file itself rewritten: later reads see the new header, either way.
+    std::fs::write(&path, &bad).unwrap();
+    let zip = archive::open_zip(&path).unwrap();
+    std::fs::write(&path, &good).unwrap();
+    assert_eq!(read(&zip).unwrap(), "<probe/>");
+    let zip = archive::open_zip(&path).unwrap();
+    std::fs::write(&path, &bad).unwrap();
+    assert!(read(&zip).is_err());
+}
+
+/// A stored archive with each entry's raw name, general-purpose flags and data;
+/// `crc` false writes a wrong CRC.
+fn stored_archive(entries: &[(&[u8], u16, &[u8], bool)]) -> Vec<u8> {
+    let (mut out, mut central) = (Vec::new(), Vec::new());
+    for &(name, flags, data, crc) in entries {
+        let offset = out.len() as u32;
+        let crc = crc32fast::hash(data) ^ if crc { 0 } else { 1 };
+        let fields = |head: &mut Vec<u8>| {
+            head.extend(flags.to_le_bytes());
+            head.extend([0, 0, 0, 0, 0x21, 0]);
+            head.extend(crc.to_le_bytes());
+            head.extend((data.len() as u32).to_le_bytes());
+            head.extend((data.len() as u32).to_le_bytes());
+            head.extend((name.len() as u16).to_le_bytes());
+            head.extend([0, 0]);
+        };
+        out.extend(b"PK\x03\x04\x14\x00");
+        fields(&mut out);
+        out.extend(name);
+        out.extend(data);
+        central.extend(b"PK\x01\x02\x14\x00\x14\x00");
+        fields(&mut central);
+        central.extend([0; 10]);
+        central.extend(offset.to_le_bytes());
+        central.extend(name);
+    }
+    let (start, size, count) = (out.len() as u32, central.len() as u32, entries.len() as u16);
+    out.extend(central);
+    out.extend(b"PK\x05\x06\x00\x00\x00\x00");
+    out.extend(count.to_le_bytes());
+    out.extend(count.to_le_bytes());
+    out.extend(size.to_le_bytes());
+    out.extend(start.to_le_bytes());
+    out.extend([0, 0]);
+    out
+}
+
+fn inventory(bytes: &[u8]) -> (archive::Parts, Vec<String>) {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("book.xlsx");
+    std::fs::write(&path, bytes).unwrap();
+    archive::read_inventory(&path).unwrap()
+}
+
+#[test]
+fn records_are_named_and_selected_as_zipfile_does() {
+    let utf8 = "é.xml".as_bytes();
+    // Equal raw bytes, different flags: two names, two payloads.
+    let (parts, names) = inventory(&stored_archive(&[
+        (utf8, 0x800, b"<first/>", true),
+        (utf8, 0, b"<second/>", true),
+    ]));
+    assert_eq!(names, ["é.xml", "├⌐.xml"]);
+    assert_eq!(parts["é.xml"], b"<first/>");
+    assert_eq!(parts["├⌐.xml"], b"<second/>");
+    // Different raw bytes, one name: the last record wins, and the bad first is never read.
+    let (parts, names) = inventory(&stored_archive(&[
+        (b"\x82.xml", 0, b"<first/>", false),
+        (utf8, 0x800, b"<second/>", true),
+    ]));
+    assert_eq!(names, ["é.xml", "é.xml"]);
+    assert_eq!(parts["é.xml"], b"<second/>");
+    // The name ends at the first NUL.
+    let (parts, names) = inventory(&stored_archive(&[(
+        b"probe.xml\0ignored",
+        0,
+        b"<p/>",
+        true,
+    )]));
+    assert_eq!(names, ["probe.xml"]);
+    assert_eq!(parts["probe.xml"], b"<p/>");
+}
+
+#[test]
+fn a_lookup_reads_only_the_selected_member() {
+    let mut bytes = stored_archive(&[
+        (b"unused.dat", 0, b"x", true),
+        (b"xl/workbook.xml", 0, b"<workbook/>", false),
+    ]);
+    bytes[..4].copy_from_slice(b"XXXX");
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("book.xlsx");
+    std::fs::write(&path, &bytes).unwrap();
+    let zip = archive::open_zip(&path).unwrap();
+    // The damaged unused header is not read; the selected member's CRC is checked.
     assert_eq!(
-        archive::member_text(&mut zip, "xl/workbook.xml").unwrap(),
-        "<probe/>"
+        archive::member_text(&zip, "xl/workbook.xml").unwrap_err(),
+        "Bad CRC-32 for file 'xl/workbook.xml'"
+    );
+    assert_eq!(
+        archive::member_text(&zip, "unused.dat").unwrap_err(),
+        "Bad magic number for file header"
     );
 }
 
