@@ -3,8 +3,9 @@
 Each case is an Excel formula and the grid it should return, worked out here in Python
 from the rule the function implements rather than from the LAMBDA's own steps: present
 values from the closed-form annuity factor, loan repayments from the level-payment
-formula, and the ATO ratios and rate lookup from the mirrors in
-tools/tests/postbuild/test_ato_benchmarks_rate_lookup.py.
+formula, the ATO ratios and rate lookup from the mirrors in
+tools/tests/postbuild/test_ato_benchmarks_rate_lookup.py, and the variance and
+financial-year period functions from their definitions with Python dates.
 
 The lease scenarios follow the patterns of the IFRS 16 illustrative examples the AASB
 reproduces (Example 13, initial measurement and a change in lease term at a revised
@@ -238,9 +239,66 @@ def ato_cases():
     ]
 
 
+def fy_month(day, start=7):
+    """Month of the financial year that starts in month `start`, from 1 to 12."""
+    return (day.month - start) % 12 + 1
+
+
+def year_to_date(rows, dates, as_at, start=7):
+    """Each row's total over the dates from the first day of as_at's financial year."""
+    first = date(as_at.year - (as_at.month < start), start, 1)
+    return [[sum(v for v, d in zip(row, dates) if first <= d <= as_at)] for row in rows]
+
+
+def period_cases():
+    rows = [[10, 20, 30, 40], [1, 2, 3, 4]]
+    months = [date(2026, m, 1) for m in (5, 6, 7, 8)]
+    dates = "DATE(2026,{5,6,7,8},1)"
+    grid = "{10,20,30,40;1,2,3,4}"
+    return [
+        ("variance_income_above", "=oz.Varianceλ(120,100)", [[(120 - 100) * 1]]),
+        ("variance_expense_below", "=oz.Varianceλ(90,100,-1)", [[(90 - 100) * -1]]),
+        ("variance_types_by_line", "=oz.Varianceλ({120;90;80},{100;100;100},{1;-1;1})",
+         [[(a - b) * t] for a, b, t in ((120, 100, 1), (90, 100, -1), (80, 100, 1))]),
+        ("variance_type_refused", "=oz.Varianceλ(120,100,2)",
+         [["Varianceλ needs Type to be 1 for income or -1 for an expense in every entry."]]),
+        ("variance_pct_income", "=oz.VariancePctλ(110,100)", [[(110 - 100) / abs(100)]]),
+        ("variance_pct_negative_budget", "=oz.VariancePctλ(-30,-20)", [[(-30 - -20) / abs(-20)]]),
+        ("variance_pct_negative_budget_expense", "=oz.VariancePctλ(-30,-20,-1)",
+         [[(-30 - -20) * -1 / abs(-20)]]),
+        ("variance_pct_zero_budget", "=oz.VariancePctλ(5,0)", [[DIV0]]),
+        ("year_to_date_example", f"=oz.YearToDateλ({grid},{dates},DATE(2026,8,31))",
+         year_to_date(rows, months, date(2026, 8, 31))),
+        ("year_to_date_june", f"=oz.YearToDateλ({grid},{dates},DATE(2026,6,30))",
+         year_to_date(rows, months, date(2026, 6, 30))),
+        ("year_to_date_calendar", f"=oz.YearToDateλ({grid},{dates},DATE(2026,7,15),1)",
+         year_to_date(rows, months, date(2026, 7, 15), 1)),
+        ("year_to_date_shape", f"=oz.YearToDateλ({grid},DATE(2026,{{5,6,7}},1),DATE(2026,8,31))",
+         [["YearToDateλ needs Dates to be one row with a date for each column of Values."]]),
+        ("financial_month_row", "=oz.FinancialMonthλ(DATE(2026,{1,6,7,12},15))",
+         [[fy_month(date(2026, m, 15)) for m in (1, 6, 7, 12)]]),
+        ("financial_month_april_start", "=oz.FinancialMonthλ(DATE(2026,{3;4},1),4)",
+         [[fy_month(date(2026, m, 1), 4)] for m in (3, 4)]),
+        ("financial_quarter_row", "=oz.FinancialQuarterλ(DATE(2026,{7,9,10,1,6},1))",
+         [[(fy_month(date(2026, m, 1)) - 1) // 3 + 1 for m in (7, 9, 10, 1, 6)]]),
+        ("financial_quarter_start_refused", "=oz.FinancialQuarterλ(DATE(2026,7,1),13)",
+         [["FinancialQuarterλ needs StartMonth to be one whole number from 1 to 12."]]),
+        ("variance_type_row_refused", "=oz.Varianceλ({120;90},{100;100},{1,-1})",
+         [["Varianceλ needs Actual and Budget of the same shape, and Type as one value, one for each row or one for each cell."]]),
+        ("variance_type_per_row_across_months", "=oz.Varianceλ({120,130;90,80},{100,100;100,100},{1;-1})",
+         [[(a - 100) * t for a in row] for row, t in (((120, 130), 1), ((90, 80), -1))]),
+        ("variance_text_amount_refused", '=oz.Varianceλ("120",100)',
+         [["Varianceλ needs Actual and Budget to hold numbers or blank cells; text and TRUE or FALSE are refused."]]),
+        ("year_to_date_start_range_refused", "=oz.YearToDateλ({10,20},DATE(2026,{2,5},1),DATE(2026,8,31),{1,7})",
+         [["YearToDateλ needs StartMonth to be one whole number from 1 to 12."]]),
+        ("year_to_date_boolean_refused", "=oz.YearToDateλ({TRUE,20},DATE(2026,{7,8},1),DATE(2026,8,31))",
+         [["YearToDateλ needs Values to hold numbers or blank cells; text and TRUE or FALSE are refused."]]),
+    ]
+
+
 CASES = [
     {"id": case_id, "formula": formula, "expected": expected}
-    for case_id, formula, expected in lease_cases() + loan_cases() + ato_cases()
+    for case_id, formula, expected in lease_cases() + loan_cases() + ato_cases() + period_cases()
 ]
 
 

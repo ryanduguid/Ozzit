@@ -71,6 +71,10 @@ const COMMANDS: &[(&str, Handler)] = &[
         "ato_benchmarks_rate_lookup",
         postbuild::function_pass::ato_benchmarks_rate_lookup,
     ),
+    (
+        "variance_fy_periods",
+        postbuild::function_pass::variance_fy_periods,
+    ),
 ];
 pub fn dispatch(args: &[String]) -> Output {
     let command = args.first().map(String::as_str);
