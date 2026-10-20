@@ -1,4 +1,4 @@
-"""Refusal and edge paths of the cache, native evidence, index and help-spill gates."""
+"""Refusal and edge paths of the native evidence, index and help-spill gates."""
 
 import contextlib
 import csv
@@ -12,14 +12,12 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
-from types import SimpleNamespace
 from unittest import mock
 
 TOOLS = Path(__file__).resolve().parents[1]
 ROOT = TOOLS.parent
 sys.path.insert(0, str(TOOLS))
 
-import verify_cache  # noqa: E402
 import verify_help_spills as spills  # noqa: E402
 import verify_index  # noqa: E402
 import verify_native_evidence as evidence  # noqa: E402
@@ -45,118 +43,11 @@ def load_fresh(name):
 class PlainStdoutImportTests(unittest.TestCase):
     def test_each_gate_imports_when_stdout_cannot_be_reconfigured(self):
         self.assertFalse(hasattr(io.StringIO(), "reconfigure"))
-        for name in ("verify_cache", "verify_index", "verify_help_spills"):
+        for name in ("verify_index", "verify_help_spills"):
             with self.subTest(tool=name):
                 module = load_fresh(name)
                 self.assertTrue(callable(module.main))
                 self.assertIsNot(module, sys.modules[name])
-
-
-class CacheGatePathTests(unittest.TestCase):
-    def setUp(self):
-        self.directory = Path(tempfile.mkdtemp(prefix="ozzit-cache-paths-"))
-
-    def tearDown(self):
-        shutil.rmtree(self.directory, ignore_errors=True)
-
-    def workbook(self, cells):
-        """One worksheet, no shared strings part, holding the given cell XML."""
-        return write_archive(self.directory / "cache.xlsx", {
-            "xl/workbook.xml": '<workbook><sheets><sheet name="Data" r:id="rId1"/></sheets></workbook>',
-            "xl/_rels/workbook.xml.rels": (
-                '<Relationships><Relationship Id="rId1" Target="worksheets/sheet1.xml"/></Relationships>'
-            ),
-            "xl/worksheets/sheet1.xml": "<worksheet><sheetData>%s</sheetData></worksheet>" % cells,
-        })
-
-    def numbers(self, count, value="1"):
-        return self.workbook("".join(f'<c r="A{row}"><v>{value}</v></c>' for row in range(1, count + 1)))
-
-    def run_gate(self, workbook, dump="", returncode=0, stdout="", stderr="", floor=None):
-        dumps = []
-
-        def dump_values(args, **kwargs):
-            target = Path(args[args.index("-Out") + 1])
-            dumps.append(target)
-            if returncode:
-                target.unlink()
-            else:
-                target.write_text(dump, encoding="utf-8")
-            return SimpleNamespace(args=args, returncode=returncode, stdout=stdout,
-                                   stderr=stderr)
-
-        output = io.StringIO()
-        patches = [mock.patch.object(verify_cache, "WORKBOOK", str(workbook)),
-                   mock.patch.object(verify_cache.subprocess, "run", side_effect=dump_values)]
-        if floor is not None:
-            patches.append(mock.patch.object(verify_cache, "FLOOR", floor))
-        with contextlib.ExitStack() as stack:
-            for item in patches:
-                stack.enter_context(item)
-            stack.enter_context(contextlib.redirect_stdout(output))
-            result = verify_cache.main()
-        for target in dumps:
-            self.assertFalse(target.exists(), "the gate left its value dump behind")
-        return result, output.getvalue()
-
-    def test_a_missing_workbook_fails_before_excel_is_driven(self):
-        missing = self.directory / "missing.xlsx"
-        output = io.StringIO()
-        with mock.patch.object(verify_cache, "WORKBOOK", str(missing)), \
-                mock.patch.object(verify_cache.subprocess, "run") as run, \
-                contextlib.redirect_stdout(output):
-            self.assertEqual(verify_cache.main(), 1)
-        self.assertEqual(output.getvalue(), f"FAIL: no such workbook: {missing}\n")
-        run.assert_not_called()
-
-    def test_an_excel_failure_reports_its_exit_code_and_output(self):
-        # The dumper exits before writing, so the cleanup finds no file to remove.
-        result, output = self.run_gate(self.numbers(1), returncode=3, stderr="  COM refused \n")
-        self.assertEqual(result, 1)
-        self.assertEqual(
-            output, "FAIL: could not read the workbook in Excel (exit 3)\nCOM refused\n"
-        )
-
-    def test_cached_values_without_shared_strings_skip_empty_inline_cells(self):
-        workbook = self.workbook('<c r="A1"><v>7</v></c><c r="B1" t="inlineStr"><is/></c>')
-        self.assertEqual(verify_cache.cached_values(workbook),
-                         ({(1, 1, 1): verify_cache.CellValue("7")}, {1: "Data"}))
-
-    def test_malformed_dump_lines_fail_with_a_diagnostic(self):
-        workbook = self.workbook('<c r="A1"><v>7</v></c><c r="B1" t="inlineStr"><is/></c>')
-        result, output = self.run_gate(workbook, dump="1\t1\t1\tvalue\t7\nnot a dump row\n1\t2\n")
-        self.assertEqual(result, 1)
-        self.assertIn("FAIL: cannot read Excel dump: row 2", output)
-
-    def test_a_complete_but_thin_dump_still_fails_the_floor(self):
-        result, output = self.run_gate(self.numbers(1), dump="1\t1\t1\tvalue\t1\n")
-        self.assertEqual(result, 1)
-        self.assertIn("FAIL: only 1 cells carried both a cached and a calculated value, "
-                      "under the floor of 15000.", output)
-
-    def test_value_tabs_remain_inside_the_final_dump_field(self):
-        workbook = self.workbook('<c r="A1" t="str"><v>a\tb</v></c>')
-        result, output = self.run_gate(workbook, dump="1\t1\t1\tvalue\ta\tb\n", floor=1)
-        self.assertEqual(result, 0, output)
-
-    def test_more_than_twenty_missing_cells_are_summarised(self):
-        result, output = self.run_gate(self.numbers(25))
-        self.assertEqual(result, 1)
-        lines = output.splitlines()
-        self.assertEqual(lines[0], "FAIL: 25 cached value(s) are missing from the Excel dump")
-        self.assertEqual(len(lines), 22)
-        self.assertEqual(lines[-1], "  ... and 5 more")
-
-    def test_more_than_twenty_stale_cells_are_summarised(self):
-        dump = "".join(f"1\t{row}\t1\tvalue\t2\n" for row in range(1, 26))
-        result, output = self.run_gate(self.numbers(25), dump=dump, floor=1)
-        self.assertEqual(result, 1)
-        lines = output.splitlines()
-        self.assertEqual(
-            lines[0], "FAIL: 25 of 25 cached values are not what the formula produces, on 1 sheet(s)"
-        )
-        self.assertEqual(lines[1], "  - Data row 1 col 1: cached 1 (value), calculates to 2 (value)")
-        self.assertEqual(lines[-2:], ["  ... and 5 more", "Run: ozzit refresh_cache"])
 
 
 class NativeEvidencePathTests(unittest.TestCase):

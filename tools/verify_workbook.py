@@ -243,7 +243,7 @@ def main() -> None:
 
     # This structural check catches a missing recalculation flag and calculation chain.
     # A chain can survive XML edits that leave caches stale, so its presence proves
-    # nothing about cached values. The separate tools/verify_cache.py native Excel gate
+    # nothing about cached values. The separate ozzit verify_cache native Excel gate
     # remains mandatory under RELEASING.md, including when this check passes.
     if 'fullCalcOnLoad="1"' not in workbook and "xl/calcChain.xml" not in parts:
         fail("neither fullCalcOnLoad nor a calculation chain. Run ozzit refresh_cache, or "

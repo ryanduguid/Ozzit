@@ -58,6 +58,13 @@ selection checks. Its 31 remaining compiler contracts run in `tests/foundation.r
 index text and inline idempotency. The shared Python argument parser now belongs
 to `verify_sources`; its original test follows it. All 10 unrelated comparison
 tests remain. The obsolete Python compiler import lifecycle test is retired.
+`verify_cache` and its exclusive OPC helper are native only. Their 26 former
+test contracts run in `src/cache_retirement.rs`, with physical command refusals
+in `tests/cache_retirement_cli.rs`. Fake runners check the complete launch,
+600-second deadline, temporary-dump cleanup and unchanged workbook bytes.
+All 8 typed error-code combinations and the 12 original cases at exactly
+15,000 cells remain checked. The retained column helper test follows its live
+Python owner; the other gate import checks and 26 unrelated tests remain.
 Generated headers retain historical Python filenames to preserve published bytes.
 The workbook retains its native Excel formulas and ordinary `.xlsx` format.
 

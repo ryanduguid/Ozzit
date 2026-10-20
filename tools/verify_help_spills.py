@@ -7,7 +7,7 @@ call with no arguments that spills the function's help, and the file caches what
 that spilled when Excel last saved. A help change in src/ compiled into the
 workbook leaves that cache showing the old table until Excel recalculates, and
 nothing in the CI sequence looks at it: verify_sources.py compares definitions,
-and tools/verify_cache.py needs Excel.
+and ozzit verify_cache needs Excel.
 
 The help is the one result that can be predicted without a formula engine. It
 is TRIM(TEXTSPLIT(text, "→", "¶")) over a string literal, so this tool reads the
@@ -23,7 +23,7 @@ excluding it would let a spill Excel never saved pass the check unseen.
 This tool only reads. AGENTS.md reserves cached values for Excel-backed
 evidence, so a stale help is reported, never rewritten: run
 ozzit refresh_cache in Excel, then ozzit sanitise_workbook, and
-tools/verify_cache.py proves the result. Run this first to know whether that
+ozzit verify_cache proves the result. Run this first to know whether that
 round is needed at all.
 """
 
@@ -180,7 +180,7 @@ def main() -> None:
         sys.exit(
             f"FAIL: {len(stale)} of {anchors} cached helps in {workbook} no longer match "
             "their definitions; run ozzit refresh_cache in Excel, then "
-            "ozzit sanitise_workbook, and tools/verify_cache.py proves the result"
+            "ozzit sanitise_workbook, and ozzit verify_cache proves the result"
         )
     print(f"OK: every cached help in {workbook} matches its definition, {anchors} anchors")
 

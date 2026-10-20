@@ -2,6 +2,15 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+The Python `verify_cache` tool and its exclusive `opc` helper are retired.
+Rust retains their 26 test contracts, including typed Excel errors, OPC targets,
+exact cell representations, missing/stale/floor precedence and 15,000-cell
+nonfinite/tolerance cases. Private test seams retain the real temporary-dump
+lifecycle and process arguments with fake runners. Physical command refusals
+preserve status, stdout and stderr. All 26 unrelated mixed-file methods remain;
+the shared column test follows its live helper. Active cache hints name
+`ozzit verify_cache`. Native evidence and the PowerShell drivers are unchanged.
+
 The Python `compile_sources` reference module is retired. Rust retains all
 31 remaining compiler test contracts, including exact rendering and refusals,
 unchanged index text and inline idempotency. The exact shared argument parser

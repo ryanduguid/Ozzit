@@ -1,0 +1,14 @@
+{
+  "cache_parts": {
+    "xl/workbook.xml": "<workbook><sheets><sheet name=\"Data\" r:id=\"rId1\"/></sheets></workbook>",
+    "xl/_rels/workbook.xml.rels": "<Relationships><Relationship Id=\"rId1\" Target=\"worksheets/sheet1.xml\"/></Relationships>",
+    "xl/sharedStrings.xml": "<sst><si><t>A&amp;B</t></si><si><t>second</t></si></sst>",
+    "xl/worksheets/sheet1.xml": "<worksheet><sheetData><row r=\"1\"><c r=\"A1\" t=\"s\"><v>0</v></c><c r=\"B2\" t=\"b\"><v>1</v></c><c r=\"C3\" t=\"inlineStr\"><is><t>inline &lt;value&gt;</t></is></c><c r=\"D4\"><v>123.5</v></c><c r=\"E5\"><f>1+1</f></c><c r=\"AA6\" t=\"str\"><v>cached text</v></c></row></sheetData></worksheet>"
+  },
+  "absolute_parts": {
+    "xl/workbook.xml": "<workbook xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\"><sheets><sheet name=\"Data\" sheetId=\"1\" r:id=\"rId1\"/><sheet name=\"Notes\" sheetId=\"2\" r:id=\"rId2\"/></sheets></workbook>",
+    "xl/_rels/workbook.xml.rels": "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"ws\" Target=\"/xl/worksheets/sheet1.xml\"/><Relationship Id=\"rId2\" Type=\"ws\" Target=\"worksheets/sheet2.xml\"/></Relationships>",
+    "xl/worksheets/sheet1.xml": "<worksheet><sheetData><c r=\"A1\"><v>1</v></c></sheetData></worksheet>",
+    "xl/worksheets/sheet2.xml": "<worksheet><sheetData><c r=\"A1\"><v>2</v></c></sheetData></worksheet>"
+  }
+}

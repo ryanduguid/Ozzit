@@ -1,9 +1,7 @@
 """Fixture tests for workbook readers that sit at untyped file boundaries."""
 
 import base64
-import contextlib
 import csv
-import io
 import json
 import shutil
 import subprocess
@@ -12,14 +10,12 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
-from unittest.mock import patch
 
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
+import sanitise_workbook  # noqa: E402
 import verify_afe  # noqa: E402
-import verify_cache  # noqa: E402
-from verify_cache import CellValue  # noqa: E402
 
 
 class WorkbookFixtureTests(unittest.TestCase):
@@ -45,30 +41,6 @@ class WorkbookFixtureTests(unittest.TestCase):
             {"customXml/item1.xml": b"<store>" + encoded + b"</store>"},
         )
 
-    def cache_parts(self, target="worksheets/sheet1.xml"):
-        return {
-            "xl/workbook.xml": (
-                '<workbook><sheets><sheet name="Data" r:id="rId1"/>'
-                "</sheets></workbook>"
-            ),
-            "xl/_rels/workbook.xml.rels": (
-                '<Relationships><Relationship Id="rId1" Target="%s"/>'
-                "</Relationships>" % target
-            ),
-            "xl/sharedStrings.xml": (
-                '<sst><si><t>A&amp;B</t></si><si><t>second</t></si></sst>'
-            ),
-            "xl/worksheets/sheet1.xml": (
-                '<worksheet><sheetData><row r="1">'
-                '<c r="A1" t="s"><v>0</v></c>'
-                '<c r="B2" t="b"><v>1</v></c>'
-                '<c r="C3" t="inlineStr"><is><t>inline &lt;value&gt;</t></is></c>'
-                '<c r="D4"><v>123.5</v></c>'
-                '<c r="E5"><f>1+1</f></c>'
-                '<c r="AA6" t="str"><v>cached text</v></c>'
-                "</row></sheetData></worksheet>"
-            ),
-        }
 
     def test_decode_store_accepts_a_typed_store_fixture(self):
         value = {
@@ -312,220 +284,6 @@ class WorkbookFixtureTests(unittest.TestCase):
                 self.assertIn(f"malformed XML in {part}", result.stdout)
                 self.assertNotIn("Traceback", result.stderr)
 
-    def test_cached_values_reads_each_supported_cell_representation(self):
-        workbook = self.write_archive("cache.xlsx", self.cache_parts())
-
-        values, names = verify_cache.cached_values(workbook)
-
-        self.assertEqual(names, {1: "Data"})
-        self.assertEqual(
-            values,
-            {
-                (1, 1, 1): CellValue("A&B"),
-                (1, 2, 2): CellValue("True"),
-                (1, 3, 3): CellValue("inline <value>"),
-                (1, 4, 4): CellValue("123.5"),
-                (1, 6, 27): CellValue("cached text"),
-            },
-        )
-
-    def test_cached_values_rejects_chart_sheets_before_positions_drift(self):
-        parts = self.cache_parts("chartsheets/sheet1.xml")
-        workbook = self.write_archive("chart.xlsx", parts)
-
-        with self.assertRaisesRegex(SystemExit, "are not worksheets"):
-            verify_cache.cached_values(workbook)
-
-    def test_cached_values_preserves_the_error_kind(self):
-        parts = self.cache_parts()
-        parts["xl/worksheets/sheet1.xml"] = (
-            '<worksheet><sheetData><row r="1">'
-            '<c r="A1" t="e"><v>#DIV/0!</v></c>'
-            '<c r="B1" t="str"><v>#DIV/0!</v></c>'
-            '<c r="C1"><v>-2146826281</v></c>'
-            '</row></sheetData></worksheet>'
-        )
-        values, _ = verify_cache.cached_values(self.write_archive("kinds.xlsx", parts))
-        self.assertEqual(values, {
-            (1, 1, 1): CellValue("#DIV/0!", True),
-            (1, 1, 2): CellValue("#DIV/0!"),
-            (1, 1, 3): CellValue("-2146826281"),
-        })
-
-    def test_cache_gate_requires_each_cached_cell_even_above_the_floor(self):
-        workbook = self.write_archive("cache.xlsx", self.cache_parts())
-        complete = (
-            "1\t1\t1\tvalue\tA&B\n1\t2\t2\tvalue\tTrue\n1\t3\t3\tvalue\tinline <value>\n"
-            "1\t4\t4\tvalue\t123.5\n1\t6\t27\tvalue\tcached text\n"
-        )
-        for label, dump, expected in (
-            ("complete", complete, 0),
-            ("one missing cell", complete.replace("1\t4\t4\tvalue\t123.5\n", ""), 1),
-            ("stale value", complete.replace("123.5", "999"), 1),
-        ):
-            with self.subTest(label=label):
-                def dump_values(args, **kwargs):
-                    Path(args[args.index("-Out") + 1]).write_text(dump, encoding="utf-8")
-                    return subprocess.CompletedProcess(args, 0, "", "")
-
-                output = io.StringIO()
-                with patch.object(verify_cache, "WORKBOOK", str(workbook)), \
-                     patch.object(verify_cache, "FLOOR", 4), \
-                     patch.object(verify_cache.subprocess, "run", side_effect=dump_values), \
-                     contextlib.redirect_stdout(output):
-                    result = verify_cache.main()
-                self.assertEqual(result, expected, output.getvalue())
-                if label == "one missing cell":
-                    self.assertIn("row 4 col 4", output.getvalue())
-
-
-    def test_cache_gate_fails_cleanly_when_excel_cannot_be_driven(self):
-        workbook = self.write_archive("cache.xlsx", self.cache_parts())
-        for label, error, expected in (
-            ("hung Excel", subprocess.TimeoutExpired("powershell.exe", 600), "did not finish"),
-            ("no PowerShell", FileNotFoundError("powershell.exe"), "was not found"),
-        ):
-            with self.subTest(label=label):
-                output = io.StringIO()
-                with patch.object(verify_cache, "WORKBOOK", str(workbook)), \
-                     patch.object(verify_cache.subprocess, "run", side_effect=error) as run, \
-                     contextlib.redirect_stdout(output):
-                    result = verify_cache.main()
-                self.assertEqual(result, 1)
-                self.assertIn(expected, output.getvalue())
-                self.assertEqual(run.call_args.kwargs["timeout"], verify_cache.DUMP_TIMEOUT_SECONDS)
-
-    def test_cache_gate_distinguishes_errors_from_error_code_numbers(self):
-        for code, error in verify_cache.ERRORS.items():
-            for cached, cached_error, kind, live, expected in (
-                (error, True, "error", str(code), 0),
-                (error, True, "value", str(code), 1),
-                (error, True, "value", f"{code}.75", 1),
-                (str(code), False, "error", str(code), 1),
-                (error, False, "error", str(code), 1),
-                (error, False, "value", error, 0),
-            ):
-                with self.subTest(cached=cached, cached_error=cached_error, kind=kind, live=live):
-                    parts = self.cache_parts()
-                    cached_kind = "e" if cached_error else "n"
-                    if not cached_error and cached.startswith("#"):
-                        cached_kind = "str"
-                    parts["xl/worksheets/sheet1.xml"] = (
-                        f'<worksheet><sheetData><row r="1"><c r="A1" t="{cached_kind}">'
-                        f'<v>{cached}</v></c></row></sheetData></worksheet>'
-                    )
-                    workbook = self.write_archive("error-cache.xlsx", parts)
-
-                    def dump_values(args, **kwargs):
-                        Path(args[args.index("-Out") + 1]).write_text(
-                            f"1\t1\t1\t{kind}\t{live}\n",
-                            encoding="utf-8",
-                        )
-                        return subprocess.CompletedProcess(args, 0, "", "")
-
-                    output = io.StringIO()
-                    with patch.object(verify_cache, "WORKBOOK", str(workbook)), \
-                         patch.object(verify_cache, "FLOOR", 1), \
-                         patch.object(verify_cache.subprocess, "run", side_effect=dump_values), \
-                         contextlib.redirect_stdout(output):
-                        result = verify_cache.main()
-                    self.assertEqual(result, expected, output.getvalue())
-
-    def test_cache_gate_refuses_malformed_or_ambiguous_dump_records(self):
-        workbook = self.write_archive("cache.xlsx", self.cache_parts())
-        for dump in (
-            b"1\t1\t1\told-format\n",
-            b"1\t1\t1\tunknown\t1\n",
-            b"0\t1\t1\tvalue\t1\n",
-            b"bad\t1\t1\tvalue\t1\n",
-            b"1\t1\t1\tvalue\t1\n1\t1\t1\tvalue\t2\n",
-            b"\xff",
-        ):
-            with self.subTest(dump=dump):
-                def dump_values(args, **kwargs):
-                    Path(args[args.index("-Out") + 1]).write_bytes(dump)
-                    return subprocess.CompletedProcess(args, 0, "", "")
-
-                output = io.StringIO()
-                with patch.object(verify_cache, "WORKBOOK", str(workbook)), \
-                     patch.object(verify_cache.subprocess, "run", side_effect=dump_values), \
-                     contextlib.redirect_stdout(output):
-                    result = verify_cache.main()
-                self.assertEqual(result, 1, output.getvalue())
-                self.assertIn("FAIL: cannot read Excel dump:", output.getvalue())
-
-    def test_cache_gate_reports_an_unreadable_value_dump(self):
-        workbook = self.write_archive("cache.xlsx", self.cache_parts())
-
-        def dump_values(args, **kwargs):
-            Path(args[args.index("-Out") + 1]).unlink()
-            return subprocess.CompletedProcess(args, 0, "", "")
-
-        output = io.StringIO()
-        with patch.object(verify_cache, "WORKBOOK", str(workbook)), \
-             patch.object(verify_cache.subprocess, "run", side_effect=dump_values), \
-             contextlib.redirect_stdout(output):
-            result = verify_cache.main()
-        self.assertEqual(result, 1, output.getvalue())
-        self.assertIn("FAIL: cannot read Excel dump:", output.getvalue())
-
-    def test_cache_gate_compares_nonfinite_values_at_the_real_floor(self):
-        self.assertEqual(verify_cache.FLOOR, 15000)
-        for cached, live, expected, live_kind in (
-            ("1", "inf", 1, "value"),
-            ("1", "-inf", 1, "value"),
-            ("1", "1e309", 1, "value"),
-            ("inf", "1", 1, "value"),
-            ("inf", "-inf", 1, "value"),
-            ("#NUM!", "inf", 1, "value"),
-            ("#NUM!", "nan", 1, "value"),
-            ("1", "nan", 1, "value"),
-            ("inf", "inf", 0, "value"),
-            ("1000000", "1000000.0005", 0, "value"),
-            ("#NUM!", "-2146826252", 0, "error"),
-            ("#NUM!", "-2146826252", 1, "value"),
-        ):
-            with self.subTest(cached=cached, live=live):
-                parts = self.cache_parts()
-                parts["xl/worksheets/sheet1.xml"] = (
-                    "<worksheet><sheetData>"
-                    + "".join(
-                        f'<row r="{row}"><c r="A{row}"'
-                        + (' t="e"' if row == 1 and cached.startswith("#") else '') + '><v>'
-                        f'{cached if row == 1 else "1"}</v></c></row>'
-                        for row in range(1, verify_cache.FLOOR + 1)
-                    )
-                    + "</sheetData></worksheet>"
-                )
-                workbook = self.write_archive("full-floor.xlsx", parts)
-                dumps = []
-
-                def dump_values(args, **kwargs):
-                    dump = Path(args[args.index("-Out") + 1])
-                    dumps.append(dump)
-                    dump.write_text(
-                        f"1\t1\t1\t{live_kind}\t{live}\n"
-                        + "".join(
-                            f"1\t{row}\t1\tvalue\t1\n"
-                            for row in range(2, verify_cache.FLOOR + 1)
-                        ),
-                        encoding="utf-8",
-                    )
-                    return subprocess.CompletedProcess(args, 0, "", "")
-
-                output = io.StringIO()
-                with patch.object(verify_cache, "WORKBOOK", str(workbook)), \
-                     patch.object(verify_cache.subprocess, "run", side_effect=dump_values), \
-                     contextlib.redirect_stdout(output):
-                    result = verify_cache.main()
-                self.assertEqual(result, expected, output.getvalue())
-                self.assertEqual(len(dumps), 1)
-                self.assertFalse(dumps[0].exists())
-                if expected:
-                    self.assertIn("FAIL: 1 of 15000 cached values", output.getvalue())
-                    self.assertIn("Data row 1 col 1", output.getvalue())
-                else:
-                    self.assertIn("OK: all 15000 cached values", output.getvalue())
 
     def test_value_dump_opens_its_output_inside_the_excel_cleanup(self):
         text = (TOOLS / "dump_values.ps1").read_text(encoding="utf-8")
@@ -536,48 +294,10 @@ class WorkbookFixtureTests(unittest.TestCase):
 
 class CacheComparisonTests(unittest.TestCase):
     def test_column_converts_a1_letters_to_one_based_numbers(self):
-        self.assertEqual(verify_cache.column_number("A"), 1)
-        self.assertEqual(verify_cache.column_number("Z"), 26)
-        self.assertEqual(verify_cache.column_number("AA"), 27)
-        self.assertEqual(verify_cache.column_number("ZZ"), 702)
-
-    def test_fold_normalises_all_physical_newline_forms(self):
-        self.assertEqual(verify_cache.fold("a\r\nb\rc\nd"), r"a\nb\nc\nd")
-
-    def test_agree_accepts_exact_text_and_negligible_numeric_rounding(self):
-        self.assertTrue(verify_cache.agree(CellValue("plain"), CellValue("plain")))
-        self.assertTrue(verify_cache.agree(CellValue("1000000"), CellValue("1000000.0005")))
-
-    def test_agree_rejects_material_numeric_and_text_differences(self):
-        self.assertFalse(verify_cache.agree(CellValue("1"), CellValue("1.01")))
-        self.assertFalse(verify_cache.agree(CellValue("old"), CellValue("new")))
-
-    def test_agree_maps_excel_com_error_codes(self):
-        self.assertTrue(verify_cache.agree(CellValue("#DIV/0!", True), CellValue("-2146826281", True)))
-        self.assertFalse(verify_cache.agree(CellValue("#N/A", True), CellValue("-2146826281", True)))
-
-    def test_agree_rejects_nonfinite_numeric_coercion(self):
-        for nonfinite in ("inf", "-inf", "nan", "NaN", "1e309", "-1e309"):
-            with self.subTest(nonfinite=nonfinite):
-                self.assertFalse(verify_cache.agree(CellValue("1"), CellValue(nonfinite)))
-                self.assertFalse(verify_cache.agree(CellValue(nonfinite), CellValue("1")))
-                self.assertFalse(verify_cache.agree(CellValue("#NUM!", True), CellValue(nonfinite, True)))
-        self.assertFalse(verify_cache.agree(CellValue("inf"), CellValue("-inf")))
-
-    def test_agree_preserves_exact_nonfinite_text_and_newlines(self):
-        for text in ("inf", "-inf", "nan", "1e309"):
-            with self.subTest(text=text):
-                self.assertTrue(verify_cache.agree(CellValue(text), CellValue(text)))
-        self.assertTrue(verify_cache.agree(CellValue("a\r\nb"), CellValue(r"a\nb")))
-
-    def test_agree_accepts_only_integral_codes_from_real_errors(self):
-        for code, label in verify_cache.ERRORS.items():
-            with self.subTest(code=code):
-                self.assertTrue(verify_cache.agree(CellValue(label, True), CellValue(str(code), True)))
-                self.assertFalse(verify_cache.agree(CellValue(label, True), CellValue(f"{code}.75", True)))
-                self.assertFalse(verify_cache.agree(CellValue(label, True), CellValue(str(-code), True)))
-                self.assertFalse(verify_cache.agree(CellValue(label, True), CellValue(str(code))))
-                self.assertFalse(verify_cache.agree(CellValue(label), CellValue(str(code), True)))
+        self.assertEqual(sanitise_workbook.column_number("A"), 1)
+        self.assertEqual(sanitise_workbook.column_number("Z"), 26)
+        self.assertEqual(sanitise_workbook.column_number("AA"), 27)
+        self.assertEqual(sanitise_workbook.column_number("ZZ"), 702)
 
 
 if __name__ == "__main__":
