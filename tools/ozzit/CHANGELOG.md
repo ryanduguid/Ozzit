@@ -2,6 +2,12 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+Native AFE tests now retain all 20 Python gate contracts. They include all 6
+stale module versions, missing Debt and non-Debt names, stale-first duplicates,
+malformed stores, unreadable inputs, exact command defaults and both supported
+output encodings. Fixtures use owned copies and preserve every input. Production
+code, Python tests and live callers remain unchanged.
+
 Native cover tests now retain all 15 Python gate contracts, including exact
 reference failures, CSV matrices, stale labels and dates, decoy shared strings,
 small-workbook success, input preservation and physical command defaults.

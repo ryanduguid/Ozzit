@@ -6,6 +6,7 @@ use ozzit::{
     compiler, formula,
     pyjson::{self, Json},
 };
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -77,12 +78,64 @@ impl Fixture {
         );
         fixture
     }
+    fn published(name: &str) -> Self {
+        let mut fixture = Self::new();
+        fixture.workbook = fixture._directory.path().join(name);
+        let root = repository_root();
+        std::fs::copy(root.join("ozzit.xlsx"), &fixture.workbook).unwrap();
+        for module in formula::MODULES {
+            let name = format!("{module}.txt");
+            std::fs::copy(root.join("src").join(&name), fixture.src.join(name)).unwrap();
+        }
+        fixture
+    }
+    fn snapshot(&self) -> BTreeMap<PathBuf, Option<Vec<u8>>> {
+        fn visit(root: &Path, path: &Path, result: &mut BTreeMap<PathBuf, Option<Vec<u8>>>) {
+            for entry in std::fs::read_dir(path).unwrap() {
+                let entry = entry.unwrap();
+                let path = entry.path();
+                assert!(!entry.file_type().unwrap().is_symlink());
+                let data = if path.is_dir() {
+                    visit(root, &path, result);
+                    None
+                } else {
+                    Some(std::fs::read(&path).unwrap())
+                };
+                result.insert(path.strip_prefix(root).unwrap().into(), data);
+            }
+        }
+        let mut result = BTreeMap::new();
+        visit(self._directory.path(), self._directory.path(), &mut result);
+        result
+    }
+    fn preserved<T>(&self, operation: impl FnOnce() -> T) -> T {
+        let before = self.snapshot();
+        let result = operation();
+        assert_eq!(self.snapshot(), before);
+        result
+    }
 }
 
 #[test]
 fn blob_selection_uses_longest_run_and_first_tie_without_decoding_xml() {
     assert_eq!(
         afe::find_blob(b"<store>short</store>").unwrap_err(),
+        "AFE store has no base64 payload"
+    );
+    let fixture = Fixture::new();
+    archive::write_deterministic(
+        &fixture.workbook,
+        &[(
+            "customXml/item1.xml".into(),
+            b"<store>short</store>".to_vec(),
+        )]
+        .into(),
+    )
+    .unwrap();
+    assert_eq!(
+        fixture
+            .preserved(|| afe::decode_store(&fixture.workbook))
+            .unwrap_err(),
         "AFE store has no base64 payload"
     );
     let a = "A".repeat(100);
@@ -115,11 +168,21 @@ fn malformed_store_shapes_are_refused_before_synchronisation_checks() {
             serde_json::json!({"schema":afe::SCHEMA,"files":[],"projectNames":[3]}),
             "projectNames must be a list of strings",
         ),
+        (
+            serde_json::json!({"schema":afe::SCHEMA,"files":[{"path":7,"text":"source"}],"projectNames":[]}),
+            "files[0] path and text must be strings",
+        ),
+        (
+            serde_json::json!({"schema":afe::SCHEMA,"files":[],"projectNames":"oz.CountDOWλ"}),
+            "projectNames must be a list of strings",
+        ),
     ] {
         value["padding"] = "x".repeat(80).into();
         fixture.store(value, &[]);
         assert_eq!(
-            afe::decode_store(&fixture.workbook).unwrap_err(),
+            fixture
+                .preserved(|| afe::decode_store(&fixture.workbook))
+                .unwrap_err(),
             format!("cannot decode AFE store: {message}")
         );
     }
@@ -128,7 +191,7 @@ fn malformed_store_shapes_are_refused_before_synchronisation_checks() {
 #[test]
 fn garbled_payloads_and_unreadable_stores_report_one_controlled_failure() {
     let fixture = Fixture::new();
-    let failure = afe::check(&fixture.workbook, &fixture.src);
+    let failure = fixture.preserved(|| afe::check(&fixture.workbook, &fixture.src));
     assert_eq!(failure.len(), 1);
     assert!(failure[0].starts_with("cannot read AFE store: "));
     for (size, detail) in [(100, "truncated data"), (104, "Expecting value")] {
@@ -138,7 +201,9 @@ fn garbled_payloads_and_unreadable_stores_report_one_controlled_failure() {
             format!("<store>{}</store>", "A".repeat(size)).into_bytes(),
         );
         archive::write_deterministic(&fixture.workbook, &parts).unwrap();
-        let error = afe::decode_store(&fixture.workbook).unwrap_err();
+        let error = fixture
+            .preserved(|| afe::decode_store(&fixture.workbook))
+            .unwrap_err();
         assert!(error.starts_with("cannot decode AFE store: "), "{error}");
         assert!(error.contains(detail), "{error}");
     }
@@ -176,7 +241,7 @@ fn schema_missing_source_and_unknown_name_are_independent_failures() {
         &["oz.Keptλ"],
     );
     assert_eq!(
-        afe::check(&fixture.workbook, &fixture.src),
+        fixture.preserved(|| afe::check(&fixture.workbook, &fixture.src)),
         vec![
             "AFE schema is 'http://example.invalid/afeprojects/0.1'".into(),
             format!(
@@ -185,6 +250,435 @@ fn schema_missing_source_and_unknown_name_are_independent_failures() {
             ),
             "AFE projectNames has unknown name oz.Ghostλ".into(),
         ]
+    );
+}
+
+#[test]
+fn unreadable_workbooks_retain_the_read_prefix_and_each_original_detail() {
+    let fixture = Fixture::new();
+    let root = fixture._directory.path();
+    let bare = root.join("bare.xlsx");
+    archive::write_deterministic(
+        &bare,
+        &[(archive::BOOK.into(), b"<workbook/>".to_vec())].into(),
+    )
+    .unwrap();
+    let not_zip = root.join("not-a-zip.xlsx");
+    std::fs::write(&not_zip, b"not a zip archive").unwrap();
+    for (path, detail) in [
+        (root.join("missing.xlsx"), "No such file"),
+        (bare, "customXml/item1.xml"),
+        (not_zip, "File is not a zip file"),
+    ] {
+        let error = fixture.preserved(|| afe::decode_store(&path)).unwrap_err();
+        assert!(error.starts_with("cannot read AFE store: "), "{error}");
+        assert!(error.contains(detail), "{error}");
+    }
+}
+
+#[test]
+fn a_typed_store_fixture_round_trips_without_adding_or_changing_fields() {
+    let fixture = Fixture::new();
+    let value = serde_json::json!({"schema": afe::SCHEMA,
+        "files": [{"path": "/projects/Dates", "text": "source"}],
+        "projectNames": ["oz.CountDOWλ"]});
+    fixture.store(value.clone(), &[]);
+    let decoded = fixture
+        .preserved(|| afe::decode_store(&fixture.workbook))
+        .unwrap();
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&pyjson::dumps_compact(&decoded)).unwrap(),
+        value
+    );
+}
+
+#[test]
+fn a_non_object_store_root_is_refused() {
+    let fixture = Fixture::new();
+    fixture.store(
+        serde_json::json!(["not", "an", "object", "x".repeat(80)]),
+        &[],
+    );
+    assert_eq!(
+        fixture
+            .preserved(|| afe::decode_store(&fixture.workbook))
+            .unwrap_err(),
+        "cannot decode AFE store: root must be an object"
+    );
+}
+
+#[test]
+fn workbook_names_decode_entities_and_exclude_non_project_names() {
+    let fixture = Fixture::new();
+    let xml = b"<workbook><definedNames><definedName name=\"oz.A&amp;B\">1</definedName><definedName name=\"Print_Area\">2</definedName></definedNames></workbook>";
+    archive::write_deterministic(
+        &fixture.workbook,
+        &[(archive::BOOK.into(), xml.to_vec())].into(),
+    )
+    .unwrap();
+    assert_eq!(
+        fixture
+            .preserved(|| compiler::workbook_names(&fixture.workbook))
+            .unwrap(),
+        ["oz.A&B".into()].into()
+    );
+}
+
+#[test]
+fn unreadable_name_parts_keep_the_helper_message_and_check_order() {
+    let fixture = Fixture::new();
+    fixture.store(serde_json::json!({"schema":afe::SCHEMA,"files":[],"projectNames":[],"padding":"x".repeat(80)}), &[]);
+    let mut parts = archive::read_parts(&fixture.workbook).unwrap();
+    parts.shift_remove(archive::BOOK);
+    archive::write_deterministic(&fixture.workbook, &parts).unwrap();
+    let missing = fixture
+        .preserved(|| compiler::workbook_names(&fixture.workbook))
+        .unwrap_err();
+    assert!(
+        missing.starts_with("cannot read workbook names"),
+        "{missing}"
+    );
+    let failures = fixture.preserved(|| afe::check(&fixture.workbook, &fixture.src));
+    assert_eq!(failures.len(), 7);
+    for (failure, module) in failures.iter().zip(formula::MODULES) {
+        assert_eq!(failure, &format!("AFE module /projects/{module} missing"));
+    }
+    assert_eq!(failures.last(), Some(&missing));
+    parts.clear();
+    parts.insert(archive::BOOK.into(), b"<workbook>\xff</workbook>".to_vec());
+    archive::write_deterministic(&fixture.workbook, &parts).unwrap();
+    let error = fixture
+        .preserved(|| compiler::workbook_names(&fixture.workbook))
+        .unwrap_err();
+    assert!(error.starts_with("cannot read workbook names"), "{error}");
+}
+
+fn gate_cli(fixture: &Fixture, args: &[String], encoding: &str) -> (i32, String, String) {
+    fixture.preserved(|| {
+        let output = Command::new(env!("CARGO_BIN_EXE_ozzit"))
+            .arg("verify_afe")
+            .args(args)
+            .env("PYTHONIOENCODING", encoding)
+            .current_dir(fixture._directory.path())
+            .output()
+            .unwrap();
+        // Decode the bytes with the requested encoding, independently of the output writer.
+        let decode = |bytes: Vec<u8>| {
+            let text = if encoding == "cp1252" {
+                const SPECIAL: &str = "€\0‚ƒ„…†‡ˆ‰Š‹Œ\0Ž\0\0‘’“”•–—˜™š›œ\0žŸ";
+                bytes
+                    .into_iter()
+                    .map(|byte| {
+                        if (0x80..=0x9f).contains(&byte) {
+                            let ch = SPECIAL.chars().nth(usize::from(byte - 0x80)).unwrap();
+                            assert_ne!(ch, '\0', "Undefined Windows-1252 byte");
+                            ch
+                        } else {
+                            char::from(byte)
+                        }
+                    })
+                    .collect::<String>()
+            } else {
+                String::from_utf8(bytes).unwrap()
+            };
+            let newline = if cfg!(windows) { "\r\n" } else { "\n" };
+            assert_eq!(text, text.replace("\r\n", "\n").replace('\n', newline));
+            text.replace("\r\n", "\n")
+        };
+        (
+            output.status.code().unwrap(),
+            decode(output.stdout),
+            decode(output.stderr),
+        )
+    })
+}
+
+fn gate_failure(fixture: &Fixture, encoding: &str, count: usize) -> String {
+    let (code, stdout, stderr) = gate_cli(fixture, &sync_args(fixture), encoding);
+    assert_eq!(code, 1);
+    assert_eq!(stderr, "");
+    assert!(
+        stdout.starts_with(&format!("FAIL: {count} AFE problem(s) in ")),
+        "{stdout}"
+    );
+    assert_eq!(stdout.lines().count(), count + 1);
+    assert!(!stdout.contains("Traceback") && !stdout.contains("UnicodeEncodeError"));
+    stdout
+}
+
+#[test]
+fn directory_workbooks_are_controlled_failures_in_both_readers_and_the_command() {
+    let mut fixture = Fixture::new();
+    fixture.workbook = fixture._directory.path().join("directory.xlsx");
+    std::fs::create_dir(&fixture.workbook).unwrap();
+    let error = fixture
+        .preserved(|| afe::decode_store(&fixture.workbook))
+        .unwrap_err();
+    assert!(error.starts_with("cannot read AFE store"), "{error}");
+    let names = fixture
+        .preserved(|| compiler::workbook_names(&fixture.workbook))
+        .unwrap_err();
+    assert!(names.starts_with("cannot read workbook names"), "{names}");
+    assert_eq!(
+        fixture.preserved(|| afe::check(&fixture.workbook, &fixture.src)),
+        vec![error.clone()]
+    );
+    assert_eq!(
+        gate_failure(&fixture, "utf-8", 1),
+        format!(
+            "FAIL: 1 AFE problem(s) in {}\n  - {error}\n",
+            display(&fixture.workbook)
+        )
+    );
+}
+
+#[test]
+fn invalid_utf8_and_directory_source_modules_report_one_failure_on_stdout() {
+    for kind in ["not-utf8", "directory"] {
+        let fixture = Fixture::published("ozzit.xlsx");
+        let path = fixture.src.join("Dates.txt");
+        if kind == "not-utf8" {
+            std::fs::write(&path, b"\xff").unwrap();
+        } else {
+            std::fs::remove_file(&path).unwrap();
+            std::fs::create_dir(&path).unwrap();
+        }
+        let failures = fixture.preserved(|| afe::check(&fixture.workbook, &fixture.src));
+        assert_eq!(failures.len(), 1);
+        assert!(failures[0].contains(&format!("cannot read source module {}", display(&path))));
+        assert_eq!(
+            gate_failure(&fixture, "utf-8", 1),
+            format!(
+                "FAIL: 1 AFE problem(s) in {}\n  - {}\n",
+                display(&fixture.workbook),
+                failures[0]
+            )
+        );
+    }
+}
+
+fn mutate_published_store(fixture: &Fixture, change: impl FnOnce(&mut serde_json::Value)) {
+    let original = archive::read_parts(&fixture.workbook).unwrap();
+    let raw = &original["customXml/item1.xml"];
+    let encoded = afe::find_blob(raw).unwrap();
+    let encoded = std::str::from_utf8(encoded).unwrap();
+    let text = String::from_utf8(raw.clone()).unwrap();
+    assert_eq!(text.matches(encoded).count(), 1);
+    let decoded = afe::decode_store(&fixture.workbook).unwrap();
+    let mut value = serde_json::from_str(&pyjson::dumps_compact(&decoded)).unwrap();
+    change(&mut value);
+    let replacement = base64::engine::general_purpose::STANDARD.encode(
+        value
+            .to_string()
+            .encode_utf16()
+            .flat_map(u16::to_le_bytes)
+            .collect::<Vec<_>>(),
+    );
+    let mut parts = original.clone();
+    parts.insert(
+        "customXml/item1.xml".into(),
+        text.replacen(encoded, &replacement, 1).into_bytes(),
+    );
+    archive::write_deterministic(&fixture.workbook, &parts).unwrap();
+    assert_eq!(
+        afe::decode_store(&fixture.workbook).unwrap(),
+        pyjson::loads(&value.to_string()).unwrap()
+    );
+    assert_ne!(
+        parts["customXml/item1.xml"],
+        original["customXml/item1.xml"]
+    );
+    assert_eq!(archive::read_parts(&fixture.workbook).unwrap(), parts);
+    assert_eq!(parts.len(), original.len());
+    for (name, data) in original {
+        if name != "customXml/item1.xml" {
+            assert_eq!(parts[&name], data, "{name}");
+        }
+    }
+}
+
+#[test]
+fn gate_rejects_the_original_six_stale_version_lines_in_both_encodings() {
+    let fixture = Fixture::published("stale-dates.xlsx");
+    mutate_published_store(&fixture, |store| {
+        let files = store["files"].as_array_mut().unwrap();
+        assert_eq!(files.len(), 7);
+        let mut affected = 0;
+        for item in files {
+            assert!(item["path"].as_str().unwrap().starts_with("/projects/"));
+            let text = item["text"].as_str().unwrap();
+            let replacement = text.replacen("20 Aug 2026", "19 Aug 2026", 1);
+            affected += usize::from(replacement != text);
+            item["text"] = replacement.into();
+        }
+        assert_eq!(affected, 6);
+    });
+    for encoding in ["cp1252", "utf-8"] {
+        let stdout = gate_failure(&fixture, encoding, 6);
+        for module in [
+            "Dates",
+            "Essentials",
+            "Financial",
+            "Ratios",
+            "Utilities",
+            "Debt",
+        ] {
+            assert!(stdout.contains(&format!("/projects/{module}")));
+        }
+        for fragment in ["at character ", "19 Aug 2026", "20 Aug 2026"] {
+            assert_eq!(stdout.matches(fragment).count(), 6);
+        }
+        let details = stdout
+            .lines()
+            .filter(|line| line.starts_with("  - AFE module "))
+            .collect::<Vec<_>>();
+        assert_eq!(details.len(), 6);
+        let arrow = if encoding == "cp1252" {
+            r"\u2192"
+        } else {
+            "→"
+        };
+        assert!(details.iter().all(|line| line.contains(arrow)));
+        if encoding == "utf-8" {
+            assert!(!stdout.contains(r"\u2192"));
+        }
+    }
+}
+
+#[test]
+fn gate_requires_debt_and_all_five_original_debt_names() {
+    let fixture = Fixture::published("debt-dropped.xlsx");
+    let names = [
+        "oz.AmortiseBλ",
+        "oz.DebtSculptFixedλ",
+        "oz.DebtSculptVariableλ",
+        "oz.DebtSculptVariableLRVλ",
+        "oz.InterestLRVλ",
+    ];
+    mutate_published_store(&fixture, |store| {
+        let files = store["files"].as_array_mut().unwrap();
+        let before = files.len();
+        files.retain(|item| item["path"] != "/projects/Debt");
+        assert_eq!(files.len(), before - 1);
+        let listed = store["projectNames"].as_array_mut().unwrap();
+        let before = listed.len();
+        listed.retain(|name| !names.contains(&name.as_str().unwrap()));
+        assert_eq!(listed.len(), before - 5);
+    });
+    let stdout = gate_failure(&fixture, "utf-8", 6);
+    assert!(stdout.contains("AFE module /projects/Debt missing"));
+    for name in names {
+        assert!(stdout.contains(&format!("missing shipped name {name}")));
+    }
+    assert_eq!(stdout.matches("missing shipped name ").count(), 5);
+}
+
+#[test]
+fn gate_missing_non_debt_name_and_unicode_filename_obey_requested_encoding() {
+    let fixture = Fixture::published("missing-name-λ→.xlsx");
+    mutate_published_store(&fixture, |store| {
+        let names = store["projectNames"].as_array_mut().unwrap();
+        let positions = names
+            .iter()
+            .enumerate()
+            .filter(|(_, name)| *name == "oz.CountDOWλ")
+            .map(|(i, _)| i)
+            .collect::<Vec<_>>();
+        assert_eq!(positions.len(), 1);
+        names.remove(positions[0]);
+    });
+    for encoding in ["cp1252", "utf-8"] {
+        let stdout = gate_failure(&fixture, encoding, 1);
+        let (path, name) = if encoding == "cp1252" {
+            (r"missing-name-\u03bb\u2192.xlsx", r"oz.CountDOW\u03bb")
+        } else {
+            ("missing-name-λ→.xlsx", "oz.CountDOWλ")
+        };
+        assert!(stdout.contains(path));
+        assert!(stdout.contains(&format!("missing shipped name {name}")));
+        if encoding == "utf-8" {
+            assert!(!stdout.contains(r"\u03bb"));
+        }
+    }
+}
+
+#[test]
+fn gate_reports_both_shipped_store_duplicates_despite_a_current_final_copy() {
+    let fixture = Fixture::published("duplicates.xlsx");
+    mutate_published_store(&fixture, |store| {
+        let files = store["files"].as_array_mut().unwrap();
+        let dates = files
+            .iter()
+            .position(|item| item["path"] == "/projects/Dates")
+            .unwrap();
+        let current = files.remove(dates);
+        files.insert(
+            0,
+            serde_json::json!({"path":"/projects/Dates","text":"stale"}),
+        );
+        files.push(current.clone());
+        assert_eq!(files.first().unwrap()["text"], "stale");
+        assert_eq!(files.last(), Some(&current));
+        store["projectNames"]
+            .as_array_mut()
+            .unwrap()
+            .push("oz.CountDOWλ".into());
+    });
+    assert_eq!(
+        gate_failure(&fixture, "utf-8", 2),
+        format!(
+            "FAIL: 2 AFE problem(s) in {}\n  - AFE file path /projects/Dates appears 2 times\n  - AFE projectNames entry oz.CountDOWλ appears 2 times\n",
+            display(&fixture.workbook)
+        )
+    );
+}
+
+#[test]
+fn gate_success_and_all_default_argument_variants_support_both_encodings() {
+    let fixture = Fixture::published("valid-λ→.xlsx");
+    std::fs::copy(
+        &fixture.workbook,
+        fixture._directory.path().join("ozzit.xlsx"),
+    )
+    .unwrap();
+    for encoding in ["cp1252", "utf-8"] {
+        for args in [
+            vec![],
+            vec![display(&fixture.workbook)],
+            sync_args(&fixture),
+        ] {
+            let path = args.first().map_or("ozzit.xlsx", String::as_str);
+            let path = if encoding == "cp1252" {
+                path.replace('λ', r"\u03bb").replace('→', r"\u2192")
+            } else {
+                path.into()
+            };
+            assert_eq!(
+                gate_cli(&fixture, &args, encoding),
+                (
+                    0,
+                    format!(
+                        "OK: AFE store in {path} matches all 6 modules and every shipped name\n"
+                    ),
+                    String::new()
+                )
+            );
+        }
+    }
+}
+
+#[test]
+fn gate_surplus_inputs_fail_before_reading_or_writing_any_owned_path() {
+    let fixture = Fixture::new();
+    let mut args = sync_args(&fixture);
+    args.push(display(&fixture._directory.path().join("unrequested.xlsx")));
+    assert_eq!(
+        gate_cli(&fixture, &args, "utf-8"),
+        (
+            1,
+            String::new(),
+            "FAIL: usage: ozzit verify_afe [workbook] [src dir]\n".into()
+        )
     );
 }
 

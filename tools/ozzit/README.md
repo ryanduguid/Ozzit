@@ -171,6 +171,10 @@ commands retain the floor of 100. The Python gate and live callers remain.
 Cover tests retain all 15 original gate contracts, including exact small-fixture
 reference failures, stale labels and dates, decoy strings, CSV parsing and
 physical command defaults. Their fixtures write only owned copies.
+AFE tests retain all 20 original gate contracts, reusing the helper tests and
+adding shipped-store failures, workbook/source read failures and physical
+cp1252/UTF-8 command checks. Recursive snapshots protect all owned fixture bytes
+and directory entries. Production code, Python tests and live callers remain.
 Differential scripts
 and their receipts are retained in the local Agent Hub evidence for this port.
 CI, `RELEASING.md` and the postbuild run order call this binary. The Python tools
