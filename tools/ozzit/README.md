@@ -13,6 +13,9 @@ failure checks beside the revision-strip implementation.
 `fy27_help_text` and `gst_help_text` are native only. Their former assertions run
 in `tests/help_text_retirement.rs`, including character lengths, note formatting,
 unchanged descriptions and the separate AFE sync step.
+`help_links` is native only. Its former apply and refusal assertions run in
+`tests/help_links_retirement.rs`, with partial-write and failed-restore checks
+beside the implementation.
 Generated headers retain historical Python filenames to preserve published bytes.
 The workbook retains its native Excel formulas and ordinary `.xlsx` format.
 

@@ -2,6 +2,10 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+`help_links.py` is retired. Its apply, validation and command-line assertions now
+run in Rust. Private source-write callbacks exercise both rollback paths and
+verify that original workbook ZIP bytes are restored before the source restore.
+
 `fy27_help_text.py` and `gst_help_text.py` are retired. Their character-length,
 anchor-count, description, note-formatting and command-line assertions now run
 in Rust. The GST sequence still requires an explicit AFE sync after text changes.

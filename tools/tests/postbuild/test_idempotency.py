@@ -18,7 +18,6 @@ WORKBOOK = ROOT / "ozzit.xlsx"
 
 XML_PASSES = [
     (TOOLS / "postbuild" / "workbook_palette.py", False),
-    (TOOLS / "postbuild" / "help_links.py", True),
     (TOOLS / "postbuild" / "aasb16_leases.py", True),
     (TOOLS / "postbuild" / "rate_date_helpers.py", True),
     (TOOLS / "postbuild" / "working_capital_days.py", True),

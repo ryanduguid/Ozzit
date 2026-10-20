@@ -1,4 +1,4 @@
-"""Refusal and apply paths of 5 postbuild passes, on small synthetic workbooks.
+"""Refusal and apply paths of 3 postbuild passes, on small synthetic workbooks.
 
 The contract tests run each pass against the committed workbook, where every pass
 is already applied. These build just the parts a pass reads, so the usage and
@@ -22,7 +22,6 @@ sys.path.insert(0, str(TOOLS))
 sys.path.insert(0, str(TOOLS / "postbuild"))
 
 import help_corrections  # noqa: E402
-import help_links  # noqa: E402
 import workbook_palette as palette  # noqa: E402
 import working_capital_days as days  # noqa: E402
 from sanitise_workbook import write_deterministic  # noqa: E402
@@ -239,74 +238,6 @@ class WorkbookPaletteTests(ScratchTestCase):
         self.workbook.write_bytes(b"not a zip archive")
         code, _ = call_main(palette, str(self.workbook))
         self.assertEqual(code, "FAIL: File is not a zip file")
-
-
-class HelpLinksTests(ScratchTestCase):
-    def setUp(self):
-        super().setUp()
-        self.src = self.directory / "src"
-        self.src.mkdir()
-        self.ratios = self.src / "Ratios.txt"
-
-    def write_stores(self, state):
-        """Both stores holding every anchor in one state: 0 is the wrong link, 1 the fix."""
-        book = "".join(pair[state] for pair in help_links._forms("workbook"))
-        self.write_parts({"xl/workbook.xml": f"<workbook>{book}</workbook>"})
-        self.ratios.write_bytes("\n".join(p[state] for p in help_links._forms("src")).encode())
-
-    def test_main_applies_both_stores(self):
-        self.write_stores(0)
-        code, output = call_main(help_links, str(self.workbook), str(self.src))
-        self.assertIsNone(code)
-        self.assertEqual(
-            output, f"applied help links to: workbook, src/Ratios.txt\nOK: {self.workbook}\n"
-        )
-        book = self.text_parts()["xl/workbook.xml"]
-        self.assertEqual(book, "<workbook>" + "".join(new for _o, new in help_links._forms("workbook")) + "</workbook>")
-        self.assertEqual(
-            self.ratios.read_text(encoding="utf-8"),
-            "\n".join(new for _old, new in help_links._forms("src")),
-        )
-
-    def test_run_refuses_a_missing_ratios_module(self):
-        self.write_stores(1)
-        self.ratios.unlink()
-        with self.assertRaisesRegex(ValueError, "^src: missing .*Ratios.txt$"):
-            help_links.run(self.workbook, self.src)
-
-    def test_run_names_every_store_without_its_anchors(self):
-        self.write_parts({"xl/workbook.xml": "<workbook/>"})
-        self.ratios.write_text("", encoding="utf-8")
-        with self.assertRaises(ValueError) as caught:
-            help_links.run(self.workbook, self.src)
-        failures = str(caught.exception).split("; ")
-        self.assertEqual(len(failures), 4)
-        for failure, (store, (old, _new)) in zip(
-            failures,
-            [("workbook", pair) for pair in help_links._forms("workbook")]
-            + [("src", pair) for pair in help_links._forms("src")],
-        ):
-            self.assertEqual(
-                failure,
-                f"{store}: {old[-60:]!r} expected exactly 1 recognised anchor, "
-                "got wrong-link=0 fixed-link=0",
-            )
-
-    def test_main_rejects_extra_arguments(self):
-        code, _ = call_main(help_links, "a.xlsx", "src", "extra")
-        self.assertEqual(
-            code, "FAIL: usage: python tools/postbuild/help_links.py [workbook] [src dir]"
-        )
-
-    def test_main_rejects_a_missing_workbook(self):
-        code, _ = call_main(help_links, str(self.missing), str(self.src))
-        self.assertEqual(code, f"FAIL: no such workbook: {self.missing}")
-
-    def test_main_reports_a_run_failure(self):
-        self.write_stores(1)
-        self.ratios.unlink()
-        code, _ = call_main(help_links, str(self.workbook), str(self.src))
-        self.assertEqual(code, f"FAIL: src: missing {self.ratios}")
 
 
 class HelpCorrectionsTests(ScratchTestCase):

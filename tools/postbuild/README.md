@@ -34,7 +34,7 @@ The passes run through the native tools. Build them once with
 below keeps the arguments of the Python pass it replaces. The Python passes in this
 directory stay as the reference implementation until they are retired.
 `cover_label`, `sheet_names`, `strip_revision_history`, `fy27_help_text` and
-`gst_help_text` are native only; their validation, output, help-text and rollback
+`gst_help_text` and `help_links` are native only; their validation, output, help-text and rollback
 contracts are covered by Rust tests.
 
 ```bash
