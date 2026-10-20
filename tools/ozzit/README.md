@@ -20,6 +20,7 @@ repository root to use their usual path defaults.
 | `compile_sources` | Compile source definitions and optionally rebuild the CSV index |
 | `verify_sources` | Compare source definitions with stored workbook names |
 | `verify_signatures` | Check signatures, parameter tables and worked examples |
+| `function_reference` | Write each function's signature, parameters, notes and worked examples from its help, joined to the CSV index, as JSON. It has no Python twin |
 | `verify_index` | Compare the CSV inventory with sources and the workbook |
 | `verify_previous_names` | Check the released-name mapping and rename history |
 | `verify_afe` | Check the embedded AFE store against the source files |

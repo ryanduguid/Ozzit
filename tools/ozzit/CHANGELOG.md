@@ -11,8 +11,12 @@ Dependency qualification: Rust flate2 1.1.10 with zlib-rs 0.6.8 reproduces all
 169 deflated members of the base workbook byte for byte on Windows. The writer
 also reproduces Python zipfile's sorted directory, fixed date and attributes.
 ZIP reading uses zip 9.0.5. JSON, CSV, formula and HTML compatibility use local
-helpers. Thirty-one commands are implemented; see README.md for their
-scope and remaining encoding limits. Unused inherited dependencies were removed
+helpers. Thirty-two commands are implemented; see README.md for their
+scope and remaining encoding limits. `function_reference` is new, with no Python
+twin: it reads each definition's help block into signature, description,
+parameters, notes and worked examples, checks every name against the CSV index
+and writes one JSON file, so a website or an agent can document every function
+from the released source. Unused inherited dependencies were removed
 from this checkpoint; later commands will add dependencies only when needed.
 The optional pyxirr comparator's fixed-case reference outputs must be pinned
 before replacing that runner.
