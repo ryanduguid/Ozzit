@@ -83,6 +83,10 @@ cargo clippy --locked --manifest-path tools/ozzit/Cargo.toml --all-targets -- -D
 cargo test --locked --manifest-path tools/ozzit/Cargo.toml
 ```
 
+The stable tests replay the shared native parser fuzz harness and committed
+seeds. The separate nightly target and bounded Linux campaign are documented
+in `fuzz/README.md` at the repository root.
+
 The native tests include 1,117 captured parser observations, 76 recorded
 cache-gate findings, 64 recorded sanitiser and presentation-pass results, 834 recorded generator
 observations, 146 release-bundle argument and verification cases, 69 workbook and

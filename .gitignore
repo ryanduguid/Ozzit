@@ -23,3 +23,8 @@ __pycache__/
 
 # Rust build output
 target/
+
+# Local cargo-fuzz findings; committed seeds stay in fuzz/corpus/.
+tools/ozzit/fuzz/artifacts/
+tools/ozzit/fuzz/corpus/
+tools/ozzit/fuzz/coverage/

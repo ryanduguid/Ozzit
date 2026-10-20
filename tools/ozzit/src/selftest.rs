@@ -333,6 +333,11 @@ impl Decimal {
         }
     }
 
+    /// Compare the exact decimal with zero, including values outside the float range.
+    pub fn is_positive(&self) -> bool {
+        self.mantissa.is_positive()
+    }
+
     /// `repr(float(value))`: the shortest float literal that reads back as the value.
     pub fn shown(&self) -> String {
         let value = format!("{}e{}", self.mantissa, self.exponent)

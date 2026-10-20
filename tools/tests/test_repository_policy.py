@@ -97,6 +97,30 @@ updates:
       python-dependencies:
         patterns:
           - "*"
+
+  - package-ecosystem: cargo
+    directory: /tools/ozzit
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 2
+    groups:
+      rust-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: cargo
+    directory: /tools/ozzit/fuzz
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 2
+    groups:
+      rust-dependencies:
+        patterns:
+          - "*"
 """
 
 

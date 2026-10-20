@@ -2,6 +2,10 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+The active parser fuzzing workflow now exercises the Rust implementations with
+libFuzzer. Stable Rust tests replay the shared target and seed corpus. The
+Python harness remains a temporary reference during retirement.
+
 The Rust port is implemented alongside the base Python tools, which remain the
 reference implementation: CI runs the gates through this binary and fails when
 one disagrees with its Python twin. No workbook, source formula, cached result
