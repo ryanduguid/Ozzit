@@ -22,7 +22,6 @@ XML_PASSES = [
     (TOOLS / "postbuild" / "rate_date_helpers.py", True),
     (TOOLS / "postbuild" / "working_capital_days.py", True),
     (TOOLS / "postbuild" / "ato_benchmarks_rate_lookup.py", True),
-    (TOOLS / "postbuild" / "help_corrections.py", True),
 ]
 
 

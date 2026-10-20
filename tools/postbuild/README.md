@@ -96,7 +96,9 @@ their definitions; `ozzit refresh_cache` in Excel is what refreshes them, and
 per-sheet custom properties, the stale custom-function declaration on the Excel Labs
 reference, unused differential formats and named styles) and freezes the label columns
 on the 6 wide demonstration sheets. It is native only, with its former Python
-assertions covered by Rust tests. `sync_afe_store` then copies all 6 `src/`
+assertions covered by Rust tests. `help_corrections` is also native only; its Rust
+tests preserve staging, temporary siblings and the explicit AFE sync order.
+`sync_afe_store` then copies all 6 `src/`
 modules into the workbook's Advanced Formula Environment store; this step is required
 after any pass that changes `src/`. `generate_selftest_examples` rewrites the native
 self-test's generated assertions from the help, and the tool tests fail when that

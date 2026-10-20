@@ -5,6 +5,9 @@
 use super::*;
 use std::sync::LazyLock;
 
+#[cfg(test)]
+mod tests;
+
 struct Swap {
     what: String,
     workbook: (String, String),
@@ -166,6 +169,14 @@ fn apply_workbook_swaps(
 }
 
 pub fn run(workbook: &Path, src: &py::PyPath) -> Result<Vec<String>> {
+    run_with(workbook, src, &mut stage_bytes)
+}
+
+fn run_with(
+    workbook: &Path,
+    src: &py::PyPath,
+    stage: &mut impl FnMut(&Path, &[u8]) -> Result<tempfile::NamedTempFile>,
+) -> Result<Vec<String>> {
     let mut failures = Vec::new();
     let mut originals = Vec::new();
     for module in MODULES {
@@ -200,7 +211,7 @@ pub fn run(workbook: &Path, src: &py::PyPath) -> Result<Vec<String>> {
     let mut staged = Vec::new();
     if rewritten {
         staged.push((
-            stage_bytes(workbook, &deterministic_bytes(&parts)?)?,
+            stage(workbook, &deterministic_bytes(&parts)?)?,
             workbook.to_path_buf(),
         ));
         changed.push("workbook".to_string());
@@ -211,7 +222,7 @@ pub fn run(workbook: &Path, src: &py::PyPath) -> Result<Vec<String>> {
         if text == *original {
             continue;
         }
-        staged.push((stage_bytes(&path.fs(), text.as_bytes())?, path.fs()));
+        staged.push((stage(&path.fs(), text.as_bytes())?, path.fs()));
         changed.push(format!("src/{module}.txt"));
     }
     for (temporary, destination) in staged {

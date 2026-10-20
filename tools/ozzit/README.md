@@ -19,6 +19,9 @@ beside the implementation.
 `remove_residue` is native only. Whole-workbook restoration and command checks
 run in `tests/remove_residue_retirement.rs`; component refusals and binary
 content-type checks run beside the implementation.
+`help_corrections` is native only. Its workbook/source, example, static-string,
+temporary-sibling and command checks run in `tests/help_corrections_retirement.rs`.
+Private staging callbacks test a partial source-stage failure before any replacement.
 Generated headers retain historical Python filenames to preserve published bytes.
 The workbook retains its native Excel formulas and ordinary `.xlsx` format.
 

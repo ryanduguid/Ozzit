@@ -1,4 +1,4 @@
-"""Refusal and apply paths of 3 postbuild passes, on small synthetic workbooks.
+"""Refusal and apply paths of 2 postbuild passes, on small synthetic workbooks.
 
 The contract tests run each pass against the committed workbook, where every pass
 is already applied. These build just the parts a pass reads, so the usage and
@@ -21,7 +21,6 @@ TOOLS = ROOT / "tools"
 sys.path.insert(0, str(TOOLS))
 sys.path.insert(0, str(TOOLS / "postbuild"))
 
-import help_corrections  # noqa: E402
 import workbook_palette as palette  # noqa: E402
 import working_capital_days as days  # noqa: E402
 from sanitise_workbook import write_deterministic  # noqa: E402
@@ -238,46 +237,6 @@ class WorkbookPaletteTests(ScratchTestCase):
         self.workbook.write_bytes(b"not a zip archive")
         code, _ = call_main(palette, str(self.workbook))
         self.assertEqual(code, "FAIL: File is not a zip file")
-
-
-class HelpCorrectionsTests(ScratchTestCase):
-    def test_validate_cells_names_each_example_missing_from_the_worksheets(self):
-        failures = []
-        help_corrections.validate_cells({"xl/worksheets/sheet1.xml": "<worksheet/>"}, failures)
-        self.assertEqual(
-            failures,
-            [
-                f"worksheets: {what} expected 1 recognised anchor, got 0 (before=0, after=0)"
-                for what, _old, _new in help_corrections.CELL_SWAPS
-            ],
-        )
-
-    def test_run_refuses_a_workbook_without_shared_strings(self):
-        self.write_parts({"xl/workbook.xml": "<workbook/>"})
-        with self.assertRaisesRegex(ValueError, "^workbook: xl/sharedStrings.xml is missing$"):
-            help_corrections.run(self.workbook, self.directory)
-
-    def test_run_names_each_missing_source_module(self):
-        self.write_parts({"xl/workbook.xml": "<workbook/>", "xl/sharedStrings.xml": "<sst/>"})
-        before = self.workbook.read_bytes()
-        with self.assertRaises(ValueError) as caught:
-            help_corrections.run(self.workbook, self.directory)
-        failures = str(caught.exception).split("; ")
-        self.assertEqual(
-            failures[: len(help_corrections.MODULES)],
-            [f"src: missing {self.directory / f'{m}.txt'}" for m in help_corrections.MODULES],
-        )
-        self.assertEqual(self.workbook.read_bytes(), before)
-
-    def test_main_rejects_extra_arguments(self):
-        code, _ = call_main(help_corrections, "a.xlsx", "src", "extra")
-        self.assertEqual(
-            code, "FAIL: usage: python tools/postbuild/help_corrections.py [workbook] [src dir]"
-        )
-
-    def test_main_rejects_a_missing_workbook(self):
-        code, _ = call_main(help_corrections, str(self.missing))
-        self.assertEqual(code, f"FAIL: no such workbook: {self.missing}")
 
 
 def run_source_guard(functions):

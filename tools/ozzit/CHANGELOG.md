@@ -2,6 +2,11 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+`help_corrections.py` is retired. Its workbook/source, worksheet, shared-string,
+refusal, command-line, temporary-sibling and AFE-order assertions now run in Rust.
+A private staging callback exercises a partial source-stage failure and verifies
+unchanged destination bytes and cleanup before any replacement.
+
 `remove_residue.py` is retired. Its residue-removal, style-renumbering, freeze-pane,
 refusal and command-line assertions now run in Rust, including complete restored
 workbook parts, absolute sheet targets and preservation of other binary content types.
