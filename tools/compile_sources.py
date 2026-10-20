@@ -1,16 +1,12 @@
-"""Compile src/*.txt into the defined names ozzit.xlsx stores.
+"""Shared Python compiler/reference helpers.
 
-Usage: python tools/compile_sources.py [workbook] [src dir] [--check] [--index=functions.csv]
+Command: ozzit compile_sources [workbook] [src dir] [--check] [--index=functions.csv]
 
 The workbook is the shipped authority and src/ is its published, typed-form
-view. Until now the only way to change a function was to hand-write both the
-typed form and the stored form and swap them in together, which is how every
-postbuild pass works. This tool closes the loop the other way: it renders each
-published definition into the form xl/workbook.xml stores, proves the rendering
-reproduces its source through verify_sources.py's own comparison, and writes it
-over the defined name that ships. A function whose stored form already matches
-is left byte for byte as it was, so the pass is idempotent and touches only what
-changed in src/.
+view. The native command renders each published definition into the form
+xl/workbook.xml stores, proves the rendering reproduces its source and writes
+only changed definitions. This module retains the reference compiler and
+shared helpers used by Python gates and their tests.
 
 The stored form differs from the typed form in the ways verify_sources.py maps:
 
@@ -22,7 +18,7 @@ The stored form differs from the typed form in the ways verify_sources.py maps:
 
 Excel also normalises the case of every identifier it recognises, so Switch(
 becomes _xlfn.SWITCH( and a binding read as Mpp is stored under the spelling
-it was declared with. This tool does the same, and refuses any identifier it
+it was declared with. The reference compiler does the same and refuses any identifier it
 cannot classify: a name that reaches the workbook without its marker is read
 as something else entirely, and an unmarked parameter makes Excel reject the
 whole definition.
@@ -32,10 +28,10 @@ whole definition.
 function's previous_name, the way verify_index.py derives the other fields.
 
 Cached values are never touched. A formula change that alters what a
-demonstration cell computes still needs tools/refresh_cache.py, and
-tools/verify_cache.py is the gate that proves it. Run tools/sync_afe_store.py
-after this tool, as the postbuild README's run order requires for any change to
-src/, and tools/sanitise_workbook.py last.
+demonstration cell computes still needs ozzit refresh_cache, and
+ozzit verify_cache is the gate that proves it. Run ozzit sync_afe_store
+after compilation, as the postbuild README's run order requires for any change to
+src/, and ozzit sanitise_workbook last.
 """
 
 from __future__ import annotations
@@ -554,46 +550,3 @@ def run(workbook: Path, src: Path, check: bool, index: Path | None) -> list[str]
         write_index(index, new_index)
         changed.append(index.name)
     return changed
-
-
-def main() -> None:
-    args = [a for a in sys.argv[1:] if not a.startswith("--")]
-    flags = [a for a in sys.argv[1:] if a.startswith("--")]
-    index: Path | None = None
-    check = False
-    for flag in flags:
-        if flag == "--check":
-            check = True
-        elif flag.startswith("--index="):
-            index = Path(flag[len("--index="):])
-        else:
-            sys.exit(
-                "FAIL: usage: python tools/compile_sources.py [workbook] [src dir] "
-                "[--check] [--index=functions.csv]"
-            )
-    if len(args) > 2:
-        sys.exit("FAIL: usage: python tools/compile_sources.py [workbook] [src dir] [--check]")
-    workbook = Path(args[0] if args else "ozzit.xlsx")
-    src = Path(args[1] if len(args) > 1 else "src")
-    if not workbook.is_file():
-        sys.exit(f"FAIL: no such workbook: {workbook}")
-    try:
-        changed = run(workbook, src, check, index)
-    except (OSError, ValueError, KeyError, zipfile.BadZipFile) as exc:
-        sys.exit(f"FAIL: {exc}")
-    if check:
-        if changed:
-            print("would recompile: " + ", ".join(changed))
-        else:
-            print("every defined name already matches src/")
-        print(f"OK: {workbook} checked against {src}/")
-        return
-    if changed:
-        print("recompiled: " + ", ".join(changed))
-    else:
-        print("every defined name already matches src/; no changes")
-    print(f"OK: {workbook}")
-
-
-if __name__ == "__main__":
-    main()

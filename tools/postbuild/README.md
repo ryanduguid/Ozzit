@@ -81,7 +81,7 @@ fails loudly rather than writing a partial result.
 
 Edit its definition in `src/`, then run `ozzit compile_sources`. It renders every
 published definition into the form the workbook stores, proves the rendering
-reproduces its source through `verify_sources`'s own comparison, writes only the
+reproduces its source through the native source comparison, writes only the
 definitions that changed over the defined names that ship, sets each Name Manager
 comment from the source header, and with `--index` regenerates `functions.csv`. The
 compiler never touches a cached value: a change that alters what a demonstration cell

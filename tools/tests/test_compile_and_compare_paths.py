@@ -2,9 +2,7 @@
 the pyxirr comparison, on small fixture sources and workbooks built in a temporary tree.
 """
 
-import csv
 import hashlib
-import html
 import io
 import json
 import re
@@ -13,7 +11,6 @@ import shutil
 import sys
 import tempfile
 import unittest
-import zipfile
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from types import SimpleNamespace
@@ -28,7 +25,6 @@ import pyxirr_comparison as comparison  # noqa: E402
 ROOT = TOOLS.parent
 WORKBOOK = ROOT / "ozzit.xlsx"
 INDEX = ROOT / "functions.csv"
-COLUMNS = ["function", "module", "previous_name", "signature", "description"]
 
 
 def header(bare: str, description: str) -> str:
@@ -46,18 +42,6 @@ def write_src(directory: Path, overrides: dict[str, str] | None = None) -> Path:
     return directory
 
 
-def write_book(path: Path, stored: dict[str, str] | None = None) -> Path:
-    """A workbook whose only part is xl/workbook.xml with the fixture's defined names."""
-    names = []
-    for module in compile_sources.MODULES:
-        name = f"oz.{module}λ"
-        body = (stored or {}).get(name, "_xlfn.LAMBDA(_xlop.x, _xlpm.x + 1)")
-        names.append(f'<definedName name="{name}" comment="The {module} sample">'
-                     f"{html.escape(body, quote=False)}</definedName>")
-    book = f"<workbook><definedNames>{''.join(names)}</definedNames></workbook>"
-    with zipfile.ZipFile(path, "w") as archive:
-        archive.writestr("xl/workbook.xml", book)
-    return path
 
 
 def reimport_without_reconfigure(script: str) -> tuple[dict, str]:
@@ -180,66 +164,6 @@ class CompileWorkbookTests(ScratchTestCase):
                          f"{index} has unexpected columns: ['function', 'module']")
 
 
-class CompileMainTests(ScratchTestCase):
-    def setUp(self):
-        super().setUp()
-        self.src = write_src(self.directory / "src")
-        self.workbook = self.directory / "ozzit.xlsx"
-        self.index = self.directory / "functions.csv"
-
-    def main(self, *args: str) -> str:
-        printed = io.StringIO()
-        with mock.patch.object(sys, "argv", ["compile_sources.py", *args]), \
-                redirect_stdout(printed):
-            compile_sources.main()
-        return printed.getvalue()
-
-    def refusal(self, *args: str) -> object:
-        with self.assertRaises(SystemExit) as failure:
-            self.main(*args)
-        return failure.exception.code
-
-    def test_unknown_flags_and_extra_paths_print_usage(self):
-        self.assertEqual(self.refusal("--force"),
-                         "FAIL: usage: python tools/compile_sources.py [workbook] [src dir] "
-                         "[--check] [--index=functions.csv]")
-        self.assertEqual(self.refusal("a", "b", "c"),
-                         "FAIL: usage: python tools/compile_sources.py [workbook] [src dir] [--check]")
-
-    def test_a_missing_or_unreadable_workbook_fails_cleanly(self):
-        missing = self.directory / "missing.xlsx"
-        self.assertEqual(self.refusal(str(missing), str(self.src)),
-                         f"FAIL: no such workbook: {missing}")
-        self.workbook.write_bytes(b"not a zip archive")
-        self.assertEqual(self.refusal(str(self.workbook), str(self.src)),
-                         "FAIL: File is not a zip file")
-        self.assertEqual(self.workbook.read_bytes(), b"not a zip archive")
-
-    def test_check_reports_a_stale_definition_without_writing(self):
-        write_book(self.workbook, {"oz.Debtλ": "_xlfn.LAMBDA(_xlop.x, _xlpm.x + 2)"})
-        before = self.workbook.read_bytes()
-        printed = self.main(str(self.workbook), str(self.src), "--check")
-        self.assertEqual(printed, "would recompile: oz.Debtλ\n"
-                                  f"OK: {self.workbook} checked against {self.src}/\n")
-        self.assertEqual(self.workbook.read_bytes(), before)
-
-    def test_recompile_writes_the_workbook_and_index_then_has_nothing_to_do(self):
-        write_book(self.workbook, {"oz.Debtλ": "_xlfn.LAMBDA(_xlop.x, _xlpm.x + 2)"})
-        with self.index.open("w", encoding="utf-8", newline="") as handle:
-            csv.writer(handle, lineterminator="\n").writerow(COLUMNS)
-        flag = f"--index={self.index}"
-        self.assertEqual(self.main(str(self.workbook), str(self.src), flag),
-                         f"recompiled: oz.Debtλ, functions.csv\nOK: {self.workbook}\n")
-        with zipfile.ZipFile(self.workbook) as archive:
-            book = archive.read("xl/workbook.xml").decode("utf-8")
-        self.assertIn('<definedName name="oz.Debtλ" comment="The Debt sample">'
-                      "_xlfn.LAMBDA(_xlop.x, _xlpm.x + 1)</definedName>", book)
-        with self.index.open(encoding="utf-8-sig", newline="") as handle:
-            rows = {row["function"]: row for row in csv.DictReader(handle)}
-        self.assertEqual(rows["oz.Debtλ"]["module"], "Debt")
-        self.assertEqual(rows["oz.Debtλ"]["description"], "The Debt sample")
-        self.assertEqual(self.main(str(self.workbook), str(self.src), flag),
-                         f"every defined name already matches src/; no changes\nOK: {self.workbook}\n")
 
 
 class FakeFinance:

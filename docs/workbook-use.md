@@ -45,7 +45,7 @@ The workbook tracked in this repository is the candidate the gates below run aga
    `src/` is for reading, diffing, and pasting a single definition into Name
    Manager, where the name is yours to choose. To change a function, edit its
    definition in `src/` and follow the run order in `tools/postbuild/README.md`:
-   `tools/compile_sources.py` renders it into the stored form and writes it over the
+   `ozzit compile_sources` renders it into the stored form and writes it over the
    defined name that ships, `ozzit build_module` rebuilds `oz.txt`,
    `ozzit sync_afe_store` copies the source into the workbook's AFE store, and
    `ozzit sanitise_workbook` runs last.

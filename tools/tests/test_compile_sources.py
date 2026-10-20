@@ -9,7 +9,6 @@ and functions.csv.
 
 import csv
 import shutil
-import subprocess
 import sys
 import tempfile
 import unittest
@@ -225,15 +224,6 @@ class WorkbookTests(unittest.TestCase):
         self.assertIsNone(compile_sources.render_index(self.index, book, modules))
         self.assertEqual(self.index.read_bytes(), INDEX.read_bytes())
 
-    def test_cli_check_mode_reports_and_writes_nothing(self):
-        before = self.workbook.read_bytes()
-        result = subprocess.run(
-            [sys.executable, str(TOOLS / "compile_sources.py"), str(self.workbook), str(self.src), "--check"],
-            capture_output=True, text=True, check=False, encoding="utf-8",
-        )
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn("every defined name already matches src/", result.stdout)
-        self.assertEqual(self.workbook.read_bytes(), before)
 
 
 if __name__ == "__main__":

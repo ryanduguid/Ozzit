@@ -2,6 +2,12 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+The Python `compile_sources` command entry point is retired. Rust retains its
+5 former command test contracts, including exact output, no-write checks and
+workbook/index updates followed by a repeat run. Default paths, interleaved flags
+and last-index selection are also checked. The shared Python compiler and all
+43 unrelated tests remain.
+
 The Python `sanitise_workbook` pass and command are retired. Rust retains all
 14 former test contracts, including complete part restoration, ZIP metadata,
 long literals, session and printer residue, exact command output and repeat-run
