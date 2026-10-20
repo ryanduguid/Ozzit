@@ -4,7 +4,7 @@ Each case is an Excel formula and the grid it should return, worked out here in 
 from the rule the function implements rather than from the LAMBDA's own steps: present
 values from the closed-form annuity factor, loan repayments from the level-payment
 formula, the ATO ratios and rate lookup from the mirrors in
-tools/tests/postbuild/test_ato_benchmarks_rate_lookup.py, and the variance and
+tools/tests/postbuild/test_benchmark_arithmetic.py, and the variance and
 financial-year period functions from their definitions with Python dates.
 
 The lease scenarios follow the patterns of the IFRS 16 illustrative examples the AASB
@@ -38,7 +38,7 @@ CASES_PATH = FIXTURES / "cross-checks-cases.json"
 RESULTS_PATH = FIXTURES / "cross-checks-results.json"
 sys.path.insert(0, str(Path(__file__).resolve().parent / "postbuild"))
 
-from test_ato_benchmarks_rate_lookup import ato_labour, ato_turnover, rate_at_date  # noqa: E402
+from test_benchmark_arithmetic import ato_labour, ato_turnover, rate_at_date  # noqa: E402
 
 # Excel error values as excel_eval_formulas.ps1 writes them.
 NA = "#ERR:-2146826246"
