@@ -1005,7 +1005,7 @@
     "formula": "=oz.Varianceλ({120;90},{100;100},{1,-1})",
     "expected": [
       [
-        "Varianceλ needs Actual and Budget of the same shape, and Type as one value or one for each row."
+        "Varianceλ needs Actual and Budget of the same shape, and Type as one value, one for each row or one for each cell."
       ]
     ]
   },

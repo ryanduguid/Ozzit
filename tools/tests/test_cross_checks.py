@@ -284,7 +284,7 @@ def period_cases():
         ("financial_quarter_start_refused", "=oz.FinancialQuarterλ(DATE(2026,7,1),13)",
          [["FinancialQuarterλ needs StartMonth to be one whole number from 1 to 12."]]),
         ("variance_type_row_refused", "=oz.Varianceλ({120;90},{100;100},{1,-1})",
-         [["Varianceλ needs Actual and Budget of the same shape, and Type as one value or one for each row."]]),
+         [["Varianceλ needs Actual and Budget of the same shape, and Type as one value, one for each row or one for each cell."]]),
         ("variance_type_per_row_across_months", "=oz.Varianceλ({120,130;90,80},{100,100;100,100},{1;-1})",
          [[(a - 100) * t for a in row] for row, t in (((120, 130), 1), ((90, 80), -1))]),
         ("variance_text_amount_refused", '=oz.Varianceλ("120",100)',
