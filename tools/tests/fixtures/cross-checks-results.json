@@ -1,6 +1,6 @@
 {
     "excel":  "16.0 build 20527",
-    "workbook_sha256":  "222a5d3af9e930d787bb433acba1b278e50304be4cb72a22a0afa7ea75631b36",
+    "workbook_sha256":  "748c132ec19acc48b9086c9cd739160343a774d73f2c4c58abc88f5c251af487",
     "results":  {
                     "lease_l1_liability":  [
                                                [
@@ -741,7 +741,7 @@
                                                         ],
                     "variance_type_row_refused":  [
                                                       [
-                                                          "Varianceλ needs Actual and Budget of the same shape, and Type as one value or one for each row."
+                                                          "Varianceλ needs Actual and Budget of the same shape, and Type as one value, one for each row or one for each cell."
                                                       ]
                                                   ],
                     "variance_type_per_row_across_months":  [
@@ -770,8 +770,8 @@
                                                          ]
                                                      ]
                 },
-    "cases_sha256":  "8a30aba9917b187f0415313ef36f1932fe6ea41dcf97c696bb5163778cacd18d",
+    "cases_sha256":  "94aeedb585759b93703c51dca3c9fcf3b0d3355a20ad870bd985e9f39428fa76",
     "helper_sha256":  "228884ebb9da01a792fd891b9fc9714bba1ebb870b6e704b291921fc66b4f6a2",
     "evidence_helper_sha256":  "4f0db804f1d5ef13ddd8f2d635b51052db175e1c634ddaee5ad6af3dd42e6f59",
-    "evaluated_at_utc":  "2026-10-20T01:58:59.9387744Z"
+    "evaluated_at_utc":  "2026-10-20T02:14:36.4320771Z"
 }
