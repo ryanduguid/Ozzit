@@ -1012,7 +1012,7 @@ Near 'Variance: blank Types in a column'            "--ISNUMBER(SEARCH(`"1 for i
 Near 'Variance: Type 2 is refused'                  "--ISNUMBER(SEARCH(`"1 for income`", $var(120, 100, 2)))" '1'
 Near 'Variance: Type TRUE is refused'               "--ISNUMBER(SEARCH(`"1 for income`", $var(120, 100, TRUE)))" '1'
 Near 'Variance: text Type is refused'               "--ISNUMBER(SEARCH(`"1 for income`", $var(120, 100, `"1`")))" '1'
-Near 'Variance: text actual is #VALUE!'             "ERROR.TYPE($var(`"x`", 100))"            '3' '0.1'
+Near 'Variance: text actual is refused'            "--ISNUMBER(SEARCH(`"numbers or blank`", $var(`"x`", 100)))" '1'
 Near 'VariancePct: income above budget'             "$vpc(110, 100)"                           '0.1'
 Near 'VariancePct: expense above budget'            "$vpc(110, 100, -1)"                       '-0.1'
 Near 'VariancePct: negative budget, unfavourable'   "$vpc(-30, -20)"                           '-0.5'
@@ -1042,6 +1042,30 @@ Near 'FinancialQuarter: October is quarter 2'       "$fqu(DATE(2026,10,1))"     
 Near 'FinancialQuarter: June is quarter 4'          "$fqu(DATE(2027,6,30))"                    '4'
 Near 'FinancialQuarter: calendar year, April'       "$fqu(DATE(2026,4,1), 1)"                  '2'
 Near 'FinancialQuarter: StartMonth 0 is refused'    "--ISNUMBER(SEARCH(`"1 to 12`", $fqu(DATE(2026,7,1), 0)))" '1'
+# Inputs that arithmetic and broadcasting would otherwise turn into plausible numbers:
+# a Type row against a column of amounts, amounts of different shapes, text and logical
+# amounts, a range of start months, a time of day on a column date, and a year that
+# would start before 1900 (DATE reads 1899 as 3799; EDATE gives #NUM!, ERROR.TYPE 6).
+Near 'Variance: a Type row is a shape error'        "--ISNUMBER(SEARCH(`"same shape`", $var({120;90}, {100;100}, {1,-1})))" '1'
+Near 'Variance: amounts of different shapes'        "--ISNUMBER(SEARCH(`"same shape`", $var({120;90}, {100,80})))" '1'
+Near 'Variance: too many Types'                     "--ISNUMBER(SEARCH(`"same shape`", $var({120;90}, {100;100}, {1;-1;1})))" '1'
+Near 'Variance: a Type for each row and column'     "SUMPRODUCT(ABS($var({120,130;90,80}, {100,100;100,100}, {1,1;-1,-1}) - {20,30;10,20}))" '0'
+Near 'Variance: one Type per row across months'     "SUMPRODUCT(ABS($var({120,130;90,80}, {100,100;100,100}, {1;-1}) - {20,30;10,20}))" '0'
+Near 'Variance: TRUE amount is refused'             "--ISNUMBER(SEARCH(`"numbers or blank`", $var(TRUE, 0)))" '1'
+Near 'Variance: text amount is refused'             "--ISNUMBER(SEARCH(`"numbers or blank`", $var(`"120`", 100)))" '1'
+Near 'Variance: blank actual cell counts as 0'      "$var(Z1, 100)"                            '-100'
+Near 'Variance: an error amount shows'              "ERROR.TYPE($var(NA(), 100))"             '7' '0.1'
+Near 'VariancePct: FALSE amount is refused'         "--ISNUMBER(SEARCH(`"numbers or blank`", $vpc(FALSE, 100)))" '1'
+Near 'VariancePct: a Type row is a shape error'     "--ISNUMBER(SEARCH(`"same shape`", $vpc({120;90}, {100;100}, {1,-1})))" '1'
+Near 'FinancialMonth: a range of starts refused'    "--ISNUMBER(SEARCH(`"1 to 12`", $fmo(DATE(2026,7,1), {7,13})))" '1'
+Near 'FinancialQuarter: a range of starts refused'  "--ISNUMBER(SEARCH(`"1 to 12`", $fqu(DATE(2026,7,1), {1;7})))" '1'
+Near 'YearToDate: a range of starts refused'        "--ISNUMBER(SEARCH(`"1 to 12`", $ytd({10,20}, DATE(2026,{2,5},1), DATE(2026,8,31), {1,7})))" '1'
+Near 'YearToDate: text values are refused'          "--ISNUMBER(SEARCH(`"numbers or blank`", $ytd({`"10`",20}, DATE(2026,{7,8},1), DATE(2026,8,31))))" '1'
+Near 'YearToDate: TRUE values are refused'          "--ISNUMBER(SEARCH(`"numbers or blank`", $ytd({TRUE,20}, DATE(2026,{7,8},1), DATE(2026,8,31))))" '1'
+Near 'YearToDate: an error in an earlier column'    "ERROR.TYPE($ytd(HSTACK(NA(), 20), DATE(2026,{6,8},1), DATE(2026,8,31)))" '7' '0.1'
+Near 'YearToDate: a time of day is ignored'         "$ytd({10,20}, DATE(2026,8,31) + {0,0.5}, DATE(2026,8,31))" '30'
+Near 'YearToDate: a year before 1900 is #NUM!'      "ERROR.TYPE($ytd({10,20}, DATE(1900,{1,6},1), DATE(1900,6,30)))" '6' '0.1'
+Near 'YearToDate: a 1900 calendar year'             "$ytd({10,20}, DATE(1900,{1,6},1), DATE(1900,6,30), 1)" '30'
 
 # --- Randomised checks. Each trial draws fresh inputs, compares the function with an
 # independent Excel formula and, on a miss, reports the inputs that produced it so the

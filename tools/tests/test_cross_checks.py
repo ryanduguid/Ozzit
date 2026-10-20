@@ -282,7 +282,17 @@ def period_cases():
         ("financial_quarter_row", "=oz.FinancialQuarterλ(DATE(2026,{7,9,10,1,6},1))",
          [[(fy_month(date(2026, m, 1)) - 1) // 3 + 1 for m in (7, 9, 10, 1, 6)]]),
         ("financial_quarter_start_refused", "=oz.FinancialQuarterλ(DATE(2026,7,1),13)",
-         [["FinancialQuarterλ needs StartMonth to be a whole number from 1 to 12."]]),
+         [["FinancialQuarterλ needs StartMonth to be one whole number from 1 to 12."]]),
+        ("variance_type_row_refused", "=oz.Varianceλ({120;90},{100;100},{1,-1})",
+         [["Varianceλ needs Actual and Budget of the same shape, and Type as one value or one for each row."]]),
+        ("variance_type_per_row_across_months", "=oz.Varianceλ({120,130;90,80},{100,100;100,100},{1;-1})",
+         [[(a - 100) * t for a in row] for row, t in (((120, 130), 1), ((90, 80), -1))]),
+        ("variance_text_amount_refused", '=oz.Varianceλ("120",100)',
+         [["Varianceλ needs Actual and Budget to hold numbers or blank cells; text and TRUE or FALSE are refused."]]),
+        ("year_to_date_start_range_refused", "=oz.YearToDateλ({10,20},DATE(2026,{2,5},1),DATE(2026,8,31),{1,7})",
+         [["YearToDateλ needs StartMonth to be one whole number from 1 to 12."]]),
+        ("year_to_date_boolean_refused", "=oz.YearToDateλ({TRUE,20},DATE(2026,{7,8},1),DATE(2026,8,31))",
+         [["YearToDateλ needs Values to hold numbers or blank cells; text and TRUE or FALSE are refused."]]),
     ]
 
 

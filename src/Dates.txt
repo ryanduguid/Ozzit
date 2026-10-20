@@ -784,7 +784,7 @@ FinancialMonthλ = LAMBDA(
                             "VERSION:       →20 Oct 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Dates          →(Required) One or more dates, numeric or text. A blank cell returns a blank.¶" &
-                            "StartMonth     →(Optional: Default = 7) Month the financial year starts, a whole number from 1 to 12. Blank cells and empty text use 7.¶" &
+                            "StartMonth     →(Optional: Default = 7) Month the financial year starts, one whole number from 1 to 12. Blank cells and empty text use 7.¶" &
                             "EXAMPLES:      →¶" &
                             "→Formula (oz is assumed to be the module's name)¶" &
                             "→=oz.FinancialMonthλ(DATE(2026,8,15))¶" &
@@ -796,8 +796,9 @@ FinancialMonthλ = LAMBDA(
         Help?,          ISOMITTED(Dates),
     //  Set defaults
         FYStart,        IF(ISOMITTED(StartMonth), 7, IF(StartMonth = "", 7, StartMonth)),
-        ValidStart?,    AND(IFERROR(OR(FYStart = SEQUENCE(12)), FALSE)),
-        StartMessage,   "FinancialMonthλ needs StartMonth to be a whole number from 1 to 12.",
+    //  A range of start months would number each date against its own year
+        ValidStart?,    IF(AND(ROWS(FYStart) = 1, COLUMNS(FYStart) = 1), IFERROR(OR(FYStart = SEQUENCE(12)), FALSE), FALSE),
+        StartMessage,   "FinancialMonthλ needs StartMonth to be one whole number from 1 to 12.",
     //  Check inputs - apply convenience conversions. A blank cell stays blank, a text date is read
         CvtDates,       IF( ISOMITTED( Dates),
                             FALSE,
@@ -828,7 +829,7 @@ FinancialQuarterλ = LAMBDA(
                             "VERSION:       →20 Oct 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Dates          →(Required) One or more dates, numeric or text. A blank cell returns a blank.¶" &
-                            "StartMonth     →(Optional: Default = 7) Month the financial year starts, a whole number from 1 to 12. Blank cells and empty text use 7.¶" &
+                            "StartMonth     →(Optional: Default = 7) Month the financial year starts, one whole number from 1 to 12. Blank cells and empty text use 7.¶" &
                             "EXAMPLES:      →¶" &
                             "→Formula (oz is assumed to be the module's name)¶" &
                             "→=oz.FinancialQuarterλ(DATE(2026,11,15))¶" &
@@ -840,8 +841,9 @@ FinancialQuarterλ = LAMBDA(
         Help?,          ISOMITTED(Dates),
     //  Set defaults
         FYStart,        IF(ISOMITTED(StartMonth), 7, IF(StartMonth = "", 7, StartMonth)),
-        ValidStart?,    AND(IFERROR(OR(FYStart = SEQUENCE(12)), FALSE)),
-        StartMessage,   "FinancialQuarterλ needs StartMonth to be a whole number from 1 to 12.",
+    //  A range of start months would number each date against its own year
+        ValidStart?,    IF(AND(ROWS(FYStart) = 1, COLUMNS(FYStart) = 1), IFERROR(OR(FYStart = SEQUENCE(12)), FALSE), FALSE),
+        StartMessage,   "FinancialQuarterλ needs StartMonth to be one whole number from 1 to 12.",
     //  Check inputs - apply convenience conversions. A blank cell stays blank, a text date is read
         CvtDates,       IF( ISOMITTED( Dates),
                             FALSE,
