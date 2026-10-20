@@ -2,6 +2,12 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+Native cover tests now retain all 15 Python gate contracts, including exact
+reference failures, CSV matrices, stale labels and dates, decoy shared strings,
+small-workbook success, input preservation and physical command defaults.
+Production code is unchanged. The Python gate and live callers remain pending
+comparison and release compatibility work.
+
 Native previous-name tests now cover all 13 remaining Python test contracts:
 ordered defect reports, CSV header precedence, ignored columns, truncated rows,
 input failures, defaults and surplus arguments. A private test floor permits

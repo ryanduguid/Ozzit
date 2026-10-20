@@ -168,6 +168,9 @@ when tests run. Previous-name coverage retains the 13 original Python test
 contracts, including all header and read-failure cases and physical command
 defaults. Its small diagnostic fixtures use a private floor parameter; public
 commands retain the floor of 100. The Python gate and live callers remain.
+Cover tests retain all 15 original gate contracts, including exact small-fixture
+reference failures, stale labels and dates, decoy strings, CSV parsing and
+physical command defaults. Their fixtures write only owned copies.
 Differential scripts
 and their receipts are retained in the local Agent Hub evidence for this port.
 CI, `RELEASING.md` and the postbuild run order call this binary. The Python tools
