@@ -996,7 +996,57 @@
     "formula": "=oz.FinancialQuarterλ(DATE(2026,7,1),13)",
     "expected": [
       [
-        "FinancialQuarterλ needs StartMonth to be a whole number from 1 to 12."
+        "FinancialQuarterλ needs StartMonth to be one whole number from 1 to 12."
+      ]
+    ]
+  },
+  {
+    "id": "variance_type_row_refused",
+    "formula": "=oz.Varianceλ({120;90},{100;100},{1,-1})",
+    "expected": [
+      [
+        "Varianceλ needs Actual and Budget of the same shape, and Type as one value or one for each row."
+      ]
+    ]
+  },
+  {
+    "id": "variance_type_per_row_across_months",
+    "formula": "=oz.Varianceλ({120,130;90,80},{100,100;100,100},{1;-1})",
+    "expected": [
+      [
+        20,
+        30
+      ],
+      [
+        10,
+        20
+      ]
+    ]
+  },
+  {
+    "id": "variance_text_amount_refused",
+    "formula": "=oz.Varianceλ(\"120\",100)",
+    "expected": [
+      [
+        "Varianceλ needs Actual and Budget to hold numbers or blank cells; text and TRUE or FALSE are refused."
+      ]
+    ]
+  },
+  {
+    "id": "year_to_date_start_range_refused",
+    "formula": "=oz.YearToDateλ({10,20},DATE(2026,{2,5},1),DATE(2026,8,31),{1,7})",
+    "expected": [
+      [
+        "YearToDateλ needs StartMonth to be one whole number from 1 to 12."
+      ]
+    ]
+  },
+  {
+    "id": "year_to_date_boolean_refused",
+    "formula": "=oz.YearToDateλ({TRUE,20},DATE(2026,{7,8},1),DATE(2026,8,31))",
+    "expected": [
+      [
+        "YearToDateλ needs Values to hold numbers or blank cells; text and TRUE or FALSE are refused."
       ]
     ]
   }
