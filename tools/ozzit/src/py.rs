@@ -275,6 +275,33 @@ pub fn repr_bytes(b: &[u8]) -> String {
     out
 }
 
+/// Significant digits and decimal-point position of `{:e}` output.
+fn scientific_digits(sci: &str) -> (String, i64) {
+    let (mantissa, exponent) = sci.split_once('e').expect("scientific notation");
+    let digits = mantissa.replace('.', "");
+    (digits, exponent.parse::<i64>().expect("exponent") + 1)
+}
+
+/// The shortest round-tripping digits of a finite `f`, as CPython's dtoa picks
+/// them: where two shortest strings are equally close, Rust rounds up and
+/// CPython takes the even last digit.
+fn shortest_digits(f: f64) -> (String, i64) {
+    let (digits, decpt) = scientific_digits(&format!("{f:e}"));
+    // Rounded up from a tie, the last digit is odd and the even one is just below.
+    if digits.ends_with(['1', '3', '5', '7', '9']) {
+        // 767 decimals hold every double's exact expansion.
+        let (exact, exact_decpt) = scientific_digits(&format!("{f:.767e}"));
+        let n = digits.len();
+        if exact_decpt == decpt && exact[n..].trim_end_matches('0') == "5" {
+            let down = &exact[..n];
+            if format!("{down}e{}", decpt - n as i64).parse::<f64>() == Ok(f) {
+                return (down.trim_end_matches('0').to_owned(), decpt);
+            }
+        }
+    }
+    (digits, decpt)
+}
+
 /// `repr(f)` for a `float`.
 pub fn float_repr(f: f64) -> String {
     if f.is_nan() {
@@ -283,10 +310,7 @@ pub fn float_repr(f: f64) -> String {
     if f.is_infinite() {
         return if f > 0.0 { "inf".into() } else { "-inf".into() };
     }
-    let sci = format!("{:e}", f.abs());
-    let (mantissa, exponent) = sci.split_once('e').expect("scientific notation");
-    let digits: String = mantissa.chars().filter(|c| *c != '.').collect();
-    let decpt: i64 = exponent.parse::<i64>().expect("exponent") + 1;
+    let (digits, decpt) = shortest_digits(f.abs());
     let sign = if f.is_sign_negative() { "-" } else { "" };
     let n = digits.len() as i64;
     let body = if f == 0.0 {
@@ -1002,6 +1026,14 @@ mod tests {
             (1.0, "1.0"),
         ] {
             assert_eq!(float_repr(value), expected);
+        }
+        // Exact ties between two shortest strings take the even digit. Parsed,
+        // since a literal would be checked against Rust's own rounding.
+        for (text, expected) in [
+            ("626625312770308.25", "626625312770308.2"),
+            ("626625312770308.75", "626625312770308.8"),
+        ] {
+            assert_eq!(float_repr(text.parse().unwrap()), expected);
         }
     }
 

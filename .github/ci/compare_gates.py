@@ -29,10 +29,6 @@ from pathlib import Path
 WORKFLOW = ".github/workflows/verify.yml"
 GATE = re.compile(r"^\s*run:\s*(tools/ozzit/target/release/ozzit\s+verify_\w+.*?)\s*$")
 INPUTS = ("ozzit.xlsx", "src", "functions.csv", "CHANGELOG.md")
-# The one documented wording difference: a corrupt ZIP's reason comes from each
-# implementation's own parser (tools/ozzit/README.md). Only this exact pair of
-# strings is allowed; any other difference in the same output still fails.
-ZIP_REASON = ("invalid ZIP: invalid Zip archive: Could not find EOCD", "File is not a zip file")
 
 
 def drop_function_row(root: Path) -> None:
@@ -85,13 +81,6 @@ def compare(label: str, native: str, gate: str, arguments: list[str], cwd: Path)
     python = run([sys.executable, str(Path("tools", f"{gate}.py").resolve()), *arguments], cwd)
     if (rust.returncode, rust.stdout, rust.stderr) == (python.returncode, python.stdout, python.stderr):
         print(f"same: {label} (exit {rust.returncode})")
-        return True
-    if ZIP_REASON[0] in rust.stdout + rust.stderr and (
-        rust.returncode,
-        rust.stdout.replace(*ZIP_REASON),
-        rust.stderr.replace(*ZIP_REASON),
-    ) == (python.returncode, python.stdout, python.stderr):
-        print(f"same apart from the ZIP parser's reason: {label} (exit {rust.returncode})")
         return True
     print(f"DIFFERENT: {label}", file=sys.stderr)
     for name, result in (("ozzit", rust), ("python", python)):

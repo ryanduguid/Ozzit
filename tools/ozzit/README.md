@@ -40,7 +40,7 @@ repository root to use their usual path defaults.
 
 Normal positional paths and existing flags retain their spelling. Replace
 `python tools/<name>.py` with `ozzit <name>`. Usage and help identify the native
-command. XML and corrupt ZIP diagnostics include the native parser's reason.
+command. XML and corrupt deflate diagnostics include the native parser's reason.
 Undefined-reference findings have deterministic token order.
 Some Python tracebacks become a controlled error and exit status 1. Boundary
 qualification is still in progress. JSON inputs have a native nesting ceiling

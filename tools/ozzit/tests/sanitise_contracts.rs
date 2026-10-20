@@ -5,7 +5,6 @@ use base64::Engine;
 use ozzit::{cache::Dump, polish, py::PyPath, refresh, sanitise};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
-use std::io::Read;
 use std::path::Path;
 
 fn hex(bytes: &[u8]) -> String {
@@ -15,16 +14,14 @@ fn hex(bytes: &[u8]) -> String {
         .collect()
 }
 
-fn part_hashes(bytes: &[u8]) -> Option<serde_json::Map<String, Value>> {
-    let mut zip = zip::ZipArchive::new(std::io::Cursor::new(bytes)).ok()?;
-    let mut out = serde_json::Map::new();
-    for i in 0..zip.len() {
-        let mut member = zip.by_index(i).ok()?;
-        let mut data = Vec::new();
-        member.read_to_end(&mut data).ok()?;
-        out.insert(member.name().ok()?.into_owned(), Value::String(hex(&data)));
-    }
-    Some(out)
+fn part_hashes(path: &Path) -> Option<serde_json::Map<String, Value>> {
+    let parts = ozzit::archive::read_parts(path).ok()?;
+    Some(
+        parts
+            .into_iter()
+            .map(|(name, data)| (name, Value::String(hex(&data))))
+            .collect(),
+    )
 }
 
 fn printed(lines: &[String]) -> String {
@@ -53,19 +50,11 @@ fn write_input(data: &Value, record: &Value, path: &Path) {
     }
 }
 
-/// Whether the run printed what the recorder saw, allowing the native ZIP reason.
+/// Whether the run printed what the recorder saw.
 fn same_output(code: u8, out: &str, err: &str, expected: &Value) -> bool {
-    let mut same = i64::from(code) == expected["code"].as_i64().unwrap()
+    i64::from(code) == expected["code"].as_i64().unwrap()
         && out == expected["stdout"].as_str().unwrap()
-        && err == expected["stderr"].as_str().unwrap();
-    // Only the native ZIP reason differs; the refusal, stream and exit are kept.
-    if !same && let Some((prefix, _)) = err.split_once(": invalid ZIP: ") {
-        same = code == 1
-            && out.is_empty()
-            && expected["stderr"].as_str().unwrap()
-                == format!("{prefix}: File is not a zip file\n");
-    }
-    same
+        && err == expected["stderr"].as_str().unwrap()
 }
 
 /// Compares the written bytes and a second run with the recorder's.
@@ -81,7 +70,7 @@ fn result_differences(
         if hex(&bytes) != sha {
             differences.push(format!(
                 "{name}: result bytes differ (parts same: {})",
-                part_hashes(&bytes).map(Value::Object).as_ref() == Some(&expected["parts"])
+                part_hashes(path).map(Value::Object).as_ref() == Some(&expected["parts"])
             ));
         }
         if let Some(second) = expected["second"].as_str() {

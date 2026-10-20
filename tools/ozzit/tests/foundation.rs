@@ -767,3 +767,246 @@ fn member_names_decode_by_their_own_utf8_flags_as_zipfile_does() {
     let parts = archive::read_parts(&path).unwrap();
     assert_eq!(parts.keys().collect::<Vec<_>>(), ["├⌐.xml"]);
 }
+
+/// `a.xml` and `b.xml`, stored, with `edit` applied to the bytes of the end record.
+fn edited_archive(edit: impl Fn(&mut Vec<u8>, usize)) -> Vec<u8> {
+    let mut bytes = stored_archive(&[(b"a.xml", 0, b"<a/>", true), (b"b.xml", 0, b"<b/>", true)]);
+    let end = bytes.len() - 22;
+    edit(&mut bytes, end);
+    bytes
+}
+fn set16(bytes: &mut [u8], at: usize, value: u16) {
+    bytes[at..at + 2].copy_from_slice(&value.to_le_bytes());
+}
+fn set32(bytes: &mut [u8], at: usize, value: u32) {
+    bytes[at..at + 4].copy_from_slice(&value.to_le_bytes());
+}
+fn get32(bytes: &[u8], at: usize) -> u32 {
+    u32::from_le_bytes(bytes[at..at + 4].try_into().unwrap())
+}
+fn bump32(bytes: &mut [u8], at: usize, delta: u32) {
+    set32(bytes, at, get32(bytes, at) + delta);
+}
+/// Reads the archive and checks it gives both parts, or the refusal `expected`
+/// (each expectation is what Python 3.15's zipfile does with the same edit).
+fn assert_read(name: &str, bytes: &[u8], expected: Option<&str>) {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("book.xlsx");
+    std::fs::write(&path, bytes).unwrap();
+    let parts = archive::read_parts(&path).map(|parts| parts.into_iter().collect::<Vec<_>>());
+    let ok = vec![
+        ("a.xml".to_string(), b"<a/>".to_vec()),
+        ("b.xml".to_string(), b"<b/>".to_vec()),
+    ];
+    match expected {
+        None => assert_eq!(parts, Ok(ok), "{name}"),
+        Some(message) => assert_eq!(parts, Err(message.to_string()), "{name}"),
+    }
+}
+/// Inserts a ZIP64 end record and locator before the classic end record, whose
+/// size and offset become 0xFFFFFFFF.
+fn with_zip64(mut bytes: Vec<u8>, locator_disk: u32, offset_delta: u64) -> Vec<u8> {
+    let end = bytes.len() - 22;
+    let (size, offset) = (get32(&bytes, end + 12), get32(&bytes, end + 16));
+    let mut record = b"PK\x06\x06".to_vec();
+    record.extend(44u64.to_le_bytes());
+    record.extend([45, 0, 45, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    record.extend(2u64.to_le_bytes());
+    record.extend(2u64.to_le_bytes());
+    record.extend(u64::from(size).to_le_bytes());
+    record.extend((u64::from(offset) + offset_delta).to_le_bytes());
+    record.extend(b"PK\x06\x07");
+    record.extend(locator_disk.to_le_bytes());
+    record.extend((end as u64).to_le_bytes());
+    record.extend(1u32.to_le_bytes());
+    set32(&mut bytes, end + 12, u32::MAX);
+    set32(&mut bytes, end + 16, u32::MAX);
+    bytes.splice(end..end, record);
+    bytes
+}
+
+#[test]
+fn the_end_record_and_directory_are_read_as_zipfile_reads_them() {
+    assert_read("unchanged", &edited_archive(|_, _| {}), None);
+    // The directory is the recorded size before the end record.
+    assert_read(
+        "size + 1",
+        &edited_archive(|b, e| bump32(b, e + 12, 1)),
+        Some("Bad magic number for central directory"),
+    );
+    let junk = edited_archive(|b, e| {
+        bump32(b, e + 12, 10);
+        b.splice(e..e, [0; 10]);
+    });
+    assert_read(
+        "junk, size + 10",
+        &junk,
+        Some("Truncated central directory"),
+    );
+    assert_read(
+        "size beyond the start",
+        &edited_archive(|b, e| set32(b, e + 12, e as u32 + 1)),
+        Some("Bad offset for central directory"),
+    );
+    // zipfile ignores the disk numbers, entry counts and comment length.
+    for (field, value) in [(4, 1), (6, 1), (8, 3), (20, 1)] {
+        let bytes = edited_archive(|b, e| set16(b, e + field, value));
+        assert_read(&format!("end record field {field}"), &bytes, None);
+    }
+    let prepended = [b"x".repeat(100), edited_archive(|_, _| {})].concat();
+    assert_read("prepended data", &prepended, None);
+    assert_read(
+        "offset + 100",
+        &edited_archive(|b, e| bump32(b, e + 16, 100)),
+        Some("[Errno 22] Invalid argument"),
+    );
+    let short = &edited_archive(|_, _| {})[..5];
+    assert_read("five bytes", short, Some("File is not a zip file"));
+    let version = edited_archive(|b, _| {
+        let central = b.windows(4).position(|w| w == b"PK\x01\x02").unwrap();
+        b[central + 6] = 64;
+    });
+    assert_read("extract version", &version, Some("zip file version 6.4"));
+    // A ZIP64 end record replaces the classic size and offset.
+    let zip64 = |disk, delta| with_zip64(edited_archive(|_, _| {}), disk, delta);
+    assert_read("zip64 end record", &zip64(0, 0), None);
+    assert_read(
+        "zip64 locator disk",
+        &zip64(1, 0),
+        Some("zipfiles that span multiple disks are not supported"),
+    );
+    assert_read(
+        "zip64 directory offset + 1",
+        &zip64(0, 1),
+        Some("Corrupt zip64 end of central directory record"),
+    );
+}
+
+#[test]
+fn an_unmatched_bracket_does_not_close_a_collapsed_default_call() {
+    // verify_sources' call_arguments nests only parentheses and braces, and drops
+    // the last argument of a call left open (Python 3.15 results).
+    for (body, expected) in [
+        (r#"LAMBDA(x, IF(OR(x=""), 0, LET(c], x, 1)))"#, vec![]),
+        (r#"LAMBDA(x, LET(a], 1, IF(OR(x=""), 0, x)))"#, vec!["x"]),
+        (r#"LAMBDA(x, IF(OR(x="", a]), 0, x))"#, vec!["x"]),
+        (r#"LAMBDA(x, IF(OR(ISOMITTED(x), x=""), 0, x))"#, vec!["x"]),
+        (r#"LAMBDA(x, IF(OR(x=""), 0, x)"#, vec![]),
+        (r#"LAMBDA(x, IF(OR(x=""), 0, x"#, vec![]),
+    ] {
+        let found = formula::collapsed_defaults(body);
+        assert_eq!(found.iter().collect::<Vec<_>>(), expected, "{body}");
+    }
+}
+
+fn local_header(name: &[u8], method: u16, crc: u32, sizes: (u32, u32), extra: u16) -> Vec<u8> {
+    let mut out = b"PK\x03\x04\x14\x00\x00\x00".to_vec();
+    out.extend(method.to_le_bytes());
+    out.extend([0, 0, 0x21, 0]);
+    for field in [crc, sizes.0, sizes.1] {
+        out.extend(field.to_le_bytes());
+    }
+    out.extend((name.len() as u16).to_le_bytes());
+    out.extend(extra.to_le_bytes());
+    out.extend(name);
+    out
+}
+fn central_record(name: &[u8], method: u16, crc: u32, sizes: (u32, u32), offset: u32) -> Vec<u8> {
+    let mut out = b"PK\x01\x02\x14\x00".to_vec();
+    out.extend(&local_header(name, method, crc, sizes, 0)[4..28]);
+    out.extend([0; 12]);
+    out.extend(offset.to_le_bytes());
+    out.extend(name);
+    out
+}
+fn end_of(body: &[u8], directory: &[u8], count: u16) -> Vec<u8> {
+    let mut out = [body, directory, b"PK\x05\x06\0\0\0\0"].concat();
+    out.extend(count.to_le_bytes());
+    out.extend(count.to_le_bytes());
+    out.extend((directory.len() as u32).to_le_bytes());
+    out.extend((body.len() as u32).to_le_bytes());
+    out.extend([0, 0]);
+    out
+}
+/// One member `a` whose recorded `file_size` is 1, with `data` compressed by `method`.
+fn one_byte_member(method: u16, data: &[u8]) -> Vec<u8> {
+    let (crc, sizes) = (crc32fast::hash(b"A"), (data.len() as u32, 1));
+    let body = [local_header(b"a", method, crc, sizes, 0), data.to_vec()].concat();
+    end_of(&body, &central_record(b"a", method, crc, sizes, 0), 1)
+}
+
+fn read(bytes: &[u8]) -> Result<Vec<(String, Vec<u8>)>> {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("book.xlsx");
+    std::fs::write(&path, bytes).unwrap();
+    archive::read_parts(&path).map(|parts| parts.into_iter().collect())
+}
+
+#[test]
+fn missing_stored_data_is_refused_as_zipfile_refuses_it() {
+    // An empty stored member with one recorded byte that lies past the end of the
+    // file (its local extra length says 65,535): Python's `_read2` raises EOFError.
+    let a = local_header(b"a", 0, 0, (1, 0), 65_535);
+    let b = local_header(b"b", 0, 0, (0, 0), 0);
+    let directory = [
+        central_record(b"a", 0, 0, (1, 0), 0),
+        central_record(b"b", 0, 0, (0, 0), 0),
+        central_record(b"b", 0, 0, (0, 0), a.len() as u32),
+    ]
+    .concat();
+    let past_end = end_of(&[a, b].concat(), &directory, 3);
+    assert_eq!(
+        read(&past_end),
+        Err("'a' ended before its compressed size".into())
+    );
+    // A genuinely empty stored member reads.
+    let empty = end_of(
+        &local_header(b"a", 0, 0, (0, 0), 0),
+        &central_record(b"a", 0, 0, (0, 0), 0),
+        1,
+    );
+    assert_eq!(read(&empty), Ok(vec![("a".into(), vec![])]));
+    // The same layout with compressed size 2 and data starting at the file's last
+    // byte, a one-byte end-record comment "A": the short but non-empty read gives
+    // the recorded byte, so zipfile accepts it too.
+    let crc = crc32fast::hash(b"A");
+    let a_len = local_header(b"a", 0, crc, (2, 1), 0).len();
+    let b = local_header(b"b", 0, 0, (0, 0), 0);
+    let directory = [
+        central_record(b"a", 0, crc, (2, 1), 0),
+        central_record(b"b", 0, 0, (0, 0), 0),
+        central_record(b"b", 0, 0, (0, 0), a_len as u32),
+    ]
+    .concat();
+    let extra = (b.len() + directory.len() + 22) as u16;
+    let a = local_header(b"a", 0, crc, (2, 1), extra);
+    let mut partial = end_of(&[a, b].concat(), &directory, 3);
+    let comment_length = partial.len() - 2;
+    partial[comment_length..].copy_from_slice(&[1, 0]);
+    partial.push(b'A');
+    let parts = read(&partial).unwrap();
+    assert!(parts.contains(&("a".into(), b"A".to_vec())), "{parts:?}");
+}
+
+#[test]
+fn corrupt_deflate_data_is_refused_as_zipfile_refuses_it() {
+    // 32 stored bytes in a non-final block, then a block of reserved type 3: Python
+    // inflates the whole member and fails, although `file_size` is only 1.
+    let block = [b"\x00\x20\x00\xdf\xff".as_slice(), &[b'A'; 32]].concat();
+    assert_eq!(
+        read(&one_byte_member(8, &[block.as_slice(), b"\x07"].concat())),
+        Err("Error while decompressing data: corrupt deflate stream".into())
+    );
+    // The same block left unfinished, or a complete stream, gives the first byte.
+    let mut complete = Vec::new();
+    let mut encoder =
+        flate2::write::DeflateEncoder::new(&mut complete, flate2::Compression::best());
+    std::io::Write::write_all(&mut encoder, &[b'A'; 32]).unwrap();
+    encoder.finish().unwrap();
+    for stream in [block, complete] {
+        assert_eq!(
+            read(&one_byte_member(8, &stream)),
+            Ok(vec![("a".into(), b"A".to_vec())])
+        );
+    }
+}

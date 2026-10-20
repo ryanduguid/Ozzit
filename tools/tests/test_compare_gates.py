@@ -29,14 +29,9 @@ class CompareGatesTests(unittest.TestCase):
     def test_a_stderr_difference_is_reported(self):
         self.assertFalse(self.compare(result(0, "OK\n", ""), result(0, "OK\n", "different diagnostic\n")))
 
-    def test_the_zip_reason_allowance_still_compares_stderr(self):
-        rust_reason, python_reason = compare_gates.ZIP_REASON
-        rust = result(1, f"FAIL: {rust_reason}\n", "")
-        self.assertTrue(self.compare(rust, result(1, f"FAIL: {python_reason}\n", "")))
-        rust = result(1, f"FAIL: {rust_reason}\n", "")
-        self.assertFalse(self.compare(rust, result(1, f"FAIL: {python_reason}\n", "extra\n")))
-        rust = result(1, "", f"FAIL: {rust_reason}\n")
-        self.assertTrue(self.compare(rust, result(1, "", f"FAIL: {python_reason}\n")))
+    def test_a_different_zip_reason_is_reported(self):
+        rust = result(1, "FAIL: invalid ZIP: invalid Zip archive: Could not find EOCD\n", "")
+        self.assertFalse(self.compare(rust, result(1, "FAIL: File is not a zip file\n", "")))
 
 
 if __name__ == "__main__":
