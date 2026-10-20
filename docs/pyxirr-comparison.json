@@ -2,7 +2,7 @@
   "recorded": "2026-10-20",
   "excel": "16.0 build 20527",
   "workbook": "ozzit.xlsx",
-  "workbook_sha256": "222a5d3af9e930d787bb433acba1b278e50304be4cb72a22a0afa7ea75631b36",
+  "workbook_sha256": "748c132ec19acc48b9086c9cd739160343a774d73f2c4c58abc88f5c251af487",
   "pyxirr": "0.10.8",
   "cases": [
     {
@@ -110,5 +110,5 @@
       "note": null
     }
   ],
-  "commit": "10dae7ab7a545e9096856017155b472656b02465"
+  "commit": "28c1effd8657df781385fba6fdcafd81b8d14d38"
 }
