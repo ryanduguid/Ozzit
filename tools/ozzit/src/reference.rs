@@ -8,7 +8,7 @@
 use crate::{common::*, formula, help, py};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
 pub const FORMAT: &str = "ozzit-function-reference/1";
@@ -209,10 +209,12 @@ fn heading(
         }
         "WEBPAGE" | "WEBSITE" | "REPOSITORY" => In::Ignored,
         _ => {
-            block.extra.push(Section {
-                heading,
-                rows: vec![],
-            });
+            let rows = if text.is_empty() {
+                vec![]
+            } else {
+                vec![(String::new(), collapse(text))]
+            };
+            block.extra.push(Section { heading, rows });
             In::Extra
         }
     }
@@ -332,19 +334,53 @@ fn hex(bytes: &[u8]) -> String {
         .collect()
 }
 
-fn index_rows(index: &Path) -> Result<BTreeMap<String, IndexRow>> {
+/// The index rows by function name, noting any name listed twice.
+fn index_rows(index: &Path, problems: &mut Vec<String>) -> Result<BTreeMap<String, IndexRow>> {
     let csv = Csv::read(index)?;
-    Ok(csv
-        .rows
-        .iter()
-        .map(|row| {
-            let fields: IndexRow = INDEX_FIELDS
-                .iter()
-                .map(|&key| (key, csv.get(row, key).unwrap_or("").to_owned()))
-                .collect();
-            (fields["function"].clone(), fields)
-        })
-        .collect())
+    let mut rows = BTreeMap::new();
+    for row in &csv.rows {
+        let fields: IndexRow = INDEX_FIELDS
+            .iter()
+            .map(|&key| (key, csv.get(row, key).unwrap_or("").to_owned()))
+            .collect();
+        let name = fields["function"].clone();
+        if rows.insert(name.clone(), fields).is_some() {
+            problems.push(format!("{name} is listed more than once in the index"));
+        }
+    }
+    Ok(rows)
+}
+
+fn squash(text: &str) -> String {
+    text.split_whitespace().collect()
+}
+
+/// Problems with one source definition against its index row.
+fn index_problems(
+    key: &str,
+    module: &str,
+    help: Option<&str>,
+    row: Option<&IndexRow>,
+) -> Vec<String> {
+    let Some(row) = row else {
+        return vec![format!("{key} is in src/{module}.txt but not in the index")];
+    };
+    let mut problems = Vec::new();
+    if row["module"] != module {
+        problems.push(format!(
+            "{key} is in src/{module}.txt but the index files it under {}",
+            row["module"]
+        ));
+    }
+    if let Some(help) = help
+        && squash(help) != squash(&row["signature"])
+    {
+        problems.push(format!(
+            "{key}: its help signature {help} disagrees with the index signature {}",
+            row["signature"]
+        ));
+    }
+    problems
 }
 
 /// One module's functions in source order, noting any the index disagrees with.
@@ -352,8 +388,9 @@ fn module_json(
     src: &Path,
     module: &str,
     rows: &BTreeMap<String, IndexRow>,
+    seen: &mut BTreeSet<String>,
     problems: &mut Vec<String>,
-) -> Result<(Value, usize)> {
+) -> Result<Value> {
     let path = src.join(format!("{module}.txt"));
     let bytes = read_bytes(&path)?;
     let mut functions = Vec::new();
@@ -362,45 +399,40 @@ fn module_json(
             continue;
         };
         let key = format!("oz.{}", m[1]);
-        let row = rows.get(&key);
-        match row.map(|r| r["module"].as_str()) {
-            None => problems.push(format!("{key} is in src/{module}.txt but not in the index")),
-            Some(filed) if filed != module => problems.push(format!(
-                "{key} is in src/{module}.txt but the index files it under {filed}"
-            )),
-            Some(_) => {}
+        if !seen.insert(key.clone()) {
+            problems.push(format!("{key} is defined more than once in the sources"));
         }
-        functions.push(function_json(&m[1], py::strip(&m[2]), row));
+        let body = py::strip(&m[2]);
+        let help = help_text(body).and_then(|t| parse(&t).signature);
+        problems.extend(index_problems(
+            &key,
+            module,
+            help.as_deref(),
+            rows.get(&key),
+        ));
+        functions.push(function_json(&m[1], body, rows.get(&key)));
     }
-    let count = functions.len();
     let source = format!("src/{module}.txt");
-    let document =
-        json!({"module": module, "source": source, "sha256": hex(&bytes), "functions": functions});
-    Ok((document, count))
+    Ok(json!({"module": module, "source": source, "sha256": hex(&bytes), "functions": functions}))
 }
 
 /// Build the reference from the module sources and the published index.
 /// Returns the JSON document and the number of functions, or the problems
-/// that stop the two from describing the same library.
+/// that stop the two from describing exactly the same library.
 pub fn build(src: &Path, index: &Path) -> std::result::Result<(Value, usize), Vec<String>> {
-    let rows = index_rows(index).map_err(|e| vec![e])?;
     let mut problems = Vec::new();
+    let rows = index_rows(index, &mut problems).map_err(|e| vec![e])?;
+    let mut seen = BTreeSet::new();
     let mut modules = Vec::new();
-    let mut seen = 0;
     for module in formula::MODULES {
-        let (document, count) =
-            module_json(src, module, &rows, &mut problems).map_err(|e| vec![e])?;
-        modules.push(document);
-        seen += count;
+        modules
+            .push(module_json(src, module, &rows, &mut seen, &mut problems).map_err(|e| vec![e])?);
     }
-    if seen != rows.len() {
-        problems.push(format!(
-            "the sources define {seen} names but the index lists {}",
-            rows.len()
-        ));
+    for name in rows.keys().filter(|name| !seen.contains(*name)) {
+        problems.push(format!("{name} is in the index but not in the sources"));
     }
     if problems.is_empty() {
-        Ok((json!({"format": FORMAT, "modules": modules}), seen))
+        Ok((json!({"format": FORMAT, "modules": modules}), seen.len()))
     } else {
         Err(problems)
     }

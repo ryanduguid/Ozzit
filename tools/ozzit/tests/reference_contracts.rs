@@ -201,3 +201,99 @@ fn a_lower_case_row_after_a_colon_continues_the_sentence() {
         "A date here is not a life: the arguments read Values."
     );
 }
+
+const INDEX_HEADER: &str = "function,module,previous_name,signature,description\n";
+
+#[test]
+fn a_duplicate_index_row_or_definition_is_refused() {
+    let (_dir, src, csv) = fixture(&format!(
+        "{INDEX_HEADER}oz.Thisλ,Dates,,Thisλ(x),Does this\noz.Thisλ,Dates,,Thisλ(x),Does this\n"
+    ));
+    let problems = reference::build(&src, &csv).unwrap_err();
+    assert!(problems.contains(&"oz.Thisλ is listed more than once in the index".to_string()));
+
+    let (_dir, src, csv) = fixture(&format!(
+        "{INDEX_HEADER}oz.Thisλ,Dates,,Thisλ(x),Does this\noz.Thatλ,Dates,,Thatλ(x),Does that\n"
+    ));
+    let text = std::fs::read_to_string(src.join("Dates.txt")).unwrap();
+    std::fs::write(src.join("Dates.txt"), format!("{text}\n{text}")).unwrap();
+    let problems = reference::build(&src, &csv).unwrap_err();
+    assert!(problems.contains(&"oz.Thisλ is defined more than once in the sources".to_string()));
+    assert!(problems.contains(&"oz.Thatλ is in the index but not in the sources".to_string()));
+}
+
+#[test]
+fn the_help_signature_must_match_the_index_apart_from_spacing() {
+    let (_dir, src, csv) = fixture(&format!(
+        "{INDEX_HEADER}oz.Thisλ,Dates,,Thisλ( x ),Does this\n"
+    ));
+    assert!(reference::build(&src, &csv).is_ok());
+    let (_dir, src, csv) = fixture(&format!(
+        "{INDEX_HEADER}oz.Thisλ,Dates,,Thisλ(y),Does this\n"
+    ));
+    let problems = reference::build(&src, &csv).unwrap_err();
+    assert_eq!(
+        problems,
+        ["oz.Thisλ: its help signature Thisλ(x) disagrees with the index signature Thisλ(y)"]
+    );
+}
+
+#[test]
+fn text_on_an_unrecognised_heading_row_is_kept() {
+    let block = reference::parse("ROW CONTENTS:→Opening balance¶→Closing balance");
+    assert_eq!(block.extra[0].heading, "ROW CONTENTS");
+    assert_eq!(
+        block.extra[0].rows,
+        [
+            (String::new(), "Opening balance".to_string()),
+            (String::new(), "Closing balance".to_string())
+        ]
+    );
+}
+
+/// Expected values read by hand from the released help in src/, not from the parser.
+#[test]
+fn released_help_survives_in_full() {
+    let (document, _) =
+        reference::build(&root().join("src"), &root().join("functions.csv")).unwrap();
+    let function = |name: &str| {
+        document["modules"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .flat_map(|m| m["functions"].as_array().unwrap())
+            .find(|f| f["name"] == name)
+            .unwrap()
+            .clone()
+    };
+    let labour = function("oz.ATOLabourRatioλ");
+    assert_eq!(
+        labour["notes"][0],
+        "(Wages + Contractors - AssociatePayments) / Turnover, where Wages is SalaryWages, or W1 when W1 is greater. The ATO adds total salary and wages expenses to contractor, subcontractor and commission expenses and deducts payments to associated persons. Where the activity statements' label W1 (total salary, wages and other payments) for the year exceeds the return's salary and wages, it uses W1. Returns a fraction, as ATOBenchmarkRatioλ() does. An omitted or blank AssociatePayments or W1 counts as 0. Turnover of 0 returns #DIV/0!. Arithmetic only. ATO benchmark ratio calculations checked 19 October 2026."
+    );
+    assert_eq!(labour["parameters"][3]["name"], "AssociatePayments");
+    assert_eq!(labour["parameters"][3]["requirement"], "Optional");
+    assert_eq!(labour["parameters"][3]["qualifier"], "Default = 0");
+    assert_eq!(
+        labour["parameters"][3]["text"],
+        "Payments to associated persons."
+    );
+    assert_eq!(
+        labour["examples"][0]["formula"],
+        "=oz.ATOLabourRatioλ(90000, 20000, 480000, 10000, 95000)"
+    );
+    assert_eq!(labour["examples"][0]["result"], "0.21875");
+    let quick = function("oz.QuickRatioλ");
+    assert_eq!(
+        quick["parameters"][0]["text"],
+        "Quick Assets. Includes:\n• Cash & Cash equivalents\n• Marketable securities\n• Accounts receivable\nAlterantively it includes:\n• Current assets\n• Less inventory\n• Less prepaid expenses"
+    );
+    assert_eq!(
+        quick["parameters"][1]["text"],
+        "Current Liabilities. Includes:\nAccounts payable\nWages\nTaxes payable\nShort-term debts\nCurrent portion of long-term debt"
+    );
+    assert_eq!(quick["examples"][0]["result"], "1.2");
+    let year = function("oz.FinancialYearλ");
+    assert_eq!(year["parameters"][1]["qualifier"], "Default = 7");
+    assert_eq!(year["examples"][0]["result"], "FY2027");
+}
