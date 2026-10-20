@@ -170,6 +170,8 @@ enum In {
     SeeAlso,
     Parameters,
     Examples,
+    /// A NOTE! row inside EXAMPLES: its continuations, then back to examples.
+    ExampleNote,
     Note,
     Extra,
     Ignored,
@@ -271,13 +273,28 @@ pub fn parse(text: &str) -> HelpBlock {
             let name = py::strip(name).to_uppercase();
             state = heading(&mut block, &mut example_rows, name, &text);
         } else if label.ends_with('!')
-            && (state != In::Examples
+            && (!matches!(state, In::Examples | In::ExampleNote)
                 || matches!(label.to_uppercase().as_str(), "NOTE!" | "NOTES!"))
         {
             // Under EXAMPLES the label is the result, which can be an Excel
             // error such as #DIV/0!; only an explicit NOTE! row is a note there.
             block.notes.push(collapse(&text));
-            state = In::Note;
+            state = if matches!(state, In::Examples | In::ExampleNote) {
+                In::ExampleNote
+            } else {
+                In::Note
+            };
+        } else if state == In::ExampleNote {
+            let example = !label.is_empty()
+                || text.starts_with('=')
+                || text.starts_with("Formula")
+                || text == "Result";
+            if example {
+                state = In::Examples;
+                example_rows.push((label, text));
+            } else if let Some(note) = block.notes.last_mut() {
+                join(note, &collapse(&text));
+            }
         } else {
             row(&mut block, &mut example_rows, state, label, &text);
         }

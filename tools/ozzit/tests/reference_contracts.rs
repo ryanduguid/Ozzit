@@ -325,3 +325,14 @@ fn several_vertical_examples_stay_apart() {
     assert_eq!(block.examples[1].formula, "=oz.Thisλ(2)");
     assert_eq!(block.examples[1].result.as_deref(), Some("FY2028"));
 }
+
+#[test]
+fn a_note_among_examples_keeps_the_examples_after_it() {
+    let block = reference::parse(
+        "EXAMPLES:→¶1→=oz.Thisλ(1)¶NOTE!→Dates are serial numbers¶→in this example.¶2→=oz.Thisλ(2)¶→Formula¶→=oz.Thisλ(3)¶→Result¶→3",
+    );
+    assert_eq!(block.notes, ["Dates are serial numbers in this example."]);
+    let results: Vec<_> = block.examples.iter().map(|e| e.result.as_deref()).collect();
+    assert_eq!(results, [Some("1"), Some("2"), Some("3")]);
+    assert_eq!(block.examples[2].formula, "=oz.Thisλ(3)");
+}
