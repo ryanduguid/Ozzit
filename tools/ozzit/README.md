@@ -5,6 +5,9 @@ postbuild run order call this binary; the Python tools stay as the reference
 implementation, and CI fails when a gate and its Python twin disagree.
 `build_module` is native only; its former Python assertions now run in
 `tests/module_contracts.rs`, including the physical command-line checks.
+`generate_selftest_examples` is also native only, with its former assertions in
+`tests/selftest_retirement.rs` and exact decimal checks in `src/selftest.rs`.
+Generated headers retain historical Python filenames to preserve published bytes.
 The workbook retains its native Excel formulas and ordinary `.xlsx` format.
 
 Build with the repository's pinned Rust toolchain:

@@ -1,4 +1,4 @@
-"""Refusal and edge paths of the compiler, the self-test generator and
+"""Refusal and edge paths of the compiler and
 the pyxirr comparison, on small fixture sources and workbooks built in a temporary tree.
 """
 
@@ -23,13 +23,11 @@ TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
 import compile_sources  # noqa: E402
-import generate_selftest_examples as generator  # noqa: E402
 import pyxirr_comparison as comparison  # noqa: E402
 
 ROOT = TOOLS.parent
 WORKBOOK = ROOT / "ozzit.xlsx"
 INDEX = ROOT / "functions.csv"
-SRC = ROOT / "src"
 COLUMNS = ["function", "module", "previous_name", "signature", "description"]
 
 
@@ -79,8 +77,7 @@ class ScratchTestCase(unittest.TestCase):
 
 class ImportWithoutReconfigureTests(unittest.TestCase):
     def test_tools_import_when_stdout_cannot_be_reconfigured(self):
-        for script, name in [("compile_sources.py", "NAME_LIMIT"),
-                             ("generate_selftest_examples.py", "MODULES")]:
+        for script, name in [("compile_sources.py", "NAME_LIMIT")]:
             with self.subTest(script=script):
                 namespace, printed = reimport_without_reconfigure(script)
                 self.assertIn(name, namespace)
@@ -243,78 +240,6 @@ class CompileMainTests(ScratchTestCase):
         self.assertEqual(rows["oz.Debtλ"]["description"], "The Debt sample")
         self.assertEqual(self.main(str(self.workbook), str(self.src), flag),
                          f"every defined name already matches src/; no changes\nOK: {self.workbook}\n")
-
-
-def help_body(*rows: str) -> str:
-    text = "¶".join(rows).replace('"', '""')
-    return f'LAMBDA([x], LET(Help, TRIM(TEXTSPLIT("{text}", "→", "¶")), x))'
-
-
-class SelftestParserTests(unittest.TestCase):
-    def test_an_unterminated_literal_runs_to_the_end(self):
-        self.assertEqual(generator.read_literals('x("ab""c", "open'), 'ab"copen')
-
-    def test_an_empty_result_label_collects_the_rows_below(self):
-        examples, _ = generator.examples_of(help_body(
-            "EXAMPLES:→", "→=oz.Thisλ(1)", "Result→", "→3"))
-        self.assertEqual([(e.formula, e.results) for e in examples], [("oz.Thisλ(1)", ["3"])])
-
-    def test_a_sign_and_percent_without_digits_is_not_a_number(self):
-        # Decimal("-") used to raise InvalidOperation here and stop the whole generation.
-        self.assertIsNone(generator.number("-%"))
-        example = generator.Example(formula="oz.Thisλ(1)", results=["-%"])
-        self.assertEqual(generator.checks_for("Thisλ", example, 1, {"Thisλ"}, {}),
-                         ["Near 'example: This${L} #1' \"SUMPRODUCT(--ISERROR(oz.This${L}(1)))\" '0'"])
-
-    def test_an_unknown_function_does_not_stand_alone(self):
-        self.assertFalse(generator.stands_alone("Unknown(1)", {"Thisλ"}, set()))
-
-    def test_a_binding_that_does_not_stand_alone_drops_the_example(self):
-        example = generator.Example(formula="oz.Thisλ(Values)", results=["3"])
-        self.assertEqual(generator.checks_for("Thisλ", example, 1, {"Thisλ"},
-                                              {"Values": "Unknown(1)"}), [])
-
-
-class SelftestMainTests(ScratchTestCase):
-    def setUp(self):
-        super().setUp()
-        self.output = self.directory / "fragment.ps1"
-
-    def src(self, formula: str) -> Path:
-        body = help_body("FUNCTION:→Datesλ(x)", "EXAMPLES:→", "Result→Formula", f"3→={formula}")
-        return write_src(self.directory / "src", {"Dates": f"Datesλ = {body};\nBROKEN;\n"})
-
-    def main(self, *args: str) -> str:
-        printed = io.StringIO()
-        with mock.patch.object(sys, "argv", ["generate_selftest_examples.py", *args]), \
-                redirect_stdout(printed):
-            generator.main()
-        return printed.getvalue()
-
-    def test_too_many_arguments_print_usage(self):
-        with self.assertRaises(SystemExit) as failure:
-            self.main("a", "b", "c")
-        self.assertEqual(failure.exception.code,
-                         "FAIL: usage: python tools/generate_selftest_examples.py [src dir] [output]")
-
-    def test_writes_the_fragment_once_and_then_reports_it_current(self):
-        src = self.src("oz.Datesλ(1)")
-        text = generator.generate(src)
-        self.assertIn("Same 'help: Dates${L}' \"INDEX(oz.Dates${L}(),1,1)\" 'FUNCTION:'", text)
-        self.assertIn("# --- 1 worked examples that stand on their own", text)
-        self.assertIn("Near 'example: Dates${L} #1' \"oz.Dates${L}(1)\" '3.0' '0.5'", text)
-        self.assertNotIn("BROKEN", text)
-        self.assertEqual(self.main(str(src), str(self.output)),
-                         f"wrote {self.output}: {text.count(chr(10))} lines\n")
-        self.assertEqual(self.output.read_text(encoding="ascii"), text)
-        self.assertEqual(self.main(str(src), str(self.output)), f"already current: {self.output}\n")
-
-    def test_a_non_ascii_fragment_is_refused_without_writing(self):
-        src = self.src('oz.Datesλ("café")')
-        with self.assertRaises(SystemExit) as failure:
-            self.main(str(src), str(self.output))
-        self.assertEqual(failure.exception.code, "FAIL: the generated fragment is not pure ASCII")
-        self.assertFalse(self.output.exists())
 
 
 class FakeFinance:

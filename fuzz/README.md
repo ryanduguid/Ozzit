@@ -1,9 +1,9 @@
 The Rust target feeds fabricated text to the native module statement splitter
 and help-result number parser. Neither may panic, and every accepted number
 must have a positive exact tolerance. Rust's return types guarantee strings
-and finite decimals. Invalid UTF-8 is decoded with replacement, as in the
-temporary Python reference target. The seed corpus holds the first 4 KiB of
-each `src/` module, a few printed help results and an empty file.
+and finite decimals. Invalid UTF-8 is decoded with replacement. The seed corpus
+holds the first 4 KiB of each `src/` module, a few printed help results and an
+empty file.
 
 On Linux, from the repository root, run:
 
@@ -28,7 +28,8 @@ on demand, with read-only repository access and a 20-minute job timeout. Its
 random exploration lasts 60 seconds and is not a merge gate. A successful run
 is bounded evidence, not proof that every input is handled.
 
-`fuzz/ozzit_parsers.py`, its hash-pinned Atheris requirements and
-`tools/tests/test_fuzz_harness.py` remain as temporary Python reference checks
-until the wider Python retirement is qualified. The active fuzzing workflow
-uses Rust.
+The Python reference target, its Atheris requirements and its Python tests are
+retired. Stable Rust tests retain the seed replay and exercise the positive
+tolerance guard with a zero-tolerance refusal control. The statement parser's
+`Vec<String>` return type guarantees that every statement is a string; exact
+decimals cannot represent NaN or infinity.

@@ -2,6 +2,11 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+`generate_selftest_examples.py` and the Python fuzz reference are retired.
+Their parser, exact decimal, fragment and command-line assertions now run in
+Rust. The native fuzz harness also has a refusal control for zero tolerance.
+The generated PowerShell fragment retains its bytes and historical header.
+
 `build_module.py` is retired. Its assertions now run against the Rust module
 builder, including command-line failures and unchanged destinations. The stale
 output diagnostic points to `ozzit build_module`. The generated banner keeps
