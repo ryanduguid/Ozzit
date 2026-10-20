@@ -56,7 +56,50 @@ pub fn xml_part<'a>(name: &str, bytes: &'a [u8]) -> Result<Document<'a>> {
     }
     let text = std::str::from_utf8(bytes)
         .map_err(|_| format!("malformed XML in {name}: {}", decode(bytes).unwrap_err()))?;
-    Document::parse(text).map_err(|e| format!("malformed XML in {name}: {e}"))
+    let doc = Document::parse(text).map_err(|e| format!("malformed XML in {name}: {e}"))?;
+    if let Some((line, column)) = invalid_char_ref(text) {
+        return Err(format!(
+            "malformed XML in {name}: reference to invalid character number: line {line}, column {column}"
+        ));
+    }
+    Ok(doc)
+}
+/// Expat's position of the first character reference to a surrogate or beyond
+/// U+10FFFF, which roxmltree reads as U+FFFD: line from 1, column in characters
+/// from 0. Comments, CDATA sections and processing instructions hold no references.
+fn invalid_char_ref(text: &str) -> Option<(usize, usize)> {
+    let bytes = text.as_bytes();
+    let mut at = 0;
+    while at < bytes.len() {
+        let rest = &bytes[at..];
+        let skip = [("<!--", "-->"), ("<![CDATA[", "]]>"), ("<?", "?>")]
+            .into_iter()
+            .find(|(open, _)| rest.starts_with(open.as_bytes()));
+        if let Some((open, close)) = skip {
+            at += text[at + open.len()..]
+                .find(close)
+                .map_or(rest.len(), |end| open.len() + end + close.len());
+            continue;
+        }
+        if rest.starts_with(b"&#") {
+            // The document parsed, so this is a whole reference ending at ';'.
+            let digits = &text[at + 2..at + text[at..].find(';')?];
+            let code = match digits.strip_prefix('x') {
+                Some(hex) => u32::from_str_radix(hex, 16),
+                None => digits.parse(),
+            };
+            if code.ok().and_then(char::from_u32).is_none() {
+                let before = text[..at].replace("\r\n", "\n").replace('\r', "\n");
+                let line_start = before.rfind('\n').map_or(0, |n| n + 1);
+                return Some((
+                    before.matches('\n').count() + 1,
+                    before[line_start..].chars().count(),
+                ));
+            }
+        }
+        at += 1;
+    }
+    None
 }
 fn elements<'a, 'i>(docs: &'a BTreeMap<&str, Document<'i>>, name: &str) -> Vec<Node<'a, 'i>> {
     docs.get(name)

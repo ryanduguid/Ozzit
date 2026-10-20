@@ -10,8 +10,9 @@ or release evidence changes as part of the tooling port.
 Dependency qualification: Rust flate2 1.1.10 with zlib-rs 0.6.8 reproduces all
 169 deflated members of the base workbook byte for byte on Windows. The writer
 also reproduces Python zipfile's sorted directory, fixed date and attributes.
-ZIP reading uses zip 9.0.5. JSON, CSV, formula and HTML compatibility use local
-helpers. Thirty-two commands are implemented; see README.md for their
+ZIP reading is local: the end record, central directory and members are read
+as Python's zipfile reads them. JSON, CSV, formula and HTML compatibility use
+local helpers. Thirty-two commands are implemented; see README.md for their
 scope and remaining encoding limits. `function_reference` is new, with no Python
 twin: it reads each definition's help block into signature, description,
 parameters, notes and worked examples, checks every name against the CSV index
@@ -25,7 +26,7 @@ Excel remains the formula engine, driven by the existing PowerShell scripts.
 
 ### Deliberate compatibility differences
 
-- XML and corrupt ZIP parser diagnostics name the native parser's reason.
+- XML and corrupt deflate diagnostics name the native parser's reason.
   Rejection, exit codes and unchanged destinations remain required.
 - A previously uncaught Python exception becomes one error line and exit 1.
 - Command dispatch becomes `ozzit <script_stem>`; normal arguments retain
@@ -47,6 +48,24 @@ Excel remains the formula engine, driven by the existing PowerShell scripts.
   or a size, offset or directory field above that) it refuses instead. Both
   refusals happen before replacement and leave the destination unchanged. The
   committed workbook and recorded Excel saves use neither feature.
+- The archive reader refuses a member whose stored or inflated data is
+  shorter than its recorded uncompressed size, and a deflate stream that stops
+  without its final block by the time it has yielded that many bytes (an empty
+  stream included), even when the CRC matches. zipfile accepts these when all
+  the recorded compressed bytes are present. Both refuse a required
+  compressed-data read that returns no bytes and a CRC mismatch, and both
+  ignore bytes after the first completed deflate stream. The native reader
+  inflates the rest of that stream and refuses any decoding error in it;
+  zipfile inflates at most 2,147,483,647 bytes per read and stops once it has
+  the recorded size, so only the native reader refuses corruption beyond that
+  much output. In an archive with another fault, this refusal can be the one
+  reported. Excel and the deterministic writer never produce such members.
+- The CSV readers decode the whole file before parsing it. Python decodes it
+  in chunks as it reads (8,192 bytes at a time), so for an invalid byte beyond
+  the first chunk it reports a position within the input it was decoding and
+  can report a header problem first; the native reader reports the offset from
+  the start of the file and the decoding error first. Both refuse the file
+  with exit 1.
 - Python's two zipfile warnings (an empty Unicode Path field, and an entry
   whose data reaches a record at its own header) are not printed.
 
@@ -104,5 +123,19 @@ hue remap reproduces Python's `colorsys` arithmetic and half-even rounding. The
 lease pass's signature pattern uses atomic groups in place of possessive
 quantifiers. Python exceptions these passes did not catch (a missing
 relationship, part or list entry) become one FAIL line and exit 1.
+
+A differential fuzzer run against the Python tools on 20 October 2026 found
+three differences that are now fixed. The reader takes the central directory
+from the `size_cd` bytes before the end record, as zipfile does, so a wrong
+directory size is refused where it was accepted; the end record's disk numbers,
+entry counts and comment length are ignored as zipfile ignores them. Workbook
+XML refuses character references to surrogates and code points above
+U+10FFFF, as expat does. Float output breaks an exact tie between two shortest
+digit strings to the even digit, as CPython's `repr` does. The source check's
+collapsed-default scan now nests only parentheses and braces, as Python's does,
+so an unmatched `]` no longer adds a finding. Review of these repairs found two
+more inputs the reader accepted and zipfile refuses: a member whose recorded
+compressed data lies past the end of the file, and corrupt deflate data after
+the bytes a member needs. Both are now refused.
 
 These notes do not claim the port or its differential qualification is complete.

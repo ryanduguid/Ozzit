@@ -161,3 +161,27 @@ fn an_unterminated_help_literal_drops_one_character_as_python_slices() {
     let table = spills::help_table("TEXTSPLIT(\"A→B\",\"→\",\"¶é", "Probe").unwrap();
     assert_eq!(table, [["A", "B"]]);
 }
+#[test]
+fn character_references_expat_refuses_are_refused() {
+    // Python 3.15 ElementTree's messages; roxmltree alone reads these as U+FFFD.
+    for (input, position) in [
+        ("<a>&#xD800;</a>", "line 1, column 3"),
+        ("<a>éé&#xD800;</a>", "line 1, column 5"),
+        ("<a>\n  x&#x110000;</a>", "line 2, column 3"),
+        ("<a b=\"1&#xDFFF;\"/>", "line 1, column 7"),
+        ("<a>😀&#55296;</a>", "line 1, column 4"),
+        ("<a>\r\nx&#xD800;</a>", "line 2, column 1"),
+        ("<a>&#x0000D800;</a>", "line 1, column 3"),
+    ] {
+        assert_eq!(
+            workbook::xml_part("fixture.xml", input.as_bytes()).unwrap_err(),
+            format!(
+                "malformed XML in fixture.xml: reference to invalid character number: {position}"
+            ),
+            "{input}"
+        );
+    }
+    // Comments, CDATA sections and processing instructions hold no references.
+    let quoted = "<a><!-- &#xD800; --><![CDATA[&#xD800;]]><?p &#xD800;?>&#x10FFFF;</a>";
+    assert!(workbook::xml_part("fixture.xml", quoted.as_bytes()).is_ok());
+}

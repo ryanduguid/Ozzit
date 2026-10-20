@@ -4,33 +4,34 @@ use indexmap::IndexMap;
 use std::{
     collections::HashMap,
     fs::File,
-    io::{self, BufReader, Read, Seek, SeekFrom, Write},
+    io::{self, Read, Write},
     path::Path,
-    sync::Arc,
 };
 pub type Parts = IndexMap<String, Vec<u8>>;
 pub const BOOK: &str = "xl/workbook.xml";
 
-/// The open file, read at explicit offsets, so the end-record parser and the
-/// member reads share one file object (as Python's `ZipFile` does) without
-/// sharing a cursor.
-#[derive(Clone)]
+/// The open file, read at explicit offsets, as Python's `ZipFile` reads its one
+/// file object.
 struct Shared {
-    file: Arc<File>,
-    pos: u64,
+    file: File,
 }
 impl Shared {
     #[cfg(unix)]
     fn read_at(&self, buf: &mut [u8], at: u64) -> io::Result<usize> {
-        std::os::unix::fs::FileExt::read_at(&*self.file, buf, at)
+        std::os::unix::fs::FileExt::read_at(&self.file, buf, at)
     }
     #[cfg(windows)]
     fn read_at(&self, buf: &mut [u8], at: u64) -> io::Result<usize> {
         // Moves the handle's own pointer, which nothing here relies on.
-        std::os::windows::fs::FileExt::seek_read(&*self.file, buf, at)
+        std::os::windows::fs::FileExt::seek_read(&self.file, buf, at)
+    }
+    fn len(&self) -> Result<u64> {
+        Ok(self.file.metadata().map_err(|e| e.to_string())?.len())
     }
     /// Up to `len` bytes from `at`; fewer at the end of the file, as `fp.read` returns.
     fn bytes_at(&self, at: u64, len: u64) -> Result<Vec<u8>> {
+        // A recorded size is no promise of that many bytes: allocate what is there.
+        let len = len.min(self.len()?.saturating_sub(at));
         let len = usize::try_from(len).map_err(|_| "ZIP member is too large".to_string())?;
         let mut out = vec![0; len];
         let mut filled = 0;
@@ -49,26 +50,6 @@ impl Shared {
         Ok(out)
     }
 }
-impl Read for Shared {
-    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        let n = self.read_at(buf, self.pos)?;
-        self.pos += n as u64;
-        Ok(n)
-    }
-}
-impl Seek for Shared {
-    fn seek(&mut self, to: SeekFrom) -> io::Result<u64> {
-        let (base, delta) = match to {
-            SeekFrom::Start(n) => (n, 0),
-            SeekFrom::Current(d) => (self.pos, d),
-            SeekFrom::End(d) => (self.file.metadata()?.len(), d),
-        };
-        self.pos = base
-            .checked_add_signed(delta)
-            .ok_or_else(|| io::Error::from(io::ErrorKind::InvalidInput))?;
-        Ok(self.pos)
-    }
-}
 
 /// One central-directory record, as Python's `ZipInfo` holds it.
 struct Member {
@@ -81,10 +62,11 @@ struct Member {
     crc: u32,
     compressed: u64,
     size: u64,
-    /// `header_offset`, including any data prepended to the archive.
-    offset: u64,
+    /// `header_offset`, including any data prepended to the archive. As in
+    /// Python, a wrong end record can make it negative.
+    offset: i128,
     /// The next record's local header, or the directory: data may not run past it.
-    end: u64,
+    end: i128,
 }
 
 /// An open archive read as Python's `zipfile` reads it: every central record in
@@ -103,18 +85,18 @@ pub fn open_zip(path: &Path) -> Result<ZipReader> {
     if file.metadata().map_err(|e| io_error(&e, path))?.is_dir() {
         return Err(io_error(&io::Error::from_raw_os_error(21), path));
     }
-    let file = Shared {
-        file: Arc::new(file),
-        pos: 0,
-    };
-    // The native parser finds and checks the end record; its diagnostics stand
-    // for Python's on an archive neither can open.
-    let zip = zip::ZipArchive::new(BufReader::new(file.clone()))
-        .map_err(|e| format!("invalid ZIP: {e}"))?;
-    let (start, concat) = (zip.central_directory_start(), zip.offset());
-    drop(zip);
-    let mut members = read_directory(&file, start, concat)?;
-    // `_RealGetContents`: each record's data ends at the next local header.
+    let file = Shared { file };
+    // `_RealGetContents`: the directory is the `size_cd` bytes before the end
+    // record, wherever its recorded offset points; the difference is `concat`.
+    let (size, offset, location) = end_record(&file)?;
+    let start = i128::from(location) - i128::from(size);
+    if start < 0 {
+        return Err("Bad offset for central directory".into());
+    }
+    let concat = start - i128::from(offset);
+    let directory = file.bytes_at(start as u64, size)?;
+    let mut members = read_directory(&directory, size, concat)?;
+    // Each record's data ends at the next local header.
     let mut order = (0..members.len()).collect::<Vec<_>>();
     order.sort_by_key(|&i| members[i].offset);
     let mut end = start;
@@ -141,44 +123,135 @@ fn long(bytes: &[u8], at: usize) -> u32 {
     u32::from_le_bytes([bytes[at], bytes[at + 1], bytes[at + 2], bytes[at + 3]])
 }
 
-fn read_directory(file: &Shared, mut at: u64, concat: u64) -> Result<Vec<Member>> {
+fn quad(bytes: &[u8], at: usize) -> u64 {
+    u64::from_le_bytes(bytes[at..at + 8].try_into().expect("eight bytes"))
+}
+
+const NOT_ZIP: &str = "File is not a zip file";
+
+/// `_EndRecData`: the directory's size and offset and the end record's position.
+/// zipfile ignores the disk numbers, entry counts and comment length here.
+fn end_record(file: &Shared) -> Result<(u64, u64, u64)> {
+    // `_RealGetContents` reports any read error here as not a ZIP file.
+    let read = |at, len| file.bytes_at(at, len).map_err(|_| NOT_ZIP.to_string());
+    let size = file.len().map_err(|_| NOT_ZIP.to_string())?;
+    let at = size.checked_sub(22).ok_or(NOT_ZIP)?;
+    let data = read(at, 22)?;
+    let (record, location) =
+        if data.len() == 22 && data.starts_with(b"PK\x05\x06") && data.ends_with(b"\0\0") {
+            (data, at)
+        } else {
+            // An archive comment: the last signature in the final 64 KiB + 22 bytes.
+            let from = size.saturating_sub(65_535 + 22);
+            let data = read(from, 65_535 + 22)?;
+            let at = data
+                .windows(4)
+                .rposition(|w| w == b"PK\x05\x06")
+                .ok_or(NOT_ZIP)?;
+            let record = data.get(at..at + 22).ok_or(NOT_ZIP)?.to_vec();
+            (record, from + at as u64)
+        };
+    end_record64(
+        file,
+        long(&record, 12).into(),
+        long(&record, 16).into(),
+        location,
+    )
+}
+
+/// `_EndRecData64`: a ZIP64 end record, found through its locator, replaces the
+/// classic record's size, offset and position.
+fn end_record64(file: &Shared, size: u64, offset: u64, location: u64) -> Result<(u64, u64, u64)> {
+    let Some(locator) = location.checked_sub(20) else {
+        return Ok((size, offset, location));
+    };
+    // A short read is Python's OSError, which `_RealGetContents` reports as not a ZIP file.
+    let read = |at, len: u64| match file.bytes_at(at, len) {
+        Ok(data) if data.len() as u64 == len => Ok(data),
+        _ => Err(NOT_ZIP.to_string()),
+    };
+    let data = read(locator, 20)?;
+    if !data.starts_with(b"PK\x06\x07") {
+        return Ok((size, offset, location));
+    }
+    if long(&data, 4) != 0 || long(&data, 16) > 1 {
+        return Err("zipfiles that span multiple disks are not supported".into());
+    }
+    let reloff = quad(&data, 8);
+    let Some(at) = locator.checked_sub(56).filter(|&at| reloff <= at) else {
+        return Err("Corrupt zip64 end of central directory locator".into());
+    };
+    let (mut data, mut extra) = (read(reloff, 56)?, at - reloff);
+    if !data.starts_with(b"PK\x06\x06") && reloff != at {
+        // Data prepended to the archive: assume no extensible data.
+        (data, extra) = (read(at, 56)?, 0);
+    }
+    if !data.starts_with(b"PK\x06\x06") {
+        return Err("Zip64 end of central directory record not found".into());
+    }
+    let (record_size, dir_size, dir_offset) = (quad(&data, 4), quad(&data, 40), quad(&data, 48));
+    if u128::from(dir_offset) + u128::from(dir_size) != u128::from(reloff)
+        || u128::from(record_size) + 12 != 56 + u128::from(extra)
+    {
+        return Err("Corrupt zip64 end of central directory record".into());
+    }
+    Ok((dir_size, dir_offset, at - extra))
+}
+
+/// Parses `size_cd` recorded bytes of directory as `_RealGetContents` does: a
+/// record's name, extra field and comment are cut short at the end of the data
+/// read, and the walk stops once the recorded lengths reach `size_cd`.
+/// `io.BytesIO.read`: up to `len` bytes from `at`, which always advances.
+fn take<'a>(data: &'a [u8], at: &mut usize, len: usize) -> &'a [u8] {
+    let from = (*at).min(data.len());
+    *at = at.saturating_add(len);
+    &data[from..(*at).min(data.len())]
+}
+
+fn read_directory(directory: &[u8], size_cd: u64, concat: i128) -> Result<Vec<Member>> {
     let mut members = Vec::new();
-    loop {
-        let header = file.bytes_at(at, 46)?;
-        if header.get(..4) != Some(b"PK\x01\x02".as_slice()) {
-            return Ok(members);
-        }
-        if header.len() < 46 {
+    let (mut total, mut at) = (0u128, 0usize);
+    let mut next = |len: usize| take(directory, &mut at, len);
+    while total < u128::from(size_cd) {
+        let header = next(46);
+        if header.len() != 46 {
             return Err("Truncated central directory".into());
         }
-        let (name_length, extra_length) =
-            (u64::from(word(&header, 28)), u64::from(word(&header, 30)));
-        let rest = file.bytes_at(at + 46, name_length + extra_length)?;
-        let (raw, extra) = rest.split_at(rest.len().min(usize::from(word(&header, 28))));
-        let flags = word(&header, 8);
+        if header[..4] != *b"PK\x01\x02" {
+            return Err("Bad magic number for central directory".into());
+        }
+        let lengths = [28, 30, 32].map(|at| usize::from(word(header, at)));
+        let raw = next(lengths[0]);
+        let flags = word(header, 8);
         let orig = zip_name(flags, raw)?;
+        let extra = next(lengths[1]);
+        next(lengths[2]);
+        let version = header[6];
+        if version > 63 {
+            return Err(format!(
+                "zip file version {}.{}",
+                version / 10,
+                version % 10
+            ));
+        }
         let mut member = Member {
             name: sanitize(&orig),
             orig,
             flags,
-            method: word(&header, 10),
-            crc: long(&header, 16),
-            compressed: long(&header, 20).into(),
-            size: long(&header, 24).into(),
-            offset: long(&header, 42).into(),
+            method: word(header, 10),
+            crc: long(header, 16),
+            compressed: long(header, 20).into(),
+            size: long(header, 24).into(),
+            offset: 0,
             end: 0,
         };
-        decode_extra(&mut member, extra, raw)?;
-        member.offset = member
-            .offset
-            .checked_add(concat)
-            .ok_or("ZIP offset is too large")?;
+        let mut offset = u64::from(long(header, 42));
+        decode_extra(&mut member, &mut offset, extra, raw)?;
+        member.offset = i128::from(offset) + concat;
         members.push(member);
-        at = [name_length, extra_length, u64::from(word(&header, 32))]
-            .into_iter()
-            .try_fold(at + 46, u64::checked_add)
-            .ok_or("invalid ZIP directory size")?;
+        total += 46 + lengths.iter().map(|&n| n as u128).sum::<u128>();
     }
+    Ok(members)
 }
 
 /// `name.decode("utf-8")` when the UTF-8 flag is set, else `name.decode("cp437")`.
@@ -201,7 +274,7 @@ fn sanitize(name: &str) -> String {
 }
 
 /// `ZipInfo._decodeExtra`: ZIP64 sizes and offset, and the Unicode Path field.
-fn decode_extra(member: &mut Member, mut extra: &[u8], raw: &[u8]) -> Result<()> {
+fn decode_extra(member: &mut Member, offset: &mut u64, mut extra: &[u8], raw: &[u8]) -> Result<()> {
     while extra.len() >= 4 {
         let (kind, length) = (word(extra, 0), usize::from(word(extra, 2)));
         if length + 4 > extra.len() {
@@ -213,7 +286,7 @@ fn decode_extra(member: &mut Member, mut extra: &[u8], raw: &[u8]) -> Result<()>
             let fields: [(&str, &mut u64, u64); 3] = [
                 ("File size", &mut member.size, 0xFFFF_FFFF),
                 ("Compress size", &mut member.compressed, 0xFFFF_FFFF),
-                ("Header offset", &mut member.offset, 0xFFFF_FFFF),
+                ("Header offset", offset, 0xFFFF_FFFF),
             ];
             for (field, value, marker) in fields {
                 if *value == marker {
@@ -261,7 +334,13 @@ impl ZipReader {
 
     /// `ZipFile.open`'s local-header checks, in its order; returns where the data starts.
     fn data_start(&self, member: &Member, name: &str) -> Result<u64> {
-        let header = self.file.bytes_at(member.offset, 30)?;
+        // A file's `seek` refuses a negative position with EINVAL; past the end, the
+        // header reads short.
+        let offset = u64::try_from(member.offset.max(0)).unwrap_or(u64::MAX);
+        if member.offset < 0 {
+            return Err("[Errno 22] Invalid argument".into());
+        }
+        let header = self.file.bytes_at(offset, 30)?;
         if header.len() != 30 {
             return Err("Truncated file header".into());
         }
@@ -270,7 +349,7 @@ impl ZipReader {
         }
         let local = self
             .file
-            .bytes_at(member.offset.saturating_add(30), word(&header, 26).into())?;
+            .bytes_at(offset.saturating_add(30), word(&header, 26).into())?;
         if member.flags & 0x20 != 0 {
             return Err("compressed patched data (flag bit 5)".into());
         }
@@ -286,12 +365,14 @@ impl ZipReader {
         }
         let start = [26, 28]
             .into_iter()
-            .try_fold(member.offset.saturating_add(30), |at, field| {
+            .try_fold(offset.saturating_add(30), |at, field| {
                 at.checked_add(word(&header, field).into())
             })
             .ok_or("ZIP offset is too large")?;
         // Python only warns when the next record starts at this one's own header.
-        if start.saturating_add(member.compressed) > member.end && member.end != member.offset {
+        if i128::from(start) + i128::from(member.compressed) > member.end
+            && member.end != member.offset
+        {
             return Err(format!(
                 "Overlapped entries: {} (possible zip bomb)",
                 py::repr_str(&member.orig)
@@ -308,19 +389,38 @@ impl ZipReader {
 
     /// The decompressed data, cut at `file_size` and checked against the CRC.
     fn contents(&self, member: &Member, start: u64) -> Result<Vec<u8>> {
+        if ![0, 8].contains(&member.method) {
+            return Err("That compression method is not supported".into());
+        }
         let compressed = self.file.bytes_at(start, member.compressed)?;
-        let mut data = match member.method {
-            0 => compressed,
-            8 => {
-                // Python stops after `file_size` bytes; one more shows a longer stream.
-                let mut out = Vec::new();
-                flate2::read::DeflateDecoder::new(compressed.as_slice())
-                    .take(member.size.saturating_add(1))
-                    .read_to_end(&mut out)
-                    .map_err(|e| format!("Error while decompressing data: {e}"))?;
-                out
+        // `_read2` raises EOFError when a member's recorded data is missing,
+        // even one whose `file_size` is 0.
+        if compressed.is_empty() && member.compressed > 0 {
+            return Err(format!(
+                "{} ended before its compressed size",
+                py::repr_str(&member.name)
+            ));
+        }
+        let mut data = if member.method == 0 {
+            compressed
+        } else {
+            let inflate_error = |e: io::Error| format!("Error while decompressing data: {e}");
+            let mut decoder = flate2::read::DeflateDecoder::new(compressed.as_slice());
+            // Python stops after `file_size` bytes; one more shows a longer stream.
+            let mut out = Vec::new();
+            (&mut decoder)
+                .take(member.size.saturating_add(1))
+                .read_to_end(&mut out)
+                .map_err(inflate_error)?;
+            // Python inflates up to 2,147,483,647 output bytes per read, so corrupt
+            // data past `file_size` within that is still an error; a stream that
+            // merely stops is not. Draining the rest of the stream is stricter:
+            // corruption beyond that much output is refused here alone.
+            match io::copy(&mut decoder, &mut io::sink()) {
+                Err(e) if e.kind() != io::ErrorKind::UnexpectedEof => return Err(inflate_error(e)),
+                _ => {}
             }
-            _ => return Err("That compression method is not supported".into()),
+            out
         };
         if (data.len() as u64) < member.size {
             return Err(format!(

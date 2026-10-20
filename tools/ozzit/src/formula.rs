@@ -247,6 +247,31 @@ pub fn dead_conversions(body: &str) -> BTreeSet<String> {
         .cloned()
         .collect()
 }
+/// verify_sources' `call_arguments`: the top-level arguments of the call whose "("
+/// ends at `start`. Only parentheses and braces nest (an unmatched "]" is text), and
+/// a call left open loses its last argument. String literals must already be empty.
+fn call_arguments(code: &str, start: usize) -> Vec<String> {
+    let (mut out, mut depth, mut begin) = (Vec::new(), 1usize, start);
+    for (i, c) in code[start..].char_indices() {
+        let i = start + i;
+        match c {
+            '(' | '{' => depth += 1,
+            ')' | '}' => {
+                depth -= 1;
+                if depth == 0 {
+                    out.push(code[begin..i].into());
+                    break;
+                }
+            }
+            ',' if depth == 1 => {
+                out.push(code[begin..i].into());
+                begin = i + 1;
+            }
+            _ => {}
+        }
+    }
+    out
+}
 fn reads_any(code: &str, names: &HashSet<String>, stop: &str) -> bool {
     let token = re(r"([A-Za-z_][A-Za-z0-9_.?λ]*)\s*\(|([A-Za-z_][A-Za-z0-9_.?λ]*)|([({])|([)}])");
     let mut calls = Vec::new();
@@ -262,7 +287,7 @@ fn reads_any(code: &str, names: &HashSet<String>, stop: &str) -> bool {
             .map_or(String::new(), |m| m.as_str().to_uppercase());
         let stopped = calls.iter().any(|c: StringRef<'_>| listed(stop, c));
         if call == "LET" && !stopped {
-            let args = arguments(code, whole.end());
+            let args = call_arguments(code, whole.end());
             if args.len() >= 3 && args.len() % 2 == 1 {
                 let mut live = names.clone();
                 for pair in args[..args.len() - 1].chunks(2) {
@@ -306,17 +331,14 @@ pub fn collapsed_defaults(body: &str) -> BTreeSet<String> {
     let Some(head) = head.find(&code).expect("LAMBDA matching") else {
         return BTreeSet::new();
     };
-    let params = arguments(&code, head.end());
+    let params = call_arguments(&code, head.end());
     let mut found = BTreeSet::new();
-    if params.is_empty() {
-        return found;
-    }
-    let params = params[..params.len() - 1]
+    let params = params[..params.len().saturating_sub(1)]
         .iter()
         .map(|p| sub(r"[\[\]\s]", p, ""))
         .collect::<Vec<_>>();
     for m in re(r"(?i)(?<![A-Za-z0-9_.?λ])IF\s*\(").find_iter(&code) {
-        let args = arguments(&code, m.expect("IF matching").end());
+        let args = call_arguments(&code, m.expect("IF matching").end());
         if args.len() < 2 {
             continue;
         }
@@ -324,7 +346,7 @@ pub fn collapsed_defaults(body: &str) -> BTreeSet<String> {
         let Some(test) = combined.find(&args[0]).expect("combined matching") else {
             continue;
         };
-        let tested = arguments(&args[0], test.end());
+        let tested = call_arguments(&args[0], test.end());
         for name in &params {
             let names = HashSet::from([name.to_uppercase()]);
             if tested.iter().any(|a| reads_any(a, &names, SHAPE))
