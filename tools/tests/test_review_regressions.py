@@ -16,9 +16,6 @@ sys.path.insert(0, str(TOOLS))
 import sanitise_workbook  # noqa: E402
 import verify_workbook  # noqa: E402
 
-sys.path.insert(0, str(TOOLS / 'postbuild'))
-import aasb16_leases  # noqa: E402
-
 
 class ReviewRegressionTests(unittest.TestCase):
     def setUp(self):
@@ -98,21 +95,6 @@ class ReviewRegressionTests(unittest.TestCase):
         self.assertIn('unbalanced parentheses in fixture', result.stdout)
 
 
-    def test_lease_pass_restores_source_if_workbook_write_fails(self):
-        source = self.root / (aasb16_leases.MODULE + '.txt')
-        source.write_bytes(b'Fixture = 1;\r\n')
-        before = source.read_bytes()
-        with (
-            patch.object(aasb16_leases, 'src_state', return_value='absent'),
-            patch.object(aasb16_leases, 'workbook_state', return_value='absent'),
-            patch.object(aasb16_leases, 'build_definitions', return_value={}),
-            patch.object(aasb16_leases, 'add_to_src', return_value='changed'),
-            patch.object(aasb16_leases, 'add_to_workbook', return_value='<workbook/>'),
-            patch.object(aasb16_leases, 'write_deterministic', side_effect=OSError('synthetic failure')),
-        ):
-            with self.assertRaisesRegex(OSError, 'synthetic failure'):
-                aasb16_leases.run(self.book, self.root, None)
-        self.assertEqual(source.read_bytes(), before)
 
     def test_window_geometry_is_replaced_after_unrelated_attributes(self):
         book = self.parts['xl/workbook.xml'].decode()

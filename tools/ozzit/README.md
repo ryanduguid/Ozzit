@@ -34,6 +34,10 @@ newline assertions run beside the shared function-pass implementation.
 `ato_benchmarks_rate_lookup` is native only. Apply, required-index, refusal and
 command checks run in `tests/ato_retirement.rs`; two-module recovery, insertion
 anchors/followers and its source guard run beside the shared implementation.
+`aasb16_leases` is native only. Its apply, refusal and final byte-no-op checks
+run in `tests/leases_retirement.rs`; exact parser, source-guard, index, shared
+helper and CRLF recovery checks run beside the lease implementation. The final
+Python workbook helper has retired.
 Generated headers retain historical Python filenames to preserve published bytes.
 The workbook retains its native Excel formulas and ordinary `.xlsx` format.
 

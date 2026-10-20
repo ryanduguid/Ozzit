@@ -343,7 +343,7 @@ class RepositoryPolicyTests(unittest.TestCase):
             )
         ]
 
-        self.assertGreaterEqual(len(production), 20)
+        self.assertIn(TOOLS / "pyxirr_comparison.py", production)
         self.assertGreaterEqual(len(functions), 146)
         self.assertEqual(incomplete, [])
 

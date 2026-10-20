@@ -2,6 +2,11 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+`aasb16_leases.py` and the final Python workbook helper are retired. Rust
+retains all 20 writer, 7 shared-helper and final idempotency test contracts,
+including exact parser output, source guards, index validation and raw CRLF
+rollback. Formulas and independent arithmetic checks are unchanged.
+
 `ato_benchmarks_rate_lookup.py` and its 4 unused shared workbook helpers are
 retired, along with the unused Python compiler index-update wrapper. Rust retains
 the apply, required-index, insertion, refusal, source-guard

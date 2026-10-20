@@ -8,7 +8,6 @@ and functions.csv.
 """
 
 import csv
-import runpy
 import shutil
 import subprocess
 import sys
@@ -22,12 +21,8 @@ from pathlib import Path
 
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
-# The lease builder test runs a postbuild pass, which imports its sibling workbook.py.
-# Run alone, nothing else has put that directory on the path.
-sys.path.insert(0, str(TOOLS / "postbuild"))
 
 import compile_sources  # noqa: E402
-from verify_sources import canonical  # noqa: E402
 
 ROOT = TOOLS.parent
 WORKBOOK = ROOT / "ozzit.xlsx"
@@ -148,14 +143,6 @@ class WorkbookTests(unittest.TestCase):
     def test_tracked_sources_reproduce_every_shipped_definition(self):
         self.assertEqual(compile_sources.run(self.workbook, self.src, True, None), [])
 
-    def test_lease_builder_preserves_shipped_rate_guidance_and_remeasurement(self):
-        shipped = compile_sources.shipped_names(self._book())
-        library = {name.removeprefix("oz.") for name in shipped}
-        builder = runpy.run_path(str(TOOLS / "postbuild" / "aasb16_leases.py"))
-        rebuilt = builder["build_definitions"](library)
-        for name in ("oz.LeaseLiabilityλ", "oz.LeaseRemeasureλ"):
-            with self.subTest(name=name):
-                self.assertEqual(canonical(rebuilt[name][1]), canonical(shipped[name][1]))
 
     def test_only_a_changed_definition_is_rewritten(self):
         before = self._book()

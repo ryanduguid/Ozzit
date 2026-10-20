@@ -10,10 +10,9 @@ FY27 help text and the workbook palette are the tracked successors of the one-of
 session scripts that produced v3.1.0. Later passes, including GST help text, start
 from the committed `ozzit.xlsx` and `src/`. They do not read the earlier workbook.
 
-The remaining Python references are standalone scripts, run by path and never imported as a package.
-`workbook.py` is the one exception: it is the shared reader the passes import, and
-it holds the archive reading, the applied-or-absent check and the swap replacement
-that used to be copied from pass to pass.
+The postbuild commands are native. Their former Python writers and the shared
+`workbook.py` helper have retired after their tests moved to Rust. Embedded
+tables retain the original values and ordering.
 
 The shared writers create a unique temporary file beside each destination and
 close it before replacement. Existing `.tmp` siblings are left alone. On POSIX,
@@ -31,8 +30,8 @@ updates from concurrent edits.
 
 The passes run through the native tools. Build them once with
 `cargo build --locked --release --manifest-path tools/ozzit/Cargo.toml`; each command
-below keeps the arguments of the Python pass it replaces. The Python passes in this
-directory stay as the reference implementation until they are retired.
+below keeps the arguments of the Python pass it replaces. Rust tests preserve
+the former Python apply, refusal, recovery and byte-no-op contracts.
 `cover_label`, `sheet_names`, `strip_revision_history`, `fy27_help_text`,
 `gst_help_text`, `help_links`, `remove_residue`, `help_corrections` and
 `workbook_palette`, `working_capital_days`, `rate_date_helpers` and
