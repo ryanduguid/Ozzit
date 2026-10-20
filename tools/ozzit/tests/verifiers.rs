@@ -109,7 +109,7 @@ fn all_three_verifiers_pass_the_frozen_library_without_a_writer() {
     assert_eq!(names.len(), 169);
     let report = workbook::check(&parts, &names);
     assert!(report.failures.is_empty(), "{:?}", report.failures);
-    assert_eq!(report.functions, 148);
+    assert_eq!(report.functions, 153);
     let (stale, anchors) = spills::check(&parts).unwrap();
     assert!(stale.is_empty());
     assert_eq!(anchors, 43);
