@@ -15,6 +15,7 @@ pub mod postbuild;
 pub mod py;
 pub mod pyjson;
 mod pyunicode;
+pub mod reference;
 pub mod refresh;
 pub mod release;
 pub mod sanitise;
@@ -29,6 +30,7 @@ const COMMANDS: &[(&str, Handler)] = &[
     ("compile_sources", compiler::command),
     ("verify_sources", sources::verify),
     ("verify_signatures", help::verify),
+    ("function_reference", reference::command),
     ("verify_index", index::verify),
     ("verify_previous_names", index::previous_names),
     ("verify_afe", afe::verify),
