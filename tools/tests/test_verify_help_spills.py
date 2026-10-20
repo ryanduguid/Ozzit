@@ -2,7 +2,7 @@
 
 The tool models TRIM(TEXTSPLIT(literal, "→", "¶")) and compares the result with
 the cells a help anchor spills into. It only reads: a stale help is reported for
-tools/refresh_cache.py to refresh in Excel, never rewritten here. The model is
+ozzit refresh_cache to refresh in Excel, never rewritten here. The model is
 proven against the workbook itself: every help cache Excel wrote must equal
 what the model computes, as CI requires.
 """
@@ -142,7 +142,7 @@ class HelpSpillCheckTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
                 self.assertIn(STALE_LINE, result.stdout)
                 self.assertIn("FAIL: 1 of 2 cached helps", result.stderr)
-                self.assertIn("run tools/refresh_cache.py in Excel", result.stderr)
+                self.assertIn("run ozzit refresh_cache in Excel", result.stderr)
                 self.assertEqual(stale.read_bytes(), before)
 
         current = self.write("current.xlsx", parts_for(CURRENT))
@@ -160,7 +160,7 @@ class HelpSpillCheckTests(unittest.TestCase):
         self.assertIn("FAIL: no help anchor found", result.stderr)
 
     def test_tracked_workbook_matches_the_model(self):
-        # A help change leaves its cache stale until tools/refresh_cache.py runs in Excel,
+        # A help change leaves its cache stale until ozzit refresh_cache runs in Excel,
         # and CI fails on it until then, so the tracked workbook holds none.
         stale, anchors = spills.run(WORKBOOK)
         self.assertGreaterEqual(anchors, 40)

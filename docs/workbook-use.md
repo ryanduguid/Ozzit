@@ -56,7 +56,7 @@ The workbook tracked in this repository is the candidate the gates below run aga
    names in Name Manager, or delete the `oz` module in the add-in and save; both
    leave formulas that used the functions showing `#NAME?` until they are replaced.
 
-The workbook opens showing the numbers its own formulas produce, so nothing has to recalculate before it reads correctly and Excel does not ask you to save a file you never edited. That is a property the build cannot give it: the build edits the workbook as XML with no formula engine, so `tools/refresh_cache.py` recalculates it in Excel afterwards and `tools/verify_cache.py` proves every cached value matches.
+The workbook opens showing the numbers its own formulas produce, so nothing has to recalculate before it reads correctly and Excel does not ask you to save a file you never edited. That is a property the build cannot give it: the build edits the workbook as XML with no formula engine, so `ozzit refresh_cache` recalculates it in Excel afterwards and `tools/verify_cache.py` proves every cached value matches.
 
 Functions with a data-validation companion (named with a `DV` suffix, such as `oz.AmortiseλDV`) diagnose argument problems when the parent function returns something unexpected.
 

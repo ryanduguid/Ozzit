@@ -156,7 +156,7 @@ class CacheGatePathTests(unittest.TestCase):
             lines[0], "FAIL: 25 of 25 cached values are not what the formula produces, on 1 sheet(s)"
         )
         self.assertEqual(lines[1], "  - Data row 1 col 1: cached 1 (value), calculates to 2 (value)")
-        self.assertEqual(lines[-2:], ["  ... and 5 more", "Run: python tools/refresh_cache.py"])
+        self.assertEqual(lines[-2:], ["  ... and 5 more", "Run: ozzit refresh_cache"])
 
 
 class NativeEvidencePathTests(unittest.TestCase):

@@ -364,7 +364,7 @@ fn stale_report(
     if stale.len() > 20 {
         out.push(format!("  ... and {} more", stale.len() - 20));
     }
-    out.push("Run: python tools/refresh_cache.py".into());
+    out.push("Run: ozzit refresh_cache".into());
     fail(out)
 }
 

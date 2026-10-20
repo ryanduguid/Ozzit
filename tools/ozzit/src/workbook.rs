@@ -510,7 +510,7 @@ pub fn check(parts: &Parts, names: &[String]) -> Report {
     volatile_formulas(names, &docs, &mut failures);
     shared_string_count(&docs, &mut failures);
     if !book.contains("fullCalcOnLoad=\"1\"") && !names.iter().any(|n| n == "xl/calcChain.xml") {
-        failures.push("neither fullCalcOnLoad nor a calculation chain. Run tools/refresh_cache.py, or set fullCalcOnLoad".into());
+        failures.push("neither fullCalcOnLoad nor a calculation chain. Run ozzit refresh_cache, or set fullCalcOnLoad".into());
     }
     sheet_titles(&docs, &defined.sheets, &mut failures);
     slicer_caches(names, &docs, book, &mut failures);

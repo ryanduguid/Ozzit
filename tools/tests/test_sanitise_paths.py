@@ -4,7 +4,6 @@ Uses a small synthetic workbook built with zipfile; Excel and PowerShell are
 always replaced with fakes.
 """
 
-import importlib.util
 import io
 import shutil
 import stat
@@ -20,7 +19,6 @@ from unittest import mock
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
-import refresh_cache  # noqa: E402
 import sanitise_workbook  # noqa: E402
 
 PRINTER_CT = "application/vnd.openxmlformats-officedocument.spreadsheetml.printerSettings"
@@ -215,100 +213,6 @@ class StagingPermissionTests(unittest.TestCase):
         chmod.assert_not_called()
 
 
-class RefreshCacheTests(unittest.TestCase):
-    def setUp(self):
-        self.directory = Path(tempfile.mkdtemp(prefix="ozzit-refresh-"))
-        self.workbook = self.directory / "ozzit.xlsx"
-        self.workbook.write_bytes(b"workbook")
-
-    def tearDown(self):
-        shutil.rmtree(self.directory, ignore_errors=True)
-
-    def refresh(self, workbook=None, **run):
-        printed = io.StringIO()
-        with (
-            mock.patch.object(refresh_cache, "WORKBOOK", str(workbook or self.workbook)),
-            mock.patch.object(refresh_cache.subprocess, "run", **run) as excel,
-            mock.patch.object(refresh_cache, "sanitise", return_value=["sanitised"]) as clean,
-            redirect_stdout(printed),
-        ):
-            code = refresh_cache.main()
-        return code, printed.getvalue(), excel, clean
-
-    def test_missing_workbook_fails_before_excel_runs(self):
-        missing = self.directory / "missing.xlsx"
-        code, printed, excel, clean = self.refresh(missing)
-        self.assertEqual((code, printed), (1, f"FAIL: no such workbook: {missing}\n"))
-        excel.assert_not_called()
-        clean.assert_not_called()
-
-    def test_missing_powershell_is_reported(self):
-        code, printed, _, clean = self.refresh(side_effect=FileNotFoundError("powershell.exe"))
-        self.assertEqual(
-            (code, printed),
-            (1, "FAIL: powershell.exe was not found, so Excel could not be driven\n"),
-        )
-        clean.assert_not_called()
-
-    def test_hung_refresh_is_reported(self):
-        timeout = refresh_cache.subprocess.TimeoutExpired("powershell.exe", 600)
-        code, printed, _, clean = self.refresh(side_effect=timeout)
-        self.assertEqual(code, 1)
-        self.assertEqual(
-            printed,
-            "FAIL: the Excel refresh did not finish within 600s; check for a modal dialog "
-            "and close any Excel process before retrying\n",
-        )
-        clean.assert_not_called()
-
-    def test_failed_refresh_prints_its_exit_code_and_trimmed_error(self):
-        failed = SimpleNamespace(returncode=5, stdout="", stderr="  " + "x" * 2500 + "\n")
-        code, printed, _, clean = self.refresh(return_value=failed)
-        self.assertEqual(code, 1)
-        self.assertEqual(
-            printed,
-            "FAIL: the Excel refresh did not complete (exit 5)\n" + "x" * 2000 + "\n",
-        )
-        clean.assert_not_called()
-
-    def test_failed_refresh_without_error_text_prints_only_the_exit_code(self):
-        failed = SimpleNamespace(returncode=2, stdout="opening\n", stderr=" \n")
-        code, printed, _, _ = self.refresh(return_value=failed)
-        self.assertEqual(code, 1)
-        self.assertEqual(printed, "opening\nFAIL: the Excel refresh did not complete (exit 2)\n")
-
-    def test_silent_successful_refresh_goes_straight_to_the_sanitiser(self):
-        done = SimpleNamespace(returncode=0, stdout=None, stderr="")
-        code, printed, excel, clean = self.refresh(return_value=done)
-        self.assertEqual(code, 0)
-        self.assertEqual(
-            printed,
-            f"sanitised\nOK: {self.workbook} holds the values its own formulas produce\n",
-        )
-        script = str(refresh_cache.HERE / "refresh_cache.ps1")
-        self.assertEqual(
-            excel.call_args.args[0],
-            ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", script,
-             "-Path", str(self.workbook.resolve())],
-        )
-        self.assertEqual(excel.call_args.kwargs["timeout"], refresh_cache.REFRESH_TIMEOUT_SECONDS)
-        clean.assert_called_once_with(self.workbook)
-
-    def test_import_reads_the_workbook_argument_and_tolerates_a_plain_stdout(self):
-        # A captured or redirected stdout may have no reconfigure(); importing must still work.
-        for argv, expected in ((["refresh_cache.py"], "ozzit.xlsx"),
-                               (["refresh_cache.py", "other.xlsx"], "other.xlsx")):
-            with self.subTest(argv=argv):
-                spec = importlib.util.spec_from_file_location(
-                    "refresh_cache_plain_stdout", TOOLS / "refresh_cache.py"
-                )
-                module = importlib.util.module_from_spec(spec)
-                stream = io.StringIO()
-                with mock.patch.object(sys, "argv", argv), redirect_stdout(stream):
-                    spec.loader.exec_module(module)
-                self.assertEqual(module.WORKBOOK, expected)
-                self.assertIs(module.sanitise, sanitise_workbook.sanitise)
-                self.assertEqual(stream.getvalue(), "")
 
 
 if __name__ == "__main__":

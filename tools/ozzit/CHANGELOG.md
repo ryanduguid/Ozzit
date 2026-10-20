@@ -2,6 +2,11 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+`refresh_cache.py` is retired. Rust preserves its 8 former test contracts,
+including the exact PowerShell arguments, 600-second deadline, failure output
+and shared sanitiser call. Active diagnostics name `ozzit refresh_cache`; the
+frozen cache corpus stays unchanged with an explicit hint adaptation in replay.
+
 `aasb16_leases.py` and the final Python workbook helper are retired. Rust
 retains all 20 writer, 7 shared-helper and final idempotency test contracts,
 including exact parser output, source guards, index validation and raw CRLF

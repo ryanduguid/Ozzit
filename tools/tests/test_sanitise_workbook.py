@@ -1,4 +1,3 @@
-import io
 import os
 import re
 import shutil
@@ -8,15 +7,12 @@ import sys
 import tempfile
 import unittest
 import zipfile
-from contextlib import redirect_stdout
 from pathlib import Path
-from types import SimpleNamespace
 from unittest import mock
 
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
-import refresh_cache  # noqa: E402
 import sanitise_workbook  # noqa: E402
 import verify_workbook  # noqa: E402
 
@@ -399,25 +395,6 @@ class WorkbookToolTests(unittest.TestCase):
         self.assertTrue(result.stderr.startswith("FAIL:"), result.stderr)
         self.assertNotIn("Traceback", result.stderr)
 
-    def test_refresh_cache_delegates_all_cleanup_to_shared_sanitiser(self):
-        completed = SimpleNamespace(returncode=0, stdout="refreshed", stderr="")
-        printed = io.StringIO()
-        with (
-            mock.patch.object(refresh_cache, "WORKBOOK", str(self.workbook)),
-            mock.patch.object(refresh_cache.subprocess, "run", return_value=completed),
-            mock.patch.object(
-                refresh_cache,
-                "sanitise",
-                return_value=["removed 1 x15ac:absPath"],
-            ) as shared,
-            redirect_stdout(printed),
-        ):
-            self.assertEqual(refresh_cache.main(), 0)
-
-        shared.assert_called_once_with(Path(self.workbook))
-        # The Excel run's own output and each sanitiser line are passed through.
-        self.assertIn("refreshed", printed.getvalue())
-        self.assertIn("removed 1 x15ac:absPath", printed.getvalue())
 
 
 if __name__ == "__main__":

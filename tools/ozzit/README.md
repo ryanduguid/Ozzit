@@ -38,6 +38,10 @@ anchors/followers and its source guard run beside the shared implementation.
 run in `tests/leases_retirement.rs`; exact parser, source-guard, index, shared
 helper and CRLF recovery checks run beside the lease implementation. The final
 Python workbook helper has retired.
+`refresh_cache` is native only. Its former process-launch, timeout, failure,
+argument-selection and sanitiser-delegation assertions run beside `src/refresh.rs`.
+Diagnostic hints now name `ozzit refresh_cache`; replay adapts only the 16 old
+command-hint lines in the unchanged 76-case cache corpus.
 Generated headers retain historical Python filenames to preserve published bytes.
 The workbook retains its native Excel formulas and ordinary `.xlsx` format.
 

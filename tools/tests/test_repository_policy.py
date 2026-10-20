@@ -344,7 +344,10 @@ class RepositoryPolicyTests(unittest.TestCase):
         ]
 
         self.assertIn(TOOLS / "pyxirr_comparison.py", production)
-        self.assertGreaterEqual(len(functions), 146)
+        self.assertIn(
+            (TOOLS / "pyxirr_comparison.py", "main"),
+            [(path, function.name) for path, function in functions],
+        )
         self.assertEqual(incomplete, [])
 
     def test_editorconfig_exempts_the_bytes_the_afe_gate_compares(self):

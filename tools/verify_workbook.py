@@ -246,7 +246,7 @@ def main() -> None:
     # nothing about cached values. The separate tools/verify_cache.py native Excel gate
     # remains mandatory under RELEASING.md, including when this check passes.
     if 'fullCalcOnLoad="1"' not in workbook and "xl/calcChain.xml" not in parts:
-        fail("neither fullCalcOnLoad nor a calculation chain. Run tools/refresh_cache.py, or "
+        fail("neither fullCalcOnLoad nor a calculation chain. Run ozzit refresh_cache, or "
              "set fullCalcOnLoad")
 
     # docProps/app.xml repeats the sheet list, and nothing regenerates it: the build added

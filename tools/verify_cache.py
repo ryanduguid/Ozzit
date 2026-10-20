@@ -219,7 +219,7 @@ def main() -> int:
                      now.text[:40], "error" if now.is_error else "value"))
         if len(stale) > 20:
             print("  ... and %d more" % (len(stale) - 20))
-        print("Run: python tools/refresh_cache.py")
+        print("Run: ozzit refresh_cache")
         return 1
 
     print("OK: all %d cached values in %s are the values their formulas produce"

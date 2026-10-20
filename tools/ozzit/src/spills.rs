@@ -198,7 +198,7 @@ pub fn verify(args: &[String]) -> Output {
         Output {
             code: 1,
             err: vec![format!(
-                "FAIL: {} of {anchors} cached helps in {} no longer match their definitions; run tools/refresh_cache.py in Excel, then tools/sanitise_workbook.py, and tools/verify_cache.py proves the result",
+                "FAIL: {} of {anchors} cached helps in {} no longer match their definitions; run ozzit refresh_cache in Excel, then tools/sanitise_workbook.py, and tools/verify_cache.py proves the result",
                 stale.len(),
                 display(workbook)
             )],

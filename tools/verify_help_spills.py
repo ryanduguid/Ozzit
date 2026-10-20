@@ -22,7 +22,7 @@ excluding it would let a spill Excel never saved pass the check unseen.
 
 This tool only reads. AGENTS.md reserves cached values for Excel-backed
 evidence, so a stale help is reported, never rewritten: run
-tools/refresh_cache.py in Excel, then tools/sanitise_workbook.py, and
+ozzit refresh_cache in Excel, then tools/sanitise_workbook.py, and
 tools/verify_cache.py proves the result. Run this first to know whether that
 round is needed at all.
 """
@@ -179,7 +179,7 @@ def main() -> None:
     if stale:
         sys.exit(
             f"FAIL: {len(stale)} of {anchors} cached helps in {workbook} no longer match "
-            "their definitions; run tools/refresh_cache.py in Excel, then "
+            "their definitions; run ozzit refresh_cache in Excel, then "
             "tools/sanitise_workbook.py, and tools/verify_cache.py proves the result"
         )
     print(f"OK: every cached help in {workbook} matches its definition, {anchors} anchors")
