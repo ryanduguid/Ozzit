@@ -11,10 +11,7 @@ pub fn literal_text(code: &str) -> String {
     formula::split_literals(code)
         .into_iter()
         .filter(|(lit, _)| *lit)
-        .map(|(_, s)| {
-            let end = s.len().saturating_sub(1).max(1);
-            s[1..end].replace("\"\"", "\"")
-        })
+        .map(|(_, s)| py::inner(s).replace("\"\"", "\""))
         .collect()
 }
 pub fn trim(text: &str) -> String {

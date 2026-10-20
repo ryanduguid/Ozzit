@@ -57,8 +57,9 @@ pub fn strip_comments(text: &str) -> String {
             i = end;
         } else if rest.starts_with("//") {
             i += rest.find('\n').unwrap_or(rest.len());
-        } else if rest.starts_with("/*") {
-            i += rest.find("*/").map_or(rest.len(), |n| n + 2);
+        } else if let Some(body) = rest.strip_prefix("/*") {
+            // As Python: the terminator is searched for after the opening "/*".
+            i += body.find("*/").map_or(rest.len(), |n| n + 4);
         } else {
             let c = rest.chars().next().expect("nonempty");
             out.push(c);
@@ -363,7 +364,11 @@ pub fn local_names(code: &str) -> Vec<String> {
                 .iter()
                 .step_by(if call == "LET" { 2 } else { 1 })
             {
-                let bare = py::strip(py::strip(a).trim_matches(['[', ']']));
+                // Python strips brackets from LAMBDA parameters only, not LET bindings.
+                let bare = match call {
+                    "LAMBDA" => py::strip(py::strip(a).trim_matches(['[', ']'])),
+                    _ => py::strip(a),
+                };
                 if matches(r"^[A-Za-z_][A-Za-z0-9_λ]*\??$", bare) && !out.iter().any(|s| s == bare)
                 {
                     out.push(bare.into());
@@ -519,7 +524,7 @@ pub fn render(body: &str, library: &BTreeSet<String>) -> Result<String> {
     let optional = args[..args.len().saturating_sub(1)]
         .iter()
         .filter(|a| py::strip(a).starts_with('['))
-        .map(|a| py::strip(py::strip(a).trim_matches(['[', ']'])).to_string())
+        .map(|a| py::strip(py::inner(py::strip(a))).to_string())
         .collect::<BTreeSet<_>>();
     let locals = local_names(&code)
         .into_iter()

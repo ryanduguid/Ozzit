@@ -5,7 +5,7 @@ use num_traits::ToPrimitive;
 use std::path::Path;
 
 /// The worksheet part behind the sheet named Cover.
-fn cover_part(archive: &mut ZipReader) -> Result<String> {
+fn cover_part(archive: &ZipReader) -> Result<String> {
     let book = member_text(archive, BOOK)?;
     let sheet = captures(r#"<sheet [^>]*name="Cover"[^>]*r:id="(rId\d+)""#, &book);
     let sheet = sheet
@@ -28,9 +28,9 @@ fn cover_part(archive: &mut ZipReader) -> Result<String> {
 }
 
 pub fn cover_label(workbook: &Path) -> Result<(String, BigInt)> {
-    let mut archive = open_zip(workbook)?;
-    let part = cover_part(&mut archive)?;
-    let sheet = member_text(&mut archive, &part)?;
+    let archive = open_zip(workbook)?;
+    let part = cover_part(&archive)?;
+    let sheet = member_text(&archive, &part)?;
     let cell = captures(r#"(?s)<c r="A3"([^>]*)>(.*?)</c>"#, &sheet);
     let cell = cell
         .first()
@@ -43,7 +43,7 @@ pub fn cover_label(workbook: &Path) -> Result<(String, BigInt)> {
     let position = py::parse_int(&index[1], 10)?;
     let items = captures(
         r"(?s)<si>(.*?)</si>",
-        &member_text(&mut archive, "xl/sharedStrings.xml")?,
+        &member_text(&archive, "xl/sharedStrings.xml")?,
     );
     let item = position
         .to_usize()
