@@ -297,3 +297,31 @@ fn released_help_survives_in_full() {
     assert_eq!(year["parameters"][1]["qualifier"], "Default = 7");
     assert_eq!(year["examples"][0]["result"], "FY2027");
 }
+
+#[test]
+fn an_error_result_stays_with_its_example() {
+    let block = reference::parse(
+        "EXAMPLES:→¶Result→Formula (oz is assumed)¶#DIV/0!→=oz.Thisλ(1, 0)¶2→=oz.Thisλ(2, 1)¶NOTE!→A zero divisor errors.",
+    );
+    assert!(
+        block.notes == ["A zero divisor errors."],
+        "{:?}",
+        block.notes
+    );
+    assert_eq!(block.examples.len(), 2);
+    assert_eq!(block.examples[0].formula, "=oz.Thisλ(1, 0)");
+    assert_eq!(block.examples[0].result.as_deref(), Some("#DIV/0!"));
+    assert_eq!(block.examples[1].result.as_deref(), Some("2"));
+}
+
+#[test]
+fn several_vertical_examples_stay_apart() {
+    let block = reference::parse(
+        "EXAMPLES:→¶→Formula¶→=oz.Thisλ(1)¶→Result¶→FY2027¶→Formula¶→=oz.Thisλ(2)¶→Result¶→FY2028",
+    );
+    assert_eq!(block.examples.len(), 2);
+    assert_eq!(block.examples[0].formula, "=oz.Thisλ(1)");
+    assert_eq!(block.examples[0].result.as_deref(), Some("FY2027"));
+    assert_eq!(block.examples[1].formula, "=oz.Thisλ(2)");
+    assert_eq!(block.examples[1].result.as_deref(), Some("FY2028"));
+}

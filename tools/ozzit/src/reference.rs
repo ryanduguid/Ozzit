@@ -120,9 +120,16 @@ pub fn examples(rows: &[(String, String)]) -> Vec<Example> {
     let mut result_next = false;
     let mut in_result = false;
     for (label, text) in rows {
-        let header =
-            (label == "Result" && text.starts_with("Formula")) || text.starts_with("Formula (");
-        if header || (label.is_empty() && text.is_empty()) {
+        // A bare `Formula` row starts the next vertical example.
+        let header = (label == "Result" && text.starts_with("Formula"))
+            || text.starts_with("Formula (")
+            || (label.is_empty() && text == "Formula");
+        if header {
+            result_next = false;
+            in_result = false;
+            continue;
+        }
+        if label.is_empty() && text.is_empty() {
             continue;
         }
         if label.is_empty() && text == "Result" {
@@ -263,7 +270,12 @@ pub fn parse(text: &str) -> HelpBlock {
         if let Some(name) = label.strip_suffix(':') {
             let name = py::strip(name).to_uppercase();
             state = heading(&mut block, &mut example_rows, name, &text);
-        } else if label.ends_with('!') {
+        } else if label.ends_with('!')
+            && (state != In::Examples
+                || matches!(label.to_uppercase().as_str(), "NOTE!" | "NOTES!"))
+        {
+            // Under EXAMPLES the label is the result, which can be an Excel
+            // error such as #DIV/0!; only an explicit NOTE! row is a note there.
             block.notes.push(collapse(&text));
             state = In::Note;
         } else {
