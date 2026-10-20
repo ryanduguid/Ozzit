@@ -611,3 +611,56 @@ fn a_local_header_naming_another_member_is_refused() {
         "File name in directory 'xl/workbook.xml' and header b'xl/workbool.xml' differ."
     );
 }
+
+fn one_member_archive(name: &str) -> Vec<u8> {
+    let parts: archive::Parts = [(name.to_string(), b"<probe/>".to_vec())]
+        .into_iter()
+        .collect();
+    archive::deterministic_bytes(&parts).unwrap()
+}
+
+#[test]
+fn a_retained_reader_checks_the_bytes_it_opened() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("book.xlsx");
+    let good = one_member_archive("xl/workbook.xml");
+    let mut bad = good.clone();
+    bad[30..45].copy_from_slice(b"xl/workbool.xml");
+    // A malformed archive stays malformed after its path is replaced with a good one.
+    std::fs::write(&path, &bad).unwrap();
+    let mut zip = archive::open_zip(&path).unwrap();
+    std::fs::write(&path, &good).unwrap();
+    assert!(archive::member_text(&mut zip, "xl/workbook.xml").is_err());
+    // A good archive stays readable after its path is removed, as an open file does.
+    let mut zip = archive::open_zip(&path).unwrap();
+    std::fs::remove_file(&path).unwrap();
+    assert_eq!(
+        archive::member_text(&mut zip, "xl/workbook.xml").unwrap(),
+        "<probe/>"
+    );
+}
+
+#[test]
+fn member_names_decode_by_their_own_utf8_flags_as_zipfile_does() {
+    assert_eq!(ozzit::py::decode_cp437(b"a\x82\xc3\xa9\xff"), "aé├⌐\u{a0}");
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("book.xlsx");
+    // Both headers carry the UTF-8 bytes of "é.xml" and the UTF-8 flag (bit 11).
+    let flagged = one_member_archive("é.xml");
+    let central = flagged.windows(4).position(|w| w == b"PK\x01\x02").unwrap();
+    let clear = |bytes: &mut Vec<u8>, at: usize| bytes[at + 1] &= !0x08;
+    // Local flag cleared: the local name decodes as cp437 and no longer matches.
+    let mut local_only = flagged.clone();
+    clear(&mut local_only, 6);
+    std::fs::write(&path, &local_only).unwrap();
+    assert_eq!(
+        archive::read_parts(&path).unwrap_err(),
+        r"File name in directory 'é.xml' and header b'\xc3\xa9.xml' differ."
+    );
+    // Both flags cleared: both names decode as cp437 and match.
+    let mut neither = local_only;
+    clear(&mut neither, central + 8);
+    std::fs::write(&path, &neither).unwrap();
+    let parts = archive::read_parts(&path).unwrap();
+    assert_eq!(parts.keys().collect::<Vec<_>>(), ["├⌐.xml"]);
+}

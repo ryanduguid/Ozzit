@@ -176,6 +176,20 @@ pub fn casefold(s: &str) -> String {
 }
 
 /// The first `n` characters, as `s[:n]` takes them.
+/// `bytes.decode("cp437")`: ASCII, then this table for 0x80 to 0xFF.
+const CP437: &str = "ÇüéâäàåçêëèïîìÄÅÉæÆôöòûùÿÖÜ¢£¥₧ƒáíóúñÑªº¿⌐¬½¼¡«»░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞φε∩≡±≥≤⌠⌡÷≈°∙·√ⁿ²■\u{a0}";
+pub fn decode_cp437(bytes: &[u8]) -> String {
+    bytes
+        .iter()
+        .map(|&b| match b {
+            0..=0x7f => char::from(b),
+            _ => CP437
+                .chars()
+                .nth(usize::from(b - 0x80))
+                .expect("128 characters"),
+        })
+        .collect()
+}
 /// `s[1:-1]`, by characters.
 pub fn inner(s: &str) -> &str {
     let mut chars = s.chars();

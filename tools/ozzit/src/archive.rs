@@ -2,17 +2,20 @@
 use crate::{common::*, py};
 use indexmap::IndexMap;
 use std::{
-    io::{BufReader, Read, Seek, SeekFrom, Write},
-    path::{Path, PathBuf},
+    io::{Cursor, Read, Seek, SeekFrom, Write},
+    path::Path,
+    sync::Arc,
 };
 pub type Parts = IndexMap<String, Vec<u8>>;
-/// The archive and the path it came from, so a read can check the member's local header.
+type Source = Cursor<Arc<[u8]>>;
+/// The archive and its bytes, so a read can check the member's local header in
+/// the same bytes it extracts from, as Python's open file does.
 pub struct ZipReader {
-    archive: zip::ZipArchive<BufReader<std::fs::File>>,
-    path: PathBuf,
+    archive: zip::ZipArchive<Source>,
+    bytes: Arc<[u8]>,
 }
 impl std::ops::Deref for ZipReader {
-    type Target = zip::ZipArchive<BufReader<std::fs::File>>;
+    type Target = zip::ZipArchive<Source>;
     fn deref(&self) -> &Self::Target {
         &self.archive
     }
@@ -24,57 +27,79 @@ impl std::ops::DerefMut for ZipReader {
 }
 pub const BOOK: &str = "xl/workbook.xml";
 pub fn open_zip(path: &Path) -> Result<ZipReader> {
-    let file = std::fs::File::open(path).map_err(|e| io_error(&e, path))?;
+    let mut file = std::fs::File::open(path).map_err(|e| io_error(&e, path))?;
     // Python's buffered open rejects a directory before parsing ZIP data.
     // Unix File::open accepts it, so retain EISDIR and its filename here.
     #[cfg(unix)]
     if file.metadata().map_err(|e| io_error(&e, path))?.is_dir() {
         return Err(io_error(&std::io::Error::from_raw_os_error(21), path));
     }
-    let archive =
-        zip::ZipArchive::new(BufReader::new(file)).map_err(|e| format!("invalid ZIP: {e}"))?;
-    Ok(ZipReader {
-        archive,
-        path: path.to_path_buf(),
-    })
+    // shortcut: the whole archive is held in memory (workbooks are about 0.5 MB);
+    // stream through a shared file handle if inputs ever grow large.
+    let mut bytes = Vec::new();
+    file.read_to_end(&mut bytes)
+        .map_err(|e| io_error(&e, path))?;
+    let bytes: Arc<[u8]> = bytes.into();
+    let archive = zip::ZipArchive::new(Cursor::new(Arc::clone(&bytes)))
+        .map_err(|e| format!("invalid ZIP: {e}"))?;
+    Ok(ZipReader { archive, bytes })
 }
-/// Python's `ZipFile.open` refuses a member whose local header names another file.
-fn check_local_name(zip: &mut ZipReader, index: usize) -> Result<()> {
+/// The general-purpose flags and filename of the header at `at`.
+fn header_name(
+    bytes: &[u8],
+    at: u64,
+    flags: usize,
+    length: usize,
+    name: usize,
+) -> Result<(u16, &[u8])> {
+    let field = |from: usize, len: usize| {
+        usize::try_from(at)
+            .ok()
+            .and_then(|at| at.checked_add(from))
+            .and_then(|from| bytes.get(from..from.checked_add(len)?))
+            .ok_or_else(|| "invalid ZIP header: truncated".to_string())
+    };
+    let word = |from| field(from, 2).map(|b| u16::from_le_bytes([b[0], b[1]]));
+    Ok((word(flags)?, field(name, usize::from(word(length)?))?))
+}
+/// `name.decode("utf-8")` when the UTF-8 flag is set, else `name.decode("cp437")`.
+fn zip_name((flags, name): (u16, &[u8])) -> Result<String> {
+    if flags & 0x800 != 0 {
+        decode(name)
+    } else {
+        Ok(py::decode_cp437(name))
+    }
+}
+/// The local and central header offsets of member `index`.
+fn header_starts(zip: &mut ZipReader, index: usize) -> Result<(u64, u64)> {
     let item = zip
         .by_index_raw(index)
         .map_err(|e| format!("invalid ZIP: {e}"))?;
-    let (start, central) = (item.header_start(), item.name_raw().to_vec());
-    let name = item
-        .name()
-        .map_err(|e| format!("invalid ZIP name: {e}"))?
-        .into_owned();
-    drop(item);
-    let mut file = std::fs::File::open(&zip.path).map_err(|e| io_error(&e, &zip.path))?;
-    let mut header = [0; 30];
-    file.seek(SeekFrom::Start(start))
-        .and_then(|_| file.read_exact(&mut header))
-        .map_err(|e| format!("invalid ZIP header: {e}"))?;
-    let mut local = vec![0; usize::from(u16::from_le_bytes([header[26], header[27]]))];
-    file.read_exact(&mut local)
-        .map_err(|e| format!("invalid ZIP header: {e}"))?;
-    // Python decodes the local name as UTF-8 when flagged, else as cp437 (ASCII here).
-    let utf8 = u16::from_le_bytes([header[6], header[7]]) & 0x800 != 0;
-    let decoded = std::str::from_utf8(&local)
-        .ok()
-        .filter(|s| utf8 || s.is_ascii());
-    if local == central || decoded == Some(name.as_str()) {
+    Ok((item.header_start(), item.central_header_start()))
+}
+/// Member `index`'s name as Python's zipfile decodes it from the central directory.
+fn central_name(zip: &mut ZipReader, index: usize) -> Result<String> {
+    let (_, central_at) = header_starts(zip, index)?;
+    zip_name(header_name(&zip.bytes, central_at, 8, 28, 46)?)
+}
+/// Python's `ZipFile.open` refuses a member whose local header names another file.
+fn check_local_name(zip: &mut ZipReader, index: usize) -> Result<()> {
+    let (local_at, _) = header_starts(zip, index)?;
+    let name = central_name(zip, index)?;
+    let local = header_name(&zip.bytes, local_at, 6, 26, 30)?;
+    if zip_name(local)? == name {
         return Ok(());
     }
     Err(format!(
         "File name in directory {} and header {} differ.",
         py::repr_str(&name),
-        py::repr_bytes(&local)
+        py::repr_bytes(local.1)
     ))
 }
 pub fn member_text(zip: &mut ZipReader, name: &str) -> Result<String> {
     let mut index = None;
-    for (i, member) in zip.file_names().enumerate() {
-        if member.map_err(|e| format!("invalid ZIP name: {e}"))? == name {
+    for i in 0..zip.len() {
+        if central_name(zip, i)? == name {
             index = Some(i);
         }
     }
@@ -104,15 +129,13 @@ pub fn read_selected_inventory(
     let mut decoded = std::collections::HashMap::new();
     let mut out = Parts::new();
     for i in 0..zip.len() {
-        let item = zip
+        let name = central_name(&mut zip, i)?;
+        let raw = zip
             .by_index_raw(i)
-            .map_err(|e| format!("invalid ZIP: {e}"))?;
-        let name = item
-            .name()
-            .map_err(|e| format!("invalid ZIP name: {e}"))?
-            .into_owned();
-        decoded.insert(item.name_raw().to_vec(), name.clone());
-        drop(item);
+            .map_err(|e| format!("invalid ZIP: {e}"))?
+            .name_raw()
+            .to_vec();
+        decoded.insert(raw, name.clone());
         if include(&name) {
             check_local_name(&mut zip, i)?;
             let mut item = zip.by_index(i).map_err(|e| format!("invalid ZIP: {e}"))?;
@@ -201,8 +224,8 @@ pub fn deterministic_bytes(parts: &Parts) -> Result<Vec<u8>> {
     for name in names {
         write_member(&mut out, &mut central, name, &parts[name])?;
     }
-    let start = u32::try_from(out.len()).map_err(|_| "ZIP64 archive is too large")?;
-    let len = u32::try_from(central.len()).map_err(|_| "ZIP64 directory is too large")?;
+    let start = classic(out.len()).ok_or("ZIP64 archive is too large")?;
+    let len = classic(central.len()).ok_or("ZIP64 directory is too large")?;
     out.extend(central);
     u32le(&mut out, 0x06054b50);
     u16le(&mut out, 0);
@@ -214,15 +237,18 @@ pub fn deterministic_bytes(parts: &Parts) -> Result<Vec<u8>> {
     u16le(&mut out, 0);
     Ok(out)
 }
+/// A size or offset Python's zipfile still writes without ZIP64 (`ZIP64_LIMIT`).
+fn classic(n: usize) -> Option<u32> {
+    u32::try_from(n).ok().filter(|&n| n <= 0x7fff_ffff)
+}
 /// Appends one member's local header and data to `out` and its directory record to `central`.
 fn write_member(out: &mut Vec<u8>, central: &mut Vec<u8>, name: &str, data: &[u8]) -> Result<()> {
     let mut encoder = flate2::write::DeflateEncoder::new(Vec::new(), flate2::Compression::best());
     encoder.write_all(data).map_err(|e| e.to_string())?;
     let compressed = encoder.finish().map_err(|e| e.to_string())?;
-    let size = u32::try_from(data.len()).map_err(|_| "ZIP64 member is too large")?;
-    let csize =
-        u32::try_from(compressed.len()).map_err(|_| "ZIP64 compressed member is too large")?;
-    let offset = u32::try_from(out.len()).map_err(|_| "ZIP64 archive is too large")?;
+    let size = classic(data.len()).ok_or("ZIP64 member is too large")?;
+    let csize = classic(compressed.len()).ok_or("ZIP64 compressed member is too large")?;
+    let offset = classic(out.len()).ok_or("ZIP64 archive is too large")?;
     let namelen = u16::try_from(name.len()).map_err(|_| "ZIP member name is too long")?;
     let flags = if name.is_ascii() { 0 } else { 0x800 };
     let crc = crc32fast::hash(data);
@@ -261,4 +287,13 @@ fn write_member(out: &mut Vec<u8>, central: &mut Vec<u8>, name: &str, data: &[u8
 }
 pub fn write_deterministic(path: &Path, parts: &Parts) -> Result<()> {
     replace_atomically(path, &deterministic_bytes(parts)?)
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn classic_fields_stop_where_python_switches_to_zip64() {
+        assert_eq!(super::classic(0x7fff_ffff), Some(0x7fff_ffff));
+        assert_eq!(super::classic(0x8000_0000), None);
+    }
 }
