@@ -20,7 +20,6 @@ import test_help_matches_code as help_matches  # noqa: E402
 import test_ratio_definitions as ratio_definitions  # noqa: E402
 import test_repository_policy as policy  # noqa: E402
 
-from postbuild import test_gst_help_text as gst_help  # noqa: E402
 from postbuild import test_rate_date_helpers as rate_date  # noqa: E402
 from postbuild import test_working_capital_days as working_capital  # noqa: E402
 
@@ -49,11 +48,10 @@ class WorkflowCommandTests(unittest.TestCase):
 
 class DefinedNameTests(unittest.TestCase):
     def test_each_copy_returns_its_part_of_a_present_name(self):
-        self.assertEqual(gst_help.defined_name(BOOK, "oz.Aλ"), BOOK)
         self.assertEqual(help_matches.defined_name(BOOK, "oz.Aλ"), "=LAMBDA(x, x)")
 
     def test_each_copy_fails_on_a_missing_name(self):
-        for module in (gst_help, help_matches):
+        for module in (help_matches,):
             with self.subTest(module=module.__name__):
                 with self.assertRaises(AssertionError) as caught:
                     module.defined_name(BOOK, "oz.Bλ")

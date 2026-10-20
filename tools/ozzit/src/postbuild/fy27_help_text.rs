@@ -27,6 +27,12 @@ fn check_swaps(text: &str, label: &str, failures: &mut Vec<String>) -> Vec<(Stri
     let mut text = text.to_string();
     let mut pairs = Vec::new();
     for (old, new, workbook, src) in SWAPS.iter() {
+        assert_eq!(
+            py::char_len(old),
+            py::char_len(new),
+            "length drift: {}",
+            head_repr(old, 40)
+        );
         let hits = count(&text, old);
         let expected = if label == "workbook" { *workbook } else { *src };
         if hits == 0 {

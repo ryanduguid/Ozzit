@@ -2,6 +2,10 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+`fy27_help_text.py` and `gst_help_text.py` are retired. Their character-length,
+anchor-count, description, note-formatting and command-line assertions now run
+in Rust. The GST sequence still requires an explicit AFE sync after text changes.
+
 `cover_label.py`, `sheet_names.py` and `strip_revision_history.py` are retired.
 Their rename, validation, command-line and rollback assertions now run in Rust.
 The revision-strip transaction accepts private I/O callbacks so tests can fail

@@ -10,6 +10,9 @@ implementation, and CI fails when a gate and its Python twin disagree.
 `cover_label`, `sheet_names` and `strip_revision_history` are native only. Their
 former assertions run in `tests/postbuild_retirement.rs`, with transaction
 failure checks beside the revision-strip implementation.
+`fy27_help_text` and `gst_help_text` are native only. Their former assertions run
+in `tests/help_text_retirement.rs`, including character lengths, note formatting,
+unchanged descriptions and the separate AFE sync step.
 Generated headers retain historical Python filenames to preserve published bytes.
 The workbook retains its native Excel formulas and ordinary `.xlsx` format.
 

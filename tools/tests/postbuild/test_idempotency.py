@@ -17,9 +17,7 @@ TOOLS = ROOT / "tools"
 WORKBOOK = ROOT / "ozzit.xlsx"
 
 XML_PASSES = [
-    (TOOLS / "postbuild" / "fy27_help_text.py", True),
     (TOOLS / "postbuild" / "workbook_palette.py", False),
-    (TOOLS / "postbuild" / "gst_help_text.py", True),
     (TOOLS / "postbuild" / "help_links.py", True),
     (TOOLS / "postbuild" / "aasb16_leases.py", True),
     (TOOLS / "postbuild" / "rate_date_helpers.py", True),

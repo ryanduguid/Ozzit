@@ -33,8 +33,9 @@ The passes run through the native tools. Build them once with
 `cargo build --locked --release --manifest-path tools/ozzit/Cargo.toml`; each command
 below keeps the arguments of the Python pass it replaces. The Python passes in this
 directory stay as the reference implementation until they are retired.
-`cover_label`, `sheet_names` and `strip_revision_history` are native only; their
-validation, output and rollback contracts are covered by Rust tests.
+`cover_label`, `sheet_names`, `strip_revision_history`, `fy27_help_text` and
+`gst_help_text` are native only; their validation, output, help-text and rollback
+contracts are covered by Rust tests.
 
 ```bash
 tools/ozzit/target/release/ozzit fy27_help_text ozzit.xlsx src

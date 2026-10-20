@@ -1,4 +1,4 @@
-"""Refusal and apply paths of the lease, cover-label and help-text postbuild passes.
+"""Refusal and apply paths of the lease postbuild pass.
 
 The contract tests run these passes as scripts on the committed stores, where they
 are no-ops. These tests call them in process: the AASB 16 pass is applied to a copy
@@ -13,7 +13,6 @@ import shutil
 import sys
 import tempfile
 import unittest
-import zipfile
 from pathlib import Path
 from unittest import mock
 from xml.sax.saxutils import escape as xml_escape
@@ -24,8 +23,6 @@ sys.path.insert(0, str(TOOLS))
 sys.path.insert(0, str(TOOLS / "postbuild"))
 
 import aasb16_leases  # noqa: E402
-import fy27_help_text  # noqa: E402
-import gst_help_text  # noqa: E402
 from sanitise_workbook import read_text, write_deterministic  # noqa: E402
 from verify_sources import NAME, canonical, statements  # noqa: E402
 from workbook import BOOK, read_book, read_parts  # noqa: E402
@@ -33,12 +30,6 @@ from workbook import BOOK, read_book, read_parts  # noqa: E402
 WORKBOOK = ROOT / "ozzit.xlsx"
 SRC = ROOT / "src"
 INDEX = ROOT / "functions.csv"
-
-
-def write_zip(path: Path, parts: dict[str, str]) -> None:
-    with zipfile.ZipFile(path, "w") as archive:
-        for name, text in parts.items():
-            archive.writestr(name, text)
 
 
 def run_main(module, argv):
@@ -295,52 +286,6 @@ class LeaseGuardTests(StoreCopyMixin, unittest.TestCase):
             ValueError, "^oz.Xλ: stored definition has no FUNCTION line$"
         ):
             aasb16_leases.update_index(path, {"oz.Xλ": ("comment", "no help", "body")})
-
-
-class HelpTextPathTests(unittest.TestCase):
-    """Both help-text passes share one shape: modules in src/, swaps in workbook.xml."""
-
-    PASSES = (
-        (gst_help_text, "gst_help_text.py"),
-        (fy27_help_text, "fy27_help_text.py"),
-    )
-
-    def setUp(self):
-        self.directory = Path(tempfile.mkdtemp(prefix="ozzit-help-paths-"))
-        self.workbook = self.directory / "book.xlsx"
-        self.src = self.directory / "src"
-        self.src.mkdir()
-
-    def tearDown(self):
-        shutil.rmtree(self.directory, ignore_errors=True)
-
-    def test_missing_src_modules_are_each_reported(self):
-        write_zip(self.workbook, {BOOK: "<workbook/>"})
-        for module, script in self.PASSES:
-            with self.subTest(script=script):
-                with self.assertRaises(ValueError) as caught:
-                    module.run(self.workbook, self.src)
-                failures = str(caught.exception).split("; ")
-                self.assertEqual(
-                    [f for f in failures if f.startswith("src: missing")],
-                    [f"src: missing {self.src / f'{name}.txt'}" for name in module.MODULES],
-                )
-                code, _out = run_main(module, [script, str(self.workbook), str(self.src)])
-                self.assertTrue(code.startswith(f"FAIL: src: missing {self.src}"), code)
-
-    def test_too_many_arguments_print_the_usage(self):
-        for module, script in self.PASSES:
-            with self.subTest(script=script):
-                code, _out = run_main(module, [script, "a", "b", "c"])
-                self.assertEqual(
-                    code, f"FAIL: usage: python tools/postbuild/{script} [workbook] [src dir]"
-                )
-
-    def test_a_missing_workbook_is_refused(self):
-        for module, script in self.PASSES:
-            with self.subTest(script=script):
-                code, _out = run_main(module, [script, str(self.workbook)])
-                self.assertEqual(code, f"FAIL: no such workbook: {self.workbook}")
 
 
 if __name__ == "__main__":
