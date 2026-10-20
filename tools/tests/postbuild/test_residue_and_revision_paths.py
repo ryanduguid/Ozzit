@@ -1,4 +1,4 @@
-"""Refusal and edge paths of the residue, rate and date helper, and revision-strip passes."""
+"""Refusal and edge paths of the rate and date helper pass."""
 
 import ast
 import contextlib
@@ -18,7 +18,6 @@ sys.path.insert(0, str(TOOLS))
 sys.path.insert(0, str(TOOLS / "postbuild"))
 
 import rate_date_helpers as helpers  # noqa: E402
-import remove_residue  # noqa: E402
 from sanitise_workbook import write_deterministic  # noqa: E402
 from workbook import read_book, read_parts  # noqa: E402
 
@@ -44,106 +43,6 @@ class ScratchDirectory(unittest.TestCase):
 
     def tearDown(self):
         shutil.rmtree(self.directory, ignore_errors=True)
-
-
-STYLES = (
-    '<styleSheet><cellStyleXfs count="1"><xf numFmtId="0"/></cellStyleXfs>'
-    '<cellXfs count="1"><xf xfId="0"/></cellXfs>'
-    '<cellStyles count="1"><cellStyle name="Normal" xfId="0"/></cellStyles>'
-    "%s</styleSheet>"
-)
-
-
-def style_parts(dxfs, sheet="<worksheet/>", styles=STYLES):
-    return {"xl/styles.xml": (styles % dxfs).encode("utf-8"),
-            "xl/worksheets/sheet1.xml": sheet.encode("utf-8")}
-
-
-class ResiduePathTests(ScratchDirectory):
-    def test_a_residue_sheet_without_its_relationship_is_refused(self):
-        parts = {
-            "xl/workbook.xml": b'<workbook><sheets><sheet name="FMTs" sheetId="9" r:id="rId9"/></sheets></workbook>',
-            "xl/_rels/workbook.xml.rels": b"<Relationships></Relationships>",
-        }
-        with self.assertRaisesRegex(ValueError, "^FMTs: relationship rId9 missing$"):
-            remove_residue.drop_sheet(parts, "FMTs", [])
-
-    def test_a_workbook_without_the_web_extension_is_left_alone(self):
-        parts = {"xl/workbook.xml": b"<workbook/>"}
-        log = []
-        remove_residue.drop_custom_function_declaration(parts, log)
-        self.assertEqual((parts, log), ({"xl/workbook.xml": b"<workbook/>"}, []))
-
-    def test_malformed_style_collections_are_refused(self):
-        for label, parts, message in (
-            ("no dxfs", style_parts(""), "styles.xml has no dxfs collection"),
-            ("count disagrees", style_parts('<dxfs count="2"><dxf/></dxfs>'),
-             "styles.xml dxfs count disagrees with its entries"),
-            ("dxfId out of range", style_parts('<dxfs count="1"><dxf/></dxfs>', '<cfRule dxfId="1"/>'),
-             "a dxfId points past the dxfs collection"),
-            ("no cell styles", style_parts('<dxfs count="0"></dxfs>', styles="<styleSheet>%s</styleSheet>"),
-             "styles.xml lacks a cell style collection"),
-            ("xfId out of range",
-             style_parts('<dxfs count="0"></dxfs>', styles=STYLES.replace('<xf xfId="0"/>', '<xf xfId="1"/>')),
-             "an xfId points past the cellStyleXfs collection"),
-        ):
-            with self.subTest(label=label), self.assertRaisesRegex(ValueError, f"^{re.escape(message)}$"):
-                remove_residue.prune_styles(parts, [])
-
-    def test_unused_formats_are_pruned_without_a_table_style_collection(self):
-        parts = style_parts('<dxfs count="2"><dxf><b/></dxf><dxf><i/></dxf></dxfs>', '<cfRule dxfId="1"/>')
-        log = []
-        remove_residue.prune_styles(parts, log)
-        self.assertEqual(log, ["dropped 1 unused differential formats"])
-        self.assertEqual(parts["xl/worksheets/sheet1.xml"], b'<cfRule dxfId="0"/>')
-        self.assertIn('<dxfs count="1"><dxf><i/></dxf></dxfs>', parts["xl/styles.xml"].decode("utf-8"))
-
-    def freeze_parts(self, sheet_xml, *, drop_first=False):
-        sheets = list(remove_residue.FREEZE)[1:] if drop_first else list(remove_residue.FREEZE)
-        book = "".join(f'<sheet name="{name}" r:id="rId{i}"/>' for i, name in enumerate(sheets))
-        rels = "".join(
-            f'<Relationship Id="rId{i}" Target="worksheets/sheet{i}.xml"/>' for i in range(len(sheets))
-        )
-        parts = {"xl/workbook.xml": book.encode("utf-8"), "xl/_rels/workbook.xml.rels": rels.encode("utf-8")}
-        for i in range(len(sheets)):
-            parts[f"xl/worksheets/sheet{i}.xml"] = sheet_xml.encode("utf-8")
-        return parts
-
-    def test_freeze_panes_refuse_a_missing_sheet_or_sheet_view(self):
-        first = next(iter(remove_residue.FREEZE))
-        for label, parts, message in (
-            ("missing sheet", self.freeze_parts("<worksheet/>", drop_first=True), f"{first} is not in the workbook"),
-            ("no sheet view", self.freeze_parts("<worksheet/>"), f"{first} has no sheetView"),
-        ):
-            with self.subTest(label=label), self.assertRaisesRegex(ValueError, f"^{re.escape(message)}$"):
-                remove_residue.freeze_panes(parts, [])
-
-    def test_main_refuses_extra_arguments_a_missing_file_and_a_non_archive(self):
-        missing = self.directory / "missing.xlsx"
-        not_zip = self.directory / "not-zip.xlsx"
-        not_zip.write_bytes(b"not a zip archive")
-        self.assertEqual(run_main(remove_residue, "a.xlsx", "b.xlsx"),
-                         ("FAIL: usage: python tools/postbuild/remove_residue.py [workbook]", ""))
-        self.assertEqual(run_main(remove_residue, missing), (f"FAIL: no such workbook: {missing}", ""))
-        self.assertEqual(run_main(remove_residue, not_zip), ("FAIL: File is not a zip file", ""))
-
-    def test_main_prints_each_change_it_applies(self):
-        workbook = self.directory / "ozzit.xlsx"
-        shutil.copy2(WORKBOOK, workbook)
-        parts = read_parts(workbook)
-        target = remove_residue.sheet_targets(parts)[next(iter(remove_residue.FREEZE))]
-        text = parts[target].decode("utf-8")
-        text = re.sub(r'<selection pane="topRight"[^>]*/>', "", re.sub(r"<pane [^>]*/>", "", text))
-        parts[target] = text.encode("utf-8")
-        write_deterministic(workbook, parts)
-
-        self.assertEqual(run_main(remove_residue, workbook), (None, (
-            "froze the label columns on 1 wide demonstration sheets\n"
-            f"OK: {workbook}\n"
-        )))
-        # Compare the parts: deflate output differs between zlib builds, so the
-        # rewritten archive's bytes match the committed one only on some platforms.
-        self.assertEqual(read_parts(workbook), read_parts(WORKBOOK))
 
 
 def guard_loop():

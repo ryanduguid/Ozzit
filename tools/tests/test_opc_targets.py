@@ -17,7 +17,6 @@ sys.path.insert(0, str(TOOLS))
 sys.path.insert(0, str(TOOLS / "postbuild"))
 
 import polish_workbook  # noqa: E402
-import remove_residue  # noqa: E402
 import verify_cache  # noqa: E402
 from opc import resolve_target  # noqa: E402
 
@@ -60,20 +59,6 @@ class AbsoluteTargetTests(unittest.TestCase):
 
     def test_polish_workbook_sheet_paths(self):
         self.assertEqual(polish_workbook.sheet_paths(book_parts("Data", "Notes")), self.expected)
-
-    def test_remove_residue_sheet_targets(self):
-        self.assertEqual(remove_residue.sheet_targets(book_parts("Data", "Notes")), self.expected)
-
-    def test_remove_residue_drops_a_sheet_with_an_absolute_target(self):
-        parts = book_parts(remove_residue.RESIDUE_SHEET, "Notes")
-        parts["xl/worksheets/sheet1.xml"] = b"<worksheet/>"
-        parts["[Content_Types].xml"] = (
-            b'<Types><Override PartName="/xl/worksheets/sheet1.xml" ContentType="ws"/></Types>'
-        )
-        parts["docProps/app.xml"] = f"<vt:lpstr>{remove_residue.RESIDUE_SHEET}</vt:lpstr>".encode("utf-8")
-        remove_residue.drop_sheet(parts, remove_residue.RESIDUE_SHEET, [])
-        self.assertNotIn("xl/worksheets/sheet1.xml", parts)
-        self.assertEqual(parts["[Content_Types].xml"], b"<Types></Types>")
 
 
     def test_verify_cache_reads_an_absolute_target(self):

@@ -18,7 +18,6 @@ import verify_workbook  # noqa: E402
 
 sys.path.insert(0, str(TOOLS / 'postbuild'))
 import aasb16_leases  # noqa: E402
-import remove_residue  # noqa: E402
 import workbook_palette  # noqa: E402
 
 
@@ -99,14 +98,6 @@ class ReviewRegressionTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('unbalanced parentheses in fixture', result.stdout)
 
-    def test_other_binary_parts_keep_the_content_type_default(self):
-        content_type = b'<Types><Default Extension="bin" ContentType="application/octet-stream"/></Types>'
-        parts = {'xl/customProperty1.bin': b'fabricated',
-                 'xl/printerSettings/printerSettings1.bin': b'fabricated',
-                 '[Content_Types].xml': content_type}
-        remove_residue.drop_custom_properties(parts, [])
-        self.assertEqual(parts['[Content_Types].xml'], content_type)
-        self.assertNotIn('xl/customProperty1.bin', parts)
 
     def test_palette_does_not_claim_an_indexed_background_was_folded(self):
         styles = self.parts['xl/styles.xml'].decode()

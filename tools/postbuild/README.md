@@ -95,7 +95,8 @@ their definitions; `ozzit refresh_cache` in Excel is what refreshes them, and
 `remove_residue` drops what nothing in the workbook reads (the hidden FMTs sheet, the
 per-sheet custom properties, the stale custom-function declaration on the Excel Labs
 reference, unused differential formats and named styles) and freezes the label columns
-on the 6 wide demonstration sheets. `sync_afe_store` then copies all 6 `src/`
+on the 6 wide demonstration sheets. It is native only, with its former Python
+assertions covered by Rust tests. `sync_afe_store` then copies all 6 `src/`
 modules into the workbook's Advanced Formula Environment store; this step is required
 after any pass that changes `src/`. `generate_selftest_examples` rewrites the native
 self-test's generated assertions from the help, and the tool tests fail when that

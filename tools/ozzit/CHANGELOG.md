@@ -2,6 +2,10 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+`remove_residue.py` is retired. Its residue-removal, style-renumbering, freeze-pane,
+refusal and command-line assertions now run in Rust, including complete restored
+workbook parts, absolute sheet targets and preservation of other binary content types.
+
 `help_links.py` is retired. Its apply, validation and command-line assertions now
 run in Rust. Private source-write callbacks exercise both rollback paths and
 verify that original workbook ZIP bytes are restored before the source restore.

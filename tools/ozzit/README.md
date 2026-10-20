@@ -16,6 +16,9 @@ unchanged descriptions and the separate AFE sync step.
 `help_links` is native only. Its former apply and refusal assertions run in
 `tests/help_links_retirement.rs`, with partial-write and failed-restore checks
 beside the implementation.
+`remove_residue` is native only. Whole-workbook restoration and command checks
+run in `tests/remove_residue_retirement.rs`; component refusals and binary
+content-type checks run beside the implementation.
 Generated headers retain historical Python filenames to preserve published bytes.
 The workbook retains its native Excel formulas and ordinary `.xlsx` format.
 
