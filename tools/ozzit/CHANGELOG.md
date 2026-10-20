@@ -2,6 +2,12 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+Native index tests retain all applicable assertions from 18 Python contracts,
+including the full header/CSV matrices, contradictory-first duplicates, missing
+names, truncated rows, metadata mismatches, unreadable sources and command
+defaults/refusals. Owned fixtures preserve files and directory entries. The
+Python-only import assertion, production code and all Python callers remain.
+
 Native AFE tests now retain all 20 Python gate contracts. They include all 6
 stale module versions, missing Debt and non-Debt names, stale-first duplicates,
 malformed stores, unreadable inputs, exact command defaults and both supported

@@ -175,6 +175,10 @@ AFE tests retain all 20 original gate contracts, reusing the helper tests and
 adding shipped-store failures, workbook/source read failures and physical
 cp1252/UTF-8 command checks. Recursive snapshots protect all owned fixture bytes
 and directory entries. Production code, Python tests and live callers remain.
+Index tests retain the 10 direct and 8 mixed Python contracts through native
+fixtures and physical command checks, with the Python-specific import assertion
+kept in Python. They cover every original header/CSV matrix, contradictory
+duplicates, missing metadata and unreadable inputs. Production code is unchanged.
 Differential scripts
 and their receipts are retained in the local Agent Hub evidence for this port.
 CI, `RELEASING.md` and the postbuild run order call this binary. The Python tools
