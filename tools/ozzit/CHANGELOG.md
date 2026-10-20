@@ -2,6 +2,11 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+`rate_date_helpers.py` is retired. Its assertions now run in Rust, including
+Financial/Dates write order, two-module recovery, optional-index notes, source
+guards, final newlines and exact command output. Formula blocks and independent
+day-count checks are unchanged.
+
 `working_capital_days.py` is retired. Its apply, partial-state, missing-input,
 source-guard and command-line assertions now run in Rust. Private failure hooks
 verify source, compile and final workbook failures restore every original store.

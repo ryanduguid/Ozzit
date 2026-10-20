@@ -28,6 +28,9 @@ font-sharing and fixed-point assertions run beside the implementation.
 `working_capital_days` is native only. Apply, refusal and command checks run in
 `tests/working_capital_retirement.rs`; source guards, module endings and all 3
 write/compile recovery paths run beside the shared function-pass implementation.
+`rate_date_helpers` is native only. Its apply, optional-index and command checks
+run in `tests/rate_date_retirement.rs`; two-module recovery, source guards and
+newline assertions run beside the shared function-pass implementation.
 Generated headers retain historical Python filenames to preserve published bytes.
 The workbook retains its native Excel formulas and ordinary `.xlsx` format.
 

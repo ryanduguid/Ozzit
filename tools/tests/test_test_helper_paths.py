@@ -20,8 +20,6 @@ import test_help_matches_code as help_matches  # noqa: E402
 import test_ratio_definitions as ratio_definitions  # noqa: E402
 import test_repository_policy as policy  # noqa: E402
 
-from postbuild import test_rate_date_helpers as rate_date  # noqa: E402
-
 MAIN = cash_flow.MAIN
 BOOK = '<definedName name="oz.Aλ" comment="c">=LAMBDA(x, x)</definedName>'
 
@@ -87,13 +85,6 @@ class RatioSourceTests(unittest.TestCase):
         )
 
 
-class UnapplySourceTests(unittest.TestCase):
-
-    def test_rate_date_leaves_an_absent_module_unchanged(self):
-        module = rate_date.helpers.MODULES[0]
-        text = rate_date.helpers.ABOUT[module][0] + " &\n"
-        unapply = rate_date.RateDateHelperContractTests._unapply_src
-        self.assertEqual(unapply(module, text), text)
 
 
 def worksheet(body):

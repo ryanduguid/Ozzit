@@ -275,10 +275,10 @@ fn restore(
     texts: &Sources,
     index: Option<&py::PyPath>,
     index_before: Option<&[u8]>,
-    step: &mut impl FnMut(Step) -> Result<()>,
+    step: &mut impl FnMut(Step, &Path) -> Result<()>,
 ) -> Result<()> {
     for (_, path, text) in texts {
-        step(Step::Source)?;
+        step(Step::Source, &path.fs())?;
         write_text(&path.fs(), text)?;
     }
     if let (Some(path), Some(before)) = (index, index_before) {
@@ -317,7 +317,7 @@ fn run(
     index: Option<&py::PyPath>,
     notes: &mut Vec<String>,
 ) -> Result<Vec<String>> {
-    run_with_steps(spec, workbook, src, index, notes, &mut |_| Ok(()))
+    run_with_steps(spec, workbook, src, index, notes, &mut |_, _| Ok(()))
 }
 
 fn compile_book(
@@ -350,10 +350,10 @@ fn run_with_steps(
     src: &py::PyPath,
     index: Option<&py::PyPath>,
     notes: &mut Vec<String>,
-    step: &mut impl FnMut(Step) -> Result<()>,
+    step: &mut impl FnMut(Step, &Path) -> Result<()>,
 ) -> Result<Vec<String>> {
     let t = tables(spec);
-    if spec.stem == "working_capital_days" {
+    if matches!(spec.stem, "working_capital_days" | "rate_date_helpers") {
         check_source_blocks(&t.functions)?;
     }
     let qualified = t.qualified();
@@ -383,15 +383,15 @@ fn run_with_steps(
     let mut apply = || -> Result<()> {
         for (module, path, text) in &texts {
             let after = add_to_src(spec, &t, module, text)?;
-            step(Step::Source)?;
+            step(Step::Source, &path.fs())?;
             write_text(&path.fs(), &after)?;
             changed.push(format!("src/{module}.txt"));
         }
-        step(Step::Compile)?;
+        step(Step::Compile, &src.fs())?;
         let (book, compiled) = compile_book(&src.fs(), &book, &qualified)?;
         indexed = refresh_index(index, given, &compiled, &book, notes)?;
         parts.insert(BOOK.into(), book.into_bytes());
-        step(Step::Workbook)?;
+        step(Step::Workbook, workbook)?;
         write_deterministic(workbook, &parts)
     };
     if let Err(e) = apply() {

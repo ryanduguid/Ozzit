@@ -27,8 +27,11 @@ fn failing(stage: Step, message: &str) -> Vec<Step> {
         &py::PyPath::new(&display(&f.src)),
         Some(&py::PyPath::new(&display(&f.index))),
         &mut vec![],
-        &mut |step| {
+        &mut |step, path| {
             calls.push(step);
+            if step == Step::Source {
+                assert_eq!(path.file_name().unwrap(), "Ratios.txt");
+            }
             if !failed && step == Step::Compile {
                 assert_ne!(
                     std::fs::read(f.src.join("Ratios.txt")).unwrap(),
@@ -58,6 +61,8 @@ fn failing(stage: Step, message: &str) -> Vec<Step> {
     assert_eq!(f.snapshot(), before);
     calls
 }
+
+mod rate_date;
 
 #[test]
 fn a_failed_source_write_restores_every_store() {
