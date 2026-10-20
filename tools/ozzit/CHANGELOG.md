@@ -2,6 +2,12 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+Native previous-name tests now cover all 13 remaining Python test contracts:
+ordered defect reports, CSV header precedence, ignored columns, truncated rows,
+input failures, defaults and surplus arguments. A private test floor permits
+small diagnostic fixtures; the public floor stays at 100. The Python gate and
+its callers remain until comparison and release contracts can be retired.
+
 The remaining Python `sanitise_workbook` helper module is retired. Its 13
 writer, permission and raw-text contracts map to native tests, including real
 partial-write errors, panic unwinding, regular-file replacement refusal,

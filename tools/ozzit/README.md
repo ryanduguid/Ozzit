@@ -164,7 +164,11 @@ observations, 146 release-bundle argument and verification cases, 69 workbook an
 help-cache observations, 5,461 strict base64 cases, 1,332 retained-evidence/grid
 observations, archive byte checks and
 controlled writer failures. Large test fixtures are read from `tests/data/`
-when tests run. Differential scripts
+when tests run. Previous-name coverage retains the 13 original Python test
+contracts, including all header and read-failure cases and physical command
+defaults. Its small diagnostic fixtures use a private floor parameter; public
+commands retain the floor of 100. The Python gate and live callers remain.
+Differential scripts
 and their receipts are retained in the local Agent Hub evidence for this port.
 CI, `RELEASING.md` and the postbuild run order call this binary. The Python tools
 that remain under test are the reference implementations until retired; the
