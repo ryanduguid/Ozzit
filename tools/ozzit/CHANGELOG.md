@@ -2,6 +2,11 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+`cover_label.py`, `sheet_names.py` and `strip_revision_history.py` are retired.
+Their rename, validation, command-line and rollback assertions now run in Rust.
+The revision-strip transaction accepts private I/O callbacks so tests can fail
+between writes and verify restoration of every source and the original ZIP bytes.
+
 `generate_selftest_examples.py` and the Python fuzz reference are retired.
 Their parser, exact decimal, fragment and command-line assertions now run in
 Rust. The native fuzz harness also has a refusal control for zero tolerance.
@@ -15,7 +20,7 @@ identical.
 
 The active parser fuzzing workflow now exercises the Rust implementations with
 libFuzzer. Stable Rust tests replay the shared target and seed corpus. The
-Python harness remains a temporary reference during retirement.
+former Python harness has been retired after its assertions moved to Rust.
 
 The Rust port is implemented alongside the base Python tools, which remain the
 reference implementation: CI runs the gates through this binary and fails when

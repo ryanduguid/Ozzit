@@ -18,7 +18,6 @@ sys.path.insert(0, str(TOOLS / "postbuild"))
 
 import polish_workbook  # noqa: E402
 import remove_residue  # noqa: E402
-import sheet_names  # noqa: E402
 import verify_cache  # noqa: E402
 from opc import resolve_target  # noqa: E402
 
@@ -76,10 +75,6 @@ class AbsoluteTargetTests(unittest.TestCase):
         self.assertNotIn("xl/worksheets/sheet1.xml", parts)
         self.assertEqual(parts["[Content_Types].xml"], b"<Types></Types>")
 
-    def test_sheet_names_resolves_both_worksheet_parts(self):
-        planned = sheet_names.edits(book_parts("TOC", sheet_names.OLD))
-        self.assertIn("xl/worksheets/sheet1.xml", planned)
-        self.assertIn("xl/worksheets/sheet2.xml", planned)
 
     def test_verify_cache_reads_an_absolute_target(self):
         directory = Path(tempfile.mkdtemp(prefix="ozzit-opc-"))

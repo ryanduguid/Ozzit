@@ -7,6 +7,9 @@ implementation, and CI fails when a gate and its Python twin disagree.
 `tests/module_contracts.rs`, including the physical command-line checks.
 `generate_selftest_examples` is also native only, with its former assertions in
 `tests/selftest_retirement.rs` and exact decimal checks in `src/selftest.rs`.
+`cover_label`, `sheet_names` and `strip_revision_history` are native only. Their
+former assertions run in `tests/postbuild_retirement.rs`, with transaction
+failure checks beside the revision-strip implementation.
 Generated headers retain historical Python filenames to preserve published bytes.
 The workbook retains its native Excel formulas and ordinary `.xlsx` format.
 
@@ -101,5 +104,5 @@ controlled writer failures. Large test fixtures are read from `tests/data/`
 when tests run. Differential scripts
 and their receipts are retained in the local Agent Hub evidence for this port.
 CI, `RELEASING.md` and the postbuild run order call this binary. The Python tools
-remain under test as the reference implementation until they are retired; the
+that remain under test are the reference implementations until retired; the
 optional pyxirr comparison stays in Python.

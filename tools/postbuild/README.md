@@ -10,7 +10,7 @@ FY27 help text and the workbook palette are the tracked successors of the one-of
 session scripts that produced v3.1.0. Later passes, including GST help text, start
 from the committed `ozzit.xlsx` and `src/`. They do not read the earlier workbook.
 
-Each pass is a standalone script, run by path and never imported as a package.
+The remaining Python references are standalone scripts, run by path and never imported as a package.
 `workbook.py` is the one exception: it is the shared reader the passes import, and
 it holds the archive reading, the applied-or-absent check and the swap replacement
 that used to be copied from pass to pass.
@@ -33,6 +33,8 @@ The passes run through the native tools. Build them once with
 `cargo build --locked --release --manifest-path tools/ozzit/Cargo.toml`; each command
 below keeps the arguments of the Python pass it replaces. The Python passes in this
 directory stay as the reference implementation until they are retired.
+`cover_label`, `sheet_names` and `strip_revision_history` are native only; their
+validation, output and rollback contracts are covered by Rust tests.
 
 ```bash
 tools/ozzit/target/release/ozzit fy27_help_text ozzit.xlsx src

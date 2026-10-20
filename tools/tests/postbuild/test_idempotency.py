@@ -21,13 +21,10 @@ XML_PASSES = [
     (TOOLS / "postbuild" / "workbook_palette.py", False),
     (TOOLS / "postbuild" / "gst_help_text.py", True),
     (TOOLS / "postbuild" / "help_links.py", True),
-    (TOOLS / "postbuild" / "sheet_names.py", False),
-    (TOOLS / "postbuild" / "strip_revision_history.py", True),
     (TOOLS / "postbuild" / "aasb16_leases.py", True),
     (TOOLS / "postbuild" / "rate_date_helpers.py", True),
     (TOOLS / "postbuild" / "working_capital_days.py", True),
     (TOOLS / "postbuild" / "ato_benchmarks_rate_lookup.py", True),
-    (TOOLS / "postbuild" / "cover_label.py", False),
     (TOOLS / "postbuild" / "help_corrections.py", True),
     (TOOLS / "postbuild" / "remove_residue.py", False),
 ]

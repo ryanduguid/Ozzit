@@ -24,7 +24,6 @@ sys.path.insert(0, str(TOOLS))
 sys.path.insert(0, str(TOOLS / "postbuild"))
 
 import aasb16_leases  # noqa: E402
-import cover_label  # noqa: E402
 import fy27_help_text  # noqa: E402
 import gst_help_text  # noqa: E402
 from sanitise_workbook import read_text, write_deterministic  # noqa: E402
@@ -296,55 +295,6 @@ class LeaseGuardTests(StoreCopyMixin, unittest.TestCase):
             ValueError, "^oz.Xλ: stored definition has no FUNCTION line$"
         ):
             aasb16_leases.update_index(path, {"oz.Xλ": ("comment", "no help", "body")})
-
-
-class CoverLabelPathTests(unittest.TestCase):
-    def setUp(self):
-        self.directory = Path(tempfile.mkdtemp(prefix="ozzit-cover-paths-"))
-        self.workbook = self.directory / "book.xlsx"
-
-    def tearDown(self):
-        shutil.rmtree(self.directory, ignore_errors=True)
-
-    def _strings(self, label: str) -> None:
-        write_zip(self.workbook, {cover_label.STRINGS: f"<sst><si><t>{label}</t></si></sst>"})
-
-    def test_an_earlier_label_is_applied_and_reported(self):
-        self._strings(cover_label.OLD[0])
-        code, out = run_main(cover_label, ["cover_label.py", str(self.workbook)])
-        self.assertIsNone(code)
-        self.assertEqual(
-            out.splitlines(), ["applied cover label to: workbook", f"OK: {self.workbook}"]
-        )
-        self.assertEqual(
-            read_parts(self.workbook)[cover_label.STRINGS].decode("utf-8"),
-            f"<sst><si><t>{cover_label.NEW}</t></si></sst>",
-        )
-        code, out = run_main(cover_label, ["cover_label.py", str(self.workbook)])
-        self.assertIsNone(code)
-        self.assertEqual(
-            out.splitlines(),
-            ["cover label already applied; no changes", f"OK: {self.workbook}"],
-        )
-
-    def test_a_workbook_without_shared_strings_fails_cleanly(self):
-        write_zip(self.workbook, {"xl/workbook.xml": "<workbook/>"})
-        code, out = run_main(cover_label, ["cover_label.py", str(self.workbook)])
-        self.assertEqual(code, "FAIL: missing part xl/sharedStrings.xml")
-        self.assertEqual(out, "")
-
-    def test_a_file_that_is_not_a_zip_fails_cleanly(self):
-        self.workbook.write_text("not a workbook", encoding="utf-8")
-        code, _out = run_main(cover_label, ["cover_label.py", str(self.workbook)])
-        self.assertEqual(code, "FAIL: File is not a zip file")
-
-    def test_too_many_arguments_print_the_usage(self):
-        code, _out = run_main(cover_label, ["cover_label.py", "a", "b"])
-        self.assertEqual(code, "FAIL: usage: python tools/postbuild/cover_label.py [workbook]")
-
-    def test_a_missing_workbook_is_refused(self):
-        code, _out = run_main(cover_label, ["cover_label.py", str(self.workbook)])
-        self.assertEqual(code, f"FAIL: no such workbook: {self.workbook}")
 
 
 class HelpTextPathTests(unittest.TestCase):

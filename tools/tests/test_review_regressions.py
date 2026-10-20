@@ -19,7 +19,6 @@ import verify_workbook  # noqa: E402
 sys.path.insert(0, str(TOOLS / 'postbuild'))
 import aasb16_leases  # noqa: E402
 import remove_residue  # noqa: E402
-import strip_revision_history  # noqa: E402
 import workbook_palette  # noqa: E402
 
 
@@ -118,11 +117,6 @@ class ReviewRegressionTests(unittest.TestCase):
         self.assertEqual(workbook_palette.run(self.book), [])
         self.assertEqual(self.book.read_bytes(), before)
 
-    def test_revision_removal_preserves_crlf_outside_the_removed_block(self):
-        source = '/* Keep this.\r\n REVISIONS:\r\n Old history.\r\n*/\r\nFixture = 1;\r\n'
-        actual, count = strip_revision_history.strip_module(source)
-        self.assertEqual(count, 1)
-        self.assertEqual(actual, '/* Keep this.\r\n*/\r\nFixture = 1;\r\n')
 
     def test_lease_pass_restores_source_if_workbook_write_fails(self):
         source = self.root / (aasb16_leases.MODULE + '.txt')

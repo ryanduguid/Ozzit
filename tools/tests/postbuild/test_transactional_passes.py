@@ -1,6 +1,6 @@
-"""Recovery-block contracts for the help-link and revision-strip passes.
+"""Recovery-block contracts for the help-link pass.
 
-Both passes rewrite two or more tracked stores that the release gates then
+The pass rewrites two tracked stores that the release gates then
 compare. A failure between writes used to leave one store updated and the
 rest stale; the gates would then read the stores as out of sync. These tests
 fault-inject the second write the way test_rate_date_helpers does and hold
@@ -21,15 +21,11 @@ sys.path.insert(0, str(TOOLS))
 sys.path.insert(0, str(TOOLS / "postbuild"))
 
 import help_links  # noqa: E402
-import strip_revision_history as strip  # noqa: E402
 from sanitise_workbook import read_text, write_deterministic  # noqa: E402
 from workbook import BOOK, read_book, read_parts  # noqa: E402
 
 WORKBOOK = ROOT / "ozzit.xlsx"
 SRC = ROOT / "src"
-MODULES = ("Dates", "Essentials", "Financial", "Ratios", "Utilities", "Debt")
-
-BLOCK = "/*\r\nREVISIONS: synthetic test block\r\n*/\r\n"
 
 
 def revert_links(workbook: Path, src_dir: Path) -> None:
@@ -119,128 +115,6 @@ class HelpLinkRecoveryTests(unittest.TestCase):
         self.assertEqual(calls, ["Ratios.txt", "Ratios.txt"])
         self.assertEqual(self.workbook.read_bytes(), before_workbook)
         self.assertEqual(self.ratios_path.read_bytes(), before_ratios)
-
-
-class StripRecoveryTests(unittest.TestCase):
-    def setUp(self):
-        self.directory = Path(tempfile.mkdtemp(prefix="ozzit-strip-"))
-        self.workbook = self.directory / "ozzit.xlsx"
-        shutil.copy2(WORKBOOK, self.workbook)
-        with zipfile.ZipFile(self.workbook, "a") as archive:
-            archive.comment = b"original archive"
-        self.src = self.directory / "src"
-        shutil.copytree(SRC, self.src)
-        for module in MODULES:
-            path = self.src / f"{module}.txt"
-            path.write_bytes(path.read_bytes() + BLOCK.encode("utf-8"))
-        self.expected = {"Dates": 1, "Essentials": 1, "Financial": 1,
-                         "Ratios": 1, "Utilities": 1, "Debt": 1}
-
-    def tearDown(self):
-        shutil.rmtree(self.directory, ignore_errors=True)
-
-    def _before(self) -> dict[str, bytes]:
-        return {path.name: path.read_bytes() for path in sorted(self.src.glob("*.txt"))}
-
-    def test_the_pass_strips_every_module(self):
-        with mock.patch.dict(strip.EXPECTED_BLOCKS, self.expected):
-            changes = strip.apply(self.workbook, self.src)
-        self.assertEqual(
-            changes[:6],
-            [f"stripped 1 REVISIONS blocks from {module}.txt" for module in MODULES],
-        )
-        for module in MODULES:
-            self.assertEqual(
-                (self.src / f"{module}.txt").read_bytes(),
-                (SRC / f"{module}.txt").read_bytes(),
-            )
-
-    def test_a_failed_later_write_restores_every_module(self):
-        before = self._before()
-
-        real_write = strip.write_text
-        calls = []
-
-        def failing_write(path, text):
-            calls.append(Path(path).name)
-            if len(calls) == 2:
-                raise PermissionError("synthetic failure on the second module write")
-            return real_write(path, text)
-        with (
-            mock.patch.dict(strip.EXPECTED_BLOCKS, self.expected),
-            mock.patch.object(strip, "write_text", side_effect=failing_write),
-            self.assertRaises(PermissionError),
-        ):
-            strip.apply(self.workbook, self.src)
-
-        # 2 writes attempted, then the restore loop writes every module back:
-        # the recovery covers the modules written before the failure and the
-        # ones it never reached.
-        written = [f"{module}.txt" for module in MODULES]
-        self.assertEqual(calls, written[:2] + written)
-        self.assertEqual(self._before(), before)
-
-    def test_a_failed_sync_restores_the_sources_and_the_workbook(self) -> None:
-        before = self._before()
-        before_workbook = self.workbook.read_bytes()
-
-        with (
-            mock.patch.dict(strip.EXPECTED_BLOCKS, self.expected),
-            mock.patch.object(strip, "sync", side_effect=ValueError("synthetic AFE sync failure")),
-            self.assertRaisesRegex(ValueError, "synthetic AFE sync failure"),
-        ):
-            strip.apply(self.workbook, self.src)
-
-        self.assertEqual(self._before(), before)
-        self.assertEqual(self.workbook.read_bytes(), before_workbook)
-
-    def test_a_failed_source_restore_still_rolls_the_workbook_back(self) -> None:
-        # sync fails after the workbook phase is touched, and the restore of
-        # the first source module fails too: the workbook rollback must
-        # still happen, because it runs before the source restores.
-        before_workbook = self.workbook.read_bytes()
-
-        real_write = strip.write_text
-        calls = []
-
-        def failing_restore(path, text):
-            calls.append(Path(path).name)
-            if len(calls) >= 1 + len(MODULES) and Path(path).name == "Dates.txt":
-                # a restore write, not the publish write
-                raise PermissionError("synthetic failure on the Dates restore")
-            return real_write(path, text)
-
-        with (
-            mock.patch.dict(strip.EXPECTED_BLOCKS, self.expected),
-            mock.patch.object(strip, "sync", side_effect=ValueError("synthetic AFE sync failure")),
-            mock.patch.object(strip, "write_text", side_effect=failing_restore),
-            self.assertRaises(PermissionError),
-        ):
-            strip.apply(self.workbook, self.src)
-
-        self.assertEqual(self.workbook.read_bytes(), before_workbook)
-
-    def test_validation_failure_leaves_every_module_untouched(self):
-        # A later module with an unexpected block count must not leave the
-        # earlier modules already stripped.
-        self.expected["Essentials"] = 2
-        before = self._before()
-        with mock.patch.dict(strip.EXPECTED_BLOCKS, self.expected):
-            with self.assertRaisesRegex(ValueError, "Essentials.txt: expected 2"):
-                strip.apply(self.workbook, self.src)
-        self.assertEqual(self._before(), before)
-
-    def test_unreadable_workbook_leaves_every_module_untouched(self):
-        before = self._before()
-        before_workbook = self.workbook.read_bytes()
-        with (
-            mock.patch.dict(strip.EXPECTED_BLOCKS, self.expected),
-            mock.patch.object(strip, "read_parts", side_effect=ValueError("invalid archive")),
-            self.assertRaisesRegex(ValueError, "invalid archive"),
-        ):
-            strip.apply(self.workbook, self.src)
-        self.assertEqual(self._before(), before)
-        self.assertEqual(self.workbook.read_bytes(), before_workbook)
 
 
 if __name__ == "__main__":

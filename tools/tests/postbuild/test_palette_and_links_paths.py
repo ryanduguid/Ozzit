@@ -23,7 +23,6 @@ sys.path.insert(0, str(TOOLS / "postbuild"))
 
 import help_corrections  # noqa: E402
 import help_links  # noqa: E402
-import sheet_names  # noqa: E402
 import workbook_palette as palette  # noqa: E402
 import working_capital_days as days  # noqa: E402
 from sanitise_workbook import write_deterministic  # noqa: E402
@@ -240,73 +239,6 @@ class WorkbookPaletteTests(ScratchTestCase):
         self.workbook.write_bytes(b"not a zip archive")
         code, _ = call_main(palette, str(self.workbook))
         self.assertEqual(code, "FAIL: File is not a zip file")
-
-
-def sheet_name_parts(name="oz.SumContains", toc_links=4):
-    return {
-        "xl/workbook.xml": (
-            '<workbook><sheets><sheet name="TOC" sheetId="1" r:id="rId1"/>'
-            f'<sheet name="{name}" sheetId="2" r:id="rId2"/></sheets></workbook>'
-        ),
-        "xl/_rels/workbook.xml.rels": (
-            '<Relationships><Relationship Id="rId1" Type="ws" Target="worksheets/sheet1.xml"/>'
-            '<Relationship Id="rId2" Type="ws" Target="worksheets/sheet2.xml"/></Relationships>'
-        ),
-        "xl/worksheets/sheet1.xml": f"<f>'{name}'!A1</f>" * toc_links,
-        "xl/worksheets/sheet2.xml": f"<v>{name}</v>",
-        "docProps/app.xml": f"<vt:lpstr>{name}</vt:lpstr>",
-        "xl/sharedStrings.xml": f"<t>{name}</t>",
-    }
-
-
-class SheetNamesTests(ScratchTestCase):
-    def test_run_renames_every_part_then_finds_nothing_to_do(self):
-        self.write_parts(sheet_name_parts())
-        self.assertEqual(sheet_names.run(self.workbook), ["workbook"])
-        self.assertEqual(self.text_parts(), sheet_name_parts(name="oz.SumContainsλ"))
-        self.assertEqual(sheet_names.run(self.workbook), [])
-
-    def test_run_refuses_a_workbook_without_the_toc_sheet(self):
-        parts = sheet_name_parts()
-        parts["xl/workbook.xml"] = parts["xl/workbook.xml"].replace('name="TOC"', 'name="Cover"')
-        self.write_parts(parts)
-        with self.assertRaisesRegex(
-            ValueError, "the workbook lacks the TOC sheet or the oz.SumContains sheet"
-        ):
-            sheet_names.run(self.workbook)
-
-    def test_run_names_a_missing_part_and_a_wrong_anchor_count(self):
-        parts = sheet_name_parts(toc_links=3)
-        del parts["docProps/app.xml"]
-        self.write_parts(parts)
-        before = self.workbook.read_bytes()
-        with self.assertRaises(ValueError) as caught:
-            sheet_names.run(self.workbook)
-        self.assertEqual(
-            str(caught.exception),
-            "xl/worksheets/sheet1.xml: \"'oz.SumContains'!\" expected 4 recognised anchors, "
-            "got pre-rename=3 renamed=0; missing part docProps/app.xml",
-        )
-        self.assertEqual(self.workbook.read_bytes(), before)
-
-    def test_main_rejects_extra_arguments(self):
-        code, _ = call_main(sheet_names, "a.xlsx", "b.xlsx")
-        self.assertEqual(code, "FAIL: usage: python tools/postbuild/sheet_names.py [workbook]")
-
-    def test_main_rejects_a_missing_workbook(self):
-        code, _ = call_main(sheet_names, str(self.missing))
-        self.assertEqual(code, f"FAIL: no such workbook: {self.missing}")
-
-    def test_main_reports_a_run_failure(self):
-        self.workbook.write_bytes(b"not a zip archive")
-        code, _ = call_main(sheet_names, str(self.workbook))
-        self.assertEqual(code, "FAIL: File is not a zip file")
-
-    def test_main_reports_the_applied_rename(self):
-        self.write_parts(sheet_name_parts())
-        code, output = call_main(sheet_names, str(self.workbook))
-        self.assertIsNone(code)
-        self.assertEqual(output, f"applied sheet names to: workbook\nOK: {self.workbook}\n")
 
 
 class HelpLinksTests(ScratchTestCase):

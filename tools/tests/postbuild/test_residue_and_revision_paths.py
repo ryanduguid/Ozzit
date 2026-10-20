@@ -19,12 +19,10 @@ sys.path.insert(0, str(TOOLS / "postbuild"))
 
 import rate_date_helpers as helpers  # noqa: E402
 import remove_residue  # noqa: E402
-import strip_revision_history as strip  # noqa: E402
 from sanitise_workbook import write_deterministic  # noqa: E402
 from workbook import read_book, read_parts  # noqa: E402
 
 WORKBOOK = ROOT / "ozzit.xlsx"
-BLOCK = "/*\r\nREVISIONS: synthetic test block\r\n*/\r\n"
 
 
 def run_main(module, *argv):
@@ -276,55 +274,6 @@ class RateDateHelperPathTests(ScratchDirectory):
             "FAIL: usage: python tools/postbuild/rate_date_helpers.py [workbook] [src dir] [functions.csv]", ""
         ))
         self.assertEqual(run_main(helpers, missing), (f"FAIL: no such workbook: {missing}", ""))
-
-
-class RevisionStripPathTests(ScratchDirectory):
-    def test_strip_module_handles_unterminated_comments_and_line_endings(self):
-        self.assertEqual(strip.strip_module("a /* REVISIONS: open"), ("a /* REVISIONS: open", 0))
-        self.assertEqual(strip.strip_module("x\n/*\nREVISIONS: y\n*/\nz"), ("x\nz", 1))
-        self.assertEqual(strip.strip_module("x\n/*\nREVISIONS: y\n*/"), ("x\n", 1))
-
-    def copy_stores(self, creator):
-        workbook = self.directory / "ozzit.xlsx"
-        shutil.copy2(WORKBOOK, workbook)
-        parts = read_parts(workbook)
-        core = parts["docProps/core.xml"]
-        self.assertEqual(core.count(strip.NEW_CREATOR), 1)
-        parts["docProps/core.xml"] = core.replace(strip.NEW_CREATOR, creator)
-        write_deterministic(workbook, parts)
-        src = self.directory / "src"
-        shutil.copytree(ROOT / "src", src)
-        return workbook, src
-
-    def test_main_rewrites_the_old_creator_credit(self):
-        workbook, src = self.copy_stores(strip.OLD_CREATOR)
-        code, output = run_main(strip, workbook, src)
-        self.assertIsNone(code)
-        lines = output.splitlines()
-        self.assertEqual(lines[0], "rewrote docProps/core.xml creator")
-        self.assertEqual(len(lines), 2)
-        self.assertTrue(lines[1].startswith(f"OK: {workbook} stripped, "), lines[1])
-        self.assertEqual(read_parts(workbook)["docProps/core.xml"], read_parts(WORKBOOK)["docProps/core.xml"])
-
-    def test_an_unknown_creator_fails_and_restores_the_sources(self):
-        workbook, src = self.copy_stores(b"<dc:creator>Someone else</dc:creator>")
-        dates = src / "Dates.txt"
-        dates.write_bytes(dates.read_bytes() + BLOCK.encode("utf-8"))
-        before_dates, before_workbook = dates.read_bytes(), workbook.read_bytes()
-        with mock.patch.dict(strip.EXPECTED_BLOCKS, {"Dates": 1}):
-            code, output = run_main(strip, workbook, src)
-        self.assertEqual(code, "FAIL: cannot strip revision history: "
-                               "docProps/core.xml carries neither the old nor the new creator")
-        self.assertEqual(output, "")
-        self.assertEqual(dates.read_bytes(), before_dates)
-        self.assertEqual(workbook.read_bytes(), before_workbook)
-
-    def test_main_refuses_extra_arguments_and_a_missing_workbook(self):
-        missing = self.directory / "missing.xlsx"
-        self.assertEqual(run_main(strip, "a", "b", "c"), (
-            "FAIL: usage: python tools/postbuild/strip_revision_history.py [workbook] [src dir]", ""
-        ))
-        self.assertEqual(run_main(strip, missing), (f"FAIL: no such workbook: {missing}", ""))
 
 
 if __name__ == "__main__":
