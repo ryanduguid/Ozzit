@@ -14,8 +14,8 @@ from pathlib import Path
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
-import sanitise_workbook  # noqa: E402
 import verify_afe  # noqa: E402
+import verify_help_spills  # noqa: E402
 
 
 class WorkbookFixtureTests(unittest.TestCase):
@@ -294,10 +294,10 @@ class WorkbookFixtureTests(unittest.TestCase):
 
 class CacheComparisonTests(unittest.TestCase):
     def test_column_converts_a1_letters_to_one_based_numbers(self):
-        self.assertEqual(sanitise_workbook.column_number("A"), 1)
-        self.assertEqual(sanitise_workbook.column_number("Z"), 26)
-        self.assertEqual(sanitise_workbook.column_number("AA"), 27)
-        self.assertEqual(sanitise_workbook.column_number("ZZ"), 702)
+        self.assertEqual(verify_help_spills.column_number("A"), 1)
+        self.assertEqual(verify_help_spills.column_number("Z"), 26)
+        self.assertEqual(verify_help_spills.column_number("AA"), 27)
+        self.assertEqual(verify_help_spills.column_number("ZZ"), 702)
 
 
 if __name__ == "__main__":

@@ -36,7 +36,6 @@ import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from sanitise_workbook import column_number  # noqa: E402
 from verify_sources import arguments, read_string  # noqa: E402
 
 if hasattr(sys.stdout, "reconfigure"):
@@ -49,6 +48,14 @@ ANCHOR = re.compile(
 )
 CELL = re.compile(r'<c r="([A-Z]+)(\d+)"([^>]*?)(?:/>|>(.*?)</c>)', re.DOTALL)
 SHEET = re.compile(r"xl/worksheets/sheet\d+\.xml")
+
+
+def column_number(letters: str) -> int:
+    """A cell reference's column letters as a 1-based number: A is 1, AA is 27."""
+    n = 0
+    for ch in letters:
+        n = n * 26 + ord(ch) - 64
+    return n
 
 
 def literal_text(code: str) -> str:

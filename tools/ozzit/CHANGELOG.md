@@ -2,6 +2,17 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+The remaining Python `sanitise_workbook` helper module is retired. Its 13
+writer, permission and raw-text contracts map to native tests, including real
+partial-write errors, panic unwinding, regular-file replacement refusal,
+overlapping stages, exact UTF-8/newlines and the original level-9 workbook bytes.
+The native open-stage lifetime differs from Python's closed stage; Python's
+buffered-close error seam is explicitly retired, and panic tests do not prove
+cleanup on process termination. Windows and Linux qualify their actual
+permission branches. The exact live column helper moves to `verify_help_spills`
+with its test; all 34 unrelated methods remain. Review regression fixtures now
+use a standard-library ZIP builder. Archive algorithms and public APIs are unchanged.
+
 The Python `verify_cache` tool and its exclusive `opc` helper are retired.
 Rust retains their 26 test contracts, including typed Excel errors, OPC targets,
 exact cell representations, missing/stale/floor precedence and 15,000-cell

@@ -50,7 +50,15 @@ status/refusals, whole-store restoration, unrelated ZIP parts and idempotency.
 retain exact presentation edits, refusals, path resolution and idempotency.
 `sanitise_workbook` is native only. Its 14 former Python test contracts run in
 `tests/sanitise_retirement.rs` and a private cell-pattern unit test. The 33-case
-replay remains unchanged. Python text and archive helpers remain for callers.
+replay remains unchanged. The remaining Python helper module is retired too:
+its 13 writer, permission and raw-text contracts map to `src/common_retirement.rs`
+and `tests/writer_retirement.rs`. Native tests exercise real temporary files,
+partial-write errors, panic unwinding, regular-file replacement refusal and
+platform permissions. Native stages remain open; Python's buffered-close fault
+injection has no native equivalent, and panic cleanup does not cover OS process
+termination. The exact live Python column helper now belongs to
+`verify_help_spills`, with its original test retargeted. All 34 unrelated tests
+remain; review regression fixtures use a simple standard-library ZIP builder.
 `compile_sources` is native only. Its 5 former command test contracts run in
 `tests/compiler_cli_retirement.rs`, with exact status, output, no-write and index
 selection checks. Its 31 remaining compiler contracts run in `tests/foundation.rs`,

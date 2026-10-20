@@ -12,7 +12,6 @@ from unittest.mock import patch
 
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
-import sanitise_workbook  # noqa: E402
 import verify_workbook  # noqa: E402
 
 
@@ -27,7 +26,9 @@ class ReviewRegressionTests(unittest.TestCase):
             self.parts = {name: archive.read(name) for name in archive.namelist()}
 
     def verify(self):
-        sanitise_workbook.write_deterministic(self.book, self.parts)
+        with zipfile.ZipFile(self.book, "w") as archive:
+            for name in sorted(self.parts):
+                archive.writestr(name, self.parts[name])
         return subprocess.run([sys.executable, str(TOOLS / 'verify_workbook.py'), str(self.book)],
                               capture_output=True, text=True, encoding='utf-8')
 

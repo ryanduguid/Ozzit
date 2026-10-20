@@ -17,7 +17,6 @@ TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
 import pyxirr_comparison as comparison  # noqa: E402
-import sanitise_workbook  # noqa: E402
 import verify_sources  # noqa: E402
 
 
@@ -37,11 +36,6 @@ class CompileReadingTests(unittest.TestCase):
         self.assertEqual(verify_sources.arguments('x, "a,b", [y,z], {1,2})tail', 0),
                          ['x', ' "a,b"', ' [y,z]', ' {1,2}'])
 
-    def test_raw_text_helper_preserves_utf8_and_physical_newlines(self):
-        with tempfile.TemporaryDirectory(prefix="ozzit-text-") as directory:
-            path = Path(directory) / "module.txt"
-            path.write_bytes("λ\r\nsecond\rthird\n".encode("utf-8"))
-            self.assertEqual(sanitise_workbook.read_text(path), "λ\r\nsecond\rthird\n")
 
 
 class FakeFinance:
