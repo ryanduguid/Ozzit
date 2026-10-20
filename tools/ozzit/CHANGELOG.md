@@ -2,6 +2,13 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+The Python `compile_sources` reference module is retired. Rust retains all
+31 remaining compiler test contracts, including exact rendering and refusals,
+unchanged index text and inline idempotency. The exact shared argument parser
+now belongs to `verify_sources`, with its original test retargeted and an added
+literal/array comma case. All 10 unrelated comparison tests remain. The deleted
+Python module's import lifecycle test is explicitly retired.
+
 The Python `compile_sources` command entry point is retired. Rust retains its
 5 former command test contracts, including exact output, no-write checks and
 workbook/index updates followed by a repeat run. Default paths, interleaved flags

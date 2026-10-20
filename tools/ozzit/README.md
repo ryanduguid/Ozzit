@@ -51,9 +51,13 @@ retain exact presentation edits, refusals, path resolution and idempotency.
 `sanitise_workbook` is native only. Its 14 former Python test contracts run in
 `tests/sanitise_retirement.rs` and a private cell-pattern unit test. The 33-case
 replay remains unchanged. Python text and archive helpers remain for callers.
-`compile_sources` is native only as a command. Its 5 former command test contracts
-run in `tests/compiler_cli_retirement.rs`, with exact status, output, no-write
-and index selection checks. The shared Python reference compiler remains.
+`compile_sources` is native only. Its 5 former command test contracts run in
+`tests/compiler_cli_retirement.rs`, with exact status, output, no-write and index
+selection checks. Its 31 remaining compiler contracts run in `tests/foundation.rs`,
+`tests/compiler_retirement.rs` and private formula tests, including exact refusals,
+index text and inline idempotency. The shared Python argument parser now belongs
+to `verify_sources`; its original test follows it. All 10 unrelated comparison
+tests remain. The obsolete Python compiler import lifecycle test is retired.
 Generated headers retain historical Python filenames to preserve published bytes.
 The workbook retains its native Excel formulas and ordinary `.xlsx` format.
 

@@ -119,7 +119,7 @@ corrected statements are also typed into label and description cells that no for
 feeds, so it rewrites those shared strings too. The rate and date helpers pass runs
 after it: it adds 4 functions (`oz.PeriodRateλ`, `oz.AnnualRateλ`,
 `oz.DayCountRateλ` and `oz.DateDifλ`) on the same pattern as the AASB 16 pass, except
-that it renders the stored forms through `compile_sources.py` rather than carrying a
+that it renders the stored forms through the shared native compiler rather than carrying a
 renderer of its own. The working-capital days pass follows it on the same pattern: it adds 4 ratio
 functions (`oz.ReceivableDaysλ`, `oz.PayableDaysλ`, `oz.WIPDaysλ` and
 `oz.CashConversionCycleλ`) and their rows in the Ratios About table. The ATO benchmark

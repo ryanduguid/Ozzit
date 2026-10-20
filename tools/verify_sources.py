@@ -103,6 +103,32 @@ def read_string(text: str, i: int) -> tuple[str, int]:
     return "".join(lit), i
 
 
+def arguments(text: str, start: int) -> list[str]:
+    """The top-level arguments of a call whose opening bracket ends at start."""
+    out, buf, depth, i, n = [], [], 0, start, len(text)
+    while i < n:
+        char = text[i]
+        if char == '"':
+            lit, i = read_string(text, i)
+            buf.append(lit)
+            continue
+        if char in "({[":
+            depth += 1
+        elif char in ")}]":
+            if depth == 0:
+                break
+            depth -= 1
+        elif char == "," and depth == 0:
+            out.append("".join(buf))
+            buf = []
+            i += 1
+            continue
+        buf.append(char)
+        i += 1
+    out.append("".join(buf))
+    return out
+
+
 def statements(text: str) -> list[str]:
     """Split a module into top-level statements, honouring strings and comments."""
     out, buf, depth = [], [], 0

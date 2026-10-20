@@ -36,8 +36,8 @@ import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from compile_sources import arguments, read_string  # noqa: E402
 from sanitise_workbook import column_number  # noqa: E402
+from verify_sources import arguments, read_string  # noqa: E402
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")

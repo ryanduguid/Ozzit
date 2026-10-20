@@ -1,12 +1,9 @@
-"""Refusal and edge paths of the compiler and
-the pyxirr comparison, on small fixture sources and workbooks built in a temporary tree.
+"""Shared argument parsing and pyxirr comparison refusal paths on owned fixtures.
 """
 
 import hashlib
 import io
 import json
-import re
-import runpy
 import shutil
 import sys
 import tempfile
@@ -19,36 +16,9 @@ from unittest import mock
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
-import compile_sources  # noqa: E402
 import pyxirr_comparison as comparison  # noqa: E402
-
-ROOT = TOOLS.parent
-WORKBOOK = ROOT / "ozzit.xlsx"
-INDEX = ROOT / "functions.csv"
-
-
-def header(bare: str, description: str) -> str:
-    return f"/*  FUNCTION NAME:  {bare}\n    DESCRIPTION:*//**{description}*/\n"
-
-
-def write_src(directory: Path, overrides: dict[str, str] | None = None) -> Path:
-    """One small declaration per module, each under its header, unless overridden."""
-    directory.mkdir(parents=True, exist_ok=True)
-    for module in compile_sources.MODULES:
-        bare = f"{module}λ"
-        default = header(bare, f"The {module} sample") + f"{bare} = LAMBDA([x], x + 1);\n"
-        (directory / f"{module}.txt").write_text((overrides or {}).get(module, default),
-                                                 encoding="utf-8")
-    return directory
-
-
-
-
-def reimport_without_reconfigure(script: str) -> tuple[dict, str]:
-    """Run a tool's module code with a stdout that has no reconfigure(), as a pipe can be."""
-    with redirect_stdout(io.StringIO()) as printed:
-        namespace = runpy.run_path(str(TOOLS / script), run_name="reimported")
-    return namespace, printed.getvalue()
+import sanitise_workbook  # noqa: E402
+import verify_sources  # noqa: E402
 
 
 class ScratchTestCase(unittest.TestCase):
@@ -59,111 +29,19 @@ class ScratchTestCase(unittest.TestCase):
         shutil.rmtree(self.directory, ignore_errors=True)
 
 
-class ImportWithoutReconfigureTests(unittest.TestCase):
-    def test_tools_import_when_stdout_cannot_be_reconfigured(self):
-        for script, name in [("compile_sources.py", "NAME_LIMIT")]:
-            with self.subTest(script=script):
-                namespace, printed = reimport_without_reconfigure(script)
-                self.assertIn(name, namespace)
-                self.assertEqual(printed, "")
-
-
 class CompileReadingTests(unittest.TestCase):
-    def test_line_and_block_comments_are_dropped_and_an_open_block_ends_the_text(self):
-        self.assertEqual(compile_sources.strip_comments('a // note\nb /* x */ c "//kept" /* open'),
-                         'a \nb  c "//kept" ')
-
     def test_arguments_of_an_unclosed_call_run_to_the_end(self):
-        self.assertEqual(compile_sources.arguments("x, (y, z), w", 0), ["x", " (y, z)", " w"])
+        self.assertEqual(verify_sources.arguments("x, (y, z), w", 0), ["x", " (y, z)", " w"])
 
-    def test_implicit_intersection_tolerates_spacing_and_an_unclosed_call(self):
-        self.assertEqual(compile_sources.unwrap_at("@ First + 1"), "SINGLE(First) + 1")
-        self.assertEqual(compile_sources.unwrap_at("@INDEX (x, 1)"), "SINGLE(INDEX (x, 1))")
-        self.assertEqual(compile_sources.unwrap_at("@INDEX(x"), "SINGLE(INDEX(x)")
+    def test_literals_and_nested_arrays_keep_their_commas(self):
+        self.assertEqual(verify_sources.arguments('x, "a,b", [y,z], {1,2})tail', 0),
+                         ['x', ' "a,b"', ' [y,z]', ' {1,2}'])
 
-    def test_implicit_intersection_without_a_name_is_refused(self):
-        with self.assertRaisesRegex(ValueError, re.escape("@ is not followed by a name: '@1 + x'")):
-            compile_sources.unwrap_at("@1 + x")
-
-    def test_a_qualified_library_call_is_kept(self):
-        self.assertEqual(compile_sources.render("LAMBDA([x], oz.Otherλ(x))", {"Otherλ"}),
-                         "_xlfn.LAMBDA(_xlop.x, oz.Otherλ(_xlpm.x))")
-
-    def test_an_unknown_call_is_refused(self):
-        with self.assertRaisesRegex(ValueError, "^Mystery reached the stored form without a marker"):
-            compile_sources.render("LAMBDA([x], Mystery(x))", {"Otherλ"})
-
-
-class CompileSourcesTests(ScratchTestCase):
-    def test_a_missing_module_is_refused(self):
-        with self.assertRaises(ValueError) as failure:
-            compile_sources.compile_sources(self.directory)
-        self.assertEqual(str(failure.exception),
-                         f"missing source module {self.directory / 'Dates.txt'}")
-
-    def test_statements_that_are_not_declarations_are_skipped(self):
-        src = write_src(self.directory / "src", {
-            "Dates": header("Datesλ", "The Dates sample") + "Datesλ = LAMBDA([x], x + 1);\nBROKEN;\n",
-        })
-        compiled = compile_sources.compile_sources(src)
-        self.assertEqual([c.name for c in compiled], [f"oz.{m}λ" for m in compile_sources.MODULES])
-        self.assertEqual(compiled[0].stored, "_xlfn.LAMBDA(_xlop.x, _xlpm.x + 1)")
-
-    def test_a_declaration_without_its_header_is_refused(self):
-        src = write_src(self.directory / "src", {"Dates": "Datesλ = LAMBDA([x], x);\n"})
-        with self.assertRaisesRegex(ValueError, "^Datesλ: no FUNCTION NAME / DESCRIPTION header "
-                                                "in Dates.txt$"):
-            compile_sources.compile_sources(src)
-
-    def test_a_rendering_failure_names_the_function(self):
-        src = write_src(self.directory / "src", {
-            "Dates": header("Datesλ", "d") + "Datesλ = LAMBDA([x], Mystery(x));\n",
-        })
-        with self.assertRaisesRegex(ValueError, "^Datesλ: Mystery reached the stored form"):
-            compile_sources.compile_sources(src)
-
-    def test_a_definition_over_excels_name_limit_is_refused(self):
-        literal = "a" * 9000
-        src = write_src(self.directory / "src", {
-            "Dates": header("Datesλ", "d") + f'Datesλ = LAMBDA([x], "{literal}");\n',
-        })
-        stored = f'_xlfn.LAMBDA(_xlop.x,"{literal}")'
-        with self.assertRaises(ValueError) as failure:
-            compile_sources.compile_sources(src)
-        self.assertEqual(str(failure.exception),
-                         f"Datesλ: the stored definition is {len(stored)} characters and Excel "
-                         "refuses to open a workbook with a defined name over 8192")
-
-    def test_a_binding_that_shadows_a_library_function_does_not_reproduce_its_source(self):
-        # qualify() reads Essentialsλ( as the library call; the renderer stores the binding.
-        src = write_src(self.directory / "src", {
-            "Dates": header("Datesλ", "d")
-            + "Datesλ = LAMBDA([x], LET(Essentialsλ, LAMBDA(y, y), Essentialsλ(x)));\n",
-        })
-        with self.assertRaises(ValueError) as failure:
-            compile_sources.compile_sources(src)
-        message = str(failure.exception)
-        self.assertRegex(message, r"^Datesλ: the rendering does not reproduce its source "
-                                  r"at character \d+\n  src   : .*OZ\.ESSENTIALSΛ\(X\)")
-        self.assertIn("\n  stored: ", message)
-
-
-class CompileWorkbookTests(ScratchTestCase):
-    def test_a_shipped_name_missing_from_src_is_refused(self):
-        book = '<definedName name="oz.Goneλ">1</definedName>'
-        with self.assertRaisesRegex(ValueError, "^oz.Goneλ ship in the workbook but are not "
-                                                "declared in src/$"):
-            compile_sources.apply(book, [])
-
-    def test_an_index_with_other_columns_is_refused(self):
-        index = self.directory / "functions.csv"
-        index.write_text("function,module\noz.Datesλ,Dates\n", encoding="utf-8")
-        with self.assertRaises(ValueError) as failure:
-            compile_sources.render_index(index, "", {})
-        self.assertEqual(str(failure.exception),
-                         f"{index} has unexpected columns: ['function', 'module']")
-
-
+    def test_raw_text_helper_preserves_utf8_and_physical_newlines(self):
+        with tempfile.TemporaryDirectory(prefix="ozzit-text-") as directory:
+            path = Path(directory) / "module.txt"
+            path.write_bytes("λ\r\nsecond\rthird\n".encode("utf-8"))
+            self.assertEqual(sanitise_workbook.read_text(path), "λ\r\nsecond\rthird\n")
 
 
 class FakeFinance:
