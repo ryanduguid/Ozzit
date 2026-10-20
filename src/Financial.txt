@@ -2490,13 +2490,13 @@ Varianceλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →Varianceλ(Actual, Budget, [Type])¶" &
                             "DESCRIPTION:   →Actual less budget, signed so a favourable variance is positive for income and expense lines alike.¶" &
-                            "NOTES!         →Type 1 marks income, where an actual above budget is favourable; -1 marks an¶               →expense, where an actual below budget is favourable. Enter expenses as positive¶               →costs: for a ledger that stores them as negative balances, negate both amounts¶               →first. Give one Type for all lines or a column of them, one for each row. Actual¶               →and Budget must be the same shape and hold numbers or blank cells, which count as¶               →0; text and TRUE or FALSE return a message. Budget may also be a prior period.¶               →VariancePctλ() gives the percentage.¶" &
+                            "NOTES!         →Type 1 marks income, where an actual above budget is favourable; -1 marks an¶               →expense, where an actual below budget is favourable. Enter expenses as positive¶               →costs: for a ledger that stores them as negative balances, negate both amounts¶               →first. Give one Type for all lines, one for each row or one for each cell. Actual¶               →and Budget must be the same shape and hold numbers or blank cells, which count as¶               →0; text and TRUE or FALSE return a message. Budget may also be a prior period.¶               →VariancePctλ() gives the percentage.¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
                             "VERSION:       →20 Oct 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Actual         →(Required) One or more actual amounts.¶" &
                             "Budget         →(Required) The budget or comparison amounts, the same shape as Actual.¶" &
-                            "Type           →(Optional: Default = 1) 1 for income or -1 for an expense recorded as a positive cost, one value or one for each row.¶" &
+                            "Type           →(Optional: Default = 1) 1 for income or -1 for an expense recorded as a positive cost: one value, one for each row or one for each cell.¶" &
                             "EXAMPLES:      →¶" &
                             "→Formula (oz is assumed to be the module's name)¶" &
                             "→=oz.Varianceλ({120;90}, {100;100}, {1;-1})¶" &
@@ -2521,7 +2521,7 @@ Varianceλ = LAMBDA(
     //  ABS(TRUE) is 1, so the type test is ISNUMBER as well as the size
         ValidType?,     AND(IFERROR(ISNUMBER(Sign) * (ABS(Sign) = 1) = 1, FALSE)),
         AmountMessage,  "Varianceλ needs Actual and Budget to hold numbers or blank cells; text and TRUE or FALSE are refused.",
-        ShapeMessage,   "Varianceλ needs Actual and Budget of the same shape, and Type as one value or one for each row.",
+        ShapeMessage,   "Varianceλ needs Actual and Budget of the same shape, and Type as one value, one for each row or one for each cell.",
         TypeMessage,    "Varianceλ needs Type to be 1 for income or -1 for an expense in every entry.",
         Result,         (Actual - Budget) * Sign,
     //  Return Result, Help or the message
@@ -2550,7 +2550,7 @@ VariancePctλ = LAMBDA(
                             "PARAMETERS:    →¶" &
                             "Actual         →(Required) One or more actual amounts.¶" &
                             "Budget         →(Required) The budget or comparison amounts, the same shape as Actual.¶" &
-                            "Type           →(Optional: Default = 1) 1 for income or -1 for an expense recorded as a positive cost, one value or one for each row.¶" &
+                            "Type           →(Optional: Default = 1) 1 for income or -1 for an expense recorded as a positive cost: one value, one for each row or one for each cell.¶" &
                             "EXAMPLES:      →¶" &
                             "→Formula (oz is assumed to be the module's name)¶" &
                             "→=oz.VariancePctλ(-30, -20)¶" &
@@ -2571,7 +2571,7 @@ VariancePctλ = LAMBDA(
                                 AND(ROWS(Sign) = Rows, OR(COLUMNS(Sign) = 1, COLUMNS(Sign) = Cols)))),
         ValidType?,     AND(IFERROR(ISNUMBER(Sign) * (ABS(Sign) = 1) = 1, FALSE)),
         AmountMessage,  "VariancePctλ needs Actual and Budget to hold numbers or blank cells; text and TRUE or FALSE are refused.",
-        ShapeMessage,   "VariancePctλ needs Actual and Budget of the same shape, and Type as one value or one for each row.",
+        ShapeMessage,   "VariancePctλ needs Actual and Budget of the same shape, and Type as one value, one for each row or one for each cell.",
         TypeMessage,    "VariancePctλ needs Type to be 1 for income or -1 for an expense in every entry.",
     //  Dividing by the budget itself would flip the sign when the budget is negative
         Result,         (Actual - Budget) * Sign / ABS(Budget),

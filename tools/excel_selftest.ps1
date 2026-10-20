@@ -1066,6 +1066,11 @@ Near 'YearToDate: an error in an earlier column'    "ERROR.TYPE($ytd(HSTACK(NA()
 Near 'YearToDate: a time of day is ignored'         "$ytd({10,20}, DATE(2026,8,31) + {0,0.5}, DATE(2026,8,31))" '30'
 Near 'YearToDate: a year before 1900 is #NUM!'      "ERROR.TYPE($ytd({10,20}, DATE(1900,{1,6},1), DATE(1900,6,30)))" '6' '0.1'
 Near 'YearToDate: a 1900 calendar year'             "$ytd({10,20}, DATE(1900,{1,6},1), DATE(1900,6,30), 1)" '30'
+Near 'Variance: a block of blank cells is 0'       "SUMPRODUCT(ABS($var(Z1:AA2, {100,100;100,100}) + 100))" '0'
+Near 'YearToDate: blank and numbers in a block'     "SUMPRODUCT(ABS($ytd(HSTACK(Z1:Z2, {20;30}), DATE(2026,{7,8},1), DATE(2026,8,31)) - {20;30}))" '0'
+Near 'FinancialMonth: text StartMonth is refused'   "--ISNUMBER(SEARCH(`"1 to 12`", $fmo(DATE(2026,7,1), `"7`")))" '1'
+Near 'FinancialQuarter: TRUE StartMonth refused'    "--ISNUMBER(SEARCH(`"1 to 12`", $fqu(DATE(2026,7,1), TRUE)))" '1'
+Near 'YearToDate: StartMonth 7.5 is refused'        "--ISNUMBER(SEARCH(`"1 to 12`", $ytd({10,20}, DATE(2026,{7,8},1), DATE(2026,8,31), 7.5)))" '1'
 
 # --- Randomised checks. Each trial draws fresh inputs, compares the function with an
 # independent Excel formula and, on a miss, reports the inputs that produced it so the
