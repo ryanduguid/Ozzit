@@ -48,7 +48,7 @@ The workbook tracked in this repository is the candidate the gates below run aga
    `tools/compile_sources.py` renders it into the stored form and writes it over the
    defined name that ships, `ozzit build_module` rebuilds `oz.txt`,
    `ozzit sync_afe_store` copies the source into the workbook's AFE store, and
-   `tools/sanitise_workbook.py` runs last.
+   `ozzit sanitise_workbook` runs last.
 
    Imported names can collide with names a workbook already holds, and a module
    import brings every function at once. Try the import in a blank workbook first,

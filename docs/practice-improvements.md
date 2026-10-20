@@ -146,7 +146,7 @@ Excel session is open. Rebuild in this order:
 ```powershell
 node tools/build_practice_calculators.mjs
 powershell.exe -NoProfile -File tools/prepare_practice_template.ps1
-python tools/sanitise_workbook.py templates/practice-calculators.xlsx
+tools/ozzit/target/release/ozzit sanitise_workbook templates/practice-calculators.xlsx
 powershell.exe -NoProfile -File tools/excel_practice_selftest.ps1 -Out docs/practice-native-evidence.json
 ```
 

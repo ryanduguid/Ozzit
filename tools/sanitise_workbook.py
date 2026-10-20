@@ -1,67 +1,18 @@
-"""Strip the parts Excel adds on save and rebuild the zip deterministically.
+"""Shared text and archive helpers for remaining Python compiler and gate callers.
 
-Saving a workbook through Excel (a COM script, or a manual open and save)
-adds parts that do not belong in a distributed file:
-
-- one xl/printerSettings/printerSettingsN.bin per worksheet, pinned to the
-  printer installed where the save happened,
-- <x15ac:absPath> in xl/workbook.xml, recording the directory the file was
-  saved from,
-- ca="1"/aca="1" always-calculate flags on cells that compute nothing
-  volatile,
-- an xl/worksheets/_rels/sheetN.xml.rels left empty for any worksheet whose
-  only relationship was its printer settings,
-- a [Content_Types].xml rewritten so the .bin default points at printer
-  settings and every customProperty*.bin gets its own Override,
-- the account name of whoever saved, the save time, the size and position of
-  the Excel window and the build of Excel that wrote the file: none of it
-  describes the workbook, and every one of them differs between two saves of
-  the same content on 2 machines,
-- _xlfn._LONGTEXT("...","...") in a defined name, which is how Excel stores a
-  string literal longer than 255 characters when it saves. It reads the plain
-  literal back without complaint, and src/, the AFE store and every gate hold
-  the plain literal, so the split is folded back into one string.
-
-All of it is removed or pinned here and the archive is rewritten sorted, at a
-fixed timestamp, at deflate level 9, so 2 saves of the same content produce
-the same bytes. The modified stamp is pinned to the archive date rather than
-kept, because a save time that changes on every save is exactly what makes 2
-saves differ; the release evidence carries the real dates. verify_workbook.py fails the file on absPath or a stray
-always-calculate flag regardless; this tool exists so a save through Excel
-does not have to be reverted.
-
-Run after any edit session that ended in an Excel save:
-
-    python tools/sanitise_workbook.py ozzit.xlsx
-
-Then re-run the verify gates, and open the result in Excel once: zip surgery
-can pass the gates while Excel still objects to the file.
+The workbook sanitise pass is native: run ozzit sanitise_workbook workbook.xlsx.
 """
 
 from __future__ import annotations
 
 import io
 import os
-import re
 import stat
-import sys
 import tempfile
 import zipfile
 from pathlib import Path
 
-CUSTOMPROP_CT = (
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.customProperty"
-)
 FIXED_DATE = (2026, 1, 1, 0, 0, 0)
-FIXED_STAMP = "%04d-%02d-%02dT%02d:%02d:%02dZ" % FIXED_DATE
-# The Excel window every save records: maximised at the origin, a common size.
-FIXED_WINDOW = 'xWindow="0" yWindow="0" windowWidth="28800" windowHeight="16000"'
-CELL_RE = re.compile(r"<c\b(?:(?!</c>|<c\b).)*?</c>|<c\b[^>]*/>", re.DOTALL)
-EMPTY_RELS = re.compile(rb"<Relationships[^>]*>\s*</Relationships>")
-# Excel's own split of a string literal over 255 characters: 2 or more literals
-# inside _xlfn._LONGTEXT(...). Quotes are unescaped in xl/workbook.xml element text.
-LONGTEXT = re.compile(r'_xlfn\._LONGTEXT\(("(?:[^"]|"")*"(?:,"(?:[^"]|"")*")+)\)')
-LITERAL = re.compile(r'"((?:[^"]|"")*)"')
 
 
 def column_number(letters: str) -> int:
@@ -82,11 +33,6 @@ def read_text(path: Path) -> str:
 def write_text(path: Path, text: str) -> None:
     """Write UTF-8 text atomically, line endings left exactly as they are."""
     replace_atomically(path, text.encode("utf-8"))
-
-
-def fold_longtext(text: str) -> tuple[str, int]:
-    """Join each _xlfn._LONGTEXT("a","b") back into "ab"; return the text and the count."""
-    return LONGTEXT.subn(lambda m: '"' + "".join(LITERAL.findall(m.group(1))) + '"', text)
 
 
 def deterministic_bytes(parts: dict[str, bytes]) -> bytes:
@@ -138,189 +84,3 @@ def replace_atomically(workbook: Path, data: bytes) -> None:
 def write_deterministic(workbook: Path, parts: dict[str, bytes]) -> None:
     """Atomically replace workbook with its canonical archive."""
     replace_atomically(workbook, deterministic_bytes(parts))
-
-
-def sanitise(workbook: Path) -> list[str]:
-    parts: dict[str, bytes] = {}
-    with zipfile.ZipFile(workbook) as z:
-        for n in z.namelist():
-            parts[n] = z.read(n)
-
-    log: list[str] = []
-
-    # Printer settings: parts, then the relationships, then the pageSetup
-    # attributes that referenced them.
-    ps = [n for n in parts if n.startswith("xl/printerSettings/")]
-    for n in ps:
-        del parts[n]
-    if ps:
-        log.append(f"removed {len(ps)} printerSettings parts")
-
-    for name in [n for n in parts if n.endswith(".rels")]:
-        txt = parts[name].decode("utf-8")
-        new = re.sub(
-            # Bounded input: each attempt stays within one tag of the repository's own workbook XML.
-            r'<Relationship[^>]*Target="[^"]*printerSettings[^"]*"[^>]*/>',  # NOSONAR
-            "",
-            txt,
-        )
-        if new != txt:
-            parts[name] = new.encode("utf-8")
-
-    sheets = [n for n in parts if n.startswith("xl/worksheets/sheet")]
-    cleared = 0
-    for name in sheets:
-        txt = parts[name].decode("utf-8")
-        if "r:id=" not in txt:
-            continue
-        # Bounded input: each attempt stays within one tag of the repository's own workbook XML.
-        new = re.sub(r'(<pageSetup\b[^>]*?)\s+r:id="[^"]*"', r"\1", txt)  # NOSONAR
-        if new != txt:
-            parts[name] = new.encode("utf-8")
-            cleared += 1
-    if cleared:
-        log.append(f"cleared pageSetup r:id on {cleared} sheets")
-
-    # Content types: printer Overrides gone, .bin default back at custom
-    # properties, per-part customProperty Overrides dropped.
-    ct = parts["[Content_Types].xml"].decode("utf-8")
-    before = len(ct)
-    ct = re.sub(
-        # Bounded input: each attempt stays within one tag of the repository's own workbook XML.
-        r'<Override[^>]*PartName="/xl/printerSettings/[^"]*"[^>]*/>', "", ct  # NOSONAR
-    )
-    if '<Default Extension="bin"' in ct:
-        ct = re.sub(
-            r'<Default Extension="bin"[^>]*/>',
-            f'<Default Extension="bin" ContentType="{CUSTOMPROP_CT}"/>',
-            ct,
-        )
-        ct = re.sub(
-            # Bounded input: each attempt stays within one tag of the repository's own workbook XML.
-            r'<Override[^>]*PartName="/xl/customProperty\d+\.bin"[^>]*/>',  # NOSONAR
-            "",
-            ct,
-        )
-    parts["[Content_Types].xml"] = ct.encode("utf-8")
-    if len(ct) != before:
-        log.append(f"[Content_Types].xml {before} -> {len(ct)} bytes")
-
-    # The save path.
-    wb = parts["xl/workbook.xml"].decode("utf-8")
-    wb, n_abs = re.subn(r"<x15ac:absPath[^>]*/>", "", wb)
-    if n_abs:
-        wb = re.sub(
-            r"<mc:AlternateContent[^>]*>\s*<mc:Choice[^>]*>\s*</mc:Choice>"
-            r"\s*</mc:AlternateContent>",
-            "",
-            wb,
-        )
-        parts["xl/workbook.xml"] = wb.encode("utf-8")
-        log.append(f"removed {n_abs} x15ac:absPath")
-
-    # Long string literals Excel split on save.
-    wb = parts["xl/workbook.xml"].decode("utf-8")
-    wb, folded = fold_longtext(wb)
-    if folded:
-        parts["xl/workbook.xml"] = wb.encode("utf-8")
-        log.append(f"folded {folded} _LONGTEXT literal(s) in defined names")
-
-    # Always-calculate flags belong on CELL() formulas and nowhere else.
-    total_ca = 0
-    for name in sheets:
-        txt = parts[name].decode("utf-8")
-        if 'ca="1"' not in txt and 'aca="1"' not in txt:
-            continue
-        hits = 0
-
-        def scrub(m: re.Match) -> str:
-            nonlocal hits
-            cell = m.group(0)
-            if "CELL(" in cell:
-                return cell
-            if 'ca="1"' not in cell and 'aca="1"' not in cell:
-                return cell
-            hits += 1
-            return cell.replace(' aca="1"', "").replace(' ca="1"', "")
-
-        new = CELL_RE.sub(scrub, txt)
-        if hits:
-            parts[name] = new.encode("utf-8")
-            total_ca += hits
-    if total_ca:
-        log.append(f"cleared always-calculate flags on {total_ca} cells")
-
-    # Session state: who saved, when, from what window, with which build.
-    session = 0
-    core = parts["docProps/core.xml"].decode("utf-8")
-    # The last editor becomes the creator when the file names one and is dropped
-    # when it does not; the save time is pinned either way.
-    creator = re.search(r"<dc:creator>([^<]*)</dc:creator>", core)
-    editor = f"<cp:lastModifiedBy>{creator.group(1)}</cp:lastModifiedBy>" if creator else ""
-    new_core = re.sub(r"<cp:lastModifiedBy>[^<]*</cp:lastModifiedBy>", lambda _m: editor, core)
-    new_core = re.sub(
-        r'(<dcterms:modified xsi:type="dcterms:W3CDTF">)[^<]*(</dcterms:modified>)',
-        rf"\g<1>{FIXED_STAMP}\2",
-        new_core,
-    )
-    if new_core != core:
-        parts["docProps/core.xml"] = new_core.encode("utf-8")
-        session += 1
-    wb = parts["xl/workbook.xml"].decode("utf-8")
-    new_wb = re.sub(r"<xr:revisionPtr\b[^>]*/>", "", wb)
-    new_wb = re.sub(
-        r'<workbookView\b[^>]*>',
-        lambda m: re.sub(
-            # Bounded input: each attempt stays within one tag of the repository's own workbook XML.
-            r'\s+(?:xWindow|yWindow|windowWidth|windowHeight)="[^"]*"', "", m.group(0)  # NOSONAR
-        ).replace("<workbookView", "<workbookView " + FIXED_WINDOW, 1),
-        new_wb,
-        count=1,
-    )
-    # Bounded input: each attempt stays within one tag of the repository's own workbook XML.
-    new_wb = re.sub(r'(<fileVersion\b[^>]*?)\s+rupBuild="[^"]*"', r"\1", new_wb)  # NOSONAR
-    if new_wb != wb:
-        parts["xl/workbook.xml"] = new_wb.encode("utf-8")
-        session += 1
-    if session:
-        log.append(f"pinned session state in {session} part(s)")
-
-    # Rels parts with nothing left in them.
-    empty = [
-        n
-        for n, b in parts.items()
-        if n.startswith("xl/worksheets/_rels/") and EMPTY_RELS.search(b)
-    ]
-    for n in empty:
-        del parts[n]
-    if empty:
-        log.append(f"dropped {len(empty)} empty worksheet rels")
-
-    canonical = deterministic_bytes(parts)
-    # Build tool; the path is the repository's own file or the maintainer's argument.
-    if not log and workbook.read_bytes() == canonical:  # NOSONAR
-        return ["already clean"]
-    if not log:
-        log.append("canonicalised archive metadata and compression")
-
-    replace_atomically(workbook, canonical)
-    return log
-
-
-def main() -> None:
-    if len(sys.argv) != 2:
-        sys.exit("FAIL: usage: python tools/sanitise_workbook.py ozzit.xlsx")
-    workbook = Path(sys.argv[1])
-    if not workbook.is_file():
-        sys.exit(f"FAIL: no such workbook: {workbook}")
-    try:
-        log = sanitise(workbook)
-    except (OSError, KeyError, UnicodeDecodeError, zipfile.BadZipFile) as exc:
-        sys.exit(f"FAIL: cannot sanitise {workbook}: {exc}")
-    for line in log:
-        print(line)
-    print(f"OK: {workbook} sanitised, {workbook.stat().st_size:,} bytes")
-
-
-if __name__ == "__main__":
-    main()

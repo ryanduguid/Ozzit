@@ -2,6 +2,11 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+The Python `sanitise_workbook` pass and command are retired. Rust retains all
+14 former test contracts, including complete part restoration, ZIP metadata,
+long literals, session and printer residue, exact command output and repeat-run
+bytes. The 33-case replay, 7 shared Python helpers and 18 unrelated tests remain.
+
 `polish_workbook.py` is retired. Rust retains its 13 former test contracts,
 including exact presentation edits, guard diagnostics, absolute and relative
 sheet targets and dedicated and inline idempotency checks. The frozen 31-case

@@ -1,7 +1,6 @@
 """Malformed workbook and interrupted postbuild regression checks."""
 
 import base64
-import re
 import shutil
 import subprocess
 import sys
@@ -93,19 +92,3 @@ class ReviewRegressionTests(unittest.TestCase):
         result = self.verify()
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('unbalanced parentheses in fixture', result.stdout)
-
-
-
-    def test_window_geometry_is_replaced_after_unrelated_attributes(self):
-        book = self.parts['xl/workbook.xml'].decode()
-        book = re.sub(r'<workbookView\b[^>]*/>',
-                      '<workbookView visibility="visible" xWindow="99" yWindow="88" windowWidth="1" windowHeight="2"/>', book)
-        self.parts['xl/workbook.xml'] = book.encode()
-        sanitise_workbook.write_deterministic(self.book, self.parts)
-        sanitise_workbook.sanitise(self.book)
-        with zipfile.ZipFile(self.book) as archive:
-            book = archive.read('xl/workbook.xml').decode()
-        view = re.search(r'<workbookView\b[^>]*/>', book).group()
-        self.assertEqual(view.count('xWindow='), 1)
-        self.assertIn('visibility="visible"', view)
-        self.assertIn(sanitise_workbook.FIXED_WINDOW, view)

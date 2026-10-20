@@ -1,8 +1,6 @@
 import os
-import re
 import shutil
 import stat
-import subprocess
 import sys
 import tempfile
 import unittest
@@ -33,57 +31,6 @@ class WorkbookToolTests(unittest.TestCase):
         with zipfile.ZipFile(self.workbook) as z:
             return {name: z.read(name) for name in z.namelist()}
 
-    def _rewrite(self, parts):
-        with zipfile.ZipFile(self.workbook, "w", zipfile.ZIP_DEFLATED) as z:
-            for name, data in parts.items():
-                z.writestr(name, data)
-
-    def test_canonical_clean_workbook_is_byte_identical(self):
-        sanitise_workbook.write_deterministic(self.workbook, self._parts())
-        before = self.workbook.read_bytes()
-        self.assertEqual(sanitise_workbook.sanitise(self.workbook), ["already clean"])
-        self.assertEqual(self.workbook.read_bytes(), before)
-
-    def test_clean_noncanonical_workbook_is_repacked(self):
-        self._rewrite(self._parts())
-        before = self.workbook.read_bytes()
-        log = sanitise_workbook.sanitise(self.workbook)
-        self.assertIn("canonicalised archive metadata and compression", log)
-        self.assertNotEqual(self.workbook.read_bytes(), before)
-        with zipfile.ZipFile(self.workbook) as archive:
-            self.assertEqual(archive.namelist(), sorted(archive.namelist()))
-            self.assertTrue(
-                all(
-                    info.date_time == sanitise_workbook.FIXED_DATE
-                    and info.create_system == 3
-                    and (info.external_attr >> 16) == 0o644
-                    for info in archive.infolist()
-                )
-            )
-
-    def test_long_literal_split_by_an_excel_save_is_folded_back(self):
-        # Excel stores a string literal over 255 characters as
-        # _xlfn._LONGTEXT("...","...") when it saves; the 6 September 2026 cache
-        # refresh rewrote 6 defined names that way and verify_sources.py then
-        # rejected the workbook. The sanitiser puts the plain literal back.
-        parts = self._parts()
-        expected_parts = dict(parts)
-        book = parts["xl/workbook.xml"].decode("utf-8")
-        literal = max(sanitise_workbook.LITERAL.findall(book), key=len)
-        self.assertGreater(len(literal), 255, "precondition: a literal Excel would split")
-        cut = len(literal) // 2
-        split = '_xlfn._LONGTEXT("%s","%s")' % (literal[:cut], literal[cut:])
-        self.assertEqual(book.count('"' + literal + '"'), 1)
-        parts["xl/workbook.xml"] = book.replace('"' + literal + '"', split, 1).encode("utf-8")
-        sanitise_workbook.write_deterministic(self.workbook, parts)
-        self.assertNotEqual(self.workbook.read_bytes(), WORKBOOK.read_bytes())
-
-        log = sanitise_workbook.sanitise(self.workbook)
-
-        self.assertIn("folded 1 _LONGTEXT literal(s) in defined names", log)
-        self.assertEqual(self._parts(), expected_parts)
-        self.assertEqual(sanitise_workbook.fold_longtext('_xlfn._LONGTEXT("a""b","c")'), ('"a""bc"', 1))
-        self.assertEqual(sanitise_workbook.fold_longtext('"plain"'), ('"plain"', 0))
 
     def test_privacy_gate_matches_real_windows_user_path(self):
         self.assertIsNotNone(
@@ -101,126 +48,6 @@ class WorkbookToolTests(unittest.TestCase):
             verify_workbook.failures,
         )
 
-    def test_cell_match_covers_shared_formula_follower_to_end_tag(self):
-        cell = (
-            '<c ca="1" r="A31" s="121" t="str">'
-            '<f t="shared" si="0"/><v>Town Hall</v></c>'
-        )
-        self.assertEqual(sanitise_workbook.CELL_RE.search(cell).group(0), cell)
-
-    def test_strips_printer_settings_and_writes_deterministically(self):
-        parts = self._parts()
-        printer = "xl/printerSettings/printerSettings99.bin"
-        parts[printer] = b"printer-specific bytes"
-
-        rels = "xl/worksheets/_rels/sheet2.xml.rels"
-        parts[rels] = (
-            b'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-            b'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
-            b'<Relationship Id="rId99" '
-            b'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/printerSettings" '
-            b'Target="../printerSettings/printerSettings99.bin"/>'
-            b"</Relationships>"
-        )
-
-        sheet = "xl/worksheets/sheet2.xml"
-        text = parts[sheet].decode()
-        text = text.replace("<pageSetup ", '<pageSetup r:id="rId99" ', 1)
-        parts[sheet] = text.encode()
-        self._rewrite(parts)
-
-        log = sanitise_workbook.sanitise(self.workbook)
-        self.assertIn("removed 1 printerSettings parts", log)
-        self.assertIn("cleared pageSetup r:id on 1 sheets", log)
-        self.assertIn("dropped 1 empty worksheet rels", log)
-
-        with zipfile.ZipFile(self.workbook) as z:
-            self.assertEqual(z.namelist(), sorted(z.namelist()))
-            self.assertTrue(
-                all(
-                    info.date_time == sanitise_workbook.FIXED_DATE
-                    for info in z.infolist()
-                )
-            )
-            self.assertNotIn(printer, z.namelist())
-            self.assertNotIn(rels, z.namelist())
-            self.assertNotIn('r:id="rId99"', z.read(sheet).decode())
-
-        first = self.workbook.read_bytes()
-        self.assertEqual(sanitise_workbook.sanitise(self.workbook), ["already clean"])
-        self.assertEqual(self.workbook.read_bytes(), first)
-
-    def test_session_state_is_pinned_so_two_saves_agree(self):
-        parts = self._parts()
-        expected_parts = dict(parts)
-        core = parts["docProps/core.xml"].decode()
-        core = core.replace(
-            "<cp:lastModifiedBy>Ozzit project</cp:lastModifiedBy>",
-            "<cp:lastModifiedBy>Somebody Else</cp:lastModifiedBy>",
-        ).replace(
-            f"{sanitise_workbook.FIXED_STAMP}</dcterms:modified>",
-            "2026-09-01T10:11:12Z</dcterms:modified>",
-        )
-        self.assertIn("Somebody Else", core)
-        self.assertIn("2026-09-01T10:11:12Z", core)
-        parts["docProps/core.xml"] = core.encode()
-        book = parts["xl/workbook.xml"].decode()
-        book = book.replace(
-            f"<workbookView {sanitise_workbook.FIXED_WINDOW}",
-            '<workbookView xWindow="-120" yWindow="-120" windowWidth="51840" windowHeight="21120"',
-        ).replace(
-            '<fileVersion appName="xl" lastEdited="7" lowestEdited="7"/>',
-            '<fileVersion appName="xl" lastEdited="7" lowestEdited="7" rupBuild="30326"/>'
-            '<workbookPr codeName="ThisWorkbook"/><xr:revisionPtr revIDLastSave="0" '
-            'documentId="13_ncr:1_{9C5E2E38-D768-43F5-8346-A39F06CA7C63}" '
-            'xr6:coauthVersionLast="47" xr6:coauthVersionMax="47" '
-            'xr10:uidLastSave="{00000000-0000-0000-0000-000000000000}"/>',
-        ).replace('<workbookPr codeName="ThisWorkbook"/><bookViews>', "<bookViews>", 1)
-        self.assertIn("rupBuild", book)
-        self.assertIn("<xr:revisionPtr", book)
-        parts["xl/workbook.xml"] = book.encode()
-        self._rewrite(parts)
-
-        log = sanitise_workbook.sanitise(self.workbook)
-        self.assertIn("pinned session state in 2 part(s)", log)
-        after = self._parts()
-        core = after["docProps/core.xml"].decode()
-        self.assertIn("<cp:lastModifiedBy>Ozzit project</cp:lastModifiedBy>", core)
-        self.assertIn(f"{sanitise_workbook.FIXED_STAMP}</dcterms:modified>", core)
-        book = after["xl/workbook.xml"].decode()
-        self.assertNotIn("<xr:revisionPtr", book)
-        self.assertNotIn("rupBuild", book)
-        self.assertIn(f"<workbookView {sanitise_workbook.FIXED_WINDOW}", book)
-        self.assertEqual(after, expected_parts)
-        before_second_pass = self.workbook.read_bytes()
-        self.assertEqual(sanitise_workbook.sanitise(self.workbook), ["already clean"])
-        self.assertEqual(self.workbook.read_bytes(), before_second_pass)
-
-    def test_session_state_is_pinned_without_a_creator(self):
-        # dc:creator is optional; the saver's name and save time go regardless
-        parts = self._parts()
-        core = parts["docProps/core.xml"].decode()
-        creator = re.search(r"<dc:creator>[^<]*</dc:creator>", core)
-        self.assertIsNotNone(creator)
-        core = core.replace(creator.group(0), "").replace(
-            "<cp:lastModifiedBy>Ozzit project</cp:lastModifiedBy>",
-            "<cp:lastModifiedBy>Somebody Else</cp:lastModifiedBy>",
-        ).replace(
-            f"{sanitise_workbook.FIXED_STAMP}</dcterms:modified>",
-            "2026-09-01T10:11:12Z</dcterms:modified>",
-        )
-        self.assertIn("Somebody Else", core)
-        parts["docProps/core.xml"] = core.encode()
-        self._rewrite(parts)
-
-        log = sanitise_workbook.sanitise(self.workbook)
-        self.assertIn("pinned session state in 1 part(s)", log)
-        core = self._parts()["docProps/core.xml"].decode()
-        self.assertNotIn("Somebody Else", core)
-        self.assertNotIn("<cp:lastModifiedBy>", core)
-        self.assertNotIn("2026-09-01T10:11:12Z", core)
-        self.assertIn(f"{sanitise_workbook.FIXED_STAMP}</dcterms:modified>", core)
-        self.assertEqual(sanitise_workbook.sanitise(self.workbook), ["already clean"])
 
     def test_atomic_writer_preserves_original_and_cleans_temp_if_replace_fails(self):
         original = self.workbook.read_bytes()
@@ -369,32 +196,6 @@ class WorkbookToolTests(unittest.TestCase):
             self.assertTrue(
                 all((info.external_attr >> 16) == 0o644 for info in archive.infolist())
             )
-
-    def test_cli_reports_non_zip_input_without_traceback(self):
-        broken = self.directory / "broken.xlsx"
-        broken.write_text("not a zip", encoding="utf-8")
-        result = subprocess.run(
-            [sys.executable, str(TOOLS / "sanitise_workbook.py"), str(broken)],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        self.assertNotEqual(result.returncode, 0)
-        self.assertTrue(result.stderr.startswith("FAIL:"), result.stderr)
-        self.assertNotIn("Traceback", result.stderr)
-
-    def test_cli_reports_missing_input_without_traceback(self):
-        missing = self.directory / "missing.xlsx"
-        result = subprocess.run(
-            [sys.executable, str(TOOLS / "sanitise_workbook.py"), str(missing)],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        self.assertNotEqual(result.returncode, 0)
-        self.assertTrue(result.stderr.startswith("FAIL:"), result.stderr)
-        self.assertNotIn("Traceback", result.stderr)
-
 
 
 if __name__ == "__main__":

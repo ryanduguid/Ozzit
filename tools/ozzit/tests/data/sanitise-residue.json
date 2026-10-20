@@ -1,0 +1,14 @@
+{
+  "parts": {
+    "[Content_Types].xml": "<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"bin\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.printerSettings\"/><Default Extension=\"xml\" ContentType=\"application/xml\"/><Override PartName=\"/xl/customProperty1.bin\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.customProperty\"/></Types>",
+    "docProps/core.xml": "<cp:coreProperties><dc:creator>Ozzit project</dc:creator><cp:lastModifiedBy>Ozzit project</cp:lastModifiedBy><dcterms:modified xsi:type=\"dcterms:W3CDTF\">2026-01-01T00:00:00Z</dcterms:modified></cp:coreProperties>",
+    "xl/workbook.xml": "<workbook><mc:AlternateContent xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\"><mc:Choice Requires=\"x15\"><x15ac:absPath url=\"/home/saver/books/\" xmlns:x15ac=\"http://schemas.microsoft.com/office/spreadsheetml/2010/11/ac\"/></mc:Choice></mc:AlternateContent><bookViews><workbookView xWindow=\"0\" yWindow=\"0\" windowWidth=\"28800\" windowHeight=\"16000\"/></bookViews></workbook>",
+    "xl/worksheets/sheet1.xml": "<worksheet><sheetData><row><c r=\"A1\" ca=\"1\"><f>A2+1</f><v>2</v></c><c r=\"B1\" aca=\"1\" ca=\"1\"><f>A1*2</f><v>4</v></c><c r=\"C1\" ca=\"1\"><f>CELL(\"filename\")</f></c><c r=\"D1\"><v>1</v></c></row></sheetData></worksheet>"
+  },
+  "expected_parts": {
+    "[Content_Types].xml": "<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"bin\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.customProperty\"/><Default Extension=\"xml\" ContentType=\"application/xml\"/></Types>",
+    "docProps/core.xml": "<cp:coreProperties><dc:creator>Ozzit project</dc:creator><cp:lastModifiedBy>Ozzit project</cp:lastModifiedBy><dcterms:modified xsi:type=\"dcterms:W3CDTF\">2026-01-01T00:00:00Z</dcterms:modified></cp:coreProperties>",
+    "xl/workbook.xml": "<workbook><bookViews><workbookView xWindow=\"0\" yWindow=\"0\" windowWidth=\"28800\" windowHeight=\"16000\"/></bookViews></workbook>",
+    "xl/worksheets/sheet1.xml": "<worksheet><sheetData><row><c r=\"A1\"><f>A2+1</f><v>2</v></c><c r=\"B1\"><f>A1*2</f><v>4</v></c><c r=\"C1\" ca=\"1\"><f>CELL(\"filename\")</f></c><c r=\"D1\"><v>1</v></c></row></sheetData></worksheet>"
+  }
+}

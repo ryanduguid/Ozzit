@@ -48,6 +48,9 @@ status/refusals, whole-store restoration, unrelated ZIP parts and idempotency.
 `polish_workbook` is native only. Its 13 former Python test contracts run in
 `tests/polish_retirement.rs`, reusing the unchanged 31-case corpus input. They
 retain exact presentation edits, refusals, path resolution and idempotency.
+`sanitise_workbook` is native only. Its 14 former Python test contracts run in
+`tests/sanitise_retirement.rs` and a private cell-pattern unit test. The 33-case
+replay remains unchanged. Python text and archive helpers remain for callers.
 Generated headers retain historical Python filenames to preserve published bytes.
 The workbook retains its native Excel formulas and ordinary `.xlsx` format.
 
