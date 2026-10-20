@@ -1,7 +1,7 @@
 """Recovery and applied-state contract for the ATO benchmark and rate pass.
 
 The pass writes 4 kinds of store: src/Ratios.txt, src/Dates.txt, xl/workbook.xml and
-functions.csv. As test_working_capital_days checks for the earlier pass, an interrupted
+functions.csv. As the native working-capital tests check for the earlier pass, an interrupted
 run leaves none of them half-written and a store missing part of the change is not
 reported as already applied. The "absent" input is the committed one with the 6
 functions taken back out of every store, which is what the pass was written to run

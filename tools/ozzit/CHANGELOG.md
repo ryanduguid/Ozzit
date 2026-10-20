@@ -2,6 +2,11 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+`working_capital_days.py` is retired. Its apply, partial-state, missing-input,
+source-guard and command-line assertions now run in Rust. Private failure hooks
+verify source, compile and final workbook failures restore every original store.
+Source blocks, arithmetic and the separate AFE sync step are unchanged.
+
 `workbook_palette.py` is retired. Its component, workbook, template, refusal and
 command-line assertions now run in Rust, including exact change counts, warning
 colours, shared fonts, rich text, indexed backgrounds and byte no-ops.

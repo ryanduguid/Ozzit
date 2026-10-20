@@ -21,7 +21,6 @@ import test_ratio_definitions as ratio_definitions  # noqa: E402
 import test_repository_policy as policy  # noqa: E402
 
 from postbuild import test_rate_date_helpers as rate_date  # noqa: E402
-from postbuild import test_working_capital_days as working_capital  # noqa: E402
 
 MAIN = cash_flow.MAIN
 BOOK = '<definedName name="oz.Aλ" comment="c">=LAMBDA(x, x)</definedName>'
@@ -89,10 +88,6 @@ class RatioSourceTests(unittest.TestCase):
 
 
 class UnapplySourceTests(unittest.TestCase):
-    def test_working_capital_leaves_an_absent_module_unchanged(self):
-        text = working_capital.helpers.ABOUT_ANCHOR + " &\n"
-        unapply = working_capital.WorkingCapitalDaysContractTests._unapply_src
-        self.assertEqual(unapply(text), text)
 
     def test_rate_date_leaves_an_absent_module_unchanged(self):
         module = rate_date.helpers.MODULES[0]

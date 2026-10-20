@@ -95,6 +95,26 @@ struct Tables {
     about: Vec<(String, About)>,
 }
 
+fn check_source_blocks(functions: &[Function]) -> Result<()> {
+    for f in functions {
+        for bad in ["&amp;", "&lt;", "&gt;"] {
+            if f.block.contains(bad) {
+                return Err(format!(
+                    "{}: {bad} is already escaped in the source",
+                    f.name
+                ));
+            }
+        }
+        if f.block.contains('\t') {
+            return Err(format!("{}: tabs do not belong in the source", f.name));
+        }
+        if !f.block.contains(&format!("\n{} = LAMBDA(", f.name)) {
+            return Err(format!("{}: the source block does not declare it", f.name));
+        }
+    }
+    Ok(())
+}
+
 fn tables(spec: &Spec) -> Tables {
     let data = data(spec.data);
     let functions = data["functions"]
@@ -251,8 +271,14 @@ fn applied(spec: &Spec, texts: &Sources, book: &str, index: Option<&py::PyPath>)
 }
 
 /// Puts back every store the failed pass may have written.
-fn restore(texts: &Sources, index: Option<&py::PyPath>, index_before: Option<&[u8]>) -> Result<()> {
+fn restore(
+    texts: &Sources,
+    index: Option<&py::PyPath>,
+    index_before: Option<&[u8]>,
+    step: &mut impl FnMut(Step) -> Result<()>,
+) -> Result<()> {
     for (_, path, text) in texts {
+        step(Step::Source)?;
         write_text(&path.fs(), text)?;
     }
     if let (Some(path), Some(before)) = (index, index_before) {
@@ -291,7 +317,45 @@ fn run(
     index: Option<&py::PyPath>,
     notes: &mut Vec<String>,
 ) -> Result<Vec<String>> {
+    run_with_steps(spec, workbook, src, index, notes, &mut |_| Ok(()))
+}
+
+fn compile_book(
+    src: &Path,
+    book: &str,
+    qualified: &[String],
+) -> Result<(String, Vec<compiler::Compiled>)> {
+    let compiled = compiler::compile_sources(src)?;
+    let added = compiled
+        .iter()
+        .filter(|c| qualified.contains(&c.name))
+        .cloned()
+        .collect::<Vec<_>>();
+    let book = compiler::insert_names(book, &added)?;
+    let (book, _) = compiler::apply(&book, &compiled)?;
+    Ok((book, compiled))
+}
+
+/// Private observation points let tests interrupt the real recovery sequence.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Step {
+    Source,
+    Compile,
+    Workbook,
+}
+
+fn run_with_steps(
+    spec: &Spec,
+    workbook: &Path,
+    src: &py::PyPath,
+    index: Option<&py::PyPath>,
+    notes: &mut Vec<String>,
+    step: &mut impl FnMut(Step) -> Result<()>,
+) -> Result<Vec<String>> {
     let t = tables(spec);
+    if spec.stem == "working_capital_days" {
+        check_source_blocks(&t.functions)?;
+    }
     let qualified = t.qualified();
     let texts = read_sources(&t, src)?;
     let mut parts = read_parts(workbook)?;
@@ -318,23 +382,20 @@ fn run(
     let mut indexed = false;
     let mut apply = || -> Result<()> {
         for (module, path, text) in &texts {
-            write_text(&path.fs(), &add_to_src(spec, &t, module, text)?)?;
+            let after = add_to_src(spec, &t, module, text)?;
+            step(Step::Source)?;
+            write_text(&path.fs(), &after)?;
             changed.push(format!("src/{module}.txt"));
         }
-        let compiled = compiler::compile_sources(&src.fs())?;
-        let added = compiled
-            .iter()
-            .filter(|c| qualified.contains(&c.name))
-            .cloned()
-            .collect::<Vec<_>>();
-        let book = compiler::insert_names(&book, &added)?;
-        let (book, _) = compiler::apply(&book, &compiled)?;
+        step(Step::Compile)?;
+        let (book, compiled) = compile_book(&src.fs(), &book, &qualified)?;
         indexed = refresh_index(index, given, &compiled, &book, notes)?;
         parts.insert(BOOK.into(), book.into_bytes());
+        step(Step::Workbook)?;
         write_deterministic(workbook, &parts)
     };
     if let Err(e) = apply() {
-        restore(&texts, index, index_before.as_deref())?;
+        restore(&texts, index, index_before.as_deref(), step)?;
         return Err(e);
     }
     changed.push("workbook".into());
@@ -396,3 +457,6 @@ pub fn ato_benchmarks_rate_lookup(args: &[String]) -> Output {
 pub fn variance_fy_periods(args: &[String]) -> Output {
     command(&SPECS[3], args)
 }
+
+#[cfg(test)]
+mod tests;
