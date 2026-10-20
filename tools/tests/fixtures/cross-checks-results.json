@@ -1,6 +1,6 @@
 {
     "excel":  "16.0 build 20527",
-    "workbook_sha256":  "76d3722c785abd3813ffffffc5fbb2d6ab80628da10fb7f36cea7c67fd171330",
+    "workbook_sha256":  "748c132ec19acc48b9086c9cd739160343a774d73f2c4c58abc88f5c251af487",
     "results":  {
                     "lease_l1_liability":  [
                                                [
@@ -633,10 +633,145 @@
                                              [
                                                  "RateAtDateλ needs EffectiveDates and Rates of the same length with a number in every entry. A blank or text entry leaves a gap in the table."
                                              ]
-                                         ]
+                                         ],
+                    "variance_income_above":  [
+                                                  [
+                                                      20
+                                                  ]
+                                              ],
+                    "variance_expense_below":  [
+                                                   [
+                                                       10
+                                                   ]
+                                               ],
+                    "variance_types_by_line":  [
+                                                   [
+                                                       20
+                                                   ],
+                                                   [
+                                                       10
+                                                   ],
+                                                   [
+                                                       -20
+                                                   ]
+                                               ],
+                    "variance_type_refused":  [
+                                                  [
+                                                      "Varianceλ needs Type to be 1 for income or -1 for an expense in every entry."
+                                                  ]
+                                              ],
+                    "variance_pct_income":  [
+                                                [
+                                                    0.1
+                                                ]
+                                            ],
+                    "variance_pct_negative_budget":  [
+                                                         [
+                                                             -0.5
+                                                         ]
+                                                     ],
+                    "variance_pct_negative_budget_expense":  [
+                                                                 [
+                                                                     0.5
+                                                                 ]
+                                                             ],
+                    "variance_pct_zero_budget":  [
+                                                     [
+                                                         "#ERR:-2146826281"
+                                                     ]
+                                                 ],
+                    "year_to_date_example":  [
+                                                 [
+                                                     70
+                                                 ],
+                                                 [
+                                                     7
+                                                 ]
+                                             ],
+                    "year_to_date_june":  [
+                                              [
+                                                  30
+                                              ],
+                                              [
+                                                  3
+                                              ]
+                                          ],
+                    "year_to_date_calendar":  [
+                                                  [
+                                                      60
+                                                  ],
+                                                  [
+                                                      6
+                                                  ]
+                                              ],
+                    "year_to_date_shape":  [
+                                               [
+                                                   "YearToDateλ needs Dates to be one row with a date for each column of Values."
+                                               ]
+                                           ],
+                    "financial_month_row":  [
+                                                [
+                                                    7,
+                                                    12,
+                                                    1,
+                                                    6
+                                                ]
+                                            ],
+                    "financial_month_april_start":  [
+                                                        [
+                                                            12
+                                                        ],
+                                                        [
+                                                            1
+                                                        ]
+                                                    ],
+                    "financial_quarter_row":  [
+                                                  [
+                                                      1,
+                                                      1,
+                                                      2,
+                                                      3,
+                                                      4
+                                                  ]
+                                              ],
+                    "financial_quarter_start_refused":  [
+                                                            [
+                                                                "FinancialQuarterλ needs StartMonth to be one whole number from 1 to 12."
+                                                            ]
+                                                        ],
+                    "variance_type_row_refused":  [
+                                                      [
+                                                          "Varianceλ needs Actual and Budget of the same shape, and Type as one value, one for each row or one for each cell."
+                                                      ]
+                                                  ],
+                    "variance_type_per_row_across_months":  [
+                                                                [
+                                                                    20,
+                                                                    30
+                                                                ],
+                                                                [
+                                                                    10,
+                                                                    20
+                                                                ]
+                                                            ],
+                    "variance_text_amount_refused":  [
+                                                         [
+                                                             "Varianceλ needs Actual and Budget to hold numbers or blank cells; text and TRUE or FALSE are refused."
+                                                         ]
+                                                     ],
+                    "year_to_date_start_range_refused":  [
+                                                             [
+                                                                 "YearToDateλ needs StartMonth to be one whole number from 1 to 12."
+                                                             ]
+                                                         ],
+                    "year_to_date_boolean_refused":  [
+                                                         [
+                                                             "YearToDateλ needs Values to hold numbers or blank cells; text and TRUE or FALSE are refused."
+                                                         ]
+                                                     ]
                 },
-    "cases_sha256":  "57bf16b526a6692f00e51f67497a943ab9ed62042ae6c0076cfa59855d3e074e",
+    "cases_sha256":  "94aeedb585759b93703c51dca3c9fcf3b0d3355a20ad870bd985e9f39428fa76",
     "helper_sha256":  "228884ebb9da01a792fd891b9fc9714bba1ebb870b6e704b291921fc66b4f6a2",
     "evidence_helper_sha256":  "4f0db804f1d5ef13ddd8f2d635b51052db175e1c634ddaee5ad6af3dd42e6f59",
-    "evaluated_at_utc":  "2026-10-19T00:21:52.4303668Z"
+    "evaluated_at_utc":  "2026-10-20T02:14:36.4320771Z"
 }

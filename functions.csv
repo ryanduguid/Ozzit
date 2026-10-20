@@ -63,6 +63,8 @@ oz.EPSλ,Ratios,nabla.r.EPSλ,"EPSλ( NetIncome, PreferredDividends, EndOfPeriod
 oz.EquityMultiplierλ,Ratios,nabla.r.EquityMultiplierλ,"EquityMultiplierλ( TotalAssets, TotalShareholdersEquity)",Measures the portion of a company’s assets financed by shareholders' equity rather than by debt (TotalAssets/TotalShareholdersEquity)
 oz.EquityRatioλ,Ratios,nabla.r.EquityRatioλ,"EquityRatioλ( ShareholdersEquity, TotalAssets, IntangibleAssets)",Measures the long-term solvency of a company by comparing its shareholders’ equity to its total assets (Shareholder's Equity/(Total Assets - Intangible Assets)).
 oz.FilterContainsλ,Financial,nabla.f.FilterContainsλ,"FilterContainsλ( ArrayToFilter, FilterByArray, FilterByText, [IgnoreCase?] )",Filter an array by another array that contains specific text
+oz.FinancialMonthλ,Dates,,"FinancialMonthλ(Dates, [StartMonth])","Numbers each date's month within its financial year, so July is month 1 when the year starts on 1 July"
+oz.FinancialQuarterλ,Dates,,"FinancialQuarterλ(Dates, [StartMonth])","Numbers each date's quarter within its financial year, so July to September is quarter 1 when the year starts on 1 July"
 oz.FinancialYearλ,Dates,nabla.d.FinancialYearλ,"FinancialYearλ(Dates, [StartMonth])","Labels dates with their Australian financial year, which starts on 1 July"
 oz.GSTAddλ,Financial,nabla.f.GSTAddλ,"GSTAddλ(Amounts, [Rate])",Adds GST to one or more GST-exclusive amounts.
 oz.GSTExtractλ,Financial,nabla.f.GSTExtractλ,"GSTExtractλ(Amounts, [Rate])",Returns the GST contained in one or more GST-inclusive amounts.
@@ -145,5 +147,8 @@ oz.TimelineOffsetλ,Financial,nabla.f.TimelineOffsetλ,"TimelineOffsetλ(Date, T
 oz.TimelinePositionλ,Financial,nabla.f.TimelinePositionλ,"TimelinePositionλ(Array, Timeline, Offset)",Crops an array based on a model's timeline
 oz.Timelineλ,Dates,nabla.d.Timelineλ,"Timelineλ(StartDate, Periods, Interval, PeriodStarts?)",Create a horizontal list of period dates
 oz.VDBλ,Financial,nabla.f.VDBλ,"VDBλ(Cost, Salvage, Life, [Factor], [No_Switch])",Variable declining balance depreciation method for one asset or asset class.
+oz.VariancePctλ,Financial,,"VariancePctλ(Actual, Budget, [Type])","Variance as a fraction of the budget's size, so its sign always matches the variance even when the budget is negative"
+oz.Varianceλ,Financial,,"Varianceλ(Actual, Budget, [Type])","Actual less budget, signed so a favourable variance is positive for income and expense lines alike"
 oz.WIPDaysλ,Ratios,,"WIPDaysλ(WIP, RelatedFlow, [Days])","Work in progress days: WIP / RelatedFlow x Days, with both on one valuation basis"
 oz.WorkingCapitalTurnoverRatioλ,Ratios,nabla.r.WorkingCapitalTurnoverRatioλ,"WorkingCapitalTurnoverRatioλ( NetAnnualSales, WorkingCapital)",Working Capital Turnover Ratio measures how efficiently a company is using its working capital to support sales and growth (Net Annual Sales/Average Working Capital).
+oz.YearToDateλ,Financial,,"YearToDateλ(Values, Dates, AsAt, [StartMonth])",Totals each row of values from the start of the financial year to an as-at date
