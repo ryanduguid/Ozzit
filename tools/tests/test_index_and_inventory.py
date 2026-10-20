@@ -25,6 +25,7 @@ class IndexAndInventoryTests(unittest.TestCase):
             [sys.executable, str(TOOLS / tool), *map(str, args)],
             capture_output=True,
             text=True,
+            encoding="utf-8",
             check=False,
         )
 

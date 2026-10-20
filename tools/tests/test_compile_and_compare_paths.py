@@ -1,4 +1,4 @@
-"""Refusal and edge paths of the compiler, the module join, the self-test generator and
+"""Refusal and edge paths of the compiler, the self-test generator and
 the pyxirr comparison, on small fixture sources and workbooks built in a temporary tree.
 """
 
@@ -22,7 +22,6 @@ from unittest import mock
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
-import build_module  # noqa: E402
 import compile_sources  # noqa: E402
 import generate_selftest_examples as generator  # noqa: E402
 import pyxirr_comparison as comparison  # noqa: E402
@@ -81,7 +80,6 @@ class ScratchTestCase(unittest.TestCase):
 class ImportWithoutReconfigureTests(unittest.TestCase):
     def test_tools_import_when_stdout_cannot_be_reconfigured(self):
         for script, name in [("compile_sources.py", "NAME_LIMIT"),
-                             ("build_module.py", "BANNER"),
                              ("generate_selftest_examples.py", "MODULES")]:
             with self.subTest(script=script):
                 namespace, printed = reimport_without_reconfigure(script)
@@ -245,46 +243,6 @@ class CompileMainTests(ScratchTestCase):
         self.assertEqual(rows["oz.Debtλ"]["description"], "The Debt sample")
         self.assertEqual(self.main(str(self.workbook), str(self.src), flag),
                          f"every defined name already matches src/; no changes\nOK: {self.workbook}\n")
-
-
-class BuildModuleCheckTests(unittest.TestCase):
-    def setUp(self):
-        self.text = build_module.build(SRC)
-
-    def findings(self, text: str) -> list[str]:
-        return build_module.check(text, WORKBOOK, INDEX)
-
-    def test_tracked_join_passes_so_each_finding_below_is_the_change_alone(self):
-        self.assertEqual(self.findings(self.text), [])
-
-    def test_a_missing_final_newline_is_reported(self):
-        self.assertEqual(self.findings(self.text.rstrip("\n")),
-                         ["module text does not end with a newline"])
-
-    def test_a_doubled_prefix_is_reported(self):
-        self.assertEqual(self.findings(self.text + "// oz.oz.Thing\n"),
-                         ["module text contains a doubled oz. prefix"])
-
-    def test_a_declaration_that_does_not_ship_is_reported_against_both_inventories(self):
-        self.assertEqual(self.findings(self.text + "Extraλ = LAMBDA(x, x);\n"),
-                         ["module text declares Extraλ, which the functions.csv does not ship",
-                          "module text declares Extraλ, which the workbook does not ship"])
-
-
-class BuildModuleMainTests(ScratchTestCase):
-    def test_failures_are_printed_and_nothing_is_written(self):
-        src = self.directory / "src"
-        shutil.copytree(SRC, src)
-        with (src / "Debt.txt").open("a", encoding="utf-8", newline="\n") as handle:
-            handle.write("\nExtraλ = LAMBDA(x, x);\n")
-        output = self.directory / "oz.txt"
-        with redirect_stdout(io.StringIO()) as printed:
-            result = build_module.main([str(src), str(output), str(WORKBOOK), str(INDEX)])
-        self.assertEqual(result, 1)
-        self.assertEqual(printed.getvalue(),
-                         "FAIL: module text declares Extraλ, which the functions.csv does not ship\n"
-                         "FAIL: module text declares Extraλ, which the workbook does not ship\n")
-        self.assertFalse(output.exists())
 
 
 def help_body(*rows: str) -> str:

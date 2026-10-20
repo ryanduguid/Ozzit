@@ -167,7 +167,7 @@ fn publish(text: &str, output: &Path, check_only: bool, names: usize) -> Output 
         };
         if current != text.as_bytes() {
             return Output::failure(format!(
-                "FAIL: {} is stale; run python tools/build_module.py",
+                "FAIL: {} is stale; run ozzit build_module",
                 display(output)
             ));
         }

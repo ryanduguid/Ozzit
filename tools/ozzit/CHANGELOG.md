@@ -2,6 +2,12 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+`build_module.py` is retired. Its assertions now run against the Rust module
+builder, including command-line failures and unchanged destinations. The stale
+output diagnostic points to `ozzit build_module`. The generated banner keeps
+its historical Python filename so that the published `oz.txt` stays byte
+identical.
+
 The active parser fuzzing workflow now exercises the Rust implementations with
 libFuzzer. Stable Rust tests replay the shared target and seed corpus. The
 Python harness remains a temporary reference during retirement.

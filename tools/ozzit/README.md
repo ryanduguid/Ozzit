@@ -3,6 +3,8 @@
 This crate is an unpublished migration checkpoint. CI, `RELEASING.md` and the
 postbuild run order call this binary; the Python tools stay as the reference
 implementation, and CI fails when a gate and its Python twin disagree.
+`build_module` is native only; its former Python assertions now run in
+`tests/module_contracts.rs`, including the physical command-line checks.
 The workbook retains its native Excel formulas and ordinary `.xlsx` format.
 
 Build with the repository's pinned Rust toolchain:

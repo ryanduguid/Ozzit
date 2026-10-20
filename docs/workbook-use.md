@@ -33,8 +33,9 @@ The workbook tracked in this repository is the candidate the gates below run aga
    one module into another does not resolve. `oz.txt` joins the 6 module texts,
    verbatim and in build order, so that one import into a new module named `oz`
    recreates every shipped `oz.` name with its cross-module calls intact.
-   `tools/build_module.py` writes it from `src/`, and `tools/tests/test_build_module.py`
-   holds the tracked file to the current `src/`, to every `oz.` name the workbook
+   `ozzit build_module` writes it from `src/`, and the native module tests in
+   `tools/ozzit/tests/module_contracts.rs` hold the tracked file to the current
+   `src/`, to every `oz.` name the workbook
    ships (the 5 help tables included) and to `functions.csv`. Those checks bind the
    file to the workbook commit it ships with; they do not exercise the add-in's
    import route, which has not yet been run against `oz.txt` as a native gate, so
@@ -45,7 +46,7 @@ The workbook tracked in this repository is the candidate the gates below run aga
    Manager, where the name is yours to choose. To change a function, edit its
    definition in `src/` and follow the run order in `tools/postbuild/README.md`:
    `tools/compile_sources.py` renders it into the stored form and writes it over the
-   defined name that ships, `tools/build_module.py` rebuilds `oz.txt`,
+   defined name that ships, `ozzit build_module` rebuilds `oz.txt`,
    `tools/sync_afe_store.py` copies the source into the workbook's AFE store, and
    `tools/sanitise_workbook.py` runs last.
 
