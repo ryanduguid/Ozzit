@@ -539,3 +539,75 @@ fn csv_decoding_removes_exactly_one_signature_and_keeps_later_boms() {
         );
     }
 }
+
+#[test]
+fn a_large_part_is_searched_without_a_backtrack_limit() {
+    // Python's `re` has no limit. The engine counts each skipped start position, so the
+    // sanitiser's pageSetup search panicked after 10 MB of sheet data.
+    let text = format!(
+        r#"{}<pageSetup scale="90" r:id="rId1"/>"#,
+        "x".repeat(11_000_000)
+    );
+    let new = sub_fn(
+        &bounded(r#"(<pageSetup\b[^>]*?)\s+r:id="[^"]*""#),
+        &text,
+        |m| m[1].to_string(),
+    );
+    assert!(new.ends_with(r#"<pageSetup scale="90"/>"#));
+}
+
+#[test]
+fn a_block_comment_ends_after_its_opening_delimiter() {
+    // Python searches for "*/" from after "/*", so "/*/" does not close a comment.
+    assert_eq!(formula::strip_comments("LAMBDA(1/*/+2/**/)"), "LAMBDA(1)");
+    assert_eq!(render("LAMBDA(1/*/+2/**/)"), "_xlfn.LAMBDA(1)");
+}
+
+#[test]
+fn bracket_trimming_matches_python_for_let_and_optional_parameters() {
+    // LET bindings keep their brackets; an optional parameter loses only its outer pair.
+    assert!(formula::local_names("LAMBDA(LET([Bound],1,Bound))").is_empty());
+    let refused =
+        "Bound reached the stored form without a marker; Excel will not read the definition";
+    for body in ["LAMBDA(LET([Bound],1,Bound))", "LAMBDA([Bound,Bound)"] {
+        assert_eq!(
+            formula::render(body, &BTreeSet::new()).unwrap_err(),
+            refused
+        );
+    }
+    assert_eq!(
+        formula::render("LAMBDA([[Bound]],Bound)", &BTreeSet::new()).unwrap(),
+        "_xlfn.LAMBDA(_xlop.[_xlpm.Bound],_xlpm.Bound)"
+    );
+}
+
+#[test]
+fn signature_discovery_skips_hidden_modules_as_glob_does() {
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::write(
+        dir.path().join(".hidden.txt"),
+        "Fλ=LAMBDA(X,\"FUNCTION:→Fλ(X)¶PARAMETERS:→¶X→input¶\");\n",
+    )
+    .unwrap();
+    let src = display(dir.path());
+    let result = help::verify(std::slice::from_ref(&src));
+    assert_eq!(result.code, 1);
+    assert_eq!(result.err, [format!("no source modules found in {src}/")]);
+}
+
+#[test]
+fn a_local_header_naming_another_member_is_refused() {
+    let parts: archive::Parts = [("xl/workbook.xml".to_string(), b"<workbook/>".to_vec())]
+        .into_iter()
+        .collect();
+    let mut bytes = archive::deterministic_bytes(&parts).unwrap();
+    // The first local header's name starts at byte 30; keep its length.
+    bytes[30..45].copy_from_slice(b"xl/workbool.xml");
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("book.xlsx");
+    std::fs::write(&path, bytes).unwrap();
+    assert_eq!(
+        archive::read_parts(&path).unwrap_err(),
+        "File name in directory 'xl/workbook.xml' and header b'xl/workbool.xml' differ."
+    );
+}

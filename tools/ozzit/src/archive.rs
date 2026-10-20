@@ -1,12 +1,27 @@
 //! OOXML parts are opaque bytes. No formula or cached value is evaluated here.
-use crate::common::*;
+use crate::{common::*, py};
 use indexmap::IndexMap;
 use std::{
     io::{BufReader, Read, Seek, SeekFrom, Write},
-    path::Path,
+    path::{Path, PathBuf},
 };
 pub type Parts = IndexMap<String, Vec<u8>>;
-pub type ZipReader = zip::ZipArchive<BufReader<std::fs::File>>;
+/// The archive and the path it came from, so a read can check the member's local header.
+pub struct ZipReader {
+    archive: zip::ZipArchive<BufReader<std::fs::File>>,
+    path: PathBuf,
+}
+impl std::ops::Deref for ZipReader {
+    type Target = zip::ZipArchive<BufReader<std::fs::File>>;
+    fn deref(&self) -> &Self::Target {
+        &self.archive
+    }
+}
+impl std::ops::DerefMut for ZipReader {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.archive
+    }
+}
 pub const BOOK: &str = "xl/workbook.xml";
 pub fn open_zip(path: &Path) -> Result<ZipReader> {
     let file = std::fs::File::open(path).map_err(|e| io_error(&e, path))?;
@@ -16,7 +31,45 @@ pub fn open_zip(path: &Path) -> Result<ZipReader> {
     if file.metadata().map_err(|e| io_error(&e, path))?.is_dir() {
         return Err(io_error(&std::io::Error::from_raw_os_error(21), path));
     }
-    zip::ZipArchive::new(BufReader::new(file)).map_err(|e| format!("invalid ZIP: {e}"))
+    let archive =
+        zip::ZipArchive::new(BufReader::new(file)).map_err(|e| format!("invalid ZIP: {e}"))?;
+    Ok(ZipReader {
+        archive,
+        path: path.to_path_buf(),
+    })
+}
+/// Python's `ZipFile.open` refuses a member whose local header names another file.
+fn check_local_name(zip: &mut ZipReader, index: usize) -> Result<()> {
+    let item = zip
+        .by_index_raw(index)
+        .map_err(|e| format!("invalid ZIP: {e}"))?;
+    let (start, central) = (item.header_start(), item.name_raw().to_vec());
+    let name = item
+        .name()
+        .map_err(|e| format!("invalid ZIP name: {e}"))?
+        .into_owned();
+    drop(item);
+    let mut file = std::fs::File::open(&zip.path).map_err(|e| io_error(&e, &zip.path))?;
+    let mut header = [0; 30];
+    file.seek(SeekFrom::Start(start))
+        .and_then(|_| file.read_exact(&mut header))
+        .map_err(|e| format!("invalid ZIP header: {e}"))?;
+    let mut local = vec![0; usize::from(u16::from_le_bytes([header[26], header[27]]))];
+    file.read_exact(&mut local)
+        .map_err(|e| format!("invalid ZIP header: {e}"))?;
+    // Python decodes the local name as UTF-8 when flagged, else as cp437 (ASCII here).
+    let utf8 = u16::from_le_bytes([header[6], header[7]]) & 0x800 != 0;
+    let decoded = std::str::from_utf8(&local)
+        .ok()
+        .filter(|s| utf8 || s.is_ascii());
+    if local == central || decoded == Some(name.as_str()) {
+        return Ok(());
+    }
+    Err(format!(
+        "File name in directory {} and header {} differ.",
+        py::repr_str(&name),
+        py::repr_bytes(&local)
+    ))
 }
 pub fn member_text(zip: &mut ZipReader, name: &str) -> Result<String> {
     let mut index = None;
@@ -27,6 +80,7 @@ pub fn member_text(zip: &mut ZipReader, name: &str) -> Result<String> {
     }
     let index =
         index.ok_or_else(|| format!("\"There is no item named '{name}' in the archive\""))?;
+    check_local_name(zip, index)?;
     let mut member = zip
         .by_index(index)
         .map_err(|e| format!("invalid ZIP: {e}"))?;
@@ -60,13 +114,14 @@ pub fn read_selected_inventory(
         decoded.insert(item.name_raw().to_vec(), name.clone());
         drop(item);
         if include(&name) {
+            check_local_name(&mut zip, i)?;
             let mut item = zip.by_index(i).map_err(|e| format!("invalid ZIP: {e}"))?;
             let mut bytes = Vec::new();
             item.read_to_end(&mut bytes).map_err(|e| e.to_string())?;
             out.insert(name, bytes);
         }
     }
-    let names = directory_names(zip.into_inner(), position, &decoded)?;
+    let names = directory_names(zip.archive.into_inner(), position, &decoded)?;
     Ok((out, names))
 }
 /// zip 9 keeps the last record for each raw filename. Read only the names

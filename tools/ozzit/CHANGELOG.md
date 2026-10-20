@@ -40,6 +40,14 @@ Excel remains the formula engine, driven by the existing PowerShell scripts.
 - On Windows, source discovery reads only `src/*.txt` with a lowercase
   extension; Python's case-insensitive glob would also read `*.TXT`. The
   repository's modules all use the lowercase extension.
+- The archive reader decompresses stored and deflated members only, and the
+  writer emits no ZIP64 records, so it refuses more than 65,535 members or
+  4 GiB. Python's zipfile also reads bzip2 and LZMA members and writes ZIP64.
+  Excel writes neither; the refusal fails closed and leaves the destination
+  unchanged.
+- A member whose local header names a different file is refused, as in Python.
+  The check compares bytes, then the UTF-8 or ASCII decoding; Python's cp437
+  decoding also accepts different non-ASCII bytes that decode to the same name.
 
 The shared CSV reader removes exactly one UTF-8 BOM. Workbook integrity checks
 retain duplicate central-directory entries and read only the parts the Python

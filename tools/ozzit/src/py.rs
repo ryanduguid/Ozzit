@@ -176,6 +176,13 @@ pub fn casefold(s: &str) -> String {
 }
 
 /// The first `n` characters, as `s[:n]` takes them.
+/// `s[1:-1]`, by characters.
+pub fn inner(s: &str) -> &str {
+    let mut chars = s.chars();
+    chars.next();
+    chars.next_back();
+    chars.as_str()
+}
 pub fn prefix_chars(s: &str, n: usize) -> &str {
     match s.char_indices().nth(n) {
         Some((i, _)) => &s[..i],
