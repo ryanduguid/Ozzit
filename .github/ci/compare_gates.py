@@ -6,7 +6,7 @@ Run from the repository root after the release build. It reads every
 "run: tools/ozzit/target/release/ozzit verify_*" step in
 .github/workflows/verify.yml, runs that command and "python tools/<gate>.py"
 with the same arguments, and fails when no gate is found or when a pair's exit
-codes or stdout differ. Line endings are normalised.
+codes, stdout or stderr differ. Line endings are normalised.
 
 It then repeats every gate that reads a broken input on a copy of the inputs
 in a temporary directory, so the pair must also agree on what fails and how it
@@ -83,13 +83,14 @@ def run(command: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
 def compare(label: str, native: str, gate: str, arguments: list[str], cwd: Path) -> bool:
     rust = run([native, gate, *arguments], cwd)
     python = run([sys.executable, str(Path("tools", f"{gate}.py").resolve()), *arguments], cwd)
-    if (rust.returncode, rust.stdout) == (python.returncode, python.stdout):
+    if (rust.returncode, rust.stdout, rust.stderr) == (python.returncode, python.stdout, python.stderr):
         print(f"same: {label} (exit {rust.returncode})")
         return True
-    if ZIP_REASON[0] in rust.stdout and (rust.returncode, rust.stdout.replace(*ZIP_REASON)) == (
-        python.returncode,
-        python.stdout,
-    ):
+    if ZIP_REASON[0] in rust.stdout + rust.stderr and (
+        rust.returncode,
+        rust.stdout.replace(*ZIP_REASON),
+        rust.stderr.replace(*ZIP_REASON),
+    ) == (python.returncode, python.stdout, python.stderr):
         print(f"same apart from the ZIP parser's reason: {label} (exit {rust.returncode})")
         return True
     print(f"DIFFERENT: {label}", file=sys.stderr)

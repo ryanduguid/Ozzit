@@ -83,16 +83,14 @@ fn column(letters: &str) -> BigInt {
 /// Keyed by position rather than by part name because Excel renumbers the sheet
 /// parts when it saves, so sheet4.xml is not the fourth sheet in a file it has written.
 pub fn cached_values(path: &Path) -> std::result::Result<Cached, CachedError> {
-    let mut zip = open_zip(path)?;
-    let order = sheet_order(&mut zip)?;
+    let zip = open_zip(path)?;
+    let order = sheet_order(&zip)?;
     let mut shared = Vec::new();
-    let has_shared = zip
-        .file_names()
-        .any(|name| name.is_ok_and(|n| n == "xl/sharedStrings.xml"));
+    let has_shared = zip.names().contains(&"xl/sharedStrings.xml");
     if has_shared {
         for si in captures(
             r"(?s)<si>(.*?)</si>",
-            &member_text(&mut zip, "xl/sharedStrings.xml")?,
+            &member_text(&zip, "xl/sharedStrings.xml")?,
         ) {
             shared.push(unescape(&sub(r"<.*?>", &si[1], ""))?);
         }
@@ -118,14 +116,14 @@ pub fn cached_values(path: &Path) -> std::result::Result<Cached, CachedError> {
     for (index, (name, target)) in order.iter().enumerate() {
         let pos = index + 1;
         names.insert(pos, name.clone());
-        let text = member_text(&mut zip, target)?;
+        let text = member_text(&zip, target)?;
         sheet_values(&text, pos, &shared, &mut out)?;
     }
     Ok((out, names))
 }
 
 /// Each sheet's name and part, in tab order.
-fn sheet_order(zip: &mut ZipReader) -> std::result::Result<Vec<(String, String)>, CachedError> {
+fn sheet_order(zip: &ZipReader) -> std::result::Result<Vec<(String, String)>, CachedError> {
     let book = member_text(zip, BOOK)?;
     let mut rels = std::collections::HashMap::new();
     for m in captures(

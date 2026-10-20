@@ -40,6 +40,15 @@ Excel remains the formula engine, driven by the existing PowerShell scripts.
 - On Windows, source discovery reads only `src/*.txt` with a lowercase
   extension; Python's case-insensitive glob would also read `*.TXT`. The
   repository's modules all use the lowercase extension.
+- The archive reader decompresses stored and deflated members only; Python's
+  zipfile also reads bzip2, LZMA and Zstandard members. The writer emits
+  classic ZIP records only: where Python would switch to ZIP64 (more than
+  65,535 members, a member whose size times 1.05 exceeds 2,147,483,647 bytes,
+  or a size, offset or directory field above that) it refuses instead. Both
+  refusals happen before replacement and leave the destination unchanged. The
+  committed workbook and recorded Excel saves use neither feature.
+- Python's two zipfile warnings (an empty Unicode Path field, and an entry
+  whose data reaches a record at its own header) are not printed.
 
 The shared CSV reader removes exactly one UTF-8 BOM. Workbook integrity checks
 retain duplicate central-directory entries and read only the parts the Python
