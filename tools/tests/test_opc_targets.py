@@ -16,10 +16,11 @@ TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 sys.path.insert(0, str(TOOLS / "postbuild"))
 
-import polish_workbook  # noqa: E402
 import verify_cache  # noqa: E402
 from opc import resolve_target  # noqa: E402
 
+MAIN_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+DOC_REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
 RELS_NS = "http://schemas.openxmlformats.org/package/2006/relationships"
 
 
@@ -34,7 +35,7 @@ def book_parts(*names: str) -> dict[str, bytes]:
     )
     return {
         "xl/workbook.xml": (
-            f'<workbook xmlns="{polish_workbook.MAIN_NS}" xmlns:r="{polish_workbook.DOC_REL_NS}">'
+            f'<workbook xmlns="{MAIN_NS}" xmlns:r="{DOC_REL_NS}">'
             f"<sheets>{sheets}</sheets></workbook>"
         ).encode("utf-8"),
         "xl/_rels/workbook.xml.rels": f'<Relationships xmlns="{RELS_NS}">{rels}</Relationships>'.encode("utf-8"),
@@ -56,9 +57,6 @@ class ResolveTargetTests(unittest.TestCase):
 
 class AbsoluteTargetTests(unittest.TestCase):
     expected = {"Data": "xl/worksheets/sheet1.xml", "Notes": "xl/worksheets/sheet2.xml"}
-
-    def test_polish_workbook_sheet_paths(self):
-        self.assertEqual(polish_workbook.sheet_paths(book_parts("Data", "Notes")), self.expected)
 
 
     def test_verify_cache_reads_an_absolute_target(self):

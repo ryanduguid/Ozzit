@@ -45,6 +45,9 @@ command-hint lines in the unchanged 76-case cache corpus.
 `sync_afe_store` is native only. Its 6 former Python test contracts run in
 `tests/afe_contracts.rs`, including both physical output encodings, exact command
 status/refusals, whole-store restoration, unrelated ZIP parts and idempotency.
+`polish_workbook` is native only. Its 13 former Python test contracts run in
+`tests/polish_retirement.rs`, reusing the unchanged 31-case corpus input. They
+retain exact presentation edits, refusals, path resolution and idempotency.
 Generated headers retain historical Python filenames to preserve published bytes.
 The workbook retains its native Excel formulas and ordinary `.xlsx` format.
 

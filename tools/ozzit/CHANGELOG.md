@@ -2,6 +2,11 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+`polish_workbook.py` is retired. Rust retains its 13 former test contracts,
+including exact presentation edits, guard diagnostics, absolute and relative
+sheet targets and dedicated and inline idempotency checks. The frozen 31-case
+replay is unchanged. The 7 unrelated mixed-file Python tests remain.
+
 `sync_afe_store.py` is retired. Rust retains its 6 former test contracts,
 including grouped names, inline idempotency, exact status/refusals and both
 output encodings. Updated owned copies restore the complete decoded AFE store
