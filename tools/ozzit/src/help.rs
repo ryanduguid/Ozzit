@@ -319,10 +319,12 @@ pub fn verify(args: &[String]) -> Output {
         return Output::stderr("FAIL: usage: ozzit verify_signatures [src dir]");
     }
     let src = args.first().map_or("src", String::as_str);
-    let paths = match txt_files(Path::new(src)) {
+    let mut paths = match txt_files(Path::new(src)) {
         Ok(paths) => paths,
         Err(e) => return Output::failure(format!("FAIL: cannot read {src}: {e}")),
     };
+    // Python's glob.glob skips hidden files; the other twins' Path.glob does not.
+    paths.retain(|p| !basename(p).starts_with('.'));
     if paths.is_empty() {
         return Output::stderr(format!("no source modules found in {src}/"));
     }

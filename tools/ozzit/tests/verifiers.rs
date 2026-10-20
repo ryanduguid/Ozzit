@@ -154,3 +154,10 @@ fn a_directory_workbook_reports_the_filesystem_error_before_zip_parsing() {
     let expected = ozzit::common::read_bytes(directory.path()).unwrap_err();
     assert_eq!(open_zip(directory.path()).err().unwrap(), expected);
 }
+
+#[test]
+fn an_unterminated_help_literal_drops_one_character_as_python_slices() {
+    // Python's lit[1:-1] removes the final é, not a byte inside it.
+    let table = spills::help_table("TEXTSPLIT(\"A→B\",\"→\",\"¶é", "Probe").unwrap();
+    assert_eq!(table, [["A", "B"]]);
+}

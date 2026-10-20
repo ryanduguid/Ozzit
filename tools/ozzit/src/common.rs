@@ -17,9 +17,10 @@ pub fn re(pattern: &str) -> Arc<Regex> {
                 .replace(r"\s", &py::S)
                 .replace(r"\w", &py::W)
                 .replace(r"\d", &py::D);
+            // Python's `re` has no backtrack limit; a finite one makes large parts panic.
             Arc::new(
                 RegexBuilder::new(&pattern)
-                    .backtrack_limit(10_000_000)
+                    .backtrack_limit(usize::MAX)
                     .build()
                     .expect("constant regular expression"),
             )
