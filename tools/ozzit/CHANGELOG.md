@@ -2,6 +2,12 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+`ato_benchmarks_rate_lookup.py` and its 4 unused shared workbook helpers are
+retired, along with the unused Python compiler index-update wrapper. Rust retains
+the apply, required-index, insertion, refusal, source-guard
+and two-module recovery assertions. Formulas and independent arithmetic checks
+are unchanged.
+
 `rate_date_helpers.py` is retired. Its assertions now run in Rust, including
 Financial/Dates write order, two-module recovery, optional-index notes, source
 guards, final newlines and exact command output. Formula blocks and independent

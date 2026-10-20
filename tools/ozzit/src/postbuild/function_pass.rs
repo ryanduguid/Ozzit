@@ -96,13 +96,22 @@ struct Tables {
 }
 
 fn check_source_blocks(functions: &[Function]) -> Result<()> {
+    check_blocks(functions, false)
+}
+
+fn check_blocks(functions: &[Function], ato: bool) -> Result<()> {
     for f in functions {
-        for bad in ["&amp;", "&lt;", "&gt;"] {
+        for bad in ["&amp;", "&lt;", "&gt;", "__ATO_PAGE__"] {
+            if bad == "__ATO_PAGE__" && !ato {
+                continue;
+            }
             if f.block.contains(bad) {
-                return Err(format!(
-                    "{}: {bad} is already escaped in the source",
-                    f.name
-                ));
+                let reason = if ato {
+                    "does not belong in the source"
+                } else {
+                    "is already escaped in the source"
+                };
+                return Err(format!("{}: {bad} {reason}", f.name));
             }
         }
         if f.block.contains('\t') {
@@ -352,10 +361,7 @@ fn run_with_steps(
     notes: &mut Vec<String>,
     step: &mut impl FnMut(Step, &Path) -> Result<()>,
 ) -> Result<Vec<String>> {
-    let t = tables(spec);
-    if matches!(spec.stem, "working_capital_days" | "rate_date_helpers") {
-        check_source_blocks(&t.functions)?;
-    }
+    let t = checked_tables(spec)?;
     let qualified = t.qualified();
     let texts = read_sources(&t, src)?;
     let mut parts = read_parts(workbook)?;
@@ -405,6 +411,16 @@ fn run_with_steps(
         changed.push(path.name().to_string());
     }
     Ok(changed)
+}
+
+fn checked_tables(spec: &Spec) -> Result<Tables> {
+    let t = tables(spec);
+    if matches!(spec.stem, "working_capital_days" | "rate_date_helpers") {
+        check_source_blocks(&t.functions)?;
+    } else if spec.stem == "ato_benchmarks_rate_lookup" {
+        check_blocks(&t.functions, true)?;
+    }
+    Ok(t)
 }
 
 fn command(spec: &Spec, args: &[String]) -> Output {

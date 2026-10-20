@@ -35,9 +35,9 @@ below keeps the arguments of the Python pass it replaces. The Python passes in t
 directory stay as the reference implementation until they are retired.
 `cover_label`, `sheet_names`, `strip_revision_history`, `fy27_help_text`,
 `gst_help_text`, `help_links`, `remove_residue`, `help_corrections` and
-`workbook_palette`, `working_capital_days` and `rate_date_helpers` are native
-only; Rust tests cover their validation, output, help text, palette and rollback
-contracts.
+`workbook_palette`, `working_capital_days`, `rate_date_helpers` and
+`ato_benchmarks_rate_lookup` are native only; Rust tests cover their validation,
+output, help text, palette, insertion and rollback contracts.
 
 ```bash
 tools/ozzit/target/release/ozzit fy27_help_text ozzit.xlsx src

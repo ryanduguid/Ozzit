@@ -175,7 +175,7 @@ class CompileWorkbookTests(ScratchTestCase):
         index = self.directory / "functions.csv"
         index.write_text("function,module\noz.Datesλ,Dates\n", encoding="utf-8")
         with self.assertRaises(ValueError) as failure:
-            compile_sources.update_index(index, "", {})
+            compile_sources.render_index(index, "", {})
         self.assertEqual(str(failure.exception),
                          f"{index} has unexpected columns: ['function', 'module']")
 

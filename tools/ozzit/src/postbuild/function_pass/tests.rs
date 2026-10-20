@@ -4,6 +4,8 @@ use crate as tooling;
 mod fixtures;
 use fixtures::*;
 
+mod ato;
+
 fn absent() -> Fixture {
     let f = Fixture::absent();
     assert_eq!(

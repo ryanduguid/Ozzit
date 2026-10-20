@@ -235,7 +235,7 @@ class WorkbookTests(unittest.TestCase):
     def test_regenerated_index_matches_the_tracked_one(self):
         book = self._book()
         modules = {c.name: c.module for c in compile_sources.compile_sources(self.src)}
-        self.assertFalse(compile_sources.update_index(self.index, book, modules))
+        self.assertIsNone(compile_sources.render_index(self.index, book, modules))
         self.assertEqual(self.index.read_bytes(), INDEX.read_bytes())
 
     def test_cli_check_mode_reports_and_writes_nothing(self):

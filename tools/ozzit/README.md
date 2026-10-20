@@ -31,6 +31,9 @@ write/compile recovery paths run beside the shared function-pass implementation.
 `rate_date_helpers` is native only. Its apply, optional-index and command checks
 run in `tests/rate_date_retirement.rs`; two-module recovery, source guards and
 newline assertions run beside the shared function-pass implementation.
+`ato_benchmarks_rate_lookup` is native only. Apply, required-index, refusal and
+command checks run in `tests/ato_retirement.rs`; two-module recovery, insertion
+anchors/followers and its source guard run beside the shared implementation.
 Generated headers retain historical Python filenames to preserve published bytes.
 The workbook retains its native Excel formulas and ordinary `.xlsx` format.
 

@@ -495,15 +495,6 @@ def apply(book: str, compiled: list[Compiled]) -> tuple[str, list[str]]:
     return book, changed
 
 
-def update_index(path: Path, book: str, modules: dict[str, str]) -> bool:
-    """Rewrite functions.csv from the compiled workbook, keeping previous_name."""
-    after = render_index(path, book, modules)
-    if after is None:
-        return False
-    write_index(path, after)
-    return True
-
-
 def render_index(path: Path, book: str, modules: dict[str, str]) -> str | None:
     """functions.csv as the compiled workbook gives it, or None when it would not change."""
     # Build tool; the path is the repository's own file or the maintainer's argument.
