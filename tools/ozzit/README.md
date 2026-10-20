@@ -35,7 +35,7 @@ repository root to use their usual path defaults.
 | `polish_workbook` | Apply the presentation rules to straplines, cover wording and styles |
 | `generate_selftest_examples` | Turn the help's worked examples into native self-test assertions |
 | `prepare_release_bundle` | Create or verify the copy-only release bundle and its provenance |
-| `cover_label`, `sheet_names`, `help_links`, `fy27_help_text`, `gst_help_text`, `strip_revision_history`, `remove_residue`, `workbook_palette`, `help_corrections`, `aasb16_leases`, `rate_date_helpers`, `working_capital_days`, `ato_benchmarks_rate_lookup` | The postbuild passes in `tools/postbuild/README.md`, with the same arguments and run order |
+| `cover_label`, `sheet_names`, `help_links`, `fy27_help_text`, `gst_help_text`, `strip_revision_history`, `remove_residue`, `workbook_palette`, `help_corrections`, `aasb16_leases`, `rate_date_helpers`, `working_capital_days`, `ato_benchmarks_rate_lookup`, `variance_fy_periods` | The postbuild passes in `tools/postbuild/README.md`, with the same arguments and run order |
 
 Normal positional paths and existing flags retain their spelling. Replace
 `python tools/<name>.py` with `ozzit <name>`. Usage and help identify the native
