@@ -84,9 +84,18 @@ The workbook retains its native Excel formulas and ordinary `.xlsx` format.
 job results, missing needs and declared removals against the first-parent base.
 It reads `RESULTS` even with `--no-results`; only `pull_request` checks the base.
 The narrow job-key grammar, directory-entry path selection and validation order
-match `.github/ci/check_gates.py`. All 39 baseline assertion sets transfer to
+retain the former `.github/ci/check_gates.py` contracts. All 39 baseline assertion sets transfer to
 private unit tests and physical command tests, with additional real Git cases.
-The Python helper, its tests and both workflow callers remain live.
+The Python helper and its tests have retired. Both ordinary aggregate jobs
+build this crate with the pinned toolchain and `cargo build --locked`, then
+run `target/debug/ozzit check_gates` with their existing arguments and RESULTS.
+They use full checkouts with fetch-depth 2 so compile-time inputs and the first
+parent remain available. Their 20-minute job limit allows toolchain installation
+and a cold build; install/build failures fail the required aggregate context.
+Job names, needs, conditions, permissions and verify's codecov exemption remain.
+Native workflow tests execute both actual workflow invocations on owned copies
+with successful, failed and missing results. The command is built within each
+unprivileged job; it needs no artifact transfer or Python runtime.
 Git uses separate arguments, inherited cwd/environment, captured streams and no
 timeout. Both Git streams and workflow files decode strictly as UTF-8 with
 universal newlines. Untrimmed Git stdout is retained. This intentionally does

@@ -340,3 +340,175 @@ fn git_process_inherits_stdin() {
     assert!(output.stderr.is_empty());
     assert_eq!(snapshot(f.root()), before);
 }
+
+// Live aggregate callers retain their required context and process contracts.
+const CALLERS: [(&str, &str, &str, &str); 2] = [
+    (
+        "verify.yml",
+        "verify-gates",
+        "needs: [lint, verify, rust, coverage]",
+        r#"{"lint":{"result":"success"},"verify":{"result":"success"},"rust":{"result":"success"},"coverage":{"result":"success"}}"#,
+    ),
+    (
+        "codeql.yml",
+        "codeql-gates",
+        "needs: [analyze]",
+        r#"{"analyze":{"result":"success"}}"#,
+    ),
+];
+fn repository() -> &'static Path {
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+}
+fn aggregate_section<'a>(text: &'a str, gate: &str) -> &'a str {
+    let (_, section) = text.split_once(&format!("\n  {gate}:\n")).unwrap();
+    let mut end = 0;
+    for line in section.split_inclusive('\n') {
+        if line.starts_with("  ")
+            && line
+                .as_bytes()
+                .get(2)
+                .is_some_and(|b| !b.is_ascii_whitespace() && *b != b'#')
+        {
+            break;
+        }
+        end += line.len();
+    }
+    &section[..end]
+}
+fn native_invocation(section: &str) -> &str {
+    section
+        .lines()
+        .map(str::trim)
+        .find_map(|line| line.strip_prefix("run: tools/ozzit/target/debug/ozzit "))
+        .unwrap()
+}
+fn assert_no_extra_workflow_capabilities(section: &str, gate: &str) {
+    for forbidden in [
+        "setup-python",
+        "sparse-checkout",
+        "continue-on-error",
+        "id-token:",
+        "security-events:",
+        "upload-artifact",
+        "download-artifact",
+        "--release",
+    ] {
+        assert!(
+            !section.contains(forbidden),
+            "{gate}: unexpected {forbidden}"
+        );
+    }
+}
+
+#[test]
+fn aggregate_workflows_build_the_pinned_native_gate_without_extra_privileges() {
+    for (file, gate, needs, _) in CALLERS {
+        let source = fs::read_to_string(repository().join(".github/workflows").join(file)).unwrap();
+        let section = aggregate_section(&source, gate);
+        for line in [
+            needs,
+            "if: always()",
+            "runs-on: ubuntu-latest",
+            "timeout-minutes: 20",
+            "permissions:\n      contents: read",
+            "persist-credentials: false",
+            "fetch-depth: 2",
+            "RESULTS: ${{ toJSON(needs) }}",
+        ] {
+            assert!(section.contains(line), "{gate}: missing {line}");
+        }
+        assert_no_extra_workflow_capabilities(section, gate);
+        let checkout = section
+            .find("uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1")
+            .unwrap();
+        let install = section.find("run: rustup toolchain install").unwrap();
+        let build = section
+            .find("run: cargo build --locked --manifest-path tools/ozzit/Cargo.toml")
+            .unwrap();
+        let invocation = native_invocation(section);
+        let run = section.find(invocation).unwrap();
+        assert!(checkout < install && install < build && build < run);
+        let extra = if gate == "verify-gates" {
+            " --exempt codecov"
+        } else {
+            ""
+        };
+        assert_eq!(
+            invocation,
+            format!("check_gates .github/workflows/{file} {gate}{extra}")
+        );
+    }
+    assert!(!repository().join(".github/ci/check_gates.py").exists());
+    assert!(
+        !repository()
+            .join("tools/tests/test_check_gates.py")
+            .exists()
+    );
+}
+
+fn caller_output(
+    root: &Path,
+    invocation: &str,
+    results: &serde_json::Value,
+) -> std::process::Output {
+    Command::new(env!("CARGO_BIN_EXE_ozzit"))
+        .args(invocation.split_whitespace())
+        .current_dir(root)
+        .env("RESULTS", results.to_string())
+        .env("GITHUB_EVENT_NAME", "pull_request")
+        .output()
+        .unwrap()
+}
+
+#[test]
+fn actual_workflow_invocations_check_success_failure_and_missing_needs() {
+    let files = CALLERS.map(|(file, _, _, _)| {
+        (
+            format!(".github/workflows/{file}"),
+            fs::read_to_string(repository().join(".github/workflows").join(file)).unwrap(),
+        )
+    });
+    let fixture = Fixture::base(
+        &files
+            .iter()
+            .map(|(p, text)| (p.as_str(), text.clone()))
+            .collect::<Vec<_>>(),
+    );
+    fixture.commit();
+    let before = snapshot(fixture.root());
+    for ((_, gate, _, results), (_, text)) in CALLERS.into_iter().zip(&files) {
+        let invocation = native_invocation(aggregate_section(text, gate));
+        let mut results: serde_json::Value = serde_json::from_str(results).unwrap();
+        let name = if gate == "verify-gates" {
+            "lint"
+        } else {
+            "analyze"
+        };
+        for state in ["success", "failure", "missing"] {
+            if state == "missing" {
+                results.as_object_mut().unwrap().remove(name);
+            } else {
+                results[name]["result"] = state.into();
+            }
+            let output = caller_output(fixture.root(), invocation, &results);
+            assert_eq!(output.status.code(), Some(i32::from(state != "success")));
+            assert!(output.stdout.is_empty());
+            let expected = match state {
+                "success" => String::new(),
+                "failure" => format!("Jobs did not succeed: {name}\n"),
+                _ => format!("Add these jobs to needs: {name}\n"),
+            };
+            assert_eq!(
+                String::from_utf8(output.stderr)
+                    .unwrap()
+                    .replace("\r\n", "\n"),
+                expected
+            );
+            assert_eq!(snapshot(fixture.root()), before);
+        }
+    }
+}
