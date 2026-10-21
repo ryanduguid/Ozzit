@@ -74,6 +74,11 @@ All 8 typed error-code combinations and the 12 original cases at exactly
 15,000 cells remain checked. The retained column helper test follows its live
 Python owner; the other gate import checks and 26 unrelated tests remain.
 Generated headers retain historical Python filenames to preserve published bytes.
+`verify_signatures` retains its Python reference and callers. Native signature
+tests cover the original mismatch fixture, floor refusal, published help defects,
+input failures and command defaults. Existing corpus and foundation cases retain
+the helper contracts. A private fixture floor leaves the public floor at 100;
+the Python-only fresh import test remains unchanged.
 The workbook retains its native Excel formulas and ordinary `.xlsx` format.
 
 Build with the repository's pinned Rust toolchain:

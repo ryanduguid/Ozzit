@@ -2,6 +2,12 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+Native signature tests retain the applicable assertions from 17 Python contracts,
+including all 5 ordered help mismatches, the normal floor refusal, published
+help defects, unreadable sources and physical command defaults. Exact corpus
+and foundation cases remain. A private fixture floor preserves the public
+floor of 100. All Python helpers, callers and fresh import assertions remain.
+
 Native source tests retain the applicable assertions from 36 Python contracts,
 including exact defect ordering, modified known lists, parser edges, canonical
 pairs, input failures and command defaults. Exact frozen corpus records remain
