@@ -90,6 +90,11 @@ corpus checks the original help model, attribute permutations, missing caches
 and dimension errors. Physical tests retain stale/current output, argument and
 read failures, UTF-8 output and input preservation. Exact trim and private
 column-index assertions add no production seam. Python import checks remain.
+`verify_native_evidence` retains its Python reference and callers. The unchanged
+corpus covers the 43 original validation calls. Additional tests retain the
+original installed-file success fixture, supplied-file preservation and physical
+default/refusal output. Copied executables exercise root resolution on owned
+trees. Production code and the native-execution disclaimer remain unchanged.
 
 Build with the repository's pinned Rust toolchain:
 

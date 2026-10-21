@@ -2,6 +2,12 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+Native-evidence tests retain applicable assertions from 13 Python contracts.
+The unchanged replay covers all 43 original validation calls. New tests add
+the original installed-workbook success fixture, refused-file preservation and
+physical default/mismatched-release status and output, using owned trees.
+Production code, Python helpers/callers and retained evidence remain unchanged.
+
 Native help-spills tests retain applicable assertions from 14 Python contracts.
 Existing corpus cases cover the help model, all 6 attribute permutations,
 missing caches and row/column errors. Physical checks retain stale/current
