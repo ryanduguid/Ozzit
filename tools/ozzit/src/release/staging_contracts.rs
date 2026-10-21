@@ -497,3 +497,208 @@ fn silent_failing_gate_reports_only_its_exit_code() {
     assert_eq!(calls.get(), 1);
     assert_eq!(snapshot(fixture.directory.path()), before);
 }
+
+struct FakeGit {
+    root: PathBuf,
+    answers: BTreeMap<&'static str, String>,
+    calls: Vec<Vec<String>>,
+}
+
+impl FakeGit {
+    fn new(fixture: &Fixture) -> Self {
+        Self {
+            root: fixture.root.clone(),
+            answers: BTreeMap::from([
+                ("ls-files", "ozzit.xlsx".into()),
+                ("hash-object", git_blob_sha1(&fixture.workbook).unwrap()),
+                ("log", "b".repeat(40)),
+                ("rev-parse", COMMIT.into()),
+                ("status", String::new()),
+            ]),
+            calls: Vec::new(),
+        }
+    }
+
+    fn query(&mut self, root: &Path, arguments: &[&str]) -> Result<String> {
+        git_output_with(root, arguments, |program, args, cwd, timeout| {
+            assert_eq!(program, "git");
+            assert_eq!(cwd, Some(self.root.as_path()));
+            assert_eq!(timeout, Duration::from_secs(30));
+            self.calls.push(args.to_vec());
+            Ok(Dump::Exited {
+                code: 0,
+                stdout: format!("{}\n", self.answers[args[0].as_str()]),
+                stderr: String::new(),
+            })
+        })
+    }
+}
+
+fn expected_git_queries() -> Vec<Vec<String>> {
+    [
+        vec!["ls-files", "--error-unmatch", "--", "ozzit.xlsx"],
+        vec!["hash-object", "--", "ozzit.xlsx"],
+        vec!["log", "-1", "--format=%H", "--", "ozzit.xlsx"],
+        vec!["rev-parse", "--verify", "HEAD"],
+        vec!["status", "--porcelain", "--untracked-files=all"],
+    ]
+    .into_iter()
+    .map(|args| args.into_iter().map(String::from).collect())
+    .collect()
+}
+
+#[test]
+fn tracked_base_manifest_matches_the_current_workbook() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let shallow = git_output(&root, &["rev-parse", "--is-shallow-repository"]).unwrap();
+    if shallow == "true" {
+        eprintln!(
+            "shallow Git clone: the manifest's last_workbook_commit cannot be checked against truncated history (run git fetch --unshallow)"
+        );
+        return;
+    }
+    assert_eq!(shallow, "false");
+    let workbook = root.join("ozzit.xlsx");
+    let base = verify_base_workbook(&workbook, &root.join(BASE_MANIFEST)).unwrap();
+    assert_eq!(
+        base.get("sha256").and_then(Json::as_str),
+        Some(sha256(&workbook).unwrap().as_str())
+    );
+    assert!(py_eq(
+        base.get("size").unwrap(),
+        &Json::Int(BigInt::from(fs::metadata(&workbook).unwrap().len()))
+    ));
+    verify_repository_base(&root, &base).unwrap();
+    println!("REAL_GIT_BINDING: shallow=false workbook=true manifest=true history=true");
+}
+
+#[test]
+fn git_queries_are_read_only_and_bind_the_manifest() {
+    let fixture = Fixture::new();
+    let before = snapshot(fixture.directory.path());
+    let base = load_json_object(&fixture.manifest).unwrap();
+    let mut git = FakeGit::new(&fixture);
+    verify_repository_base_with(&fixture.root, &base, |root, args| git.query(root, args)).unwrap();
+    assert_eq!(
+        current_commit_with(&fixture.root, |root, args| git.query(root, args)).unwrap(),
+        COMMIT
+    );
+    ensure_clean_checkout_with(&fixture.root, |root, args| git.query(root, args)).unwrap();
+    assert_eq!(git.calls, expected_git_queries());
+    assert_eq!(snapshot(fixture.directory.path()), before);
+}
+
+#[test]
+fn mismatched_git_claims_are_rejected() {
+    let fixture = Fixture::new();
+    let before = snapshot(fixture.directory.path());
+    let base = load_json_object(&fixture.manifest).unwrap();
+    let cases = [
+        (
+            "ls-files",
+            String::new(),
+            "base workbook must be tracked as ozzit.xlsx",
+        ),
+        (
+            "hash-object",
+            "d".repeat(40),
+            "base workbook Git blob does not match the manifest",
+        ),
+        (
+            "log",
+            "e".repeat(40),
+            "base workbook last-change commit does not match Git history",
+        ),
+    ];
+    for (index, (query, answer, error)) in cases.into_iter().enumerate() {
+        let mut git = FakeGit::new(&fixture);
+        git.answers.insert(query, answer);
+        assert_eq!(
+            verify_repository_base_with(&fixture.root, &base, |root, args| git.query(root, args))
+                .unwrap_err(),
+            error
+        );
+        assert_eq!(git.calls, expected_git_queries()[..=index]);
+        assert_eq!(snapshot(fixture.directory.path()), before);
+    }
+}
+
+#[test]
+fn dirty_checkout_and_bad_head_are_refused() {
+    let fixture = Fixture::new();
+    let before = snapshot(fixture.directory.path());
+    let mut git = FakeGit::new(&fixture);
+    git.answers.insert("status", "?? stray.txt".into());
+    git.answers.insert("rev-parse", "HEAD".into());
+    assert_eq!(
+        ensure_clean_checkout_with(&fixture.root, |root, args| git.query(root, args)).unwrap_err(),
+        "candidate checkout must be clean before staging a release bundle"
+    );
+    assert_eq!(
+        current_commit_with(&fixture.root, |root, args| git.query(root, args)).unwrap_err(),
+        "source commit must be a full 40-character lowercase SHA"
+    );
+    let expected = expected_git_queries();
+    assert_eq!(git.calls, [expected[4].clone(), expected[3].clone()]);
+    assert_eq!(snapshot(fixture.directory.path()), before);
+}
+
+#[test]
+fn git_output_runs_a_checked_utf8_query_and_trims_it() {
+    let root = Path::new("checkout");
+    let before = std::env::current_dir().unwrap();
+    let calls = Cell::new(0);
+    let output = git_output_with(
+        root,
+        &["rev-parse", "HEAD"],
+        |program, args, cwd, timeout| {
+            calls.set(calls.get() + 1);
+            assert_eq!(program, "git");
+            assert_eq!(args, ["rev-parse", "HEAD"]);
+            assert_eq!(cwd, Some(root));
+            assert!(!root.is_absolute());
+            assert_eq!(timeout, Duration::from_secs(30));
+            Ok(Dump::Exited {
+                code: 0,
+                stdout: "  answer\n".into(),
+                stderr: String::new(),
+            })
+        },
+    );
+    assert_eq!(output.unwrap(), "answer");
+    assert_eq!(calls.get(), 1);
+    assert_eq!(std::env::current_dir().unwrap(), before);
+}
+
+#[test]
+fn failed_git_query_propagates() {
+    let root = Path::new("checkout");
+    let calls = Cell::new(0);
+    for failure in [
+        Err("runner failed".into()),
+        Ok(Dump::Exited {
+            code: 128,
+            stdout: String::new(),
+            stderr: "Git failed".into(),
+        }),
+    ] {
+        let expected = if failure.is_err() {
+            "runner failed"
+        } else {
+            "Command '['git', 'status']' returned non-zero exit status 128."
+        };
+        assert_eq!(
+            git_output_with(root, &["status"], |program, args, cwd, timeout| {
+                calls.set(calls.get() + 1);
+                assert_eq!(program, "git");
+                assert_eq!(args, ["status"]);
+                assert_eq!(cwd, Some(root));
+                assert_eq!(timeout, Duration::from_secs(30));
+                failure
+            })
+            .unwrap_err(),
+            expected
+        );
+    }
+    assert_eq!(calls.get(), 2);
+}

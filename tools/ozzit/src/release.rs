@@ -325,10 +325,17 @@ fn not_found(program: &str) -> String {
 
 /// Run one closed read-only Git query and return its trimmed output.
 pub fn git_output(root: &Path, arguments: &[&str]) -> Result<String> {
+    git_output_with(root, arguments, cache::run_process)
+}
+
+fn git_output_with<F>(root: &Path, arguments: &[&str], runner: F) -> Result<String>
+where
+    F: FnOnce(&str, &[String], Option<&Path>, Duration) -> Result<Dump>,
+{
     let args = arguments.iter().map(|a| a.to_string()).collect::<Vec<_>>();
     let mut command = vec!["git".to_string()];
     command.extend(args.iter().cloned());
-    match cache::run_process("git", &args, Some(root), GIT_TIMEOUT)? {
+    match runner("git", &args, Some(root), GIT_TIMEOUT)? {
         Dump::NotFound => Err(not_found("git")),
         Dump::TimedOut => Err(format!(
             "Command '{}' timed out after 30 seconds",
@@ -346,15 +353,22 @@ pub fn git_output(root: &Path, arguments: &[&str]) -> Result<String> {
 
 /// Bind the base manifest's Git claims to the candidate checkout.
 pub fn verify_repository_base(root: &Path, base: &Json) -> Result<()> {
-    let tracked = git_output(root, &["ls-files", "--error-unmatch", "--", "ozzit.xlsx"])?;
+    verify_repository_base_with(root, base, git_output)
+}
+
+fn verify_repository_base_with<F>(root: &Path, base: &Json, mut query: F) -> Result<()>
+where
+    F: FnMut(&Path, &[&str]) -> Result<String>,
+{
+    let tracked = query(root, &["ls-files", "--error-unmatch", "--", "ozzit.xlsx"])?;
     if tracked != "ozzit.xlsx" {
         return Err("base workbook must be tracked as ozzit.xlsx".into());
     }
-    let blob = git_output(root, &["hash-object", "--", "ozzit.xlsx"])?;
+    let blob = query(root, &["hash-object", "--", "ozzit.xlsx"])?;
     if base.get("git_blob_sha1").and_then(Json::as_str) != Some(blob.as_str()) {
         return Err("base workbook Git blob does not match the manifest".into());
     }
-    let last = git_output(root, &["log", "-1", "--format=%H", "--", "ozzit.xlsx"])?;
+    let last = query(root, &["log", "-1", "--format=%H", "--", "ozzit.xlsx"])?;
     if base.get("last_workbook_commit").and_then(Json::as_str) != Some(last.as_str()) {
         return Err("base workbook last-change commit does not match Git history".into());
     }
@@ -1198,14 +1212,28 @@ pub fn parse(args: &[String]) -> std::result::Result<Arguments, Output> {
 }
 
 fn ensure_clean_checkout(root: &Path) -> Result<()> {
-    if !git_output(root, &["status", "--porcelain", "--untracked-files=all"])?.is_empty() {
+    ensure_clean_checkout_with(root, git_output)
+}
+
+fn ensure_clean_checkout_with<F>(root: &Path, mut query: F) -> Result<()>
+where
+    F: FnMut(&Path, &[&str]) -> Result<String>,
+{
+    if !query(root, &["status", "--porcelain", "--untracked-files=all"])?.is_empty() {
         return Err("candidate checkout must be clean before staging a release bundle".into());
     }
     Ok(())
 }
 
 fn current_commit(root: &Path) -> Result<String> {
-    validate_source_commit(&git_output(root, &["rev-parse", "--verify", "HEAD"])?)
+    current_commit_with(root, git_output)
+}
+
+fn current_commit_with<F>(root: &Path, mut query: F) -> Result<String>
+where
+    F: FnMut(&Path, &[&str]) -> Result<String>,
+{
+    validate_source_commit(&query(root, &["rev-parse", "--verify", "HEAD"])?)
 }
 
 fn run_create(arguments: &Arguments, root: &Path, head: String) -> Result<String> {

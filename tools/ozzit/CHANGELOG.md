@@ -2,6 +2,12 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+Rust Git tests retain all 6 original checkout-binding contracts, including
+the shipped workbook's manifest and full Git history, ordered read-only
+queries, mismatched claims, dirty checkout and bad HEAD refusals, checked
+invocation and failed queries. Private callbacks preserve the real public
+queries, argument vectors, cwd, deadlines and operation order.
+
 Rust semantic execution tests retain the 4 original independent-rerun,
 path-spelling and failed-gate contracts. They check ordered arguments,
 normalised evidence, first-failure stopping and exact diagnostics. Private

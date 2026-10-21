@@ -80,6 +80,13 @@ input failures and command defaults. Existing corpus and foundation cases retain
 the helper contracts. A private fixture floor leaves the public floor at 100;
 the Python-only fresh import test remains unchanged.
 The workbook retains its native Excel formulas and ordinary `.xlsx` format.
+Release Git tests retain the 6 original checkout-binding contracts beside
+the staging tests. They check the shipped workbook against its manifest and
+full Git history, query order, all claim mismatches, dirty checkout and bad
+HEAD refusals, invocation arguments and failure propagation. A positively
+shallow clone logs the original history warning and returns from the Rust
+test; qualification requires full history and records the real binding run.
+The existing runner tests retain UTF-8 and newline decoding checks.
 `verify_workbook` retains its Python reference and callers. Native tests cover
 the original report fixtures, malformed XML and AFE payloads, all add-in and
 forbidden-part cases, scoped names, long names and physical command contracts.
