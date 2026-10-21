@@ -613,3 +613,25 @@ mod compiler_retirement_tests {
         );
     }
 }
+
+#[cfg(test)]
+mod source_contract_tests {
+    use super::*;
+
+    #[test]
+    fn an_unclosed_call_retains_only_the_arguments_seen_before_its_final_segment() {
+        assert_eq!(call_arguments("f(a,b", 2), ["a"]);
+    }
+
+    #[test]
+    fn a_let_without_a_result_is_read_as_an_ordinary_call() {
+        let names = ["X".to_owned()].into();
+        assert!(reads_any("LET(x, 1)", &names, ""));
+        assert!(!reads_any("LET(x, 1)", &names, "LET"));
+    }
+
+    #[test]
+    fn a_stray_closing_bracket_does_not_hide_a_read() {
+        assert!(reads_any(") x", &["X".to_owned()].into(), "SUM"));
+    }
+}

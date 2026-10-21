@@ -2,6 +2,13 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+Native source tests retain the applicable assertions from 36 Python contracts,
+including exact defect ordering, modified known lists, parser edges, canonical
+pairs, input failures and command defaults. Exact frozen corpus records remain
+the coverage for existing cases. A private known-list parameter permits the
+original fixtures; the public command retains its values, algorithm and output.
+Python-only import tests and all Python helpers/callers remain unchanged.
+
 Native index tests retain all applicable assertions from 18 Python contracts,
 including the full header/CSV matrices, contradictory-first duplicates, missing
 names, truncated rows, metadata mismatches, unreadable sources and command

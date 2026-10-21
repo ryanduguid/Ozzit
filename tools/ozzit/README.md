@@ -179,6 +179,11 @@ Index tests retain the 10 direct and 8 mixed Python contracts through native
 fixtures and physical command checks, with the Python-specific import assertion
 kept in Python. They cover every original header/CSV matrix, contradictory
 duplicates, missing metadata and unreadable inputs. Production code is unchanged.
+Source gate tests retain all applicable assertions from 36 Python contracts,
+reusing the exact frozen parser cases and adding private known-list fixtures,
+canonical equality/difference pairs, read failures and physical command checks.
+The public command still uses the same known list and output. Python-specific
+import tests and every live Python caller remain.
 Differential scripts
 and their receipts are retained in the local Agent Hub evidence for this port.
 CI, `RELEASING.md` and the postbuild run order call this binary. The Python tools
