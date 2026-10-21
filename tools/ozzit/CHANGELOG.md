@@ -2,6 +2,12 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+Native workbook tests retain applicable assertions from 15 Python contracts,
+including the exact 14-defect multiset, store failures, malformed parts, add-in
+and forbidden-part matrices, scoped names, long names and physical commands.
+Existing corpus records remain bound. Production code, Python helpers/callers
+and fresh import assertions remain unchanged.
+
 Native signature tests retain the applicable assertions from 17 Python contracts,
 including all 5 ordered help mismatches, the normal floor refusal, published
 help defects, unreadable sources and physical command defaults. Exact corpus

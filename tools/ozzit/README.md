@@ -80,6 +80,11 @@ input failures and command defaults. Existing corpus and foundation cases retain
 the helper contracts. A private fixture floor leaves the public floor at 100;
 the Python-only fresh import test remains unchanged.
 The workbook retains its native Excel formulas and ordinary `.xlsx` format.
+`verify_workbook` retains its Python reference and callers. Native tests cover
+the original report fixtures, malformed XML and AFE payloads, all add-in and
+forbidden-part cases, scoped names, long names and physical command contracts.
+The private loader test adds no production seam. Python-only import coverage
+remains unchanged; native XML helper errors adapt its global failure list.
 
 Build with the repository's pinned Rust toolchain:
 
