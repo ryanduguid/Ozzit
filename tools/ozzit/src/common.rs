@@ -247,6 +247,30 @@ impl CsvState {
     }
 }
 impl Csv {
+    /// Raw `csv.reader` records, retaining blank records and iterator boundaries.
+    pub(crate) fn reader_lines(lines: &[&str]) -> Result<Vec<Vec<String>>> {
+        let mut state = CsvState {
+            start: true,
+            ..CsvState::default()
+        };
+        for line in lines {
+            let mut chars = line.chars().peekable();
+            while let Some(c) = chars.next() {
+                state.step(c, &mut chars);
+                if state.length > 131072 {
+                    return Err("field larger than field limit (131072)".into());
+                }
+            }
+            if !state.quoted && state.touched {
+                state.end_row(true);
+                state.start = true;
+                state.touched = false;
+                state.length = 0;
+            }
+        }
+        state.end_row(true);
+        Ok(state.records)
+    }
     pub fn read(path: &Path) -> Result<Self> {
         Self::parse(&read_sig(path)?)
     }

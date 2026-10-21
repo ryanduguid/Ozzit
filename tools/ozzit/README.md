@@ -3,6 +3,17 @@
 This crate is an unpublished migration checkpoint. CI, `RELEASING.md` and the
 postbuild run order call this binary; the Python tools stay as the reference
 implementation, and CI fails when a gate and its Python twin disagree.
+`compare_gates PYTHON` runs the workflow's native gates and their independent
+Python references, comparing exit status and both output channels on the real
+inputs and all 3 broken-input copies. The interpreter operand is explicit;
+CI supplies the `python` selected by its existing setup step. The old Python
+orchestrator and its 3 tests have retired after transfer to native tests.
+Commands inherit stdin and environment, force Python UTF-8, capture both streams
+with strict UTF-8/universal newlines and retain no timeout. Controlled errors
+replace Python tracebacks. Recursive copies follow symlinks and preserve file
+permissions and times; extended attributes are not copied. The current gates
+read content and do not use those attributes. The independent Python gates remain.
+
 `build_module` is native only; its former Python assertions now run in
 `tests/module_contracts.rs`, including the physical command-line checks.
 `generate_selftest_examples` is also native only, with its former assertions in

@@ -2,6 +2,13 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+Move gate comparison orchestration to `ozzit compare_gates PYTHON`, with the
+existing Python gate references and an explicit interpreter. Preserve discovery,
+POSIX argument splitting, status/channel comparison, ordered broken-input
+mutations and owned temporary copies. Transfer the 3 original comparison tests,
+add process and refusal checks and retire the old orchestrator/tests. The
+ordinary CI caller and agent verification command use the native comparator.
+
 Retire the Python CI aggregate-gate helper and its 39 transferred tests.
 Both ordinary aggregate jobs now build the pinned native crate and invoke
 `ozzit check_gates` with the existing arguments and result expression. Full

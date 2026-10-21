@@ -108,7 +108,7 @@ jobs:
           python-version: '3.14'
           allow-prereleases: true
       - name: Check the Python reference gates agree with the native ones
-        run: python .github/ci/compare_gates.py
+        run: tools/ozzit/target/release/ozzit compare_gates python
 
   verify-gates:
     # The one context branch protection requires from this workflow. It fails

@@ -42,7 +42,7 @@ tools/ozzit/target/release/ozzit verify_cover ozzit.xlsx functions.csv CHANGELOG
 tools/ozzit/target/release/ozzit verify_afe ozzit.xlsx src
 tools/ozzit/target/release/ozzit verify_help_spills ozzit.xlsx
 tools/ozzit/target/release/ozzit verify_native_evidence
-python .github/ci/compare_gates.py
+tools/ozzit/target/release/ozzit compare_gates python
 ```
 
 For a workbook change, also run the native Excel self-test and cached-value
