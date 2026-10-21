@@ -206,3 +206,15 @@ pub fn verify(args: &[String]) -> Output {
         }
     }
 }
+
+#[cfg(test)]
+mod help_spills_contract_tests {
+    use super::*;
+
+    #[test]
+    fn the_original_a1_columns_are_one_based() {
+        for (letters, number) in [("A", 1), ("Z", 26), ("AA", 27), ("ZZ", 702)] {
+            assert_eq!(column_index(letters), BigInt::from(number));
+        }
+    }
+}

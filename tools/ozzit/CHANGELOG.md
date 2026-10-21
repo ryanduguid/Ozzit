@@ -2,6 +2,13 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+Native help-spills tests retain applicable assertions from 14 Python contracts.
+Existing corpus cases cover the help model, all 6 attribute permutations,
+missing caches and row/column errors. Physical checks retain stale/current
+status and output channels, refusal cases, UTF-8 defaults and unchanged inputs.
+Exact trim and private column-index checks leave production code unchanged.
+Every Python helper, caller and fresh import assertion remains.
+
 Native workbook tests retain applicable assertions from 15 Python contracts,
 including the exact 14-defect multiset, store failures, malformed parts, add-in
 and forbidden-part matrices, scoped names, long names and physical commands.

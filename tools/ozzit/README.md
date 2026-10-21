@@ -85,6 +85,11 @@ the original report fixtures, malformed XML and AFE payloads, all add-in and
 forbidden-part cases, scoped names, long names and physical command contracts.
 The private loader test adds no production seam. Python-only import coverage
 remains unchanged; native XML helper errors adapt its global failure list.
+`verify_help_spills` retains its Python reference and callers. The unchanged
+corpus checks the original help model, attribute permutations, missing caches
+and dimension errors. Physical tests retain stale/current output, argument and
+read failures, UTF-8 output and input preservation. Exact trim and private
+column-index assertions add no production seam. Python import checks remain.
 
 Build with the repository's pinned Rust toolchain:
 
