@@ -1,11 +1,9 @@
-"""Refusal and edge paths of the native evidence, index and help-spill gates."""
+"""Refusal, edge and import paths of the index gate."""
 
 import contextlib
 import csv
-import hashlib
 import importlib.util
 import io
-import json
 import shutil
 import sys
 import tempfile
@@ -15,12 +13,9 @@ from pathlib import Path
 from unittest import mock
 
 TOOLS = Path(__file__).resolve().parents[1]
-ROOT = TOOLS.parent
 sys.path.insert(0, str(TOOLS))
 
-import verify_help_spills as spills  # noqa: E402
 import verify_index  # noqa: E402
-import verify_native_evidence as evidence  # noqa: E402
 
 
 def write_archive(path, parts):
@@ -43,56 +38,11 @@ def load_fresh(name):
 class PlainStdoutImportTests(unittest.TestCase):
     def test_each_gate_imports_when_stdout_cannot_be_reconfigured(self):
         self.assertFalse(hasattr(io.StringIO(), "reconfigure"))
-        for name in ("verify_index", "verify_help_spills"):
+        for name in ("verify_index",):
             with self.subTest(tool=name):
                 module = load_fresh(name)
                 self.assertTrue(callable(module.main))
                 self.assertIsNot(module, sys.modules[name])
-
-
-class NativeEvidencePathTests(unittest.TestCase):
-    def setUp(self):
-        self.directory = Path(tempfile.mkdtemp(prefix="ozzit-evidence-paths-"))
-
-    def tearDown(self):
-        shutil.rmtree(self.directory, ignore_errors=True)
-
-    def test_a_supplied_installed_workbook_that_matches_is_confirmed(self):
-        root = self.directory / "root"
-        for name in (evidence.COMPARISON, evidence.INSTALLATION, *evidence.RUNNERS, evidence.INSTALL_RUNNER):
-            (root / name).parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(ROOT / name, root / name)
-        (root / "ozzit.xlsx").write_bytes(b"synthetic checkout workbook")
-        installed = self.directory / "installed.xlsx"
-        installed.write_bytes(b"synthetic installed workbook")
-        record = evidence.read_record(root / evidence.INSTALLATION)
-        record["destination_sha256"] = hashlib.sha256(installed.read_bytes()).hexdigest()
-        (root / evidence.INSTALLATION).write_text(json.dumps(record), encoding="utf-8")
-
-        messages = evidence.verify(root, destination=installed)
-
-        self.assertIn("Supplied installed workbook bytes match the retained evidence.", messages)
-        self.assertNotIn("Supplied release workbook bytes match the retained evidence.", messages)
-
-    def run_main(self, *argv):
-        output = io.StringIO()
-        with contextlib.redirect_stdout(output):
-            result = evidence.main(list(argv))
-        return result, output.getvalue()
-
-    def test_main_prints_each_message_for_the_checkout(self):
-        result, output = self.run_main()
-        self.assertEqual(result, 0, output)
-        self.assertEqual(output.splitlines(), evidence.verify())
-
-    def test_main_reports_a_mismatched_release_workbook(self):
-        supplied = self.directory / "release.xlsx"
-        supplied.write_bytes(b"not the release workbook")
-        result, output = self.run_main("--workbook", str(supplied))
-        self.assertEqual(result, 1)
-        self.assertEqual(
-            output, "FAIL: native evidence: release workbook hash does not match the retained evidence\n"
-        )
 
 
 class IndexGatePathTests(unittest.TestCase):
@@ -159,56 +109,6 @@ class IndexGatePathTests(unittest.TestCase):
             "  - oz.Bλ is in the workbook but missing from functions.csv",
             "  - oz.Cλ is in functions.csv but missing from the workbook",
         ])
-
-
-HELP_BOOK = (
-    '<workbook><definedNames><definedName name="oz.Fλ">LAMBDA(x, TRIM(TEXTSPLIT('
-    '"FUNCTION:→Fλ(x)¶NOTE:→none", "→", "¶")))</definedName></definedNames></workbook>'
-)
-HELP_SHEET = (
-    "<worksheet><sheetData>"
-    '<row r="4"><c r="A4" t="str"><f t="array" ref="A4:C6">oz.Fλ()</f><v>FUNCTION:</v></c>'
-    '<c r="B4" t="str"><v>Fλ(x)</v></c></row>'
-    '<row r="5"><c r="A5" t="str"><v>NOTE:</v></c><c r="B5" t="str"><v>none</v></c></row>'
-    "</sheetData></worksheet>"
-)
-
-
-class HelpSpillPathTests(unittest.TestCase):
-    def setUp(self):
-        self.directory = Path(tempfile.mkdtemp(prefix="ozzit-help-paths-"))
-
-    def tearDown(self):
-        shutil.rmtree(self.directory, ignore_errors=True)
-
-    def test_a_help_split_on_other_delimiters_is_refused(self):
-        for stored in ('TRIM(TEXTSPLIT("a→b", ",", "¶"))', 'TRIM(TEXTSPLIT("a→b", "→"))'):
-            with self.subTest(stored=stored):
-                with self.assertRaisesRegex(ValueError, "oz.Fλ: the help is not split on → and ¶"):
-                    spills.help_table(stored, "oz.Fλ")
-
-    def test_a_spill_of_the_wrong_width_reports_both_dimensions(self):
-        parts = {"xl/workbook.xml": HELP_BOOK.encode("utf-8"),
-                 "xl/worksheets/sheet1.xml": HELP_SHEET.encode("utf-8")}
-        self.assertEqual(spills.check(parts), ([
-            "xl/worksheets/sheet1.xml: the oz.Fλ help is stale, "
-            "3 cached rows against 2 in the definition, 3 cached columns against 2"
-        ], 1))
-
-    def run_main(self, *argv):
-        with mock.patch.object(sys, "argv", ["verify_help_spills.py", *map(str, argv)]), \
-                self.assertRaises(SystemExit) as raised:
-            spills.main()
-        return raised.exception.code
-
-    def test_main_refuses_extra_arguments_a_missing_file_and_a_non_archive(self):
-        missing = self.directory / "missing.xlsx"
-        not_zip = self.directory / "not-zip.xlsx"
-        not_zip.write_bytes(b"not a zip archive")
-        self.assertEqual(self.run_main("a.xlsx", "b.xlsx"),
-                         "FAIL: usage: python tools/verify_help_spills.py [workbook]")
-        self.assertEqual(self.run_main(missing), f"FAIL: no such workbook: {missing}")
-        self.assertEqual(self.run_main(not_zip), "FAIL: File is not a zip file")
 
 
 if __name__ == "__main__":

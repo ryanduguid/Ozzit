@@ -1,10 +1,9 @@
 # Ozzit Rust tooling port
 
 This crate is an unpublished migration checkpoint. CI, `RELEASING.md` and the
-postbuild run order call this binary; the Python tools stay as the reference
-implementation, and CI fails when a gate and its Python twin disagree.
-`compare_gates PYTHON` runs the workflow's native gates and their independent
-Python references, comparing exit status and both output channels on the real
+postbuild run order call this binary. CI runs all 9 native verification gates.
+`compare_gates PYTHON` compares the 7 gates that retain independent Python
+references, checking exit status and both output channels on the real
 inputs and all 3 broken-input copies. The interpreter operand is explicit;
 CI supplies the `python` selected by its existing setup step. The old Python
 orchestrator and its 3 tests have retired after transfer to native tests.
@@ -12,7 +11,10 @@ Commands inherit stdin and environment, force Python UTF-8, capture both streams
 with strict UTF-8/universal newlines and retain no timeout. Controlled errors
 replace Python tracebacks. Recursive copies follow symlinks and preserve file
 permissions and times; extended attributes are not copied. The current gates
-read content and do not use those attributes. The independent Python gates remain.
+read content and do not use those attributes. Only `verify_help_spills` and
+`verify_native_evidence` are explicitly excluded after reference retirement.
+Every other discovered gate requires its Python reference, including new gates;
+missing files fail comparison. A workflow with no reference gates is refused.
 
 `build_module` is native only; its former Python assertions now run in
 `tests/module_contracts.rs`, including the physical command-line checks.
@@ -67,9 +69,9 @@ and `tests/writer_retirement.rs`. Native tests exercise real temporary files,
 partial-write errors, panic unwinding, regular-file replacement refusal and
 platform permissions. Native stages remain open; Python's buffered-close fault
 injection has no native equivalent, and panic cleanup does not cover OS process
-termination. The exact live Python column helper now belongs to
-`verify_help_spills`, with its original test retargeted. All 34 unrelated tests
-remain; review regression fixtures use a simple standard-library ZIP builder.
+termination. The original column helper assertion now runs beside the native
+help-spill implementation. Review regression fixtures use a simple
+standard-library ZIP builder.
 `compile_sources` is native only. Its 5 former command test contracts run in
 `tests/compiler_cli_retirement.rs`, with exact status, output, no-write and index
 selection checks. Its 31 remaining compiler contracts run in `tests/foundation.rs`,
@@ -82,8 +84,8 @@ test contracts run in `src/cache_retirement.rs`, with physical command refusals
 in `tests/cache_retirement_cli.rs`. Fake runners check the complete launch,
 600-second deadline, temporary-dump cleanup and unchanged workbook bytes.
 All 8 typed error-code combinations and the 12 original cases at exactly
-15,000 cells remain checked. The retained column helper test follows its live
-Python owner; the other gate import checks and 26 unrelated tests remain.
+15,000 cells remain checked. The retained column helper assertion runs natively;
+the remaining Python gate import checks stay with their live owners.
 Generated headers retain historical Python filenames to preserve published bytes.
 `verify_signatures` retains its Python reference and callers. Native signature
 tests cover the original mismatch fixture, floor refusal, published help defects,
@@ -138,12 +140,16 @@ the original report fixtures, malformed XML and AFE payloads, all add-in and
 forbidden-part cases, scoped names, long names and physical command contracts.
 The private loader test adds no production seam. Python-only import coverage
 remains unchanged; native XML helper errors adapt its global failure list.
-`verify_help_spills` retains its Python reference and callers. The unchanged
+`verify_help_spills` is native only. Its 13 original test methods transfer to
+native tests. The unchanged
 corpus checks the original help model, attribute permutations, missing caches
 and dimension errors. Physical tests retain stale/current output, argument and
 read failures, UTF-8 output and input preservation. Exact trim and private
-column-index assertions add no production seam. Python import checks remain.
-`verify_native_evidence` retains its Python reference and callers. The unchanged
+column-index assertions add no production seam. Its obsolete Python import
+branch retires; the index import check and all 20 unrelated mixed-file methods
+remain unchanged.
+`verify_native_evidence` is native only. Its 13 original test methods transfer to
+native tests. The unchanged
 corpus covers the 43 original validation calls. Additional tests retain the
 original installed-file success fixture, supplied-file preservation and physical
 default/refusal output. Copied executables exercise root resolution on owned

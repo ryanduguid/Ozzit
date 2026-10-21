@@ -125,6 +125,50 @@ fn actual_reference_and_native_gate_match_on_original_and_broken_owned_inputs() 
     assert_eq!(f.run(), (0, successful_lines().into(), String::new()));
 }
 #[test]
+fn only_the_two_retired_references_are_excluded_even_when_files_exist() {
+    let f = Fixture::new("");
+    let retired = ["verify_help_spills", "verify_native_evidence"];
+    let workflow = "run: tools/ozzit/target/release/ozzit verify_help_spills ozzit.xlsx\nrun: tools/ozzit/target/release/ozzit verify_native_evidence\n";
+    f.workflow(&format!(
+        "{workflow}run: tools/ozzit/target/release/ozzit verify_previous_names functions.csv\n"
+    ));
+    for gate in retired {
+        fs::write(
+            f.root().join(format!("tools/{gate}.py")),
+            "raise AssertionError('retired reference must not execute')\n",
+        )
+        .unwrap();
+    }
+    assert_eq!(f.run(), (0, successful_lines().into(), String::new()));
+    for gate in retired {
+        fs::remove_file(f.root().join(format!("tools/{gate}.py"))).unwrap();
+    }
+    assert_eq!(f.run(), (0, successful_lines().into(), String::new()));
+    f.workflow(workflow);
+    assert_eq!(
+        f.run(),
+        (
+            1,
+            String::new(),
+            "no Python reference gates found in .github/workflows/verify.yml\n".into()
+        )
+    );
+}
+#[test]
+fn missing_required_and_unclassified_references_fail_and_continue_every_pair() {
+    let f = Fixture::new("");
+    fs::remove_file(f.root().join("tools/verify_previous_names.py")).unwrap();
+    f.workflow("run: tools/ozzit/target/release/ozzit verify_previous_names functions.csv\nrun: tools/ozzit/target/release/ozzit verify_previous_names functions.csv\nrun: tools/ozzit/target/release/ozzit verify_unclassified\n");
+    let (code, out, err) = f.run();
+    assert_eq!(code, 1);
+    assert!(out.is_empty());
+    assert_eq!(err.matches("DIFFERENT:").count(), 5);
+    assert_eq!(err.matches("--- ozzit:").count(), 5);
+    assert_eq!(err.matches("--- python:").count(), 5);
+    assert!(err.contains("verify_previous_names.py"));
+    assert!(err.contains("DIFFERENT: verify_unclassified\n"));
+}
+#[test]
 fn stderr_mismatch_reports_both_captures_and_continues_every_pair() {
     let f = Fixture::new("import os\nos.write(2, b'marker\\r\\n')\n");
     f.workflow("run: tools/ozzit/target/release/ozzit verify_previous_names functions.csv\nrun: tools/ozzit/target/release/ozzit verify_previous_names functions.csv\n");
@@ -204,6 +248,31 @@ fn references_inherit_the_callers_open_stdin_pipe() {
 fn ordinary_workflow_selects_its_python_interpreter_for_the_native_comparator() {
     let text = fs::read_to_string(repository().join(".github/workflows/verify.yml")).unwrap();
     assert!(text.contains("run: tools/ozzit/target/release/ozzit compare_gates python\n"));
+    let gates: Vec<_> = text
+        .lines()
+        .filter_map(|line| {
+            line.trim()
+                .strip_prefix("run: tools/ozzit/target/release/ozzit verify_")
+        })
+        .map(|line| line.split_whitespace().next().unwrap())
+        .collect();
+    assert_eq!(
+        gates,
+        [
+            "workbook",
+            "sources",
+            "signatures",
+            "previous_names",
+            "index",
+            "cover",
+            "afe",
+            "help_spills",
+            "native_evidence"
+        ]
+    );
+    for retired in ["verify_help_spills", "verify_native_evidence"] {
+        assert!(!repository().join(format!("tools/{retired}.py")).exists());
+    }
     assert!(!repository().join(".github/ci/compare_gates.py").exists());
     assert!(
         !repository()

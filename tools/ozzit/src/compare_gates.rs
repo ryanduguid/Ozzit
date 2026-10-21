@@ -320,9 +320,20 @@ impl Comparator<'_> {
 }
 
 fn check(root: &Path, python: &str, output: &mut Output) -> Result<bool> {
-    let gates = discover(&common::read_text(&root.join(WORKFLOW))?)?;
-    let Some(first) = gates.first() else {
+    let mut gates = discover(&common::read_text(&root.join(WORKFLOW))?)?;
+    if gates.is_empty() {
         return Err(format!("no native verify_* gates found in {WORKFLOW}"));
+    }
+    // These references retired after their contracts transferred to native tests.
+    // Every other discovered gate still requires its independent Python reference.
+    gates.retain(|gate| {
+        !matches!(
+            gate[1].as_str(),
+            "verify_help_spills" | "verify_native_evidence"
+        )
+    });
+    let Some(first) = gates.first() else {
+        return Err(format!("no Python reference gates found in {WORKFLOW}"));
     };
     Comparator {
         root,

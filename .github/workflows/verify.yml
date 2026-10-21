@@ -101,8 +101,8 @@ jobs:
         run: tools/ozzit/target/release/ozzit verify_help_spills ozzit.xlsx
       - name: Check retained native evidence and its provenance
         run: tools/ozzit/target/release/ozzit verify_native_evidence
-      # The Python tools stay the reference implementation; this fails if any
-      # gate above and its tools/*.py twin disagree on exit code or output.
+      # The 7 remaining Python references must agree on exit code and output.
+      # Help-spill and native-evidence contracts now run in native tests.
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.14'

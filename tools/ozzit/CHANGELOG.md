@@ -2,6 +2,13 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+Retire the Python help-spill and retained-evidence references and their exclusive
+tests after mapping all 26 original methods to existing native checks. Keep all
+9 ordinary native CI gates. The comparator explicitly excludes only these 2
+retired references and still fails for missing required or unclassified
+references. All 7 schema 1 release gates, provenance and privileged workflow
+remain unchanged.
+
 Move gate comparison orchestration to `ozzit compare_gates PYTHON`, with the
 existing Python gate references and an explicit interpreter. Preserve discovery,
 POSIX argument splitting, status/channel comparison, ordered broken-input
