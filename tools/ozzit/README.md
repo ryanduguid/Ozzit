@@ -80,6 +80,21 @@ input failures and command defaults. Existing corpus and foundation cases retain
 the helper contracts. A private fixture floor leaves the public floor at 100;
 the Python-only fresh import test remains unchanged.
 The workbook retains its native Excel formulas and ordinary `.xlsx` format.
+`check_gates WORKFLOW GATE [--exempt JOB ...] [--no-results]` checks aggregate
+job results, missing needs and declared removals against the first-parent base.
+It reads `RESULTS` even with `--no-results`; only `pull_request` checks the base.
+The narrow job-key grammar, directory-entry path selection and validation order
+match `.github/ci/check_gates.py`. All 39 baseline assertion sets transfer to
+private unit tests and physical command tests, with additional real Git cases.
+The Python helper, its tests and both workflow callers remain live.
+Git uses separate arguments, inherited cwd/environment, captured streams and no
+timeout. Both Git streams and workflow files decode strictly as UTF-8 with
+universal newlines. Untrimmed Git stdout is retained. This intentionally does
+not emulate legacy Python locale/Windows ACP decoding; non-UTF-8 Git output
+fails closed. Explicit refusals preserve status and output channels, including
+declared-removal stdout before undeclared-removal stderr. Python exceptions
+become controlled category-prefixed stderr and exit 1 without tracebacks or
+exception-object identity. Git termination without an exit code reports -1.
 Release Git tests retain the 6 original checkout-binding contracts beside
 the staging tests. They check the shipped workbook against its manifest and
 full Git history, query order, all claim mismatches, dirty checkout and bad
@@ -126,6 +141,7 @@ repository root to use their usual path defaults.
 
 | Command | Purpose |
 | --- | --- |
+| `check_gates` | Check aggregate CI job results, needs and declared removals |
 | `compile_sources` | Compile source definitions and optionally rebuild the CSV index |
 | `verify_sources` | Compare source definitions with stored workbook names |
 | `verify_signatures` | Check signatures, parameter tables and worked examples |

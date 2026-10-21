@@ -2,6 +2,15 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+Add `ozzit check_gates` with the existing CI helper's job grammar, result and
+needs checks, directory-entry resolution and first-parent removal checks.
+All 39 baseline assertion sets transfer; owned physical commands add real Git
+same-path, renamed, new, ambiguous and failed-parent cases. Explicit refusals
+retain status and channels. Exceptions become controlled stderr; Git streams
+use strict UTF-8 and universal newlines, retaining no timeout. Legacy locale
+decoding remains an explicit compatibility gap. Python helpers/tests and both
+workflow callers remain unchanged during qualification.
+
 Rust release static tests and the unchanged corpus retain applicable assertions
 from the remaining 18 original methods, including all 22 provenance mutations.
 New cases use the missing original Boolean, file, manifest, checksum and parser
