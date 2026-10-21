@@ -1035,3 +1035,288 @@ fn verify_reruns_the_semantic_gates() {
     assert_eq!(git.calls, expected_command_queries());
     assert_eq!(snapshot(fixture.directory.path()), before);
 }
+
+fn rewrite_static_provenance(bundle: &Path, change: impl FnOnce(&mut serde_json::Value)) {
+    let path = bundle.join("provenance.json");
+    let mut document = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+    change(&mut document);
+    let document = pyjson::loads(&document.to_string()).unwrap();
+    fs::write(path, canonical_json(&document)).unwrap();
+    let checksums = CHECKSUMMED
+        .iter()
+        .map(|name| ((*name).into(), sha256(&bundle.join(name)).unwrap()))
+        .collect::<Vec<_>>();
+    fs::write(bundle.join("SHA256SUMS"), checksum_bytes(&checksums)).unwrap();
+}
+
+fn assert_static_refusal(fixture: &Fixture, bundle: &Path, expected: &str) {
+    let before = snapshot(fixture.directory.path());
+    assert_eq!(
+        verify_bundle(bundle, &fixture.root, false).unwrap_err(),
+        expected
+    );
+    assert_eq!(snapshot(fixture.directory.path()), before);
+}
+
+#[test]
+fn falsified_native_gate_claim_is_rejected() {
+    let fixture = Fixture::new();
+    let output = fixture.output("bundle");
+    fixture.create(&output).unwrap();
+    rewrite_static_provenance(&output, |document| {
+        document["verification"]["native_gates"]["included"] = serde_json::json!(true);
+    });
+    assert_static_refusal(
+        &fixture,
+        &output,
+        "provenance verification claims are invalid",
+    );
+    fixture.assert_source_unchanged();
+}
+
+#[test]
+fn unexpected_top_level_provenance_claim_is_rejected() {
+    let fixture = Fixture::new();
+    let output = fixture.output("bundle");
+    fixture.create(&output).unwrap();
+    rewrite_static_provenance(&output, |document| {
+        document["independently_verified"] = serde_json::json!(true);
+    });
+    assert_static_refusal(
+        &fixture,
+        &output,
+        "provenance.json has an unexpected top-level schema",
+    );
+    fixture.assert_source_unchanged();
+}
+
+#[test]
+fn version_and_commit_reject_all_original_noncanonical_values() {
+    for version in ["v3.2.0", "03.2.0", "3.2", "3.2.0; touch pwned"] {
+        assert_eq!(
+            validate_version(version).unwrap_err(),
+            "version must be canonical X.Y.Z without a v prefix"
+        );
+    }
+    for commit in [
+        "main".into(),
+        "a".repeat(39),
+        "A".repeat(40),
+        "a".repeat(40) + ";",
+    ] {
+        assert_eq!(
+            validate_source_commit(&commit).unwrap_err(),
+            "source commit must be a full 40-character lowercase SHA"
+        );
+    }
+}
+
+#[test]
+fn malformed_manifest_json_reports_its_file_name() {
+    let fixture = Fixture::new();
+    for data in [b"{not json".as_slice(), b"{\"path\": \"\xff\"}"] {
+        fs::write(&fixture.manifest, data).unwrap();
+        let before = snapshot(fixture.directory.path());
+        let error = verify_base_workbook(&fixture.workbook, &fixture.manifest).unwrap_err();
+        assert!(
+            error.starts_with("invalid JSON in workbook-base.json: "),
+            "{error}"
+        );
+        assert_eq!(snapshot(fixture.directory.path()), before);
+    }
+}
+
+#[test]
+fn missing_json_file_is_reported_as_invalid() {
+    let fixture = Fixture::new();
+    let before = snapshot(fixture.directory.path());
+    let error = load_json_object(&fixture.output("absent.json")).unwrap_err();
+    assert!(
+        error.starts_with("invalid JSON in absent.json: "),
+        "{error}"
+    );
+    assert_eq!(snapshot(fixture.directory.path()), before);
+}
+
+#[test]
+fn workbook_and_manifest_must_be_regular_files() {
+    let fixture = Fixture::new();
+    let folder = fixture.output("folder");
+    fs::create_dir(&folder).unwrap();
+    let before = snapshot(fixture.directory.path());
+    for (workbook, manifest, error) in [
+        (
+            &folder,
+            &fixture.manifest,
+            "base workbook must be a regular non-symlink file",
+        ),
+        (
+            &fixture.workbook,
+            &folder,
+            "base workbook manifest must be a regular non-symlink file",
+        ),
+    ] {
+        assert_eq!(verify_base_workbook(workbook, manifest).unwrap_err(), error);
+        assert_eq!(snapshot(fixture.directory.path()), before);
+    }
+}
+
+#[test]
+fn manifest_fields_reject_the_remaining_original_values() {
+    let fixture = Fixture::new();
+    let pristine: serde_json::Value =
+        serde_json::from_slice(&fs::read(&fixture.manifest).unwrap()).unwrap();
+    // Extra/schema/zero-size cases are retained in corpus cases 75/63/62/65.
+    for (field, value, message) in [
+        (
+            "path",
+            serde_json::json!("other.xlsx"),
+            "path must be ozzit.xlsx",
+        ),
+        (
+            "size",
+            serde_json::json!("27"),
+            "size must be a positive integer",
+        ),
+        (
+            "sha256",
+            serde_json::json!("A".repeat(64)),
+            "SHA-256 is invalid",
+        ),
+        ("sha256", serde_json::json!(7), "SHA-256 is invalid"),
+        (
+            "git_blob_sha1",
+            serde_json::json!("c".repeat(39)),
+            "Git blob SHA-1 is invalid",
+        ),
+        (
+            "git_blob_sha1",
+            serde_json::Value::Null,
+            "Git blob SHA-1 is invalid",
+        ),
+        (
+            "last_workbook_commit",
+            serde_json::json!(5),
+            "last commit is invalid",
+        ),
+    ] {
+        let mut document = pristine.clone();
+        document[field] = value;
+        fs::write(&fixture.manifest, document.to_string()).unwrap();
+        let before = snapshot(fixture.directory.path());
+        assert_eq!(
+            verify_base_workbook(&fixture.workbook, &fixture.manifest).unwrap_err(),
+            format!("base workbook manifest {message}")
+        );
+        assert_eq!(snapshot(fixture.directory.path()), before);
+    }
+}
+
+#[test]
+fn unreadable_checksum_files_are_rejected() {
+    let fixture = Fixture::new();
+    let path = fixture.output("SHA256SUMS");
+    let before = snapshot(fixture.directory.path());
+    let error = parse_checksums(&path).unwrap_err();
+    assert!(error.starts_with("invalid SHA256SUMS: "), "{error}");
+    assert_eq!(snapshot(fixture.directory.path()), before);
+    fs::write(&path, "é\n").unwrap();
+    let before = snapshot(fixture.directory.path());
+    let error = parse_checksums(&path).unwrap_err();
+    assert!(error.starts_with("invalid SHA256SUMS: "), "{error}");
+    assert!(error.contains("ascii"), "{error}");
+    assert_eq!(snapshot(fixture.directory.path()), before);
+}
+
+#[test]
+fn malformed_checksum_files_reject_all_original_rows() {
+    let fixture = Fixture::new();
+    let path = fixture.output("SHA256SUMS");
+    let digest = "f".repeat(64);
+    for (data, message) in [
+        (
+            format!("{digest}  ozzit.xlsx"),
+            "must use canonical LF-terminated lines",
+        ),
+        (
+            format!("{digest}  ozzit.xlsx\r\n"),
+            "must use canonical LF-terminated lines",
+        ),
+        (
+            format!("{digest} ozzit.xlsx\n"),
+            "contains a malformed line",
+        ),
+        (
+            format!("{digest}  ozzit.xlsx\n{digest}  ozzit.xlsx\n"),
+            "repeats ozzit.xlsx",
+        ),
+        (
+            format!("{digest}  ozzit.xlsx\n"),
+            "has an unexpected inventory",
+        ),
+        (
+            format!("{digest}  provenance.json\n{digest}  ozzit.xlsx\n"),
+            "is not canonically ordered",
+        ),
+    ] {
+        fs::write(&path, data).unwrap();
+        let before = snapshot(fixture.directory.path());
+        assert_eq!(
+            parse_checksums(&path).unwrap_err(),
+            format!("SHA256SUMS {message}")
+        );
+        assert_eq!(snapshot(fixture.directory.path()), before);
+    }
+}
+
+#[test]
+fn canonical_checksum_file_returns_both_original_digests() {
+    let fixture = Fixture::new();
+    let path = fixture.output("SHA256SUMS");
+    let digest = "f".repeat(64);
+    fs::write(
+        &path,
+        format!("{digest}  ozzit.xlsx\n{digest}  provenance.json\n"),
+    )
+    .unwrap();
+    let before = snapshot(fixture.directory.path());
+    assert_eq!(
+        parse_checksums(&path).unwrap(),
+        [
+            ("ozzit.xlsx".into(), digest.clone()),
+            ("provenance.json".into(), digest)
+        ]
+    );
+    assert_eq!(snapshot(fixture.directory.path()), before);
+}
+
+#[test]
+fn bundle_must_be_a_directory_containing_only_regular_files() {
+    let fixture = Fixture::new();
+    let output = fixture.output("bundle");
+    fixture.create(&output).unwrap();
+    assert_static_refusal(
+        &fixture,
+        &output.join("SHA256SUMS"),
+        "bundle must be a regular non-symlink directory",
+    );
+    fs::create_dir(output.join("nested")).unwrap();
+    assert_static_refusal(
+        &fixture,
+        &output,
+        "bundle inventory may contain only regular non-symlink files",
+    );
+    fixture.assert_source_unchanged();
+}
+
+#[test]
+fn parser_rejects_the_remaining_original_incomplete_commands() {
+    // Empty argv and ["verify"] remain in argparse corpus cases 0 and 8.
+    for args in [vec!["publish"], vec!["create", "--version", "3.2.0"]] {
+        let args = args.into_iter().map(String::from).collect::<Vec<_>>();
+        let output = command_with(&args, |_| panic!("parse failure must not execute"));
+        assert_eq!(output.code, 2);
+        assert!(output.out.is_empty());
+        assert!(!output.err.is_empty());
+    }
+}

@@ -2,6 +2,12 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+Rust release static tests and the unchanged corpus retain applicable assertions
+from the remaining 18 original methods, including all 22 provenance mutations.
+New cases use the missing original Boolean, file, manifest, checksum and parser
+inputs. The Python subprocess AST assertion remains with its reference; native
+invocation checks retain separate argument vectors. Production code is unchanged.
+
 Rust command tests retain the 6 original release execution contracts, with
 real owned staging and independent semantic verification. They check HEAD
 defaults, requested claims, refusal before staging, exact logical output and

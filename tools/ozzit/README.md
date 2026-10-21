@@ -92,6 +92,12 @@ bundle creation and verification. They cover implicit/explicit HEAD, all
 requested-claim refusals, clean-check-first ordering, exact logical output and
 the independent semantic rerun. Private callbacks retain production root
 discovery and command formatting. All Python release tests and callers remain.
+Release static tests and the unchanged replay retain the remaining 18 original
+method contracts. Added cases cover exact Boolean claims, malformed files,
+canonical values, manifest fields, checksum rows and parser refusals. The replay
+retains all 22 provenance mutations with type-strict input bindings. The original
+Python subprocess AST check remains; native invocation tests check separate
+argument vectors through the existing process runner. Production code is unchanged.
 `verify_workbook` retains its Python reference and callers. Native tests cover
 the original report fixtures, malformed XML and AFE payloads, all add-in and
 forbidden-part cases, scoped names, long names and physical command contracts.
