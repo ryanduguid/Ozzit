@@ -413,6 +413,17 @@ fn run_gate(exe: &str, args: Vec<String>, root: &Path) -> Result<(i64, String)> 
 }
 
 pub fn run_semantic_gates(root: &Path, workbook: &Path) -> Result<Vec<(String, String)>> {
+    run_semantic_gates_with(root, workbook, run_gate)
+}
+
+fn run_semantic_gates_with<F>(
+    root: &Path,
+    workbook: &Path,
+    mut runner: F,
+) -> Result<Vec<(String, String)>>
+where
+    F: FnMut(&str, Vec<String>, &Path) -> Result<(i64, String)>,
+{
     let workbook = py::resolve(workbook);
     let w = workbook.display().to_string();
     let r = |part: &str| root.join(part).display().to_string();
@@ -440,7 +451,7 @@ pub fn run_semantic_gates(root: &Path, workbook: &Path) -> Result<Vec<(String, S
     for ((gate, arguments), display) in specifications.into_iter().zip(GATE_COMMANDS) {
         let mut args = vec![gate.to_string()];
         args.extend(arguments);
-        let (code, output) = run_gate(&exe, args, root)?;
+        let (code, output) = runner(&exe, args, root)?;
         let output = normalise_gate_output(&output, root, &workbook);
         if code != 0 {
             let detail = if output.is_empty() {
@@ -694,6 +705,18 @@ fn check_claims(verification: &Json) -> Result<()> {
 
 /// Verify exact inventory, hashes, provenance and optionally every workbook gate.
 pub fn verify_bundle(bundle: &Path, root: &Path, check_semantics: bool) -> Result<Json> {
+    verify_bundle_with(bundle, root, check_semantics, run_semantic_gates)
+}
+
+fn verify_bundle_with<F>(
+    bundle: &Path,
+    root: &Path,
+    check_semantics: bool,
+    semantic_gates: F,
+) -> Result<Json>
+where
+    F: FnOnce(&Path, &Path) -> Result<Vec<(String, String)>>,
+{
     check_inventory(bundle)?;
     for (name, expected) in parse_checksums(&bundle.join("SHA256SUMS"))? {
         if sha256(&bundle.join(&name))? != expected {
@@ -720,7 +743,7 @@ pub fn verify_bundle(bundle: &Path, root: &Path, check_semantics: bool) -> Resul
     let verification = document.get("verification").expect("checked keys");
     let gates = static_gates(verification)?;
     check_claims(verification)?;
-    if check_semantics && run_semantic_gates(root, &bundle.join("ozzit.xlsx"))? != gates {
+    if check_semantics && semantic_gates(root, &bundle.join("ozzit.xlsx"))? != gates {
         return Err("semantic gate evidence does not match an independent run".into());
     }
     Ok(document)

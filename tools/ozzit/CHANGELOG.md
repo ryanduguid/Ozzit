@@ -2,6 +2,11 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+Rust semantic execution tests retain the 4 original independent-rerun,
+path-spelling and failed-gate contracts. They check ordered arguments,
+normalised evidence, first-failure stopping and exact diagnostics. Private
+callbacks preserve the original public checks, executable, cwd and deadlines.
+
 Rust release staging tests retain all 10 original staging contracts: exact
 3-asset output, checksums, repeatability, refusal, cleanup and destination-race
 preservation. A private seam injects the original mocked checks whilst the

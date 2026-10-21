@@ -212,6 +212,10 @@ All 3 staged assets match the original Python fixture bytes and repeat builds
 are byte identical. Private callbacks inject gate failures, structural failures
 and a destination race; the public command keeps its real checks and operation
 order. Every Python release method, caller and recorded replay remains.
+Semantic execution tests add the 4 original independent-rerun, path-spelling
+and failed-gate contracts. They check all 7 native argument vectors, absolute
+operands, normalised evidence and exact diagnostics, including silent failures.
+Private callbacks retain the real public executable, cwd, timeouts and checks.
 CI, `RELEASING.md` and the postbuild run order call this binary. The Python tools
 that remain under test are the reference implementations until retired; the
 optional pyxirr comparison stays in Python.

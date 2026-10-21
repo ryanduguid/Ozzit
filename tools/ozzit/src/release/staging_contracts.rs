@@ -326,3 +326,174 @@ fn destination_created_during_staging_is_not_replaced() {
     assert_eq!(names(fixture.directory.path()), ["bundle", "repo"]);
     fixture.assert_source_unchanged();
 }
+
+#[test]
+fn independent_semantic_results_must_match_provenance() {
+    let fixture = Fixture::new();
+    let output = fixture.output("bundle");
+    let document = fixture.create(&output).unwrap();
+    let before = snapshot(fixture.directory.path());
+    let calls = Cell::new(0);
+    let matching = |root: &Path, workbook: &Path| {
+        assert_eq!(root, fixture.root);
+        assert_eq!(workbook, output.join("ozzit.xlsx"));
+        calls.set(calls.get() + 1);
+        Ok(gates())
+    };
+    assert!(py_eq(
+        &verify_bundle_with(&output, &fixture.root, true, matching).unwrap(),
+        &document
+    ));
+    assert_eq!(calls.get(), 1);
+    let different = |root: &Path, workbook: &Path| {
+        assert_eq!(root, fixture.root);
+        assert_eq!(workbook, output.join("ozzit.xlsx"));
+        calls.set(calls.get() + 1);
+        Ok(vec![("same".into(), "different".into())])
+    };
+    assert_eq!(
+        verify_bundle_with(&output, &fixture.root, true, different).unwrap_err(),
+        "semantic gate evidence does not match an independent run"
+    );
+    assert_eq!(calls.get(), 2);
+    assert!(py_eq(
+        &verify_bundle_with(&output, &fixture.root, false, |_: &Path, _: &Path| {
+            panic!("structural-only verification must not run semantic gates")
+        })
+        .unwrap(),
+        &document
+    ));
+    assert_eq!(snapshot(fixture.directory.path()), before);
+}
+
+#[test]
+fn gate_evidence_is_independent_of_how_the_workbook_path_is_written() {
+    let fixture = Fixture::new();
+    let before = snapshot(fixture.directory.path());
+    let detoured = fixture.root.join("..").join("repo").join("ozzit.xlsx");
+    assert!(
+        detoured
+            .components()
+            .any(|part| part == Component::ParentDir)
+    );
+    let mut recorded = Vec::new();
+    let mut echo = |exe: &str, arguments: Vec<String>, root: &Path| {
+        let output = format!("OK: {}\n", arguments[1..].join(" "));
+        recorded.push((exe.to_string(), arguments, root.to_path_buf()));
+        Ok((0, output))
+    };
+    let direct = run_semantic_gates_with(&fixture.root, &fixture.workbook, &mut echo).unwrap();
+    let indirect = run_semantic_gates_with(&fixture.root, &detoured, &mut echo).unwrap();
+    assert_eq!(direct, indirect);
+    assert_eq!(direct.len(), 7);
+    assert!(
+        direct
+            .iter()
+            .all(|(command, output)| !command.contains("..") && !output.contains(".."))
+    );
+    let expected_outputs = [
+        "OK: ozzit.xlsx",
+        "OK: ozzit.xlsx src",
+        "OK: src",
+        "OK: functions.csv",
+        "OK: ozzit.xlsx src functions.csv",
+        "OK: ozzit.xlsx functions.csv ./CHANGELOG.md",
+        "OK: ozzit.xlsx src",
+    ];
+    for ((command, output), (label, expected)) in direct
+        .iter()
+        .zip(GATE_COMMANDS.into_iter().zip(expected_outputs))
+    {
+        assert_eq!(command, label);
+        assert_eq!(output, expected);
+    }
+    assert_gate_calls(&fixture, &recorded);
+    assert_eq!(snapshot(fixture.directory.path()), before);
+}
+
+fn assert_gate_calls(fixture: &Fixture, recorded: &[(String, Vec<String>, PathBuf)]) {
+    let w = py::resolve(&fixture.workbook).display().to_string();
+    let src = fixture.root.join("src").display().to_string();
+    let csv = fixture.root.join("functions.csv").display().to_string();
+    let changelog = fixture.root.join("CHANGELOG.md").display().to_string();
+    let expected_arguments = [
+        vec!["verify_workbook".to_string(), w.clone()],
+        vec!["verify_sources".into(), w.clone(), src.clone()],
+        vec!["verify_signatures".into(), src.clone()],
+        vec!["verify_previous_names".into(), csv.clone()],
+        vec!["verify_index".into(), w.clone(), src.clone(), csv.clone()],
+        vec!["verify_cover".into(), w.clone(), csv, changelog],
+        vec!["verify_afe".into(), w, src],
+    ];
+    assert_eq!(recorded.len(), 14);
+    let exe = std::env::current_exe().unwrap();
+    for (i, (program, arguments, cwd)) in recorded.iter().enumerate() {
+        assert_eq!(Path::new(program), exe);
+        assert_eq!(arguments, &expected_arguments[i % 7]);
+        assert_eq!(cwd, &fixture.root);
+        assert!(
+            arguments[1..]
+                .iter()
+                .all(|argument| Path::new(argument).is_absolute())
+        );
+    }
+}
+
+#[test]
+fn failing_gate_reports_its_command_code_and_normalised_output() {
+    let fixture = Fixture::new();
+    let before = snapshot(fixture.directory.path());
+    let calls = Cell::new(0);
+    let fail = |exe: &str, arguments: Vec<String>, root: &Path| {
+        calls.set(calls.get() + 1);
+        assert_eq!(Path::new(exe), std::env::current_exe().unwrap());
+        assert_eq!(
+            arguments,
+            [
+                "verify_workbook".to_string(),
+                py::resolve(&fixture.workbook).display().to_string()
+            ]
+        );
+        assert_eq!(root, fixture.root);
+        Ok((
+            1,
+            format!(
+                "FAIL: {}\r\nsee {}\r\n",
+                fixture.workbook.display(),
+                fixture.root.join("src").display()
+            ),
+        ))
+    };
+    assert_eq!(
+        run_semantic_gates_with(&fixture.root, &fixture.workbook, fail).unwrap_err(),
+        "python tools/verify_workbook.py ozzit.xlsx failed with exit code 1\nFAIL: ozzit.xlsx\nsee src"
+    );
+    assert_eq!(calls.get(), 1);
+    assert_eq!(snapshot(fixture.directory.path()), before);
+}
+
+#[test]
+fn silent_failing_gate_reports_only_its_exit_code() {
+    let fixture = Fixture::new();
+    let before = snapshot(fixture.directory.path());
+    let calls = Cell::new(0);
+    let fail = |exe: &str, arguments: Vec<String>, root: &Path| {
+        calls.set(calls.get() + 1);
+        assert_eq!(Path::new(exe), std::env::current_exe().unwrap());
+        assert_eq!(
+            arguments,
+            [
+                "verify_workbook".to_string(),
+                py::resolve(&fixture.workbook).display().to_string()
+            ]
+        );
+        assert_eq!(root, fixture.root);
+        Ok((3, "\r\n".into()))
+    };
+    assert_eq!(
+        run_semantic_gates_with(&fixture.root, &fixture.workbook, fail).unwrap_err(),
+        "python tools/verify_workbook.py ozzit.xlsx failed with exit code 3"
+    );
+    assert_eq!(calls.get(), 1);
+    assert_eq!(snapshot(fixture.directory.path()), before);
+}
