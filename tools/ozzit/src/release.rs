@@ -760,6 +760,30 @@ pub fn create_bundle(
     version: &str,
     source_commit: &str,
 ) -> Result<Json> {
+    create_bundle_with(
+        root,
+        workbook,
+        base_manifest,
+        output,
+        version,
+        source_commit,
+        (run_semantic_gates, verify_bundle),
+    )
+}
+
+fn create_bundle_with<G, V>(
+    root: &Path,
+    workbook: &Path,
+    base_manifest: &Path,
+    output: &py::PyPath,
+    version: &str,
+    source_commit: &str,
+    checks: (G, V),
+) -> Result<Json>
+where
+    G: FnOnce(&Path, &Path) -> Result<Vec<(String, String)>>,
+    V: FnOnce(&Path, &Path, bool) -> Result<Json>,
+{
     validate_version(version)?;
     validate_source_commit(source_commit)?;
     let root = py::resolve(root);
@@ -779,7 +803,7 @@ pub fn create_bundle(
         let staged = dir.join("ozzit.xlsx");
         write_bytes(&staged, &read_bytes(&workbook)?)?;
         verify_base_workbook(&staged, &base_manifest)?;
-        let gates = run_semantic_gates(&root, &staged)?;
+        let gates = checks.0(&root, &staged)?;
         let document = provenance(&base, version, source_commit, &gates);
         write_bytes(&dir.join("provenance.json"), &canonical_json(&document))?;
         let checksums = CHECKSUMMED
@@ -787,7 +811,7 @@ pub fn create_bundle(
             .map(|name| Ok((name.to_string(), sha256(&dir.join(name))?)))
             .collect::<Result<Vec<_>>>()?;
         write_bytes(&dir.join("SHA256SUMS"), &checksum_bytes(&checksums))?;
-        verify_bundle(dir, &root, false)?;
+        checks.1(dir, &root, false)?;
         if output_path.symlink_metadata().is_ok() {
             return Err(format!(
                 "release bundle destination already exists: {output}"
@@ -807,6 +831,9 @@ pub fn create_bundle(
     }
     Ok(document)
 }
+
+#[cfg(test)]
+mod staging_contracts;
 
 // ---- command line -------------------------------------------------------------
 

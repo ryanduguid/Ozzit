@@ -206,6 +206,12 @@ The public command still uses the same known list and output. Python-specific
 import tests and every live Python caller remain.
 Differential scripts
 and their receipts are retained in the local Agent Hub evidence for this port.
+Release staging tests retain all 10 original staging contracts, using real
+copies, checksums, structural verification and cleanup in owned synthetic roots.
+All 3 staged assets match the original Python fixture bytes and repeat builds
+are byte identical. Private callbacks inject gate failures, structural failures
+and a destination race; the public command keeps its real checks and operation
+order. Every Python release method, caller and recorded replay remains.
 CI, `RELEASING.md` and the postbuild run order call this binary. The Python tools
 that remain under test are the reference implementations until retired; the
 optional pyxirr comparison stays in Python.

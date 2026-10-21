@@ -2,6 +2,12 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+Rust release staging tests retain all 10 original staging contracts: exact
+3-asset output, checksums, repeatability, refusal, cleanup and destination-race
+preservation. A private seam injects the original mocked checks whilst the
+public command retains its real checks, schema, labels and operation order.
+All Python methods, callers and existing recorded cases remain.
+
 Native-evidence tests retain applicable assertions from 13 Python contracts.
 The unchanged replay covers all 43 original validation calls. New tests add
 the original installed-workbook success fixture, refused-file preservation and
