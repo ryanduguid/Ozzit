@@ -1237,6 +1237,13 @@ where
 }
 
 fn run_create(arguments: &Arguments, root: &Path, head: String) -> Result<String> {
+    run_create_with(arguments, root, head, create_bundle)
+}
+
+fn run_create_with<C>(arguments: &Arguments, root: &Path, head: String, build: C) -> Result<String>
+where
+    C: FnOnce(&Path, &Path, &Path, &py::PyPath, &str, &str) -> Result<Json>,
+{
     let source_commit = match &arguments.source_commit {
         None => head.clone(),
         Some(requested) => validate_source_commit(requested)?,
@@ -1246,7 +1253,7 @@ fn run_create(arguments: &Arguments, root: &Path, head: String) -> Result<String
     }
     let output = py::PyPath::new(arguments.output.as_deref().expect("required"));
     let version = arguments.version.as_deref().expect("required");
-    let document = create_bundle(
+    let document = build(
         root,
         &root.join("ozzit.xlsx"),
         &root.join(BASE_MANIFEST),
@@ -1262,8 +1269,15 @@ fn run_create(arguments: &Arguments, root: &Path, head: String) -> Result<String
 }
 
 fn run_verify(arguments: &Arguments, root: &Path, head: &str) -> Result<String> {
+    run_verify_with(arguments, root, head, verify_bundle)
+}
+
+fn run_verify_with<V>(arguments: &Arguments, root: &Path, head: &str, verify: V) -> Result<String>
+where
+    V: FnOnce(&Path, &Path, bool) -> Result<Json>,
+{
     let bundle = py::PyPath::new(arguments.bundle.as_deref().expect("required"));
-    let document = verify_bundle(&bundle.fs(), root, true)?;
+    let document = verify(&bundle.fs(), root, true)?;
     let source = document
         .get("source")
         .and_then(|s| s.get("commit"))
@@ -1290,23 +1304,57 @@ fn run_verify(arguments: &Arguments, root: &Path, head: &str) -> Result<String> 
 
 fn run(arguments: &Arguments) -> Result<String> {
     let root = py::resolve(&cache::repository_root(BASE_MANIFEST));
-    ensure_clean_checkout(&root)?;
-    let head = current_commit(&root)?;
+    run_with(
+        arguments,
+        root,
+        (
+            ensure_clean_checkout,
+            current_commit,
+            verify_repository_base,
+        ),
+        (run_create, run_verify),
+    )
+}
+
+fn run_with<E, H, B, C, V>(
+    arguments: &Arguments,
+    root: PathBuf,
+    checks: (E, H, B),
+    commands: (C, V),
+) -> Result<String>
+where
+    E: FnOnce(&Path) -> Result<()>,
+    H: FnOnce(&Path) -> Result<String>,
+    B: FnOnce(&Path, &Json) -> Result<()>,
+    C: FnOnce(&Arguments, &Path, String) -> Result<String>,
+    V: FnOnce(&Arguments, &Path, &str) -> Result<String>,
+{
+    let (clean_checkout, current_head, repository_base) = checks;
+    let (create, verify) = commands;
+    clean_checkout(&root)?;
+    let head = current_head(&root)?;
     let base = verify_base_workbook(&root.join("ozzit.xlsx"), &root.join(BASE_MANIFEST))?;
-    verify_repository_base(&root, &base)?;
+    repository_base(&root, &base)?;
     if arguments.command == "create" {
-        run_create(arguments, &root, head)
+        create(arguments, &root, head)
     } else {
-        run_verify(arguments, &root, &head)
+        verify(arguments, &root, &head)
     }
 }
 
 pub fn command(args: &[String]) -> Output {
+    command_with(args, run)
+}
+
+fn command_with<F>(args: &[String], runner: F) -> Output
+where
+    F: FnOnce(&Arguments) -> Result<String>,
+{
     let arguments = match parse(args) {
         Ok(arguments) => arguments,
         Err(output) => return output,
     };
-    match run(&arguments) {
+    match runner(&arguments) {
         Ok(line) => Output::ok(vec![line]),
         Err(e) => Output::stderr(format!("ERROR: {e}")),
     }

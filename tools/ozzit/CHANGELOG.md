@@ -2,6 +2,12 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+Rust command tests retain the 6 original release execution contracts, with
+real owned staging and independent semantic verification. They check HEAD
+defaults, requested claims, refusal before staging, exact logical output and
+input preservation. Private forwarding callbacks retain production root
+discovery, checks, validation order and command error conversion.
+
 Rust Git tests retain all 6 original checkout-binding contracts, including
 the shipped workbook's manifest and full Git history, ordered read-only
 queries, mismatched claims, dirty checkout and bad HEAD refusals, checked

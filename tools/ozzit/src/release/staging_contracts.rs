@@ -702,3 +702,336 @@ fn failed_git_query_propagates() {
     }
     assert_eq!(calls.get(), 2);
 }
+
+fn command_output(fixture: &Fixture) -> PathBuf {
+    let parent = fixture.output("out");
+    fs::create_dir(&parent).unwrap();
+    parent.join("bundle")
+}
+
+fn command_arguments(command: &str, output: &Path, extra: &[&str]) -> Vec<String> {
+    let mut args = if command == "create" {
+        vec!["create", "--version", "3.2.0", "--output"]
+    } else {
+        vec!["verify", "--bundle"]
+    }
+    .into_iter()
+    .map(String::from)
+    .collect::<Vec<_>>();
+    args.push(output.display().to_string());
+    args.extend(extra.iter().map(|s| s.to_string()));
+    args
+}
+
+fn build_fixture_bundle(
+    root: &Path,
+    workbook: &Path,
+    manifest: &Path,
+    output: &py::PyPath,
+    version: &str,
+    commit: &str,
+) -> Result<Json> {
+    create_bundle_with(
+        root,
+        workbook,
+        manifest,
+        output,
+        version,
+        commit,
+        (fixture_gates, verify_bundle),
+    )
+}
+
+fn verify_fixture_bundle(bundle: &Path, root: &Path, semantics: bool) -> Result<Json> {
+    verify_bundle_with(bundle, root, semantics, fixture_gates)
+}
+
+fn fixture_run<C, V>(
+    fixture: &Fixture,
+    arguments: &Arguments,
+    git: &mut FakeGit,
+    build: C,
+    verify: V,
+) -> Result<String>
+where
+    C: FnOnce(&Path, &Path, &Path, &py::PyPath, &str, &str) -> Result<Json>,
+    V: FnOnce(&Path, &Path, bool) -> Result<Json>,
+{
+    let git = std::cell::RefCell::new(git);
+    run_with(
+        arguments,
+        fixture.root.clone(),
+        (
+            |root: &Path| ensure_clean_checkout_with(root, |r, a| git.borrow_mut().query(r, a)),
+            |root: &Path| current_commit_with(root, |r, a| git.borrow_mut().query(r, a)),
+            |root: &Path, base: &Json| {
+                verify_repository_base_with(root, base, |r, a| git.borrow_mut().query(r, a))
+            },
+        ),
+        (
+            |args: &Arguments, root: &Path, head: String| run_create_with(args, root, head, build),
+            |args: &Arguments, root: &Path, head: &str| run_verify_with(args, root, head, verify),
+        ),
+    )
+}
+
+fn fixture_command<C, V>(
+    fixture: &Fixture,
+    arguments: &[String],
+    git: &mut FakeGit,
+    build: C,
+    verify: V,
+) -> Output
+where
+    C: FnOnce(&Path, &Path, &Path, &py::PyPath, &str, &str) -> Result<Json>,
+    V: FnOnce(&Path, &Path, bool) -> Result<Json>,
+{
+    command_with(arguments, |args| {
+        fixture_run(fixture, args, git, build, verify)
+    })
+}
+
+fn expected_command_queries() -> Vec<Vec<String>> {
+    let expected = expected_git_queries();
+    [4, 3, 0, 1, 2].map(|index| expected[index].clone()).into()
+}
+
+fn assert_command_success(output: Output, line: &str) {
+    assert_eq!(output.code, 0);
+    assert_eq!(output.out, [line]);
+    assert_eq!(output.out.join("\n") + "\n", format!("{line}\n"));
+    assert!(output.err.is_empty());
+}
+
+fn assert_fixture_refusal(fixture: &Fixture, arguments: &[String], git: &mut FakeGit, error: &str) {
+    let before = snapshot(fixture.directory.path());
+    let parsed = parse(arguments).unwrap();
+    let verifications = Cell::new(0);
+    let gates_run = Cell::new(0);
+    let verify = |bundle: &Path, root: &Path, semantics: bool| {
+        assert!(semantics);
+        verifications.set(verifications.get() + 1);
+        verify_bundle_with(bundle, root, semantics, |r, w| {
+            gates_run.set(gates_run.get() + 1);
+            fixture_gates(r, w)
+        })
+    };
+    assert_eq!(
+        fixture_run(
+            fixture,
+            &parsed,
+            git,
+            |_, _, _, _, _, _| panic!("refusal must not build"),
+            verify
+        )
+        .unwrap_err(),
+        error
+    );
+    let calls = std::mem::take(&mut git.calls);
+    let result = fixture_command(
+        fixture,
+        arguments,
+        git,
+        |_, _, _, _, _, _| panic!("refusal must not build"),
+        verify,
+    );
+    assert_eq!(result.code, 1);
+    assert!(result.out.is_empty());
+    assert_eq!(result.err, [format!("ERROR: {error}")]);
+    assert_eq!(git.calls, calls);
+    let expected = if parsed.command == "verify" { 2 } else { 0 };
+    assert_eq!(verifications.get(), expected);
+    assert_eq!(gates_run.get(), expected);
+    assert_eq!(snapshot(fixture.directory.path()), before);
+}
+
+#[test]
+fn create_stages_from_the_clean_head() {
+    for source in [vec![], vec!["--source-commit", COMMIT]] {
+        let fixture = Fixture::new();
+        let output = command_output(&fixture);
+        let arguments = command_arguments("create", &output, &source);
+        let mut git = FakeGit::new(&fixture);
+        let builds = Cell::new(0);
+        let build = |root: &Path,
+                     workbook: &Path,
+                     manifest: &Path,
+                     out: &py::PyPath,
+                     version: &str,
+                     commit: &str| {
+            builds.set(builds.get() + 1);
+            assert_eq!(root, fixture.root);
+            assert_eq!(workbook, fixture.workbook);
+            assert_eq!(manifest, fixture.manifest);
+            assert_eq!(out.fs(), output);
+            assert_eq!(version, "3.2.0");
+            assert_eq!(commit, COMMIT);
+            build_fixture_bundle(root, workbook, manifest, out, version, commit)
+        };
+        let result = fixture_command(&fixture, &arguments, &mut git, build, |_, _, _| {
+            panic!("create branch must not verify through command")
+        });
+        assert_command_success(
+            result,
+            &format!("OK: created Ozzit 3.2.0 bundle at {}", output.display()),
+        );
+        assert_eq!(builds.get(), 1);
+        assert_eq!(git.calls, expected_command_queries());
+        let provenance = load_json_object(&output.join("provenance.json")).unwrap();
+        assert_eq!(
+            provenance
+                .get("source")
+                .and_then(|s| s.get("commit"))
+                .and_then(Json::as_str),
+            Some(COMMIT)
+        );
+        assert_eq!(
+            fs::read(output.join("provenance.json")).unwrap(),
+            PROVENANCE.as_bytes()
+        );
+        assert_eq!(fs::read(output.join("SHA256SUMS")).unwrap(), CHECKSUMS);
+        assert_eq!(fs::read(output.join("ozzit.xlsx")).unwrap(), WORKBOOK);
+        fixture.assert_source_unchanged();
+    }
+}
+
+#[test]
+fn create_refuses_a_source_commit_other_than_head() {
+    let fixture = Fixture::new();
+    let output = command_output(&fixture);
+    let other = "c".repeat(40);
+    let arguments = command_arguments("create", &output, &["--source-commit", &other]);
+    let mut git = FakeGit::new(&fixture);
+    assert_fixture_refusal(
+        &fixture,
+        &arguments,
+        &mut git,
+        "source commit must equal the candidate checkout HEAD",
+    );
+    assert!(!output.exists());
+    assert_eq!(git.calls, expected_command_queries());
+}
+
+#[test]
+fn create_refuses_a_dirty_checkout() {
+    let fixture = Fixture::new();
+    let output = command_output(&fixture);
+    let arguments = command_arguments("create", &output, &[]);
+    let mut git = FakeGit::new(&fixture);
+    git.answers.insert("status", " M ozzit.xlsx".into());
+    assert_fixture_refusal(
+        &fixture,
+        &arguments,
+        &mut git,
+        "candidate checkout must be clean before staging a release bundle",
+    );
+    assert_eq!(git.calls, [expected_git_queries()[4].clone()]);
+    assert!(!output.exists());
+}
+
+#[test]
+fn verify_accepts_a_bundle_matching_head_and_the_requested_claims() {
+    let fixture = Fixture::new();
+    let output = command_output(&fixture);
+    fixture.create(&output).unwrap();
+    let before = snapshot(fixture.directory.path());
+    for extra in [
+        vec![],
+        vec!["--version", "3.2.0"],
+        vec!["--source-commit", COMMIT],
+    ] {
+        let arguments = command_arguments("verify", &output, &extra);
+        let mut git = FakeGit::new(&fixture);
+        let result = fixture_command(
+            &fixture,
+            &arguments,
+            &mut git,
+            |_, _, _, _, _, _| panic!("verify branch must not build"),
+            verify_fixture_bundle,
+        );
+        assert_command_success(
+            result,
+            &format!("OK: verified Ozzit 3.2.0 bundle at {}", output.display()),
+        );
+        assert_eq!(git.calls, expected_command_queries());
+        assert_eq!(snapshot(fixture.directory.path()), before);
+    }
+}
+
+#[test]
+fn verify_rejects_mismatched_claims() {
+    let fixture = Fixture::new();
+    let output = command_output(&fixture);
+    fixture.create(&output).unwrap();
+    let other = "c".repeat(40);
+    let cases = [
+        (
+            Some(other.as_str()),
+            vec![],
+            "bundle source commit does not match the candidate checkout HEAD",
+        ),
+        (
+            None,
+            vec!["--version", "3.2.1"],
+            "bundle version does not match --version",
+        ),
+        (
+            None,
+            vec!["--version", "v3.2.0"],
+            "version must be canonical X.Y.Z without a v prefix",
+        ),
+        (
+            None,
+            vec!["--source-commit", other.as_str()],
+            "bundle source commit does not match --source-commit",
+        ),
+    ];
+    for (head, extra, error) in cases {
+        let mut git = FakeGit::new(&fixture);
+        if let Some(head) = head {
+            git.answers.insert("rev-parse", head.into());
+        }
+        let arguments = command_arguments("verify", &output, &extra);
+        assert_fixture_refusal(&fixture, &arguments, &mut git, error);
+        assert_eq!(git.calls, expected_command_queries());
+    }
+}
+
+#[test]
+fn verify_reruns_the_semantic_gates() {
+    let fixture = Fixture::new();
+    let output = command_output(&fixture);
+    fixture.create(&output).unwrap();
+    let before = snapshot(fixture.directory.path());
+    let arguments = command_arguments("verify", &output, &[]);
+    let mut git = FakeGit::new(&fixture);
+    let verifications = Cell::new(0);
+    let gates_run = Cell::new(0);
+    let verify = |bundle: &Path, root: &Path, semantics: bool| {
+        assert_eq!(bundle, output);
+        assert_eq!(root, fixture.root);
+        assert!(semantics);
+        verifications.set(verifications.get() + 1);
+        verify_bundle_with(bundle, root, semantics, |r, w| {
+            assert_eq!(r, fixture.root);
+            assert_eq!(w, output.join("ozzit.xlsx"));
+            gates_run.set(gates_run.get() + 1);
+            fixture_gates(r, w)
+        })
+    };
+    let result = fixture_command(
+        &fixture,
+        &arguments,
+        &mut git,
+        |_, _, _, _, _, _| panic!("verify branch must not build"),
+        verify,
+    );
+    assert_command_success(
+        result,
+        &format!("OK: verified Ozzit 3.2.0 bundle at {}", output.display()),
+    );
+    assert_eq!(verifications.get(), 1);
+    assert_eq!(gates_run.get(), 1);
+    assert_eq!(git.calls, expected_command_queries());
+    assert_eq!(snapshot(fixture.directory.path()), before);
+}

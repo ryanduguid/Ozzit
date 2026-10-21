@@ -87,6 +87,11 @@ HEAD refusals, invocation arguments and failure propagation. A positively
 shallow clone logs the original history warning and returns from the Rust
 test; qualification requires full history and records the real binding run.
 The existing runner tests retain UTF-8 and newline decoding checks.
+Release command tests retain the 6 original execution contracts with owned
+bundle creation and verification. They cover implicit/explicit HEAD, all
+requested-claim refusals, clean-check-first ordering, exact logical output and
+the independent semantic rerun. Private callbacks retain production root
+discovery and command formatting. All Python release tests and callers remain.
 `verify_workbook` retains its Python reference and callers. Native tests cover
 the original report fixtures, malformed XML and AFE payloads, all add-in and
 forbidden-part cases, scoped names, long names and physical command contracts.
