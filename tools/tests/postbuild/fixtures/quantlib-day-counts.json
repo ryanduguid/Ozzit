@@ -642,9 +642,9 @@
       ]
     },
     "cases_sha256": "a1cf3093945895eb4011a6257bddf2e4ecd7709bfa7953cdb633eadf84b1977a",
-    "helper_sha256": "b0d5d1d991bc30ea78768d033d2f4bf044d755d9ad95cc0284834181dd557fe5",
+    "helper_sha256": "aee39f1b218986b4b291bb72b0ae8c2c571c39b7e4e77320debe2edc0962f90e",
     "evidence_helper_sha256": "4f0db804f1d5ef13ddd8f2d635b51052db175e1c634ddaee5ad6af3dd42e6f59",
-    "evaluated_at_utc": "2026-10-24T03:49:05.3670740Z"
+    "evaluated_at_utc": "2026-10-24T04:19:04.1265769Z"
   },
   "scope": "First period of two supplied boundary dates, APR=1, explicit convention, default EndDates. Subsequent inferred periods and other timeline behaviour are not qualified.",
   "max_abs_difference": 4.163336342344337e-17
