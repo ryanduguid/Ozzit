@@ -107,7 +107,7 @@ largest across all of them.
 ### Limits
 
 The separate [v3.4.2 release comparison](pyxirr-release-v3.4.2.json) was refreshed on
-29 September 2026 in Excel 16.0 build 20430 with pyxirr 0.10.8. The
+24 October 2026 in Excel 16.0 build 20527 with pyxirr 0.10.8. The
 [released workbook](https://github.com/ryanduguid/Ozzit/releases/tag/v3.4.2) was
 439,097 bytes and matched GitHub's published asset digest:
 `0306793a7e473ce70e78149fea1e107fc0f714d61ab50960c16f6fd528878f6f`.
