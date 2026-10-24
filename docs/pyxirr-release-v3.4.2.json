@@ -111,9 +111,9 @@
     }
   ],
   "expected_sha256": "0306793a7e473ce70e78149fea1e107fc0f714d61ab50960c16f6fd528878f6f",
-  "runner_commit": "9da8b581113e7888239ca9b3b9c1d96301e72b8e",
+  "runner_commit": "d91db14c34a70e8702034d03dc46d830a0d1e86f",
   "runner_files": {
     "tools/pyxirr_comparison.py": "a9052e3e35b4e715733034761542817e6a3a2ce09dbf6e68adc27aa1c51eb968",
-    "tools/excel_eval_formulas.ps1": "b0d5d1d991bc30ea78768d033d2f4bf044d755d9ad95cc0284834181dd557fe5"
+    "tools/excel_eval_formulas.ps1": "aee39f1b218986b4b291bb72b0ae8c2c571c39b7e4e77320debe2edc0962f90e"
   }
 }
