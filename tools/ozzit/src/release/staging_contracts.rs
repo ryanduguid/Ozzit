@@ -4,12 +4,13 @@ use std::{cell::Cell, collections::BTreeMap, fs};
 
 const WORKBOOK: &[u8] = b"synthetic workbook fixture\n";
 const COMMIT: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-// Captured from the original Python fixture, including its final LF.
+// The original Python fixture, including its final LF, with the schema 2
+// number and native gate labels.
 const PROVENANCE: &str = concat!(
-    r#"{"assets":["ozzit.xlsx","provenance.json","SHA256SUMS"],"project":"Ozzit","schema":1,"source":{"commit":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","workbook_path":"ozzit.xlsx"},"verification":{"limitations":["The bundle copies the reviewed tracked workbook; it does not regenerate it from the earlier workbook.","The documented Mypy, unit, native Excel and cache gates remain required before publication."],"native_gates":{"included":false,"required_before_publication":true},"static_gates":[{"command":"python tools/verify_workbook.py ozzit.xlsx","output":"OK: fixture gate 1"},{"command":"python tools/verify_sources.py ozzit.xlsx src","output":"OK: fixture gate 2"},{"command":"python tools/verify_signatures.py src","output":"OK: fixture gate 3"},{"command":"python tools/verify_previous_names.py functions.csv","output":"OK: fixture gate 4"},{"command":"python tools/verify_index.py ozzit.xlsx src functions.csv","output":"OK: fixture gate 5"},{"command":"python tools/verify_cover.py ozzit.xlsx functions.csv CHANGELOG.md","output":"OK: fixture gate 6"},{"command":"python tools/verify_afe.py ozzit.xlsx src","output":"OK: fixture gate 7"}]},"version":"3.2.0","workbook":{"base_manifest":"release/workbook-base.json","copy_only":true,"git_blob_sha1":"cdcd75d14f66018911bfafa9d5c23b7f25f532fd","last_workbook_commit":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","sha256":"c14e507ac5aa35f6ddd08da5ff1a041ee9bba1f2db7f676e70ca88a94a665df6","size":27}}"#,
+    r#"{"assets":["ozzit.xlsx","provenance.json","SHA256SUMS"],"project":"Ozzit","schema":2,"source":{"commit":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","workbook_path":"ozzit.xlsx"},"verification":{"limitations":["The bundle copies the reviewed tracked workbook; it does not regenerate it from the earlier workbook.","The documented Mypy, unit, native Excel and cache gates remain required before publication."],"native_gates":{"included":false,"required_before_publication":true},"static_gates":[{"command":"ozzit verify_workbook ozzit.xlsx","output":"OK: fixture gate 1"},{"command":"ozzit verify_sources ozzit.xlsx src","output":"OK: fixture gate 2"},{"command":"ozzit verify_signatures src","output":"OK: fixture gate 3"},{"command":"ozzit verify_previous_names functions.csv","output":"OK: fixture gate 4"},{"command":"ozzit verify_index ozzit.xlsx src functions.csv","output":"OK: fixture gate 5"},{"command":"ozzit verify_cover ozzit.xlsx functions.csv CHANGELOG.md","output":"OK: fixture gate 6"},{"command":"ozzit verify_afe ozzit.xlsx src","output":"OK: fixture gate 7"}]},"version":"3.2.0","workbook":{"base_manifest":"release/workbook-base.json","copy_only":true,"git_blob_sha1":"cdcd75d14f66018911bfafa9d5c23b7f25f532fd","last_workbook_commit":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","sha256":"c14e507ac5aa35f6ddd08da5ff1a041ee9bba1f2db7f676e70ca88a94a665df6","size":27}}"#,
     "\n"
 );
-const CHECKSUMS: &[u8] = b"c14e507ac5aa35f6ddd08da5ff1a041ee9bba1f2db7f676e70ca88a94a665df6  ozzit.xlsx\n96d07dcb9e4e47e84b05eb64355912e21a1b3e78277bb575a752970b2c0c11ff  provenance.json\n";
+const CHECKSUMS: &[u8] = b"c14e507ac5aa35f6ddd08da5ff1a041ee9bba1f2db7f676e70ca88a94a665df6  ozzit.xlsx\nff85512c4cd9bdd70ac19948d348ca8f60ece749f34a998eda694f6f84a0ab07  provenance.json\n";
 
 fn gates() -> Vec<(String, String)> {
     GATE_COMMANDS
@@ -466,7 +467,7 @@ fn failing_gate_reports_its_command_code_and_normalised_output() {
     };
     assert_eq!(
         run_semantic_gates_with(&fixture.root, &fixture.workbook, fail).unwrap_err(),
-        "python tools/verify_workbook.py ozzit.xlsx failed with exit code 1\nFAIL: ozzit.xlsx\nsee src"
+        "ozzit verify_workbook ozzit.xlsx failed with exit code 1\nFAIL: ozzit.xlsx\nsee src"
     );
     assert_eq!(calls.get(), 1);
     assert_eq!(snapshot(fixture.directory.path()), before);
@@ -492,7 +493,7 @@ fn silent_failing_gate_reports_only_its_exit_code() {
     };
     assert_eq!(
         run_semantic_gates_with(&fixture.root, &fixture.workbook, fail).unwrap_err(),
-        "python tools/verify_workbook.py ozzit.xlsx failed with exit code 3"
+        "ozzit verify_workbook ozzit.xlsx failed with exit code 3"
     );
     assert_eq!(calls.get(), 1);
     assert_eq!(snapshot(fixture.directory.path()), before);

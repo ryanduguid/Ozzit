@@ -271,7 +271,16 @@ class RepositoryPolicyTests(unittest.TestCase):
         self.assertEqual(list(workflow["on"]), ["workflow_dispatch"])
         self.assertEqual(workflow["permissions"], {"contents": "read"})
         attest = workflow["jobs"]["attest"]
-        self.assertEqual(attest["needs"], "checks")
+        self.assertEqual(attest["needs"], ["checks", "build"])
+        # Compilation runs without write or OIDC permissions; the privileged job
+        # only checks the built binary's digest and runs it.
+        build = workflow["jobs"]["build"]
+        self.assertEqual(build["permissions"], {"contents": "read"})
+        self.assertIn("cargo build --locked --release", str(build["steps"]))
+        self.assertNotIn("cargo", str(attest["steps"]))
+        self.assertNotIn("setup-python", str(attest["steps"]))
+        self.assertIn("needs.build.outputs.sha256", str(attest["steps"]))
+        self.assertIn("sha256sum --check --strict", str(attest["steps"]))
         self.assertEqual(
             attest["permissions"],
             {"attestations": "write", "contents": "write", "id-token": "write"},
@@ -285,7 +294,7 @@ class RepositoryPolicyTests(unittest.TestCase):
             attestation["with"], {"subject-path": "${{ runner.temp }}/subject/ozzit.xlsx"}
         )
         self.assertIn('git show "$GITHUB_SHA:ozzit.xlsx"', text)
-        self.assertIn("python tools/prepare_release_bundle.py verify", text)
+        self.assertIn('"$RUNNER_TEMP/native/ozzit" prepare_release_bundle verify', text)
         self.assertIn(".verification.verified == true", text)
         self.assertIn(".github/workflows/verify.yml: verify-gates", text)
         self.assertIn("ozzit-${GITHUB_REF_NAME#v}.intoto.jsonl", text)

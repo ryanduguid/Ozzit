@@ -2,6 +2,15 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+Retire the Python release-bundle tool and its 44 tests, whose contracts already
+run natively. Provenance moves to schema 2, which names each of the 7 static
+gates by its native command; the verifier accepts only schema 2, and schema 1
+bundles verify from their own tags. The recorded Python replay keeps all 91
+verdicts through a schema 2 test adapter. The attest workflow builds the native
+verifier in a read-only job and runs it in the privileged job after a SHA-256
+check, so compilation never holds write or OIDC permissions. The 7 Python gate
+references and the comparator remain for now.
+
 Retire the Python help-spill and retained-evidence references and their exclusive
 tests after mapping all 26 original methods to existing native checks. Keep all
 9 ordinary native CI gates. The comparator explicitly excludes only these 2

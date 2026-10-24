@@ -128,12 +128,13 @@ Release command tests retain the 6 original execution contracts with owned
 bundle creation and verification. They cover implicit/explicit HEAD, all
 requested-claim refusals, clean-check-first ordering, exact logical output and
 the independent semantic rerun. Private callbacks retain production root
-discovery and command formatting. All Python release tests and callers remain.
+discovery and command formatting. The Python release tool, its 44 tests and
+its attest caller have retired.
 Release static tests and the unchanged replay retain the remaining 18 original
 method contracts. Added cases cover exact Boolean claims, malformed files,
 canonical values, manifest fields, checksum rows and parser refusals. The replay
 retains all 22 provenance mutations with type-strict input bindings. The original
-Python subprocess AST check remains; native invocation tests check separate
+Python subprocess AST check retired with the tool; native invocation tests check separate
 argument vectors through the existing process runner. Production code is unchanged.
 `verify_workbook` retains its Python reference and callers. Native tests cover
 the original report fixtures, malformed XML and AFE payloads, all add-in and
@@ -268,10 +269,21 @@ Differential scripts
 and their receipts are retained in the local Agent Hub evidence for this port.
 Release staging tests retain all 10 original staging contracts, using real
 copies, checksums, structural verification and cleanup in owned synthetic roots.
-All 3 staged assets match the original Python fixture bytes and repeat builds
+All 3 staged assets match the original Python fixture bytes, moved to schema 2,
+and repeat builds
 are byte identical. Private callbacks inject gate failures, structural failures
 and a destination race; the public command keeps its real checks and operation
-order. Every Python release method, caller and recorded replay remains.
+order. The recorded replay remains: a test adapter moves each recorded bundle to
+schema 2 bytes, raising every integer schema by one and renaming the 7 gate labels,
+and repoints a SHA256SUMS digest only where it matched, so all 91 recorded verdicts
+keep their meaning.
+Provenance schema 2 names each static gate by its native command, such as
+`ozzit verify_workbook ozzit.xlsx`; schema 1 bundles, all staged by the retired
+Python tool, verify from their own tags. The attest workflow builds this crate in
+a job with only `contents: read`, passes the binary and its SHA-256 to the
+privileged job, and runs `prepare_release_bundle verify` there after checking the
+digest. The 7 native gates the verifier reruns still execute in the privileged
+job, as the Python gates did.
 Semantic execution tests add the 4 original independent-rerun, path-spelling
 and failed-gate contracts. They check all 7 native argument vectors, absolute
 operands, normalised evidence and exact diagnostics, including silent failures.

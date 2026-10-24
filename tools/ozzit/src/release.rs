@@ -17,15 +17,18 @@ use std::time::Duration;
 
 pub const ASSETS: [&str; 3] = ["ozzit.xlsx", "provenance.json", "SHA256SUMS"];
 const CHECKSUMMED: [&str; 2] = ["ozzit.xlsx", "provenance.json"];
+/// Schema 2 names each gate by the native command that produced its evidence;
+/// schema 1 bundles staged by the retired Python tool verify from their own tags.
+pub const SCHEMA: i64 = 2;
 /// The provenance records each gate by the command its schema names.
 pub const GATE_COMMANDS: [&str; 7] = [
-    "python tools/verify_workbook.py ozzit.xlsx",
-    "python tools/verify_sources.py ozzit.xlsx src",
-    "python tools/verify_signatures.py src",
-    "python tools/verify_previous_names.py functions.csv",
-    "python tools/verify_index.py ozzit.xlsx src functions.csv",
-    "python tools/verify_cover.py ozzit.xlsx functions.csv CHANGELOG.md",
-    "python tools/verify_afe.py ozzit.xlsx src",
+    "ozzit verify_workbook ozzit.xlsx",
+    "ozzit verify_sources ozzit.xlsx src",
+    "ozzit verify_signatures src",
+    "ozzit verify_previous_names functions.csv",
+    "ozzit verify_index ozzit.xlsx src functions.csv",
+    "ozzit verify_cover ozzit.xlsx functions.csv CHANGELOG.md",
+    "ozzit verify_afe ozzit.xlsx src",
 ];
 const LIMITATIONS: [&str; 2] = [
     "The bundle copies the reviewed tracked workbook; it does not regenerate it from the earlier workbook.",
@@ -518,7 +521,7 @@ pub fn provenance(base: &Json, version: &str, commit: &str, gates: &[(String, St
     object(vec![
         ("assets", strings(&ASSETS)),
         ("project", Json::str_obj("Ozzit")),
-        ("schema", Json::Int(BigInt::from(1))),
+        ("schema", Json::Int(BigInt::from(SCHEMA))),
         (
             "source",
             object(vec![
@@ -639,7 +642,7 @@ fn check_provenance_source(document: &Json) -> Result<()> {
         return Err("provenance.json has an unexpected top-level schema".into());
     }
     let get = |k| document.get(k);
-    if !int_is(get("schema"), 1) || get("project").and_then(Json::as_str) != Some("Ozzit") {
+    if !int_is(get("schema"), SCHEMA) || get("project").and_then(Json::as_str) != Some("Ozzit") {
         return Err("provenance.json identifies an unsupported bundle".into());
     }
     if !get("assets").is_some_and(|a| py_eq(a, &strings(&ASSETS))) {
