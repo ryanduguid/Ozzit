@@ -76,7 +76,7 @@ class HelpMatchesCodeTests(unittest.TestCase):
         # binding IF( Inclusive, ...) takes the exclusive branch and the help's own
         # =IsBetweenEλ(2, 2, 4) example returns FALSE where it prints TRUE.
         binding = "Inclusive,      IF( ISLOGICAL( Inclusive), Inclusive, TRUE),"
-        stored = "_xlpm.Inclusive, IF(ISLOGICAL(_xlpm.Inclusive), _xlpm.Inclusive, TRUE)"
+        stored = "_xlpm.Inclusive, IF( ISLOGICAL( _xlpm.Inclusive), _xlpm.Inclusive, TRUE)"
         for module, name in (("Essentials", "IsBetweenEλ"), ("Utilities", "IsBetweenUλ")):
             with self.subTest(function=name):
                 body = self.modules[module].split(f"{name} = LAMBDA(")[1]
@@ -89,6 +89,14 @@ class HelpMatchesCodeTests(unittest.TestCase):
                     f"{name} must bind Inclusive before it reads it",
                 )
                 self.assertIn(stored, defined_name(self.book, f"oz.{name}"))
+
+    def test_sum_periods_help_says_which_dates_fall_outside_the_periods(self):
+        # The calculation drops a date before the first period start and gives one after
+        # the last start to the last period. Up to v3.5.0 the help said neither.
+        note = "A date before the first period start is left out; one on or after the last start goes to the last period."
+        body = self.modules["Financial"].split("SumPeriodsλ = LAMBDA(")[1].split("\n);")[0]
+        self.assertIn(note, body)
+        self.assertIn(note, defined_name(self.book, "oz.SumPeriodsλ"))
 
     def test_movement_example_passes_the_two_arguments_it_declares(self):
         # Movementλ = LAMBDA([BeginningValues], [Values], ...). Excel rejects a
