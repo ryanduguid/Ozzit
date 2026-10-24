@@ -1,6 +1,6 @@
 {
-  "recorded": "2026-09-29",
-  "excel": "16.0 build 20430",
+  "recorded": "2026-10-24",
+  "excel": "16.0 build 20527",
   "workbook": "ozzit.xlsx",
   "workbook_sha256": "0306793a7e473ce70e78149fea1e107fc0f714d61ab50960c16f6fd528878f6f",
   "pyxirr": "0.10.8",
@@ -111,9 +111,9 @@
     }
   ],
   "expected_sha256": "0306793a7e473ce70e78149fea1e107fc0f714d61ab50960c16f6fd528878f6f",
-  "runner_commit": "69b8ef0cff72d01b9f73507cf2e51ae01a8c1996",
+  "runner_commit": "d91db14c34a70e8702034d03dc46d830a0d1e86f",
   "runner_files": {
-    "tools/pyxirr_comparison.py": "245cfe8f96064e55de41e037effb855080b2c936e2487106344c124ca78e0a41",
-    "tools/excel_eval_formulas.ps1": "228884ebb9da01a792fd891b9fc9714bba1ebb870b6e704b291921fc66b4f6a2"
+    "tools/pyxirr_comparison.py": "a9052e3e35b4e715733034761542817e6a3a2ce09dbf6e68adc27aa1c51eb968",
+    "tools/excel_eval_formulas.ps1": "aee39f1b218986b4b291bb72b0ae8c2c571c39b7e4e77320debe2edc0962f90e"
   }
 }

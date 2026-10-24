@@ -4,8 +4,9 @@ Ozzit's first-period year fractions agreed with QuantLib 1.43 for 72 comparisons
 across 18 boundary pairs. Desktop Excel 16.0 build 20527 evaluated the shipped
 `oz.DayCountRateλ` name on 5 October 2026, again on 14 October 2026 after a
 formatting-only palette change, on 19 October 2026 after the ATO benchmark and
-rate functions were added, and on 20 October 2026 after the variance and
-financial-year period functions were added, with identical results each time. The largest absolute difference was
+rate functions were added, on 20 October 2026 after the variance and
+financial-year period functions were added, and on 24 October 2026 after the input-shape
+and help-field changes, with identical results each time. The largest absolute difference was
 `4.163336342344337e-17`, below the comparison tolerance of `1e-12`.
 
 The retained record is
@@ -82,7 +83,7 @@ qualify the changed workbook.
 
 On 6 October 2026, Excel 16.0 build 20527 evaluated 113 additional formulas
 against the same workbook hash, and returned identical results for the later
-workbooks on 14, 19 and 20 October 2026. All 312 numeric values from 87 supported-input
+workbooks on 14, 19, 20 and 24 October 2026. All 312 numeric values from 87 supported-input
 cases on strictly increasing timelines agreed with declared rational calculations
 within `1e-12`. Three invalid
 numeric convention cases matched the native `#VALUE!` control. The remaining

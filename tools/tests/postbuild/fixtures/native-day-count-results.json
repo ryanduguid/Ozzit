@@ -1,6 +1,6 @@
 {
     "excel":  "16.0 build 20527",
-    "workbook_sha256":  "748c132ec19acc48b9086c9cd739160343a774d73f2c4c58abc88f5c251af487",
+    "workbook_sha256":  "83260ba8b306fd8505c72af2dd48fdbbd84f04e315af8ef26b23b5347b0af23d",
     "results":  {
                     "leap_months_1":  [
                                           [
@@ -831,7 +831,7 @@
                                           ]
                 },
     "cases_sha256":  "1e5e8a42a719d3506ee35042e468f65e6de0194dcfb4b5142bd7b5c6616c6bc5",
-    "helper_sha256":  "228884ebb9da01a792fd891b9fc9714bba1ebb870b6e704b291921fc66b4f6a2",
+    "helper_sha256":  "aee39f1b218986b4b291bb72b0ae8c2c571c39b7e4e77320debe2edc0962f90e",
     "evidence_helper_sha256":  "4f0db804f1d5ef13ddd8f2d635b51052db175e1c634ddaee5ad6af3dd42e6f59",
-    "evaluated_at_utc":  "2026-10-20T02:16:56.6264689Z"
+    "evaluated_at_utc":  "2026-10-24T04:18:54.7521094Z"
 }
