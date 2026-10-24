@@ -15,9 +15,7 @@ or attach to one. Follow the evidence, hash and Excel-version requirements in
 Run the CI sequence exactly before submitting a change. The first 4 commands
 are the `lint` job; the next 2 run on Python 3.14 and 3.15; the rest are the
 `rust` job, which builds the native tools in `tools/ozzit` once and runs the
-gates with them. Its last command reruns each gate with its Python reference
-tool, on the real inputs and on broken copies, and fails if exit code or output
-differ. Install the git
+gates with them. Install the git
 hooks once with `python -m pip install pre-commit && pre-commit install`; they
 run the pinned ruff check on staged files.
 
@@ -42,7 +40,6 @@ tools/ozzit/target/release/ozzit verify_cover ozzit.xlsx functions.csv CHANGELOG
 tools/ozzit/target/release/ozzit verify_afe ozzit.xlsx src
 tools/ozzit/target/release/ozzit verify_help_spills ozzit.xlsx
 tools/ozzit/target/release/ozzit verify_native_evidence
-tools/ozzit/target/release/ozzit compare_gates python
 ```
 
 For a workbook change, also run the native Excel self-test and cached-value

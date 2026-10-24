@@ -89,7 +89,7 @@ those examples only. It does not test Excel for Mac, Excel for the web, the AFE
 import route or every function. Numerical agreement with another engine is
 recorded separately in the [pyxirr comparison](pyxirr-comparison.md).
 
-The normal verification sequence runs `python tools/verify_native_evidence.py`.
+The normal verification sequence runs `ozzit verify_native_evidence`.
 It checks the retained v3.4.2 records, runner byte hashes, case inventories,
 reported differences and installation values. It fails on runner drift or
 contradictory evidence. If the checkout workbook differs from v3.4.2, it labels

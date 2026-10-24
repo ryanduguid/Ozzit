@@ -15,7 +15,7 @@ indent_size = 2
 trim_trailing_whitespace = false
 
 # src/*.txt is the workbook's own text, compared byte for byte with the Advanced
-# Formula Environment store by tools/verify_afe.py. Trimming the alignment padding
+# Formula Environment store by ozzit verify_afe. Trimming the alignment padding
 # on save, or adding a final newline, breaks that gate with no hint why.
 [src/*.txt]
 trim_trailing_whitespace = false

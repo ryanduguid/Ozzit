@@ -32,8 +32,8 @@ multi-line formula, which FAST 3.03-01 to 3.03-03 rule out in cells. Against tha
 - Each definition stages its work in named `LET` steps (defaults, checks,
   procedure, result), which is FAST's calculation-block idea (2.02) inside one
   formula.
-- CI checks that the text views match the workbook (`tools/verify_sources.py`,
-  `tools/verify_afe.py`), and the native Excel self-test in
+- CI checks that the text views match the workbook (`ozzit verify_sources`,
+  `ozzit verify_afe`), and the native Excel self-test in
   [RELEASING.md](../RELEASING.md) checks results.
 
 So the definitions depart from FAST 3.03-01 to 3.03-03 and 3.03-08, and the call

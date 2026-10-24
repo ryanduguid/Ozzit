@@ -45,7 +45,7 @@ Every source archive must still include `LICENSE` and `NOTICE`.
 
 ## Approval and tag
 
-A human maintainer explicitly approves the exact candidate commit and release version after all 18 gates pass.
+A human maintainer explicitly approves the exact candidate commit and release version after all 17 gates pass.
 Create an annotated, cryptographically signed tag for that exact commit. Run
 `git verify-tag` and record the tag object SHA, peeled commit SHA and
 verification result.
@@ -65,7 +65,7 @@ The release also carries one asset that is not part of the bundle: `ozzit-X.Y.Z.
 
 The signed tag and GitHub's generated source archive remain the source distribution. Inspect that archive as the equivalent of `git archive` for the exact tag; do not upload a redundant custom source archive. The standalone workbook and tagged workbook must have the same SHA-256.
 
-After all 18 gates pass in a clean candidate, stage and independently verify the bundle in 2 fresh directories outside the repository:
+After all 17 gates pass in a clean candidate, stage and independently verify the bundle in 2 fresh directories outside the repository:
 
 ```powershell
 tools/ozzit/target/release/ozzit prepare_release_bundle create --version X.Y.Z --source-commit <full-commit-sha> --output <first-new-directory>
@@ -91,7 +91,7 @@ rustup toolchain install
 cargo build --locked --release --manifest-path tools/ozzit/Cargo.toml
 ```
 
-Then run the following 16 static and repository gates, the same commands CI runs:
+Then run the following 15 static and repository gates, the same commands CI runs:
 
 ```powershell
 python -m ruff check .
@@ -109,10 +109,9 @@ tools/ozzit/target/release/ozzit verify_cover ozzit.xlsx functions.csv CHANGELOG
 tools/ozzit/target/release/ozzit verify_afe ozzit.xlsx src
 tools/ozzit/target/release/ozzit verify_help_spills ozzit.xlsx
 tools/ozzit/target/release/ozzit verify_native_evidence
-tools/ozzit/target/release/ozzit compare_gates python
 ```
 
-All 16 gate commands must exit zero. Record the lint result and substantive type-check, function,
+All 15 gate commands must exit zero. Record the lint result and substantive type-check, function,
 signature, table, example, index, module and test counts rather than only their
 exit status.
 

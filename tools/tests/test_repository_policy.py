@@ -50,7 +50,6 @@ EXPECTED_VERIFY_COMMANDS = (
     "tools/ozzit/target/release/ozzit verify_afe ozzit.xlsx src",
     "tools/ozzit/target/release/ozzit verify_help_spills ozzit.xlsx",
     "tools/ozzit/target/release/ozzit verify_native_evidence",
-    "tools/ozzit/target/release/ozzit compare_gates python",
 )
 
 
@@ -221,7 +220,7 @@ class RepositoryPolicyTests(unittest.TestCase):
 
     def test_workflow_command_parser_detects_non_python_and_multiline_gates(self):
         workflow = read_utf8(VERIFY_WORKFLOW)
-        marker = "        run: tools/ozzit/target/release/ozzit compare_gates python"
+        marker = "        run: tools/ozzit/target/release/ozzit verify_native_evidence"
         mutated = workflow.replace(
             marker,
             marker
@@ -360,7 +359,7 @@ class RepositoryPolicyTests(unittest.TestCase):
         self.assertEqual(incomplete, [])
 
     def test_editorconfig_exempts_the_bytes_the_afe_gate_compares(self):
-        # verify_afe.py compares src/*.txt with the workbook's store byte for byte.
+        # ozzit verify_afe compares src/*.txt with the workbook's store byte for byte.
         # Under the [*] rules, saving a module in any editorconfig-honouring editor
         # rewrites exactly those bytes and fails the gate with no hint why.
         config = read_utf8(EDITORCONFIG)

@@ -1,4 +1,4 @@
-# verify_signatures.py imports verify_sources.py, so the tools directory gets one
+# The Python tests import pyxirr_comparison.py, so the tools directory gets one
 __pycache__/
 *.pyc
 

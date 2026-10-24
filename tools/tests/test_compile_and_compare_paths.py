@@ -1,4 +1,4 @@
-"""Shared argument parsing and pyxirr comparison refusal paths on owned fixtures.
+"""pyxirr comparison refusal paths on owned fixtures.
 """
 
 import hashlib
@@ -17,7 +17,6 @@ TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
 import pyxirr_comparison as comparison  # noqa: E402
-import verify_sources  # noqa: E402
 
 
 class ScratchTestCase(unittest.TestCase):
@@ -26,16 +25,6 @@ class ScratchTestCase(unittest.TestCase):
 
     def tearDown(self):
         shutil.rmtree(self.directory, ignore_errors=True)
-
-
-class CompileReadingTests(unittest.TestCase):
-    def test_arguments_of_an_unclosed_call_run_to_the_end(self):
-        self.assertEqual(verify_sources.arguments("x, (y, z), w", 0), ["x", " (y, z)", " w"])
-
-    def test_literals_and_nested_arrays_keep_their_commas(self):
-        self.assertEqual(verify_sources.arguments('x, "a,b", [y,z], {1,2})tail', 0),
-                         ['x', ' "a,b"', ' [y,z]', ' {1,2}'])
-
 
 
 class FakeFinance:

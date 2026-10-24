@@ -3,7 +3,6 @@ pub mod archive;
 pub mod cache;
 mod check_gates;
 pub mod common;
-mod compare_gates;
 pub mod compiler;
 pub mod cover;
 pub mod formula;
@@ -30,7 +29,6 @@ use common::Output;
 type Handler = fn(&[String]) -> Output;
 const COMMANDS: &[(&str, Handler)] = &[
     ("check_gates", check_gates::command),
-    ("compare_gates", compare_gates::command),
     ("compile_sources", compiler::command),
     ("verify_sources", sources::verify),
     ("verify_signatures", help::verify),

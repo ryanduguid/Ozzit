@@ -2,6 +2,13 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+Retire the 7 Python gate references (`verify_workbook`, `verify_sources`,
+`verify_signatures`, `verify_previous_names`, `verify_index`, `verify_cover` and
+`verify_afe`), their 115 Python test methods, whose contracts already run as
+native tests, and `ozzit compare_gates`, which needed them. The 9 native CI
+gates are unchanged. Unrelated methods in mixed test files stay; the pyxirr
+comparison and QuantLib generator stay in Python.
+
 Retire the Python release-bundle tool and its 44 tests, whose contracts already
 run natively. Provenance moves to schema 2, which names each of the 7 static
 gates by its native command; the verifier accepts only schema 2, and schema 1
