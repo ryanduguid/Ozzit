@@ -79,9 +79,9 @@ worksheet ranges and must match the same dates passed as calculated arrays, beca
 EDATE and EOMONTH reject a multi-cell range they accept once calculated. The changed
 functions are tested on rows, columns and blocks.
 
-`tools/excel_eval_formulas.ps1` now waits for Excel to finish calculating and reads a
-blank result again before failing, rather than recording it: one cross-check run read
-a blank for a formula that returns text.
+`tools/excel_eval_formulas.ps1` now waits for Excel to finish calculating and records a
+result only once 2 reads in a row match exactly, failing after 10 reads: one cross-check
+run had recorded a blank for a formula that returns text.
 
 ## v3.5.0, 19 October 2026, ATO benchmark ratios, a dated rate lookup and Apache-2.0
 
