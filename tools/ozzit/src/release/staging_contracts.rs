@@ -1076,6 +1076,23 @@ fn falsified_native_gate_claim_is_rejected() {
 }
 
 #[test]
+fn schema_one_provenance_is_rejected() {
+    let fixture = Fixture::new();
+    let output = fixture.output("bundle");
+    fixture.create(&output).unwrap();
+    verify_bundle(&output, &fixture.root, false).unwrap();
+    rewrite_static_provenance(&output, |document| {
+        document["schema"] = serde_json::json!(1);
+    });
+    assert_static_refusal(
+        &fixture,
+        &output,
+        "provenance.json identifies an unsupported bundle",
+    );
+    fixture.assert_source_unchanged();
+}
+
+#[test]
 fn unexpected_top_level_provenance_claim_is_rejected() {
     let fixture = Fixture::new();
     let output = fixture.output("bundle");

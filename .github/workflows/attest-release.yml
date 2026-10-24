@@ -69,6 +69,8 @@ jobs:
         id: build
         run: |
           set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA" \
+            || { echo "The checkout is not $GITHUB_SHA" >&2; exit 1; }
           rustup toolchain install
           cargo build --locked --release --manifest-path tools/ozzit/Cargo.toml
           echo "sha256=$(sha256sum tools/ozzit/target/release/ozzit | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"

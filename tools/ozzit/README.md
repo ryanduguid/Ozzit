@@ -121,12 +121,13 @@ requested-claim refusals, clean-check-first ordering, exact logical output and
 the independent semantic rerun. Private callbacks retain production root
 discovery and command formatting. The Python release tool, its 44 tests and
 its attest caller have retired.
-Release static tests and the unchanged replay retain the remaining 18 original
+Release static tests and the recorded replay retain the remaining 18 original
 method contracts. Added cases cover exact Boolean claims, malformed files,
 canonical values, manifest fields, checksum rows and parser refusals. The replay
 retains all 22 provenance mutations with type-strict input bindings. The original
 Python subprocess AST check retired with the tool; native invocation tests check separate
-argument vectors through the existing process runner. Production code is unchanged.
+argument vectors through the existing process runner. That transfer changed no
+production code.
 `verify_workbook` is native only. Native tests cover
 the original report fixtures, malformed XML and AFE payloads, all add-in and
 forbidden-part cases, scoped names, long names and physical command contracts.
@@ -260,8 +261,8 @@ Differential scripts
 and their receipts are retained in the local Agent Hub evidence for this port.
 Release staging tests retain all 10 original staging contracts, using real
 copies, checksums, structural verification and cleanup in owned synthetic roots.
-All 3 staged assets match the original Python fixture bytes, moved to schema 2,
-and repeat builds
+The staged workbook matches the original Python fixture bytes, provenance.json
+and SHA256SUMS match that fixture moved to schema 2, and repeat builds
 are byte identical. Private callbacks inject gate failures, structural failures
 and a destination race; the public command keeps its real checks and operation
 order. The recorded replay remains: a test adapter moves each recorded bundle to
