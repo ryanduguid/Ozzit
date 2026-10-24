@@ -65,9 +65,11 @@ They reach the workbook through `ozzit variance_fy_periods`, which writes
   and a block as its rows added together. Both now return a message, which suggests
   TRANSPOSE for a column.
 - `oz.Depreciateλ` read a SalvageValues entry that is text, such as TBA, or an error
-  as 0, so the asset depreciated to nil without warning. Both now return a message;
-  passing the error through would have made the whole schedule one #VALUE!. A
-  blank cell is still 0, and numeric text such as "100" still reads as the number.
+  as 0, so the asset depreciated to nil without warning, and read date text such as
+  1/1/2026 as a date serial. Any text or error now returns a message, as numeric text
+  already does in `oz.Varianceλ`; passing the error through would have made the whole
+  schedule one #VALUE!. A blank cell is still 0. Numeric text such as "100", which
+  was read as the number, is now refused too.
 - `oz.SumPeriodsλ` help now states what the function already did: a date before the
   first period start is left out of every period, and a date on or after the last
   start goes to the last period. The arithmetic is unchanged.
