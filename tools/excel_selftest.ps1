@@ -1088,8 +1088,9 @@ $e4A = 'DATE(2026,{7,8},1)'
 $e5A = 'DATE(2026,{7,8},31)'
 # A range must give exactly what the same values give as an array, and neither may be
 # one of the refusal messages, which all say what an argument must be.
+# The same shape and the same values, and not a refusal message.
 function SameAsArray($id, $ranged, $arrayed) {
-    Near $id "LET(r, TEXTJOIN(`"|`",FALSE,$ranged), a, TEXTJOIN(`"|`",FALSE,$arrayed), --AND(r=a, ISERROR(SEARCH(`"must`", r))))" '1'
+    Near $id "LET(x, $ranged, y, $arrayed, r, TEXTJOIN(`"|`",FALSE,x), a, TEXTJOIN(`"|`",FALSE,y), --AND(ROWS(x)=ROWS(y), COLUMNS(x)=COLUMNS(y), r=a, ISERROR(SEARCH(`"must`", r))))" '1'
 }
 
 # Cumulative ran SCAN over a block row by row, so each row opened on the previous row's
@@ -1108,6 +1109,8 @@ foreach ($r in @(@('Sum', 'AE1:AH1', '{1,3,5,7}'), @('Avg', 'AE1:AH1', '{1,1.5,2
     Near "Rolling$($r[0]): a row range"         "SUMPRODUCT(ABS($fn($($r[1]), 2) - $($r[2])))" '0'
     Near "Rolling$($r[0]): a column is refused" "--ISNUMBER(SEARCH(`"must be one row`", $fn(AN1:AN3, 2)))" '1'
     Near "Rolling$($r[0]): a block is refused"  "--ISNUMBER(SEARCH(`"must be one row`", $fn(AE1:AH2, 2)))" '1'
+    Near "Rolling$($r[0]): a calculated column is refused" "--ISNUMBER(SEARCH(`"must be one row`", $fn(SEQUENCE(3), 2)))" '1'
+    Near "Rolling$($r[0]): a calculated block is refused"  "--ISNUMBER(SEARCH(`"must be one row`", $fn(SEQUENCE(2,2), 2)))" '1'
 }
 Near 'RollingSum: a transposed column, as the message advises' "SUMPRODUCT(ABS(oz.RollingSum$L(TRANSPOSE(AN1:AN3), 2) - {1,3,5}))" '0'
 
@@ -1125,6 +1128,11 @@ Near 'Depreciate: text salvage is refused'          "--ISNUMBER(SEARCH(`"Salvage
 Near 'Depreciate: text salvage in a cell is refused' "--ISNUMBER(SEARCH(`"SalvageValues must be`", $dp($dpS, AL1)))" '1'
 Near 'Depreciate: a blank salvage cell is 0'        "SUMPRODUCT(ABS($dp($dpS, Z1) - $dp($dpS)))" '0'
 Near 'Depreciate: numeric text salvage is a number' "SUMPRODUCT(ABS($dp($dpS, `"100`") - $dp($dpS, 100)))" '0'
+# An error salvage gets the message as well. Passed through, it made the whole schedule one
+# #VALUE!, whichever error it was and however many assets were fine.
+Near 'Depreciate: an error salvage is refused' "--ISNUMBER(SEARCH(`"SalvageValues must be`", $dp($dpS, NA())))" '1'
+Near 'Depreciate: one asset''s error salvage is refused' `
+     "--ISNUMBER(SEARCH(`"SalvageValues must be`", $dp({1000;1000}, DATE(2026,7,1)*{1;1}, {5;5}, $dpTl, {100;#DIV/0!})))" '1'
 # More than one asset needs one life per asset; a single life then returns #VALUE!. A
 # multi-asset schedule separates its assets with text, so compare it as text.
 SameAsArray 'Depreciate: range inputs equal arrays' `
@@ -1135,6 +1143,9 @@ Near 'DSI: Days defaults to 365'      "$dsi(54.9, 490)"         '54.9/490*365'
 Near 'DSI: Days of 366'               "$dsi(54.9, 490, 366)"    '54.9/490*366'
 Near 'DSI: a quarter'                 "$dsi(54.9, 120, 90)"     '54.9/120*90'
 Near 'DSI: a blank Days cell is 365'  "$dsi(54.9, 490, Z1)"     '54.9/490*365'
+Near 'DSI: an empty Days is 365'      "$dsi(54.9, 490, `"`")" '54.9/490*365'
+Near 'DSI: negative Days is #NUM!'    "ERROR.TYPE($dsi(54.9, 490, -1))"     '6'
+Near 'DSI: an error Days passes through' "ERROR.TYPE($dsi(54.9, 490, NA()))" '7'
 Near 'DSI: Days of 0 is #NUM!'        "ERROR.TYPE($dsi(54.9, 490, 0))"      '6'
 Near 'DSI: text Days is #VALUE!'      "ERROR.TYPE($dsi(54.9, 490, `"90`"))" '3'
 

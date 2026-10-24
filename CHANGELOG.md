@@ -65,7 +65,8 @@ They reach the workbook through `ozzit variance_fy_periods`, which writes
   and a block as its rows added together. Both now return a message, which suggests
   TRANSPOSE for a column.
 - `oz.Depreciateλ` read a SalvageValues entry that is text, such as TBA, or an error
-  as 0, so the asset depreciated to nil without warning. It now returns a message. A
+  as 0, so the asset depreciated to nil without warning. Both now return a message;
+  passing the error through would have made the whole schedule one #VALUE!. A
   blank cell is still 0, and numeric text such as "100" still reads as the number.
 - `oz.SumPeriodsλ` help now states what the function already did: a date before the
   first period start is left out of every period, and a date on or after the last
@@ -75,6 +76,10 @@ The native self-test gains range-input and shape checks. Each date function is g
 worksheet ranges and must match the same dates passed as calculated arrays, because
 EDATE and EOMONTH reject a multi-cell range they accept once calculated. The changed
 functions are tested on rows, columns and blocks.
+
+`tools/excel_eval_formulas.ps1` now waits for Excel to finish calculating and reads a
+blank result again before failing, rather than recording it: one cross-check run read
+a blank for a formula that returns text.
 
 ## v3.5.0, 19 October 2026, ATO benchmark ratios, a dated rate lookup and Apache-2.0
 

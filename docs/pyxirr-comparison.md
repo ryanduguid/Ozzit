@@ -25,10 +25,11 @@ digit.
 
 Commit any workbook changes first, then rerun it on a Windows host with desktop Excel
 and no Excel window open. Tracked evidence refuses workbook bytes that differ from HEAD
-before loading pyxirr or starting Excel:
+before loading pyxirr or starting Excel. `--python 3.14` pins an interpreter pyxirr 0.10.8
+publishes a wheel for; under Python 3.15 uv builds it from source, which failed on 24 October 2026:
 
 ```powershell
-uv run --no-project --with pyxirr==0.10.8 python tools/pyxirr_comparison.py
+uv run --no-project --python 3.14 --with pyxirr==0.10.8 python tools/pyxirr_comparison.py
 ```
 
 CI has neither Excel nor pyxirr. `tools/tests/test_pyxirr_comparison.py` checks that the
@@ -43,7 +44,7 @@ from the release's `SHA256SUMS` or asset digest. Close Excel before running this
 Replace the example paths and hash with the release you are checking:
 
 ```powershell
-uv run --no-project --with pyxirr==0.10.8 python tools/pyxirr_comparison.py --workbook ../release/ozzit.xlsx --expected-sha256 "64-character-release-sha256" --output ../release/comparison.json
+uv run --no-project --python 3.14 --with pyxirr==0.10.8 python tools/pyxirr_comparison.py --workbook ../release/ozzit.xlsx --expected-sha256 "64-character-release-sha256" --output ../release/comparison.json
 ```
 
 The output directory must exist and the JSON file must be new. An explicit workbook

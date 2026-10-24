@@ -56,11 +56,30 @@ try {
         $ws.Cells.Clear() | Out-Null
         Invoke-Excel { $cell.Formula2 = $case.formula } | Out-Null
         Invoke-Excel { $xl.Calculate() } | Out-Null
-        # Assigned in the branches: an if-expression would enumerate the Range into its cells.
-        $range = $cell
-        if ($cell.HasSpill) { $range = $cell.SpillingToRange }
-        # Not through a function: PowerShell flattens a 2-dimensional array on return.
-        $vals = $range.Value2
+        # Calculate() can return before the result lands. Wait for xlDone; CalculationState
+        # comes back as the enum's name, as excel_selftest.ps1 found.
+        $deadline = [DateTime]::UtcNow.AddSeconds(60)
+        while ((Invoke-Excel { "$($xl.CalculationState)" }) -notin @('xlDone', '0')) {
+            if ([DateTime]::UtcNow -gt $deadline) { throw "Excel did not finish calculating $($case.id)." }
+            Start-Sleep -Milliseconds 100
+        }
+        if (-not (Invoke-Excel { $cell.HasFormula })) { throw "Excel lost the formula for $($case.id)." }
+        # A formula's cell is never empty, so a null first value was read before Excel wrote it:
+        # on 24 Oct 2026 one run read a blank for a formula that returns text, and the self-test's
+        # range read came back null once after xlDone. Read again before failing.
+        for ($try = 1; ; $try++) {
+            # Assigned in the branches: an if-expression would enumerate the Range into its cells.
+            $range = $cell
+            if ($cell.HasSpill) { $range = $cell.SpillingToRange }
+            # Not through a function: PowerShell flattens a 2-dimensional array on return.
+            $vals = $range.Value2
+            $first = $vals
+            if ($vals -is [Array]) { $first = $vals.GetValue($vals.GetLowerBound(0), $vals.GetLowerBound(1)) }
+            if ($null -ne $first) { break }
+            if ($try -ge 10) { throw "Excel returned no value for $($case.id)." }
+            if (-not [object]::ReferenceEquals($range, $cell)) { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($range) }
+            Start-Sleep -Milliseconds 200
+        }
         $rows = @()
         if ($vals -is [Array]) {
             for ($i = $vals.GetLowerBound(0); $i -le $vals.GetUpperBound(0); $i++) {

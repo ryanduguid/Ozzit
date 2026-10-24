@@ -987,7 +987,7 @@ Depreciateλ = LAMBDA(
                             "DESCRIPTION:   →Creates an array of CAPEX, depreciation, and book values for a model's timeline¶" & 
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit ¶" & 
                             "VERSION:       →24 Oct 2026¶" &
-                            "NOTES:         →The methods used here differ from Excel's functions in several ways. Please see webpage for details.¶" &
+                            "NOTES:         →The methods differ from Excel's functions in several ways; see the webpage for details.¶" &
                             "PARAMETERS:    →¶" & 
                             "InitialValues  →(Required) The purchase values of each asset to depreciate¶" & 
                             "InServiceDates →(Required) The dates from which to start depreciating each asset¶" & 
@@ -996,7 +996,7 @@ Depreciateλ = LAMBDA(
                             "               →the arguments read InitialValues, InServiceDates, LifeInYears, Timeline.¶" & 
                             "Timeline       →(Required) The model's timeline or a row of period start dates. ¶" & 
                             "               →Timeline can be any interval: days, weeks, months, quarters or years¶" & 
-                            "SalvageValues  →(Optional: Default = 0) Book values once fully depreciated. Text returns a message.¶" & 
+                            "SalvageValues  →(Optional: Default = 0) Book values once fully depreciated. Other text or an error returns a message.¶" & 
                             "DisposalDates  →(Optional: Default = End of life) The dates on which the assets are removed from the books.¶" & 
                                            "→A disposal before the end of life writes the remaining book value off in that month.¶" & 
                             "DisposalCosts  →(Optional: Default = 0) The costs of removing each asset from the books, charged in the disposal period.¶" & 
@@ -1031,11 +1031,13 @@ Depreciateλ = LAMBDA(
     //  Set defaults and apply convenience conversions
     //  A blank salvage cell is 0. Text that is not a number used to become 0 as well, which
     //  depreciated an asset whose salvage was still to be decided down to nil without a word.
-        SalvageValues,  IF( ISOMITTED( SalvageValues), 
-                            MAP( InitialValues, LAMBDA( Ele, 0)), 
+    //  Numeric text is read as its number. An error gets the message too: passed through, it
+    //  turned the whole schedule into one #VALUE!, whatever the error was.
+        SalvageValues,  IF( ISOMITTED( SalvageValues),
+                            MAP( InitialValues, LAMBDA( Ele, 0)),
                             MAP( SalvageValues, LAMBDA(v, IFERROR( IF( v = "", 0, VALUE( v)), NA())))),
         BadSalvage?,    SUMPRODUCT( --ISNA( SalvageValues)) > 0,
-        SalvageMessage, "SalvageValues must be amounts, blank or omitted, not text.",
+        SalvageMessage, "SalvageValues must be numbers or blank.",
         CvtSrvDates,    IF( NOT( ISOMITTED( InServiceDates)), 
                             IF( ISNUMBER( InServiceDates), 
                                 InServiceDates, 

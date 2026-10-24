@@ -2,7 +2,7 @@
 
 Run from the repository root on a Windows host with desktop Excel and no Excel open:
 
-    uv run --no-project --with pyxirr==0.10.8 python tools/pyxirr_comparison.py
+    uv run --no-project --python 3.14 --with pyxirr==0.10.8 python tools/pyxirr_comparison.py
 
 Excel evaluates each case's formula against ozzit.xlsx through excel_eval_formulas.ps1,
 which opens the workbook read-only and checks its hash is unchanged. pyxirr computes the

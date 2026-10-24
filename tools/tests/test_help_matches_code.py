@@ -90,6 +90,14 @@ class HelpMatchesCodeTests(unittest.TestCase):
                 )
                 self.assertIn(stored, defined_name(self.book, f"oz.{name}"))
 
+    def test_sum_periods_help_says_which_dates_fall_outside_the_periods(self):
+        # The calculation drops a date before the first period start and gives one after
+        # the last start to the last period. Up to v3.5.0 the help said neither.
+        note = "A date before the first period start is left out; one on or after the last start goes to the last period."
+        body = self.modules["Financial"].split("SumPeriodsλ = LAMBDA(")[1].split("\n);")[0]
+        self.assertIn(note, body)
+        self.assertIn(note, defined_name(self.book, "oz.SumPeriodsλ"))
+
     def test_movement_example_passes_the_two_arguments_it_declares(self):
         # Movementλ = LAMBDA([BeginningValues], [Values], ...). Excel rejects a
         # LAMBDA call carrying more arguments than the function has parameters,
