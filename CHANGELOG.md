@@ -41,6 +41,41 @@ They reach the workbook through `ozzit variance_fy_periods`, which writes
 `functions.csv` at once, as the earlier function passes did. The cover label moves to
 148 functions.
 
+### Changed
+
+- `oz.DSIλ(AverageInventory, CostOfGoodsSold, [Days])` takes the days the cost of goods
+  sold covers, 365 when omitted or blank, as `oz.ReceivableDaysλ` and `oz.PayableDaysλ`
+  already did. It used to fix 365, so a leap year or a quarter needed the cost of goods
+  sold scaled first. Days of 0 or less returns #NUM!, and Days that is not a number,
+  numeric text included, returns #VALUE!. Existing two-argument calls give the same
+  result.
+- Every function help table now has a WEBPAGE and a VERSION row. 17 had no VERSION, 4 had
+  no link, and 10 labelled the link WEBSITE. A copied function carries only its own
+  help, so this is where a reader sees which version it came from. Added VERSION rows
+  read 24 October 2026, the date the row was added. `tools/tests/test_help_fields.py`
+  now fails when a help table lacks either row.
+
+### Fixed
+
+- `oz.Cumulativeλ` given a block of several rows and columns ran its total through
+  the block row by row, so each row opened on the previous row's closing total. It now
+  returns a message. A row or a column behaves as before.
+- `oz.RollingSumλ`, `oz.RollingAvgλ`, `oz.RollingMaxλ` and `oz.RollingMinλ` window
+  over the columns of one row. A column came back as one figure for the whole column,
+  and a block as its rows added together. Both now return a message, which suggests
+  TRANSPOSE for a column.
+- `oz.Depreciateλ` read a SalvageValues entry that is text, such as TBA, or an error
+  as 0, so the asset depreciated to nil without warning. It now returns a message. A
+  blank cell is still 0, and numeric text such as "100" still reads as the number.
+- `oz.SumPeriodsλ` help now states what the function already did: a date before the
+  first period start is left out of every period, and a date on or after the last
+  start goes to the last period. The arithmetic is unchanged.
+
+The native self-test gains range-input and shape checks. Each date function is given
+worksheet ranges and must match the same dates passed as calculated arrays, because
+EDATE and EOMONTH reject a multi-cell range they accept once calculated. The changed
+functions are tested on rows, columns and blocks.
+
 ## v3.5.0, 19 October 2026, ATO benchmark ratios, a dated rate lookup and Apache-2.0
 
 Cut on 19 October 2026 from the changes on `main` since v3.4.2, and published the same

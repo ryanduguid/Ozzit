@@ -427,6 +427,8 @@ IsBetweenUλ = LAMBDA(
     LET(Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →IsBetweenUλ( Value, Low, Hi, [Inclusive])¶" &
                             "DESCRIPTION:   →Determine if a value is between a lower and upper limit.¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Value          →(Required) A value or array of values to compare.¶" & 
                             "Low            →(Required) The lower limit that the value must be greater than¶" &
@@ -470,6 +472,8 @@ IsInListUλ = LAMBDA(
     LET(Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →IsInListUλ( Value, List)¶" &
                             "DESCRIPTION:   →Determine if a value is one of a list of items.¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Value          →(Required) A value or array of values to compare.¶" & 
                             "List           →(Required) A list of values to check: a row, a column or a grid.¶" &
@@ -509,7 +513,8 @@ RangeToDAUλ = LAMBDA(
                             "FUNCTION:          →RangeToDAUλ(Range, [Rows], [Columns])¶" &
                             "DESCRIPTION:       →Convert a range reference to a dynamic array reference.¶" & 
                             "SEE ALSO:      →Excel 365 now has TRIMRANGE and trim references (.:.) for this.¶" &
-                            "WEBSITE:           →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:           →https://github.com/ryanduguid/Ozzit¶" &
+                            "VERSION:           →24 Oct 2026¶" &
                             "PARAMETERS:        →¶" & 
                             "Range              →(Required) A reference to the range to be converted.¶" &
                             "Rows               →(Optional) Number of rows for the dynamic array. Defaults to 1.¶" &

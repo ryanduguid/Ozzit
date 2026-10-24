@@ -49,7 +49,8 @@ CountDOWλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                         "FUNCTION:      →CountDOWλ(Starts, Ends, DayOfWeek)¶" & 
                         "DESCRIPTION:   →Count instances of a specific day of the week between two dates.¶" & 
-                        "WEBSITE:       →https://github.com/ryanduguid/Ozzit¶" &
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                        "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" & 
                         "Starts         →(Required) One of more start dates (text or numeric) in a row or column¶" & 
                         "Ends           →(Required) End dates (text or numeric) for each start date¶" & 
@@ -95,7 +96,8 @@ IsBetweenλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                         "FUNCTION:      →IsBetweenλ(Values, Low, High, [Inclusive])¶" &
                         "DESCRIPTION:   →Determine if a value is between a lower and upper limit.¶" & 
-                        "WEBSITE:       →https://github.com/ryanduguid/Ozzit ¶" &
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit ¶" &
+                        "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" & 
                         "Values         →(Required) one or more values to compare.¶" & 
                         "Low            →(Required) The lower limit that the value(s) must be greater than¶" &
@@ -140,9 +142,9 @@ IsOccurrenceDateλ = LAMBDA(
         Help,       TRIM(TEXTSPLIT(
                         "FUNCTION:      →IsOccurrenceDateλ(Dates, FirstOccurrence, [LastOccurrence], [Repeats])¶" &
                         "DESCRIPTION:   →Returns TRUE if a Date is when something happens.¶" &
-                        "               →This was developed for budgeting where we have expenses that start,¶" &
-                        "               →and sometimes repeat at regular intervals.¶" &  
-                        "WEBSITE:       →https://github.com/ryanduguid/Ozzit¶" &
+                        "               →Developed for budgeting, where expenses start and sometimes repeat at regular intervals.¶" &  
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                        "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" &
                         "Dates          →(Required) Date to test. Normally this is horizontal timeline by day¶" &
                         "FirstOccurrence →(Required) When something that may repeat, happens for the first time.¶" &
@@ -241,7 +243,8 @@ OverLapDaysλ = LAMBDA(
         Help,       TRIM(TEXTSPLIT(
                         "FUNCTION:      →OverLapDaysλ(Period1Start, Period1End, Period2Start, Period2End)¶" &
                         "DESCRIPTION:   →Count days shared between two sets of periods.¶" & 
-                        "WEBSITE:       →https://github.com/ryanduguid/Ozzit¶" &
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                        "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" & 
                         "Period1Start   →(Required) First period's start date.¶" & 
                         "Period1End     →(Required) First period's end date.¶" & 
@@ -302,6 +305,7 @@ PeriodLabelλ = LAMBDA(
                         "FUNCTION:      →PeriodLabelλ(Date, [Interval])¶" &
                         "DESCRIPTION:   →Creates a label for a date based on period interval¶" & 
                         "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                        "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" & 
                         "Date           →(Required) A single date or array of date(s) where the first date is the first date of a calendar year.¶" & 
                         "Interval       →(Optional) Must be one of: ¶" & 
@@ -366,6 +370,7 @@ Periodsλ = LAMBDA(
                                        "→* Counts the period starts crossed, so a part period at the end counts¶" & 
                                        "→* Returns negative values if Starts is after Ends¶" & 
                         "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                        "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" &
                         "Starts         →(Required) First date (normally older). A single date or an array of dates.¶" &
                         "Ends           →(Required) Second date (normally newer). A single date or an array the same shape as Starts.¶" &
@@ -439,6 +444,7 @@ ScheduleRatesλ = LAMBDA(
                         "DESCRIPTION:   →Schedules rates that persist until replaced in a timeline from a schedule in a table.¶" & 
                         "NOTE!          →If 2 rates are scheduled within the same period, only the last rate will be selected.¶" & 
                         "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                        "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" & 
                         "PeriodEnds     →(Required) A row of period end dates (timeline).¶" & 
                         "RateStarts     →(Required) A column or row of rate effective dates in any order.¶" & 
@@ -490,6 +496,7 @@ ScheduleRatesByItemsλ = LAMBDA(
                         "NOTE!          →If 2 rates are scheduled within the same period for the same item, .¶" & 
                                        "→only the last rate will be selected.¶" & 
                         "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                        "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" & 
                         "PeriodEnds     →(Required) A row of period end dates (timeline).¶" & 
                         "ItemFilter     →(Required) A column of 1 or more items to filter a rate schedule by. ¶" &
@@ -558,7 +565,8 @@ ScheduleValuesλ = LAMBDA(
         Help,       TRIM(TEXTSPLIT( 
                         "FUNCTION:      →ScheduleValuesλ(PeriodStarts, PeriodEnds, Values, EffectiveDates)¶" &
                         "DESCRIPTION:   →Place values from a table into a timeline's appropriate period.¶" & 
-                        "WEBSITE:       →https://github.com/ryanduguid/Ozzit ¶" &
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit ¶" &
+                        "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" & 
                         "PeriodStarts   →(Required) A row of period start dates (timeline).¶" & 
                         "PeriodEnds     →(Required) A row of period end dates (timeline).¶" & 
@@ -622,6 +630,7 @@ ScheduleValuesByItemsλ = LAMBDA(
                         "FUNCTION:      →ScheduleValuesByItemsλ(PeriodStarts, PeriodEnds, ItemFilter, ItemList, EffectiveList, ValueList)¶" &
                         "DESCRIPTION:   →Schedule and sum values in a timeline for each item.¶" & 
                         "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                        "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" & 
                         "PeriodStarts   →(Required) A row of period start dates (timeline).¶" & 
                         "PeriodEnds     →(Required) A row of period end dates (timeline).¶" & 
@@ -685,7 +694,8 @@ Timelineλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →Timelineλ(StartDate, Periods, Interval, PeriodStarts?)¶" &
                             "DESCRIPTION:   →Creates a horizontal list of period dates.¶" & 
-                            "WEBSITE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                            "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:        →¶" & 
                             "StartDate      →(Required) First period's start date. May be entered as text.¶" &
                             "Periods        →(Optional) The number of period in the timeline. Defaults to 12.¶" &
@@ -1400,12 +1410,13 @@ IsBetweenEλ = LAMBDA(
     LET(Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →IsBetweenEλ( Value, Low, Hi, [Inclusive])¶" &
                             "DESCRIPTION:   →Determine if a value is between a lower and upper limit.¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Value          →(Required) A value or array of values to compare.¶" & 
                             "Low            →(Required) The lower limit that the value must be greater than¶" &
                             "Hi             →(Required) The higher limit that the value must be less than¶" &
                             "Inclusive      →(Optional) If set to TRUE (default) the value can be equal to Low and/or Hi¶" &
-                            "→¶" &
                             "EXAMPLES:      →¶" & 
                             "Result         →Formula¶" &
                             "FALSE          →=IsBetweenEλ(1, 2, 4)¶" & 
@@ -1443,6 +1454,8 @@ IsInListλ = LAMBDA(
     LET(Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →IsInListλ( Value, List)¶" &
                             "DESCRIPTION:   →Determine if a value is one of a list of items.¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Value          →(Required) A value or array of values to compare.¶" & 
                             "List           →(Required) A list of values to check: a row, a column or a grid.¶" &
@@ -1482,7 +1495,8 @@ RangeToDAEλ = LAMBDA(
                             "FUNCTION:          →RangeToDAEλ(Range, [Rows], [Columns])¶" &
                             "DESCRIPTION:       →Convert a range reference to a dynamic array reference.¶" & 
                             "SEE ALSO:      →Excel 365 now has TRIMRANGE and trim references (.:.) for this.¶" &
-                            "WEBSITE:           →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:           →https://github.com/ryanduguid/Ozzit¶" &
+                            "VERSION:           →24 Oct 2026¶" &
                             "PARAMETERS:        →¶" & 
                             "Range              →(Required) A reference to the range to be converted.¶" &
                             "Rows               →(Optional) Number of rows for the dynamic array. Defaults to 1.¶" &
@@ -1717,7 +1731,7 @@ IntOnIntλ = LAMBDA(
                             "FUNCTION:      →IntOnIntλ( Principal, Rate)¶" & 
                             "DESCRIPTION:   →Calculate Interest on Interest (Interest only). Use to determine amount ¶" &
                                            "→needed to cover borrowed interest¶" & 
-                            "WEBSITE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Principal     →(Required) Principal amount¶" & 
@@ -1750,7 +1764,7 @@ IRRλ = LAMBDA(
     LET(Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →IRRλ( Values, Dates)¶" & 
                             "DESCRIPTION:   →Calculates IRR, correcting for when the first investment is not in the first period¶" & 
-                            "WEBSITE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Values         →(Required) A row of investments (negative) and distributions (positive)¶" & 
@@ -1873,21 +1887,27 @@ Cumulativeλ = LAMBDA(
                             "FUNCTION:      →Cumulativeλ( Totals, [OpeningBalance])¶" &
                             "DESCRIPTION:   →Creates a row or column of cumulative totals from a total row or column¶" & 
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
-                            "VERSION:       →20 Aug 2026¶" &
-                            "PARAMETERS:    →¶" & 
-                            "Totals         →(Required) A row or column of totals from which to run cumulative totals¶" & 
-                            "OpeningBalance →(Optional) A starting balance. This defaults to 0¶" & 
-                            "EXAMPLES:      →¶" & 
+                            "VERSION:       →24 Oct 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "Totals         →(Required) One row or one column of totals from which to run cumulative totals.¶" &
+                            "               →A block of several rows and columns returns a message¶" &
+                            "OpeningBalance →(Optional) A starting balance. This defaults to 0¶" &
+                            "EXAMPLES:      →¶" &
                             "Result         →Formula (oz is assumed to be the module's name)¶" &
                             "1,3,6          →=oz.Cumulativeλ(Sequence(,3))",
                             "→", "¶" )
-                    ),            
+                    ),
     //  Check inputs - Omitted required arguments
         Help?,          ISOMITTED( Totals),
+    //  Check inputs - SCAN runs through a block row by row, so each row would start from
+    //  the previous row's closing total
+        Block?,         AND( ROWS( Totals) > 1, COLUMNS( Totals) > 1),
+        BlockMessage,   "Totals must be one row or one column. A block would carry each row's running total into the next row.",
     //  Procedure
         Result,         SCAN( OpeningBalance, Totals, LAMBDA(PreviousAmount, CurrentAmount, PreviousAmount + CurrentAmount)),
-    //  Return Result
-        CHOOSE(Help? + 1, Result, Help)
+    //  Return Result, Help, or the message
+        Return,         IF( Help?, 2, IF( Block?, 3, 1)),
+        CHOOSE( Return, Result, Help, BlockMessage)
     )  
 );
 
@@ -1905,9 +1925,10 @@ RollingAvgλ = LAMBDA(
                             "DESCRIPTION:   →Creates averages for preceding values of a set size moving¶" &
                                            "→from beginning to end over a row of values¶" & 
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
-                            "VERSION:       →20 Aug 2026¶" &
+                            "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Values         →(Required) A row of values to be averaged.¶" & 
+                            "               →A column, or a block of several rows, returns a message¶" & 
                             "Size           →(Required) The number of values to average that ¶" & 
                                            "→include and precede the current value¶" & 
                             "EXAMPLES:      →¶" &
@@ -1918,6 +1939,10 @@ RollingAvgλ = LAMBDA(
     //  Check inputs - Omitted required arguments
         Help?,          OR( ISOMITTED( Values),
                             ISOMITTED( Size)),
+    //  Check inputs - each window is a run of columns, so a column or a block would be
+    //  added up across its rows into a single row
+        NotRow?,        ROWS( Values) > 1,
+        RowMessage,     "Values must be one row. For a column of values, pass TRANSPOSE( Values).",
     //  Procedure
         Counter,        SEQUENCE(, COLUMNS( Values)),
     //  Each window is the current column and up to Size - 1 columns before it
@@ -1926,8 +1951,9 @@ RollingAvgλ = LAMBDA(
                                 AVERAGE( CHOOSECOLS( Values, SEQUENCE( 1, MIN( Val, Size), MAX( 1, Val - Size + 1))))
                             )
                         ),
-    //  Return Result
-        CHOOSE(Help? + 1, Result, Help)
+    //  Return Result, Help, or the message
+        Return,         IF( Help?, 2, IF( NotRow?, 3, 1)),
+        CHOOSE( Return, Result, Help, RowMessage)
     )
 );
 
@@ -1945,9 +1971,10 @@ RollingMaxλ = LAMBDA(
                             "DESCRIPTION:   →Creates the maximum for preceding values of a set size moving¶" &
                                            "→from beginning to end over a row of values¶" & 
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
-                            "VERSION:       →20 Aug 2026¶" &
+                            "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Values         →(Required) A row of values to be maxed.¶" & 
+                            "               →A column, or a block of several rows, returns a message¶" & 
                             "Size           →(Required) The number of values to find the maximum of that ¶" & 
                                            "→include and precede the current value¶" & 
                             "EXAMPLES:      →¶" &
@@ -1958,6 +1985,10 @@ RollingMaxλ = LAMBDA(
     //  Check inputs - Omitted required arguments
         Help?,          OR( ISOMITTED( Values),
                             ISOMITTED( Size)),
+    //  Check inputs - each window is a run of columns, so a column or a block would be
+    //  added up across its rows into a single row
+        NotRow?,        ROWS( Values) > 1,
+        RowMessage,     "Values must be one row. For a column of values, pass TRANSPOSE( Values).",
     //  Procedure
         Counter,        SEQUENCE(, COLUMNS( Values)),
     //  Each window is the current column and up to Size - 1 columns before it
@@ -1966,8 +1997,9 @@ RollingMaxλ = LAMBDA(
                                 MAX( CHOOSECOLS( Values, SEQUENCE( 1, MIN( Val, Size), MAX( 1, Val - Size + 1))))
                             )
                         ),
-    //  Return Result
-        CHOOSE(Help? + 1, Result, Help)
+    //  Return Result, Help, or the message
+        Return,         IF( Help?, 2, IF( NotRow?, 3, 1)),
+        CHOOSE( Return, Result, Help, RowMessage)
     )
 );
 
@@ -1985,9 +2017,10 @@ RollingMinλ = LAMBDA(
                             "DESCRIPTION:   →Creates the minimum for preceding values of a set size moving¶" &
                                            "→from beginning to end over a row of values¶" & 
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
-                            "VERSION:       →20 Aug 2026¶" &
+                            "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Values         →(Required) A row of values to take the minimum of.¶" & 
+                            "               →A column, or a block of several rows, returns a message¶" & 
                             "Size           →(Required) The number of values to find the minimum of that ¶" & 
                                            "→include and precede the current value¶" & 
                             "EXAMPLES:      →¶" &
@@ -1998,6 +2031,10 @@ RollingMinλ = LAMBDA(
     //  Check inputs - Omitted required arguments
         Help?,          OR( ISOMITTED( Values),
                             ISOMITTED( Size)),
+    //  Check inputs - each window is a run of columns, so a column or a block would be
+    //  added up across its rows into a single row
+        NotRow?,        ROWS( Values) > 1,
+        RowMessage,     "Values must be one row. For a column of values, pass TRANSPOSE( Values).",
     //  Procedure
         Counter,        SEQUENCE(, COLUMNS( Values)),
     //  Each window is the current column and up to Size - 1 columns before it
@@ -2006,8 +2043,9 @@ RollingMinλ = LAMBDA(
                                 MIN( CHOOSECOLS( Values, SEQUENCE( 1, MIN( Val, Size), MAX( 1, Val - Size + 1))))
                             )
                         ),
-    //  Return Result
-        CHOOSE(Help? + 1, Result, Help)
+    //  Return Result, Help, or the message
+        Return,         IF( Help?, 2, IF( NotRow?, 3, 1)),
+        CHOOSE( Return, Result, Help, RowMessage)
     )
 );
 
@@ -2025,9 +2063,10 @@ RollingSumλ = LAMBDA(
                             "DESCRIPTION:   →Creates totals for preceding values of a set size moving¶" &
                                            "→from beginning to end over a row of values¶" & 
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
-                            "VERSION:       →20 Aug 2026¶" &
+                            "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Values         →(Required) A row of values to be totalled.¶" & 
+                            "               →A column, or a block of several rows, returns a message¶" & 
                             "Size           →(Required) The number of values to total that ¶" & 
                                            "→include and precede the current value¶" & 
                             "EXAMPLES:      →¶" &
@@ -2038,6 +2077,10 @@ RollingSumλ = LAMBDA(
     //  Check inputs - Omitted required arguments
         Help?,          OR( ISOMITTED( Values),
                             ISOMITTED( Size)),
+    //  Check inputs - each window is a run of columns, so a column or a block would be
+    //  added up across its rows into a single row
+        NotRow?,        ROWS( Values) > 1,
+        RowMessage,     "Values must be one row. For a column of values, pass TRANSPOSE( Values).",
     //  Procedure
         Counter,        SEQUENCE(, COLUMNS( Values)),
     //  Each window is the current column and up to Size - 1 columns before it
@@ -2046,8 +2089,9 @@ RollingSumλ = LAMBDA(
                                 SUM( CHOOSECOLS( Values, SEQUENCE( 1, MIN( Val, Size), MAX( 1, Val - Size + 1))))
                             )
                         ),
-    //  Return Result
-        CHOOSE(Help? + 1, Result, Help)
+    //  Return Result, Help, or the message
+        Return,         IF( Help?, 2, IF( NotRow?, 3, 1)),
+        CHOOSE( Return, Result, Help, RowMessage)
     )
 );
 
@@ -2114,9 +2158,10 @@ SumPeriodsλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →SumPeriodsλ( Values, Dates, PeriodStarts)¶" &
                             "DESCRIPTION:   →Summarises values where each value column is for one day ¶" & 
-                                           "→into one column for each period. ¶" & 
+                                           "→into one column for each period. ¶" &
+                            "NOTES:         →A date before the first period start is left out; one on or after the last start goes to the last period.¶" & 
                             "SEE ALSO:      →Excel 365 now has GROUPBY and PIVOTBY for formula-driven aggregation.¶" &
-                            "VERSION:       →20 Aug 2026¶" &
+                            "VERSION:       →24 Oct 2026¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
                             "PARAMETERS:→¶" & 
                             "Values         →(Required) A two dimensional array/range containing values to be summed where" & 
@@ -2462,7 +2507,7 @@ Depreciateλ = LAMBDA(
                             "               →[SalvageValues], [DisposalDates], [DisposalCosts], [Methods], [Factors])¶" &
                             "DESCRIPTION:   →Creates an array of CAPEX, depreciation, and book values for a model's timeline¶" & 
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit ¶" & 
-                            "VERSION:       →20 Aug 2026¶" &
+                            "VERSION:       →24 Oct 2026¶" &
                             "NOTES:         →The methods used here differ from Excel's functions in several ways. Please see webpage for details.¶" &
                             "PARAMETERS:    →¶" & 
                             "InitialValues  →(Required) The purchase values of each asset to depreciate¶" & 
@@ -2472,7 +2517,7 @@ Depreciateλ = LAMBDA(
                             "               →the arguments read InitialValues, InServiceDates, LifeInYears, Timeline.¶" & 
                             "Timeline       →(Required) The model's timeline or a row of period start dates. ¶" & 
                             "               →Timeline can be any interval: days, weeks, months, quarters or years¶" & 
-                            "SalvageValues  →(Optional: Default = 0) The book values of each asset after fully depreciated.¶" & 
+                            "SalvageValues  →(Optional: Default = 0) Book values once fully depreciated. Text returns a message.¶" & 
                             "DisposalDates  →(Optional: Default = End of life) The dates on which the assets are removed from the books.¶" & 
                                            "→A disposal before the end of life writes the remaining book value off in that month.¶" & 
                             "DisposalCosts  →(Optional: Default = 0) The costs of removing each asset from the books, charged in the disposal period.¶" & 
@@ -2505,9 +2550,13 @@ Depreciateλ = LAMBDA(
         LifeMessage,    "LifeInYears must be a whole number of years greater than 0 and no more than 100. "
                         & "Check the argument order: InitialValues, InServiceDates, LifeInYears, Timeline.",
     //  Set defaults and apply convenience conversions
+    //  A blank salvage cell is 0. Text that is not a number used to become 0 as well, which
+    //  depreciated an asset whose salvage was still to be decided down to nil without a word.
         SalvageValues,  IF( ISOMITTED( SalvageValues), 
                             MAP( InitialValues, LAMBDA( Ele, 0)), 
-                            MAP( SalvageValues, LAMBDA(v, IFERROR( VALUE( v), 0)))),
+                            MAP( SalvageValues, LAMBDA(v, IFERROR( IF( v = "", 0, VALUE( v)), NA())))),
+        BadSalvage?,    SUMPRODUCT( --ISNA( SalvageValues)) > 0,
+        SalvageMessage, "SalvageValues must be amounts, blank or omitted, not text.",
         CvtSrvDates,    IF( NOT( ISOMITTED( InServiceDates)), 
                             IF( ISNUMBER( InServiceDates), 
                                 InServiceDates, 
@@ -2629,8 +2678,8 @@ Depreciateλ = LAMBDA(
                             )
                         ),
     //  Return Result, Help, or the message
-        Return,         IF( Help?, 2, IF( BadLife?, 3, 1)),
-        CHOOSE( Return, Result, Help, LifeMessage)
+        Return,         IF( Help?, 2, IF( BadLife?, 3, IF( BadSalvage?, 4, 1))),
+        CHOOSE( Return, Result, Help, LifeMessage, SalvageMessage)
     ) 
 );
 
@@ -5019,17 +5068,20 @@ DSIλ = LAMBDA(
 //  Parameter DeclaRations
         [AverageInventory],  
         [CostOfGoodsSold],    
+        [Days],
 //  Help
     LET(Help,   TRIM(TEXTSPLIT( 
-                        "FUNCTION:          →DSIλ( AverageInventory, CostOfGoodsSold)¶" & 
+                        "FUNCTION:          →DSIλ( AverageInventory, CostOfGoodsSold, [Days])¶" & 
                         "DESCRIPTION:       →Days Sales in Inventory Ratio (aka Average age of inventory)¶" & 
                                            "→indicates the average time in days that a company takes to turn its inventory¶" & 
-                                           "→(Average Inventory/Annual Cost of Goods Sold x 365 days)¶" & 
+                                           "→(Average Inventory / Cost of Goods Sold x Days, with Days 365 by default)¶" & 
                         "WEBPAGE:           →https://www.investopedia.com/terms/d/days-sales-inventory-dsi.asp ¶" &
-                        "VERSION:           →20 Aug 2026¶" &
+                        "VERSION:           →24 Oct 2026¶" &
                         "PARAMETERS:→¶" & 
                         "AverageInventory→  (Required) Average of period open and close Inventory¶" & 
-                        "CostOfGoodsSold→   (Required) Cost of Goods Sold (COGS) for a full year ¶" & 
+                        "CostOfGoodsSold→   (Required) Cost of Goods Sold (COGS) over the same Days¶" & 
+                        "Days→              (Optional: Default = 365) Days the COGS figure covers, such as 366¶" & 
+                                           "→for a leap year or 90 for a quarter. Days of 0 or less returns #NUM!¶" & 
                         "EXAMPLES:          →Formula (oz is assumed to be the module's name)¶" &
                         "40.8949 days       →=oz.DSIλ(54.9, 490 )", 
                     "→", "¶" )
@@ -5038,10 +5090,12 @@ DSIλ = LAMBDA(
         Help?,          OR( ISOMITTED( AverageInventory),
                             ISOMITTED( CostOfGoodsSold)
                         ),
-    //  Constants
-        DpY,            365, //Days per Year
     //  Procedure
-        Result,         AverageInventory/CostOfGoodsSold * DpY,
+    //  An omitted Days, a blank cell or an empty string is 365, as in ReceivableDaysλ.
+    //  Anything else that is not a number is #VALUE!, so text such as "0" cannot pass the
+    //  check below and then be read as 0 by the arithmetic.
+        Period,         IF( ISOMITTED( Days), 365, IF( Days = "", 365, IF( ISNUMBER( Days), Days, #VALUE!))),
+        Result,         IF( Period <= 0, #NUM!, AverageInventory/CostOfGoodsSold * Period),
     //  Return Result
         CHOOSE(Help? + 1, Result, Help)        
     )
@@ -6162,7 +6216,7 @@ CashConversionCycleλ = LAMBDA(
     //  Help
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →CashConversionCycleλ(InventoryDays, ReceivableDays, PayableDays, [WIPDays])¶" &
-                            "DESCRIPTION:   →Cash conversion cycle: the days between paying suppliers and collecting from customers.¶NOTES!         →InventoryDays + WIPDays + ReceivableDays - PayableDays. Pass day counts,¶               →for example from DSIλ(), ReceivableDaysλ(), PayableDaysλ() and WIPDaysλ(),¶               →with every component on the same period basis. DSIλ() multiplies by 365¶               →and expects a full year's cost of goods sold, so for a shorter window¶               →annualise that window's cost of goods sold before passing it. A negative¶               →result means suppliers are paid after customers pay. An omitted or blank¶               →WIPDays counts as 0. Pass WIPDays only where WIP is not already in the¶               →inventory behind InventoryDays, or it is counted twice.¶" &
+                            "DESCRIPTION:   →Cash conversion cycle: the days between paying suppliers and collecting from customers.¶NOTES!         →InventoryDays + WIPDays + ReceivableDays - PayableDays. Pass day counts,¶               →for example from DSIλ(), ReceivableDaysλ(), PayableDaysλ() and WIPDaysλ(),¶               →with every component on the same period basis. For a shorter window, pass¶               →that window's days as the Days argument of each component. A negative¶               →result means suppliers are paid after customers pay. An omitted or blank¶               →WIPDays counts as 0. Pass WIPDays only where WIP is not already in the¶               →inventory behind InventoryDays, or it is counted twice.¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/ratio-definitions.md¶" &
                             "VERSION:       →29 Sep 2026¶" &
                             "PARAMETERS:    →¶" &
@@ -6618,6 +6672,8 @@ IsBetweenUλ = LAMBDA(
     LET(Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →IsBetweenUλ( Value, Low, Hi, [Inclusive])¶" &
                             "DESCRIPTION:   →Determine if a value is between a lower and upper limit.¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Value          →(Required) A value or array of values to compare.¶" & 
                             "Low            →(Required) The lower limit that the value must be greater than¶" &
@@ -6661,6 +6717,8 @@ IsInListUλ = LAMBDA(
     LET(Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →IsInListUλ( Value, List)¶" &
                             "DESCRIPTION:   →Determine if a value is one of a list of items.¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Value          →(Required) A value or array of values to compare.¶" & 
                             "List           →(Required) A list of values to check: a row, a column or a grid.¶" &
@@ -6700,7 +6758,8 @@ RangeToDAUλ = LAMBDA(
                             "FUNCTION:          →RangeToDAUλ(Range, [Rows], [Columns])¶" &
                             "DESCRIPTION:       →Convert a range reference to a dynamic array reference.¶" & 
                             "SEE ALSO:      →Excel 365 now has TRIMRANGE and trim references (.:.) for this.¶" &
-                            "WEBSITE:           →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:           →https://github.com/ryanduguid/Ozzit¶" &
+                            "VERSION:           →24 Oct 2026¶" &
                             "PARAMETERS:        →¶" & 
                             "Range              →(Required) A reference to the range to be converted.¶" &
                             "Rows               →(Optional) Number of rows for the dynamic array. Defaults to 1.¶" &

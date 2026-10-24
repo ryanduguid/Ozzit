@@ -76,7 +76,7 @@ class HelpMatchesCodeTests(unittest.TestCase):
         # binding IF( Inclusive, ...) takes the exclusive branch and the help's own
         # =IsBetweenEλ(2, 2, 4) example returns FALSE where it prints TRUE.
         binding = "Inclusive,      IF( ISLOGICAL( Inclusive), Inclusive, TRUE),"
-        stored = "_xlpm.Inclusive, IF(ISLOGICAL(_xlpm.Inclusive), _xlpm.Inclusive, TRUE)"
+        stored = "_xlpm.Inclusive, IF( ISLOGICAL( _xlpm.Inclusive), _xlpm.Inclusive, TRUE)"
         for module, name in (("Essentials", "IsBetweenEλ"), ("Utilities", "IsBetweenUλ")):
             with self.subTest(function=name):
                 body = self.modules[module].split(f"{name} = LAMBDA(")[1]
