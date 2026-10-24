@@ -33,13 +33,12 @@ matches the source.
   the ATO prints multiplied by 100, and `oz.ATOTurnoverλ` returns an amount; the rest
   return a plain ratio such as 1.075.
 - **Periods.** No ratio annualises. Where a flow is divided by a balance (the
-  turnover ratios, the returns and `oz.DSIλ`), supply a full year's flow, or scale a
-  shorter period's flow to a year first. `oz.DSIλ` multiplies by a fixed 365.
-  `oz.ReceivableDaysλ`, `oz.PayableDaysλ` and `oz.WIPDaysλ` instead take `Days`, the
-  number of days their flow covers (365 when omitted), so the same function serves a
-  year's flow, a month's, or a rolling three months'. When a cash conversion cycle
-  uses a shorter window, annualise that window's cost of goods sold before passing it
-  to `oz.DSIλ`.
+  turnover ratios and the returns), supply a full year's flow, or scale a shorter
+  period's flow to a year first. `oz.DSIλ`, `oz.ReceivableDaysλ`, `oz.PayableDaysλ` and
+  `oz.WIPDaysλ` instead take `Days`, the number of days their flow covers (365 when
+  omitted), so the same function serves a year's flow, a month's, or a rolling three
+  months'. When a cash conversion cycle uses a shorter window, pass that window's days
+  to each component.
 - **Balances.** The argument name usually says which balance a function expects.
   Arguments named `Average…` want an average of opening and closing balances, and
   `oz.ROEλ` averages opening and closing equity itself. `WorkingCapital` in
@@ -73,7 +72,7 @@ matches the source.
 | `oz.InterestCoverageRatioλ` | `OperatingIncome/InterestExpenses` | Gross interest expense; some definitions deduct interest income first. |
 | `oz.EquityRatioλ` | `ShareholdersEquity/(TotalAssets - IntangibleAssets)` | Deducts intangibles from assets. Pass 0 for equity over total assets, the more common definition. |
 | `oz.AssetTurnoverRatioλ` | `NetSales/TotalAssets` | Supply a year's sales and average total assets, as the help asks. |
-| `oz.DSIλ` | `AverageInventory/CostOfGoodsSold * DpY` | `DpY` is 365, so supply a year's cost of goods sold. |
+| `oz.DSIλ` | `IF(Period <= 0, #NUM!, AverageInventory/CostOfGoodsSold * Period)` | `Period` is `Days`, 365 when omitted or blank, so pass the days the cost of goods sold covers. |
 | `oz.OperatingRatioλ` | `(OperatingExpenses+CostOfGoodsSold)/NetSales` | |
 | `oz.GrossMarginλ` | `GrossProfit/NetSales` | |
 | `oz.EBITDAMarginλ` | `EBITDA/TotalRevenue` | |

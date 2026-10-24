@@ -44,7 +44,8 @@ CountDOWλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                         "FUNCTION:      →CountDOWλ(Starts, Ends, DayOfWeek)¶" & 
                         "DESCRIPTION:   →Count instances of a specific day of the week between two dates.¶" & 
-                        "WEBSITE:       →https://github.com/ryanduguid/Ozzit¶" &
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                        "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" & 
                         "Starts         →(Required) One of more start dates (text or numeric) in a row or column¶" & 
                         "Ends           →(Required) End dates (text or numeric) for each start date¶" & 
@@ -90,7 +91,8 @@ IsBetweenλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                         "FUNCTION:      →IsBetweenλ(Values, Low, High, [Inclusive])¶" &
                         "DESCRIPTION:   →Determine if a value is between a lower and upper limit.¶" & 
-                        "WEBSITE:       →https://github.com/ryanduguid/Ozzit ¶" &
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit ¶" &
+                        "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" & 
                         "Values         →(Required) one or more values to compare.¶" & 
                         "Low            →(Required) The lower limit that the value(s) must be greater than¶" &
@@ -135,9 +137,9 @@ IsOccurrenceDateλ = LAMBDA(
         Help,       TRIM(TEXTSPLIT(
                         "FUNCTION:      →IsOccurrenceDateλ(Dates, FirstOccurrence, [LastOccurrence], [Repeats])¶" &
                         "DESCRIPTION:   →Returns TRUE if a Date is when something happens.¶" &
-                        "               →This was developed for budgeting where we have expenses that start,¶" &
-                        "               →and sometimes repeat at regular intervals.¶" &  
-                        "WEBSITE:       →https://github.com/ryanduguid/Ozzit¶" &
+                        "               →Developed for budgeting, where expenses start and sometimes repeat at regular intervals.¶" &  
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                        "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" &
                         "Dates          →(Required) Date to test. Normally this is horizontal timeline by day¶" &
                         "FirstOccurrence →(Required) When something that may repeat, happens for the first time.¶" &
@@ -236,7 +238,8 @@ OverLapDaysλ = LAMBDA(
         Help,       TRIM(TEXTSPLIT(
                         "FUNCTION:      →OverLapDaysλ(Period1Start, Period1End, Period2Start, Period2End)¶" &
                         "DESCRIPTION:   →Count days shared between two sets of periods.¶" & 
-                        "WEBSITE:       →https://github.com/ryanduguid/Ozzit¶" &
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                        "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" & 
                         "Period1Start   →(Required) First period's start date.¶" & 
                         "Period1End     →(Required) First period's end date.¶" & 
@@ -297,6 +300,7 @@ PeriodLabelλ = LAMBDA(
                         "FUNCTION:      →PeriodLabelλ(Date, [Interval])¶" &
                         "DESCRIPTION:   →Creates a label for a date based on period interval¶" & 
                         "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                        "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" & 
                         "Date           →(Required) A single date or array of date(s) where the first date is the first date of a calendar year.¶" & 
                         "Interval       →(Optional) Must be one of: ¶" & 
@@ -361,6 +365,7 @@ Periodsλ = LAMBDA(
                                        "→* Counts the period starts crossed, so a part period at the end counts¶" & 
                                        "→* Returns negative values if Starts is after Ends¶" & 
                         "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                        "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" &
                         "Starts         →(Required) First date (normally older). A single date or an array of dates.¶" &
                         "Ends           →(Required) Second date (normally newer). A single date or an array the same shape as Starts.¶" &
@@ -434,6 +439,7 @@ ScheduleRatesλ = LAMBDA(
                         "DESCRIPTION:   →Schedules rates that persist until replaced in a timeline from a schedule in a table.¶" & 
                         "NOTE!          →If 2 rates are scheduled within the same period, only the last rate will be selected.¶" & 
                         "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                        "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" & 
                         "PeriodEnds     →(Required) A row of period end dates (timeline).¶" & 
                         "RateStarts     →(Required) A column or row of rate effective dates in any order.¶" & 
@@ -485,6 +491,7 @@ ScheduleRatesByItemsλ = LAMBDA(
                         "NOTE!          →If 2 rates are scheduled within the same period for the same item, .¶" & 
                                        "→only the last rate will be selected.¶" & 
                         "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                        "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" & 
                         "PeriodEnds     →(Required) A row of period end dates (timeline).¶" & 
                         "ItemFilter     →(Required) A column of 1 or more items to filter a rate schedule by. ¶" &
@@ -553,7 +560,8 @@ ScheduleValuesλ = LAMBDA(
         Help,       TRIM(TEXTSPLIT( 
                         "FUNCTION:      →ScheduleValuesλ(PeriodStarts, PeriodEnds, Values, EffectiveDates)¶" &
                         "DESCRIPTION:   →Place values from a table into a timeline's appropriate period.¶" & 
-                        "WEBSITE:       →https://github.com/ryanduguid/Ozzit ¶" &
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit ¶" &
+                        "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" & 
                         "PeriodStarts   →(Required) A row of period start dates (timeline).¶" & 
                         "PeriodEnds     →(Required) A row of period end dates (timeline).¶" & 
@@ -617,6 +625,7 @@ ScheduleValuesByItemsλ = LAMBDA(
                         "FUNCTION:      →ScheduleValuesByItemsλ(PeriodStarts, PeriodEnds, ItemFilter, ItemList, EffectiveList, ValueList)¶" &
                         "DESCRIPTION:   →Schedule and sum values in a timeline for each item.¶" & 
                         "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                        "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" & 
                         "PeriodStarts   →(Required) A row of period start dates (timeline).¶" & 
                         "PeriodEnds     →(Required) A row of period end dates (timeline).¶" & 
@@ -680,7 +689,8 @@ Timelineλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →Timelineλ(StartDate, Periods, Interval, PeriodStarts?)¶" &
                             "DESCRIPTION:   →Creates a horizontal list of period dates.¶" & 
-                            "WEBSITE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                            "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:        →¶" & 
                             "StartDate      →(Required) First period's start date. May be entered as text.¶" &
                             "Periods        →(Optional) The number of period in the timeline. Defaults to 12.¶" &

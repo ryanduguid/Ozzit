@@ -91,14 +91,16 @@ def shared(what: str, old: str, new: str, hits: int = 1) -> Swap:
 # The stored form qualifies parameters with _xlpm./_xlop. and post-2007 functions
 # with _xlfn., and writes & as &amp;. src/ is the typed form. Neither is derived
 # from the other, so both anchors are spelt out.
+# The spacing is what compile_sources stores; Excel's compact re-serialisation
+# stood until the 24 Oct 2026 help changes recompiled both functions.
 WORKBOOK_INCLUSIVE_OLD = (
-    '"→", "¶")), _xlpm.Help?, OR(_xlfn.ISOMITTED(_xlpm.Value), '
-    "_xlfn.ISOMITTED(_xlpm.Low), _xlfn.ISOMITTED(_xlpm.Hi)),"
+    '"→", "¶" ) ), _xlpm.Help?, OR( _xlfn.ISOMITTED( _xlpm.Value), '
+    "_xlfn.ISOMITTED( _xlpm.Low), _xlfn.ISOMITTED( _xlpm.Hi) ),"
 )
 WORKBOOK_INCLUSIVE_NEW = (
-    '"→", "¶")), _xlpm.Inclusive, IF(ISLOGICAL(_xlpm.Inclusive), _xlpm.Inclusive, TRUE), '
-    "_xlpm.Help?, OR(_xlfn.ISOMITTED(_xlpm.Value), "
-    "_xlfn.ISOMITTED(_xlpm.Low), _xlfn.ISOMITTED(_xlpm.Hi)),"
+    '"→", "¶" ) ), _xlpm.Inclusive, IF( ISLOGICAL( _xlpm.Inclusive), _xlpm.Inclusive, TRUE), '
+    "_xlpm.Help?, OR( _xlfn.ISOMITTED( _xlpm.Value), "
+    "_xlfn.ISOMITTED( _xlpm.Low), _xlfn.ISOMITTED( _xlpm.Hi) ),"
 )
 # IsInListλ and IsInListUλ open with the same omitted-argument block, so the
 # anchor runs on to the Result line that only the 2 IsBetween copies carry.

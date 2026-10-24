@@ -83,10 +83,10 @@ class ModellingConventionsTest(unittest.TestCase):
         self.assertIn("Utilities repeats the 16 Essentials functions with a `U` suffix", self.page)
 
     def test_if_and_nested_if(self) -> None:
-        self.assertEqual(len(calling(r"\bIF\(")), 73)
+        self.assertEqual(len(calling(r"\bIF\(")), 79)
         nested = {n for n, lines in function_bodies().items() if any(len(re.findall(r"\bIF\(", line)) > 1 for line in lines)}
         self.assertGreaterEqual(len(nested), 22)
-        self.assertIn("73 functions call `IF`", self.page)
+        self.assertIn("79 functions call `IF`", self.page)
         self.assertIn("At least 22 functions nest one `IF` inside another", self.page)
 
     def test_help_tables_and_the_closing_choose(self) -> None:
@@ -122,8 +122,8 @@ class ModellingConventionsTest(unittest.TestCase):
     def test_the_embedded_gst_rate_and_the_days_a_year_convention(self) -> None:
         self.assertEqual(calling(r"IF\(ISOMITTED\(Rate\), 0\.1,"), {"GSTAddλ", "GSTExtractλ"})
         self.assertIn("fall back to a rate of 0.1 written into the formula", self.page)
-        self.assertEqual(calling(r"DpY,\s*365"), {"DSIλ"})
-        self.assertIn("`oz.DSIλ` names its 365 days a year in a `LET` step", self.page)
+        self.assertEqual(calling(r"DpY,\s*365"), set())
+        self.assertIn("`oz.DSIλ` defaults its days to 365 and takes `Days` to override it", self.page)
 
     def test_names_merged_cells_and_macros(self) -> None:
         with zipfile.ZipFile(WORKBOOK) as book:

@@ -427,12 +427,13 @@ IsBetweenEλ = LAMBDA(
     LET(Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →IsBetweenEλ( Value, Low, Hi, [Inclusive])¶" &
                             "DESCRIPTION:   →Determine if a value is between a lower and upper limit.¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Value          →(Required) A value or array of values to compare.¶" & 
                             "Low            →(Required) The lower limit that the value must be greater than¶" &
                             "Hi             →(Required) The higher limit that the value must be less than¶" &
                             "Inclusive      →(Optional) If set to TRUE (default) the value can be equal to Low and/or Hi¶" &
-                            "→¶" &
                             "EXAMPLES:      →¶" & 
                             "Result         →Formula¶" &
                             "FALSE          →=IsBetweenEλ(1, 2, 4)¶" & 
@@ -470,6 +471,8 @@ IsInListλ = LAMBDA(
     LET(Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →IsInListλ( Value, List)¶" &
                             "DESCRIPTION:   →Determine if a value is one of a list of items.¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Value          →(Required) A value or array of values to compare.¶" & 
                             "List           →(Required) A list of values to check: a row, a column or a grid.¶" &
@@ -509,7 +512,8 @@ RangeToDAEλ = LAMBDA(
                             "FUNCTION:          →RangeToDAEλ(Range, [Rows], [Columns])¶" &
                             "DESCRIPTION:       →Convert a range reference to a dynamic array reference.¶" & 
                             "SEE ALSO:      →Excel 365 now has TRIMRANGE and trim references (.:.) for this.¶" &
-                            "WEBSITE:           →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:           →https://github.com/ryanduguid/Ozzit¶" &
+                            "VERSION:           →24 Oct 2026¶" &
                             "PARAMETERS:        →¶" & 
                             "Range              →(Required) A reference to the range to be converted.¶" &
                             "Rows               →(Optional) Number of rows for the dynamic array. Defaults to 1.¶" &
