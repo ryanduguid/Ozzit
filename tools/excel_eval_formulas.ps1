@@ -93,11 +93,12 @@ try {
             # Not through a function: PowerShell flattens a 2-dimensional array on return.
             $vals = $range.Value2
             $now = Format-Rows $vals
-            if ($null -ne $now -and $now -eq $text) { break }
+            # -ceq: -eq ignores case, so READY and ready would pass as the same read.
+            if ($null -ne $now -and $now -ceq $text) { break }
             if ($try -ge 10) { throw "Excel returned no stable value for $($case.id)." }
             $text = $now
             if (-not [object]::ReferenceEquals($range, $cell)) { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($range) }
-            if ($null -eq $now) { Start-Sleep -Milliseconds 200 }
+            Start-Sleep -Milliseconds $(if ($null -eq $now) { 200 } else { 50 })
         }
         $parts += '"' + $case.id + '":[' + $text + ']'
         # Every Range left referenced keeps the automation Excel alive after Quit().
