@@ -1108,6 +1108,7 @@ foreach ($r in @(@('Sum', 'AE1:AH1', '{1,3,5,7}'), @('Avg', 'AE1:AH1', '{1,1.5,2
     $fn = "oz.Rolling$($r[0])$L"
     Near "Rolling$($r[0]): a row range"         "SUMPRODUCT(ABS($fn($($r[1]), 2) - $($r[2])))" '0'
     Near "Rolling$($r[0]): a column is refused" "--ISNUMBER(SEARCH(`"must be one row`", $fn(AN1:AN3, 2)))" '1'
+    Near "Rolling$($r[0]): the column message names TRANSPOSE" "--ISNUMBER(SEARCH(`"TRANSPOSE`", $fn(AN1:AN3, 2)))" '1'
     Near "Rolling$($r[0]): a block is refused"  "--ISNUMBER(SEARCH(`"must be one row`", $fn(AE1:AH2, 2)))" '1'
     Near "Rolling$($r[0]): a calculated column is refused" "--ISNUMBER(SEARCH(`"must be one row`", $fn(SEQUENCE(3), 2)))" '1'
     Near "Rolling$($r[0]): a calculated block is refused"  "--ISNUMBER(SEARCH(`"must be one row`", $fn(SEQUENCE(2,2), 2)))" '1'
@@ -1119,6 +1120,8 @@ Near 'RollingSum: a transposed column, as the message advises' "SUMPRODUCT(ABS(o
 Near 'SumPeriods: range inputs'                         "SUMPRODUCT(ABS($sp(AE1:AH2, AE3:AH3, AE4:AF4) - {5,4;50,40}))" '0'
 Near 'SumPeriods: a date before the first start is left out' "SUM(AE1:AH2) - SUM($sp(AE1:AH2, AE3:AH3, AE4:AF4))" '11'
 Near 'SumPeriods: a later date goes to the last period' "INDEX($sp(AE1:AH1, AE3:AH3, AE4:AF4), 1, 2)" '4'
+Near 'SumPeriods: a date on the last start goes to the last period' `
+     "SUMPRODUCT(ABS($sp({10,20,30}, DATE(2026,{6,7,8},{30,1,1}), DATE(2026,{7,8},1)) - {20,30}))" '0'
 
 # Depreciate read a salvage value it could not parse as 0, so an asset whose salvage was
 # still TBA depreciated to nil without a word.
@@ -1127,7 +1130,12 @@ $dpS  = "1000, DATE(2026,7,1), 5, $dpTl"
 Near 'Depreciate: text salvage is refused'          "--ISNUMBER(SEARCH(`"SalvageValues must be`", $dp($dpS, `"TBA`")))" '1'
 Near 'Depreciate: text salvage in a cell is refused' "--ISNUMBER(SEARCH(`"SalvageValues must be`", $dp($dpS, AL1)))" '1'
 Near 'Depreciate: a blank salvage cell is 0'        "SUMPRODUCT(ABS($dp($dpS, Z1) - $dp($dpS)))" '0'
-Near 'Depreciate: numeric text salvage is a number' "SUMPRODUCT(ABS($dp($dpS, `"100`") - $dp($dpS, 100)))" '0'
+# Text is refused even when it reads as a number, since VALUE also reads date text as a serial.
+foreach ($t in '100', '1/1/2026', '12:00') {
+    Near "Depreciate: salvage text $t is refused" "--ISNUMBER(SEARCH(`"SalvageValues must be`", $dp($dpS, `"$t`")))" '1'
+}
+Near 'Depreciate: a salvage amount still applies' `
+     "SUM(INDEX($dp($dpS, 0), 3, 0)) - SUM(INDEX($dp($dpS, 100), 3, 0))" '100' '0.005'
 # An error salvage gets the message as well. Passed through, it made the whole schedule one
 # #VALUE!, whichever error it was and however many assets were fine.
 Near 'Depreciate: an error salvage is refused' "--ISNUMBER(SEARCH(`"SalvageValues must be`", $dp($dpS, NA())))" '1'
@@ -1146,6 +1154,8 @@ Near 'DSI: a blank Days cell is 365'  "$dsi(54.9, 490, Z1)"     '54.9/490*365'
 Near 'DSI: an empty Days is 365'      "$dsi(54.9, 490, `"`")" '54.9/490*365'
 Near 'DSI: negative Days is #NUM!'    "ERROR.TYPE($dsi(54.9, 490, -1))"     '6'
 Near 'DSI: an error Days passes through' "ERROR.TYPE($dsi(54.9, 490, NA()))" '7'
+Near 'DSI: a #DIV/0! Days passes through' "ERROR.TYPE($dsi(54.9, 490, 1/0))" '2'
+Near 'DSI: word Days is #VALUE!'          "ERROR.TYPE($dsi(54.9, 490, `"TBA`"))" '3'
 Near 'DSI: Days of 0 is #NUM!'        "ERROR.TYPE($dsi(54.9, 490, 0))"      '6'
 Near 'DSI: text Days is #VALUE!'      "ERROR.TYPE($dsi(54.9, 490, `"90`"))" '3'
 
