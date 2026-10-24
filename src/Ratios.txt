@@ -703,7 +703,7 @@ AssetTurnoverRatioλ = LAMBDA(
 /*  FUNCTION NAME:  DSIλ
     DESCRIPTION:*//**Days Sales in Inventory Ratio (aka Average age of inventory 
 indicates the average time in days that a company takes to turn its inventory 
-(Average Inventory/Annual Cost of Goods Sold x 365) */
+(Average Inventory/Cost of Goods Sold x Days, with Days 365 by default) */
 DSIλ = LAMBDA(
 //  Parameter DeclaRations
         [AverageInventory],  
