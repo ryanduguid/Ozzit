@@ -198,11 +198,23 @@ pub fn verify(args: &[String]) -> Output {
         Output {
             code: 1,
             err: vec![format!(
-                "FAIL: {} of {anchors} cached helps in {} no longer match their definitions; run tools/refresh_cache.py in Excel, then tools/sanitise_workbook.py, and tools/verify_cache.py proves the result",
+                "FAIL: {} of {anchors} cached helps in {} no longer match their definitions; run ozzit refresh_cache in Excel, then ozzit sanitise_workbook, and ozzit verify_cache proves the result",
                 stale.len(),
                 display(workbook)
             )],
             out: stale,
+        }
+    }
+}
+
+#[cfg(test)]
+mod help_spills_contract_tests {
+    use super::*;
+
+    #[test]
+    fn the_original_a1_columns_are_one_based() {
+        for (letters, number) in [("A", 1), ("Z", 26), ("AA", 27), ("ZZ", 702)] {
+            assert_eq!(column_index(letters), BigInt::from(number));
         }
     }
 }

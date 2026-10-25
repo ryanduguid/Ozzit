@@ -37,15 +37,15 @@ A pull request that changes `ozzit.xlsx` realigns `release/workbook-base.json`
 (the SHA-256, byte length, Git blob and last workbook-changing commit) and the
 README digest in a separate commit after the workbook commit. Merge that pull
 request with a merge commit, never a squash: the manifest names the workbook
-commit, and `tools/tests/test_release_bundle.py` fails unless it is the last
-commit on the branch to change the workbook. A squash replaces it. Pull requests that change only documentation may be squashed.
+commit, and the native release test `tracked_base_manifest_matches_the_current_workbook`
+(run by `cargo test`) fails unless it is the last commit on the branch to change the workbook. A squash replaces it. Pull requests that change only documentation may be squashed.
 
 Apache-2.0 covers the whole repository, `ozzit.xlsx`, `src/` and `functions.csv` included.
 Every source archive must still include `LICENSE` and `NOTICE`.
 
 ## Approval and tag
 
-A human maintainer explicitly approves the exact candidate commit and release version after all 18 gates pass.
+A human maintainer explicitly approves the exact candidate commit and release version after all 17 gates pass.
 Create an annotated, cryptographically signed tag for that exact commit. Run
 `git verify-tag` and record the tag object SHA, peeled commit SHA and
 verification result.
@@ -58,14 +58,14 @@ Tag signing, remote tag publication and release publication are separate authori
 The uploaded bundle contains exactly 3 files:
 
 1. `ozzit.xlsx`: the consumer workbook copied byte-for-byte from the tagged tree.
-2. `provenance.json`: canonical JSON binding the version and full candidate commit to the locked workbook hash, size, Git blob, last workbook change and deterministic workbook-gate results. It also states the copy-only build limit and the gates that remain outside the bundle.
+2. `provenance.json`: canonical JSON binding the version and full candidate commit to the locked workbook hash, size, Git blob, last workbook change and deterministic workbook-gate results. It also states the copy-only build limit and the gates that remain outside the bundle. Provenance schema 2 names each gate by the native command that produced its output, such as `ozzit verify_workbook ozzit.xlsx`. There `ozzit` means the binary built from the recorded source commit with `cargo build --locked --release` and the toolchain `rust-toolchain.toml` pins, run against that tagged checkout. Each name is a repository-relative command, not a process trace: the tool runs its own executable with absolute input paths. Releases up to v3.5.0 carry schema 1, whose Python command names the retired Python tool ran; verify each bundle from its own tag.
 3. `SHA256SUMS`: canonical SHA-256 lines for `ozzit.xlsx` and `provenance.json`. It does not include itself, which avoids a checksum cycle.
 
-The release also carries one asset that is not part of the bundle: `ozzit-X.Y.Z.intoto.jsonl`, which `.github/workflows/attest-release.yml` adds to the draft. It is a Sigstore bundle holding build provenance for `ozzit.xlsx`, signed by `actions/attest` with that workflow's GitHub identity, and it names the workbook's SHA-256, the tag and the commit. `tools/prepare_release_bundle.py` neither creates nor accepts it.
+The release also carries one asset that is not part of the bundle: `ozzit-X.Y.Z.intoto.jsonl`, which `.github/workflows/attest-release.yml` adds to the draft. It is a Sigstore bundle holding build provenance for `ozzit.xlsx`, signed by `actions/attest` with that workflow's GitHub identity, and it names the workbook's SHA-256, the tag and the commit. `ozzit prepare_release_bundle` neither creates nor accepts it.
 
 The signed tag and GitHub's generated source archive remain the source distribution. Inspect that archive as the equivalent of `git archive` for the exact tag; do not upload a redundant custom source archive. The standalone workbook and tagged workbook must have the same SHA-256.
 
-After all 18 gates pass in a clean candidate, stage and independently verify the bundle in 2 fresh directories outside the repository:
+After all 17 gates pass in a clean candidate, stage and independently verify the bundle in 2 fresh directories outside the repository:
 
 ```powershell
 tools/ozzit/target/release/ozzit prepare_release_bundle create --version X.Y.Z --source-commit <full-commit-sha> --output <first-new-directory>
@@ -91,7 +91,7 @@ rustup toolchain install
 cargo build --locked --release --manifest-path tools/ozzit/Cargo.toml
 ```
 
-Then run the following 16 static and repository gates, the same commands CI runs:
+Then run the following 15 static and repository gates, the same commands CI runs:
 
 ```powershell
 python -m ruff check .
@@ -109,10 +109,9 @@ tools/ozzit/target/release/ozzit verify_cover ozzit.xlsx functions.csv CHANGELOG
 tools/ozzit/target/release/ozzit verify_afe ozzit.xlsx src
 tools/ozzit/target/release/ozzit verify_help_spills ozzit.xlsx
 tools/ozzit/target/release/ozzit verify_native_evidence
-python .github/ci/compare_gates.py
 ```
 
-All 16 gate commands must exit zero. Record the lint result and substantive type-check, function,
+All 15 gate commands must exit zero. Record the lint result and substantive type-check, function,
 signature, table, example, index, module and test counts rather than only their
 exit status.
 
@@ -144,8 +143,8 @@ and review that change. Do not silently weaken a floor.
 1. Build the exact 3-file bundle from the signed tag into a fresh staging directory outside the repository, then repeat it and compare every byte.
 2. Compute `provenance.json` and `SHA256SUMS` only after the workbook has its final bytes.
 3. Upload the assets to a draft release. A draft upload is not approval, publication or evidence of immutability.
-4. Confirm that immutable releases are enabled (`gh api repos/ryanduguid/Ozzit/immutable-releases` reports `"enabled":true`), then run the attestation workflow on the signed tag: `gh workflow run attest-release.yml --ref vX.Y.Z`. Immutability is a prerequisite: the workflow checks that the release is still a draft just before uploading, and only immutable publication stops an upload that races a maintainer publishing it. Dispatching the workflow is a separate authorised action; it never publishes, and publication waits until the run has succeeded. It stops unless GitHub reports the tag as an annotated, verified signed tag whose signed name is the dispatched tag, on the run's commit; `verify-gates` passed in a trusted `push` or `workflow_dispatch` run of `main` for that commit; exactly one draft release for the tag holds exactly the 3 assets and their API digests match; `tools/prepare_release_bundle.py verify` passes on the downloaded draft; and the draft workbook is byte-identical to the tagged one. It then attests the tagged workbook, verifies the attestation through the API and through the bundle, refuses to continue if the tag, the draft or any of its 3 assets changed since verification, and uploads `ozzit-X.Y.Z.intoto.jsonl` to that same draft by its release ID.
-5. An independent verifier downloads every asset from GitHub rather than reading the builder's local staging directory. Keep the 3 bundle files in their own directory for `tools/prepare_release_bundle.py verify`.
+4. Confirm that immutable releases are enabled (`gh api repos/ryanduguid/Ozzit/immutable-releases` reports `"enabled":true`), then run the attestation workflow on the signed tag: `gh workflow run attest-release.yml --ref vX.Y.Z`. Immutability is a prerequisite: the workflow checks that the release is still a draft just before uploading, and only immutable publication stops an upload that races a maintainer publishing it. Dispatching the workflow is a separate authorised action; it never publishes, and publication waits until the run has succeeded. It stops unless GitHub reports the tag as an annotated, verified signed tag whose signed name is the dispatched tag, on the run's commit; `verify-gates` passed in a trusted `push` or `workflow_dispatch` run of `main` for that commit; exactly one draft release for the tag holds exactly the 3 assets and their API digests match; `ozzit prepare_release_bundle verify` passes on the downloaded draft, run by a binary that a separate job without write or OIDC permissions built from the tagged commit and whose SHA-256 the attest job checks; and the draft workbook is byte-identical to the tagged one. It then attests the tagged workbook, verifies the attestation through the API and through the bundle, refuses to continue if the tag, the draft or any of its 3 assets changed since verification, and uploads `ozzit-X.Y.Z.intoto.jsonl` to that same draft by its release ID.
+5. An independent verifier downloads every asset from GitHub rather than reading the builder's local staging directory. Keep the 3 bundle files in their own directory for `ozzit prepare_release_bundle verify`.
 6. The independent verifier checks every checksum, API digest, filename and size; verifies the signed annotated tag; proves the standalone and tagged workbooks have the same SHA-256; inspects GitHub's source archive; and repeats the static and native gates on the downloaded candidate where the required Excel environment is available. It also verifies the attestation twice, through the API and with the downloaded bundle:
 
    ```powershell

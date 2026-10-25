@@ -10,10 +10,9 @@ FY27 help text and the workbook palette are the tracked successors of the one-of
 session scripts that produced v3.1.0. Later passes, including GST help text, start
 from the committed `ozzit.xlsx` and `src/`. They do not read the earlier workbook.
 
-Each pass is a standalone script, run by path and never imported as a package.
-`workbook.py` is the one exception: it is the shared reader the passes import, and
-it holds the archive reading, the applied-or-absent check and the swap replacement
-that used to be copied from pass to pass.
+The postbuild commands are native. Their former Python writers and the shared
+`workbook.py` helper have retired after their tests moved to Rust. Embedded
+tables retain the original values and ordering.
 
 The shared writers create a unique temporary file beside each destination and
 close it before replacement. Existing `.tmp` siblings are left alone. On POSIX,
@@ -31,8 +30,13 @@ updates from concurrent edits.
 
 The passes run through the native tools. Build them once with
 `cargo build --locked --release --manifest-path tools/ozzit/Cargo.toml`; each command
-below keeps the arguments of the Python pass it replaces. The Python passes in this
-directory stay as the reference implementation until they are retired.
+below keeps the arguments of the Python pass it replaces. Rust tests preserve
+the former Python apply, refusal, recovery and byte-no-op contracts.
+`cover_label`, `sheet_names`, `strip_revision_history`, `fy27_help_text`,
+`gst_help_text`, `help_links`, `remove_residue`, `help_corrections` and
+`workbook_palette`, `working_capital_days`, `rate_date_helpers` and
+`ato_benchmarks_rate_lookup` are native only; Rust tests cover their validation,
+output, help text, palette, insertion and rollback contracts.
 
 ```bash
 tools/ozzit/target/release/ozzit fy27_help_text ozzit.xlsx src
@@ -77,7 +81,7 @@ fails loudly rather than writing a partial result.
 
 Edit its definition in `src/`, then run `ozzit compile_sources`. It renders every
 published definition into the form the workbook stores, proves the rendering
-reproduces its source through `verify_sources`'s own comparison, writes only the
+reproduces its source through the native source comparison, writes only the
 definitions that changed over the defined names that ship, sets each Name Manager
 comment from the source header, and with `--index` regenerates `functions.csv`. The
 compiler never touches a cached value: a change that alters what a demonstration cell
@@ -92,7 +96,10 @@ their definitions; `ozzit refresh_cache` in Excel is what refreshes them, and
 `remove_residue` drops what nothing in the workbook reads (the hidden FMTs sheet, the
 per-sheet custom properties, the stale custom-function declaration on the Excel Labs
 reference, unused differential formats and named styles) and freezes the label columns
-on the 6 wide demonstration sheets. `sync_afe_store` then copies all 6 `src/`
+on the 6 wide demonstration sheets. It is native only, with its former Python
+assertions covered by Rust tests. `help_corrections` is also native only; its Rust
+tests preserve staging, temporary siblings and the explicit AFE sync order.
+`sync_afe_store` then copies all 6 `src/`
 modules into the workbook's Advanced Formula Environment store; this step is required
 after any pass that changes `src/`. `generate_selftest_examples` rewrites the native
 self-test's generated assertions from the help, and the tool tests fail when that
@@ -112,7 +119,7 @@ corrected statements are also typed into label and description cells that no for
 feeds, so it rewrites those shared strings too. The rate and date helpers pass runs
 after it: it adds 4 functions (`oz.PeriodRateλ`, `oz.AnnualRateλ`,
 `oz.DayCountRateλ` and `oz.DateDifλ`) on the same pattern as the AASB 16 pass, except
-that it renders the stored forms through `compile_sources.py` rather than carrying a
+that it renders the stored forms through the shared native compiler rather than carrying a
 renderer of its own. The working-capital days pass follows it on the same pattern: it adds 4 ratio
 functions (`oz.ReceivableDaysλ`, `oz.PayableDaysλ`, `oz.WIPDaysλ` and
 `oz.CashConversionCycleλ`) and their rows in the Ratios About table. The ATO benchmark

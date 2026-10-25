@@ -1,6 +1,7 @@
 pub mod afe;
 pub mod archive;
 pub mod cache;
+mod check_gates;
 pub mod common;
 pub mod compiler;
 pub mod cover;
@@ -27,6 +28,7 @@ pub mod workbook;
 use common::Output;
 type Handler = fn(&[String]) -> Output;
 const COMMANDS: &[(&str, Handler)] = &[
+    ("check_gates", check_gates::command),
     ("compile_sources", compiler::command),
     ("verify_sources", sources::verify),
     ("verify_signatures", help::verify),

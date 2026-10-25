@@ -510,7 +510,7 @@ pub fn check(parts: &Parts, names: &[String]) -> Report {
     volatile_formulas(names, &docs, &mut failures);
     shared_string_count(&docs, &mut failures);
     if !book.contains("fullCalcOnLoad=\"1\"") && !names.iter().any(|n| n == "xl/calcChain.xml") {
-        failures.push("neither fullCalcOnLoad nor a calculation chain. Run tools/refresh_cache.py, or set fullCalcOnLoad".into());
+        failures.push("neither fullCalcOnLoad nor a calculation chain. Run ozzit refresh_cache, or set fullCalcOnLoad".into());
     }
     sheet_titles(&docs, &defined.sheets, &mut failures);
     slicer_caches(names, &docs, book, &mut failures);
@@ -546,4 +546,28 @@ pub fn verify(args: &[String]) -> Output {
             names.len()
         ),
     )
+}
+
+#[cfg(test)]
+mod workbook_contract_tests {
+    use super::*;
+
+    #[test]
+    fn an_invalid_utf8_document_does_not_hide_a_later_valid_part() {
+        let parts = [
+            ("xl/worksheets/sheet1.xml".into(), b"<x>\xff</x>".to_vec()),
+            ("docProps/app.xml".into(), b"<Properties/>".to_vec()),
+        ]
+        .into_iter()
+        .collect();
+        let names = vec!["xl/worksheets/sheet1.xml".into(), "docProps/app.xml".into()];
+        let mut failures = Vec::new();
+        let docs = parse_documents(&parts, &names, &mut failures);
+        assert_eq!(
+            docs.keys().copied().collect::<Vec<_>>(),
+            ["docProps/app.xml"]
+        );
+        assert_eq!(failures.len(), 1);
+        assert!(failures[0].starts_with("malformed XML in xl/worksheets/sheet1.xml"));
+    }
 }

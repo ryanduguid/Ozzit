@@ -1,0 +1,21 @@
+{
+  "sources": {
+    "Dates.txt": "/*  FUNCTION NAME:  Datesλ\n    DESCRIPTION:*//**The Dates sample*/\nDatesλ = LAMBDA([x], x + 1);\n",
+    "Debt.txt": "/*  FUNCTION NAME:  Debtλ\n    DESCRIPTION:*//**The Debt sample*/\nDebtλ = LAMBDA([x], x + 1);\n",
+    "Essentials.txt": "/*  FUNCTION NAME:  Essentialsλ\n    DESCRIPTION:*//**The Essentials sample*/\nEssentialsλ = LAMBDA([x], x + 1);\n",
+    "Financial.txt": "/*  FUNCTION NAME:  Financialλ\n    DESCRIPTION:*//**The Financial sample*/\nFinancialλ = LAMBDA([x], x + 1);\n",
+    "Ratios.txt": "/*  FUNCTION NAME:  Ratiosλ\n    DESCRIPTION:*//**The Ratios sample*/\nRatiosλ = LAMBDA([x], x + 1);\n",
+    "Utilities.txt": "/*  FUNCTION NAME:  Utilitiesλ\n    DESCRIPTION:*//**The Utilities sample*/\nUtilitiesλ = LAMBDA([x], x + 1);\n"
+  },
+  "clean_parts": {
+    "xl/workbook.xml": "<workbook><definedNames><definedName name=\"oz.Datesλ\" comment=\"The Dates sample\">_xlfn.LAMBDA(_xlop.x, _xlpm.x + 1)</definedName><definedName name=\"oz.Essentialsλ\" comment=\"The Essentials sample\">_xlfn.LAMBDA(_xlop.x, _xlpm.x + 1)</definedName><definedName name=\"oz.Financialλ\" comment=\"The Financial sample\">_xlfn.LAMBDA(_xlop.x, _xlpm.x + 1)</definedName><definedName name=\"oz.Ratiosλ\" comment=\"The Ratios sample\">_xlfn.LAMBDA(_xlop.x, _xlpm.x + 1)</definedName><definedName name=\"oz.Utilitiesλ\" comment=\"The Utilities sample\">_xlfn.LAMBDA(_xlop.x, _xlpm.x + 1)</definedName><definedName name=\"oz.Debtλ\" comment=\"The Debt sample\">_xlfn.LAMBDA(_xlop.x, _xlpm.x + 1)</definedName></definedNames></workbook>"
+  },
+  "stale_parts": {
+    "xl/workbook.xml": "<workbook><definedNames><definedName name=\"oz.Datesλ\" comment=\"The Dates sample\">_xlfn.LAMBDA(_xlop.x, _xlpm.x + 1)</definedName><definedName name=\"oz.Essentialsλ\" comment=\"The Essentials sample\">_xlfn.LAMBDA(_xlop.x, _xlpm.x + 1)</definedName><definedName name=\"oz.Financialλ\" comment=\"The Financial sample\">_xlfn.LAMBDA(_xlop.x, _xlpm.x + 1)</definedName><definedName name=\"oz.Ratiosλ\" comment=\"The Ratios sample\">_xlfn.LAMBDA(_xlop.x, _xlpm.x + 1)</definedName><definedName name=\"oz.Utilitiesλ\" comment=\"The Utilities sample\">_xlfn.LAMBDA(_xlop.x, _xlpm.x + 1)</definedName><definedName name=\"oz.Debtλ\" comment=\"The Debt sample\">_xlfn.LAMBDA(_xlop.x, _xlpm.x + 2)</definedName></definedNames></workbook>"
+  },
+  "index_header": "function,module,previous_name,signature,description\n",
+  "expected_parts": {
+    "xl/workbook.xml": "<workbook><definedNames><definedName name=\"oz.Datesλ\" comment=\"The Dates sample\">_xlfn.LAMBDA(_xlop.x, _xlpm.x + 1)</definedName><definedName name=\"oz.Essentialsλ\" comment=\"The Essentials sample\">_xlfn.LAMBDA(_xlop.x, _xlpm.x + 1)</definedName><definedName name=\"oz.Financialλ\" comment=\"The Financial sample\">_xlfn.LAMBDA(_xlop.x, _xlpm.x + 1)</definedName><definedName name=\"oz.Ratiosλ\" comment=\"The Ratios sample\">_xlfn.LAMBDA(_xlop.x, _xlpm.x + 1)</definedName><definedName name=\"oz.Utilitiesλ\" comment=\"The Utilities sample\">_xlfn.LAMBDA(_xlop.x, _xlpm.x + 1)</definedName><definedName name=\"oz.Debtλ\" comment=\"The Debt sample\">_xlfn.LAMBDA(_xlop.x, _xlpm.x + 1)</definedName></definedNames></workbook>"
+  },
+  "expected_index": "function,module,previous_name,signature,description\noz.Datesλ,Dates,,Datesλ,The Dates sample\noz.Debtλ,Debt,,Debtλ,The Debt sample\noz.Essentialsλ,Essentials,,Essentialsλ,The Essentials sample\noz.Financialλ,Financial,,Financialλ,The Financial sample\noz.Ratiosλ,Ratios,,Ratiosλ,The Ratios sample\noz.Utilitiesλ,Utilities,,Utilitiesλ,The Utilities sample\n"
+}

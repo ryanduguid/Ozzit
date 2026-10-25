@@ -1,6 +1,6 @@
 """Guards on help text that was copied from a neighbour.
 
-verify_signatures.py already reads FUNCTION lines, parameter tables and
+ozzit verify_signatures already reads FUNCTION lines, parameter tables and
 worked examples. These checks cover the leftovers that live outside those
 3: Name Manager comments in functions.csv, the About-table prose, and
 source comments that never make it into a LAMBDA body.

@@ -15,6 +15,7 @@ const FIXED_STAMP: &str = "2026-01-01T00:00:00Z";
 const FIXED_WINDOW: &str = r#"xWindow="0" yWindow="0" windowWidth="28800" windowHeight="16000""#;
 /// Excel's own split of a string literal over 255 characters.
 const LONGTEXT: &str = r#"_xlfn\._LONGTEXT\(("(?:[^"]|"")*"(?:,"(?:[^"]|"")*")+)\)"#;
+const CELL_RE: &str = r"(?s)<c\b(?:(?!</c>|<c\b).)*?</c>|<c\b[^>]*/>";
 
 /// `parts[name].decode("utf-8")`; a missing part fails as Python's `KeyError`.
 fn part(parts: &Parts, name: &str) -> Result<String> {
@@ -176,7 +177,7 @@ fn fold_book_longtext(parts: &mut Parts, log: &mut Vec<String>) -> Result<()> {
 
 fn clear_calc_flags(parts: &mut Parts, sheets: &[String], log: &mut Vec<String>) -> Result<()> {
     // Always-calculate flags belong on CELL() formulas and nowhere else.
-    let cell = bounded(r"(?s)<c\b(?:(?!</c>|<c\b).)*?</c>|<c\b[^>]*/>");
+    let cell = bounded(CELL_RE);
     let mut flags = 0;
     for name in sheets {
         let text = part(parts, name)?;
@@ -334,4 +335,21 @@ pub fn command(args: &[String]) -> Output {
     let mut out = log;
     out.push(format!("OK: {shown} sanitised, {} bytes", thousands(size)));
     Output::ok(out)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn cell_match_covers_shared_formula_follower_to_end_tag() {
+        let cell = concat!(
+            "<c ca=\"1\" r=\"A31\" s=\"121\" t=\"str\">",
+            "<f t=\"shared\" si=\"0\"/><v>Town Hall</v></c>"
+        );
+        assert_eq!(
+            re(&bounded(CELL_RE)).find(cell).unwrap().unwrap().as_str(),
+            cell
+        );
+    }
 }

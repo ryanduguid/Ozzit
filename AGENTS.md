@@ -23,9 +23,7 @@ change requires recalculation or cache validation.
 
 Run the CI sequence exactly. The first 4 commands are the `lint` job; the next 2
 run on Python 3.14 and 3.15; the rest are the `rust` job, which builds the native
-tools in `tools/ozzit` once and runs the gates with them. Its last command reruns
-each gate with its Python reference tool, on the real inputs and on broken copies,
-and fails if exit code or output differ:
+tools in `tools/ozzit` once and runs the gates with them:
 
 ```powershell
 python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-ruff.txt
@@ -48,7 +46,6 @@ tools/ozzit/target/release/ozzit verify_cover ozzit.xlsx functions.csv CHANGELOG
 tools/ozzit/target/release/ozzit verify_afe ozzit.xlsx src
 tools/ozzit/target/release/ozzit verify_help_spills ozzit.xlsx
 tools/ozzit/target/release/ozzit verify_native_evidence
-python .github/ci/compare_gates.py
 ```
 
 For native cache evidence, first ensure no user Excel process is running; never

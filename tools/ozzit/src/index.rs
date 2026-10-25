@@ -139,7 +139,7 @@ pub fn verify(args: &[String]) -> Output {
 }
 
 /// Why the previous-name check cannot run on these inputs, if it cannot.
-fn refusal(csv: &Csv, released: &BTreeSet<String>, index: &Path) -> Option<Output> {
+fn refusal(csv: &Csv, released: &BTreeSet<String>, index: &Path, floor: usize) -> Option<Output> {
     let duplicates = csv.duplicates(&["function", "previous_name", "signature", "description"]);
     if !duplicates.is_empty() {
         return Some(Output::stderr(format!(
@@ -162,7 +162,7 @@ fn refusal(csv: &Csv, released: &BTreeSet<String>, index: &Path) -> Option<Outpu
             )));
         }
     }
-    if csv.rows.len() < 100 || released.len() < 100 {
+    if csv.rows.len() < floor || released.len() < floor {
         return Some(Output::stderr(format!(
             "only {} functions and {} baseline names read: the check is not reading them",
             csv.rows.len(),
@@ -253,6 +253,10 @@ fn published_fields(csv: &Csv, failures: &mut Vec<String>) {
 }
 
 pub fn previous_names(args: &[String]) -> Output {
+    previous_names_with_floor(args, 100)
+}
+
+fn previous_names_with_floor(args: &[String], floor: usize) -> Output {
     if args.len() > 2 {
         return Output::stderr(
             "FAIL: usage: ozzit verify_previous_names [functions.csv] [baseline]",
@@ -270,7 +274,7 @@ pub fn previous_names(args: &[String]) -> Output {
         Ok(csv) => csv,
         Err(e) => return Output::failure(format!("FAIL: cannot read {}: {e}", display(index))),
     };
-    if let Some(refusal) = refusal(&csv, &released, index) {
+    if let Some(refusal) = refusal(&csv, &released, index, floor) {
         return refusal;
     }
     let mut failures = repeated(&csv, index);
@@ -304,3 +308,7 @@ pub fn previous_names(args: &[String]) -> Output {
         ),
     )
 }
+
+#[cfg(test)]
+#[path = "index_previous_names.rs"]
+mod previous_names_tests;

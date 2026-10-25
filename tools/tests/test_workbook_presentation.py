@@ -1,7 +1,3 @@
-import shutil
-import subprocess
-import sys
-import tempfile
 import unittest
 import xml.etree.ElementTree as ET
 import zipfile
@@ -146,21 +142,6 @@ class WorkbookPresentationTests(unittest.TestCase):
         )
         self.assertNotRegex(text.lower(), r"\bgreen\s+shaded\b")
         self.assertIn("purple", text.lower())
-
-    def test_polish_tool_is_idempotent(self):
-        directory = Path(tempfile.mkdtemp(prefix="ozzit-polish-"))
-        try:
-            target = directory / "ozzit.xlsx"
-            shutil.copy2(WORKBOOK, target)
-            command = [sys.executable, str(ROOT / "tools" / "polish_workbook.py"), str(target)]
-            first = subprocess.run(command, capture_output=True, text=True, check=False)
-            self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
-            before = target.read_bytes()
-            second = subprocess.run(command, capture_output=True, text=True, check=False)
-            self.assertEqual(second.returncode, 0, second.stdout + second.stderr)
-            self.assertEqual(target.read_bytes(), before)
-        finally:
-            shutil.rmtree(directory, ignore_errors=True)
 
 
 if __name__ == "__main__":

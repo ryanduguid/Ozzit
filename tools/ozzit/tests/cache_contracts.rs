@@ -88,8 +88,7 @@ fn verify_cache_findings_match_the_python_tool() {
     )
     .unwrap();
     let data: Value = serde_json::from_reader(flate2::read::GzDecoder::new(&bytes[..])).unwrap();
-    let records = data["records"].as_array().unwrap();
-    assert_eq!(records.len(), 76);
+    let records = cache_records(&data);
     let mut differences = Vec::new();
     let mut tracebacks = 0;
     for record in records {
@@ -108,13 +107,18 @@ fn verify_cache_findings_match_the_python_tool() {
             }
             continue;
         }
+        // The frozen corpus predates retirement of the Python refresh command.
+        let expected_stdout = expected["stdout"].as_str().unwrap().replace(
+            "Run: python tools/refresh_cache.py\n",
+            "Run: ozzit refresh_cache\n",
+        );
         if i64::from(output.code) != expected["code"].as_i64().unwrap()
-            || out != expected["stdout"].as_str().unwrap()
+            || out != expected_stdout
             || err != expected["stderr"].as_str().unwrap()
         {
             differences.push(format!(
                 "{name}: got {} {out:?} {err:?}, expected {} {:?} {:?}",
-                output.code, expected["code"], expected["stdout"], expected["stderr"]
+                output.code, expected["code"], expected_stdout, expected["stderr"]
             ));
         }
     }
@@ -125,6 +129,21 @@ fn verify_cache_findings_match_the_python_tool() {
         differences.len(),
         differences.join("\n")
     );
+}
+
+fn cache_records(data: &Value) -> &[Value] {
+    let records = data["records"].as_array().unwrap();
+    assert_eq!(records.len(), 76);
+    assert_eq!(
+        records
+            .iter()
+            .filter(|r| r["expected"]["stdout"]
+                .as_str()
+                .is_some_and(|s| s.contains("Run: python tools/refresh_cache.py\n")))
+            .count(),
+        16
+    );
+    records
 }
 
 #[test]

@@ -6,6 +6,9 @@
 //! failure restores what was written.
 use super::*;
 
+#[cfg(test)]
+mod tests;
+
 const OLD_CREATOR: &[u8] = "<dc:creator>Ryan Duguid; Ozzit project</dc:creator>".as_bytes();
 const NEW_CREATOR: &[u8] = b"<dc:creator>Ozzit project</dc:creator>";
 const EXPECTED_BLOCKS: [(&str, usize); 6] = [
@@ -91,9 +94,12 @@ fn replace_bytes(haystack: &[u8], needle: &[u8], with: &[u8]) -> Vec<u8> {
 type Stripped = (&'static str, py::PyPath, String, String, usize);
 
 /// Each module that still carries REVISIONS blocks, before and after stripping.
-fn stripped_modules(src: &py::PyPath) -> Result<Vec<Stripped>> {
+fn stripped_modules(
+    src: &py::PyPath,
+    expected_blocks: &[(&'static str, usize)],
+) -> Result<Vec<Stripped>> {
     let mut stripped = Vec::new();
-    for (module, expected) in EXPECTED_BLOCKS {
+    for &(module, expected) in expected_blocks {
         let path = src.join(&format!("{module}.txt"));
         let before = read_text(&path.fs())?;
         let (after, blocks) = strip_module(&before);
@@ -111,23 +117,44 @@ fn stripped_modules(src: &py::PyPath) -> Result<Vec<Stripped>> {
     Ok(stripped)
 }
 
-fn restore_sources(stripped: &[Stripped]) -> Result<()> {
+fn restore_sources(
+    stripped: &[Stripped],
+    write: &mut impl FnMut(&Path, &str) -> Result<()>,
+) -> Result<()> {
     for (_, path, before, _, _) in stripped {
-        write_text(&path.fs(), before)?;
+        write(&path.fs(), before)?;
     }
     Ok(())
 }
 
 pub fn apply(workbook: &Path, src: &py::PyPath) -> Result<Vec<String>> {
-    let stripped = stripped_modules(src)?;
+    apply_with(
+        workbook,
+        src,
+        &EXPECTED_BLOCKS,
+        &mut write_text,
+        crate::afe::sync,
+    )
+}
+
+// Keep the transaction's I/O injectable so failures between writes exercise
+// the same recovery path as the command, without process-wide test state.
+fn apply_with(
+    workbook: &Path,
+    src: &py::PyPath,
+    expected_blocks: &[(&'static str, usize)],
+    write: &mut impl FnMut(&Path, &str) -> Result<()>,
+    sync: impl FnOnce(&Path, &Path) -> Result<Vec<String>>,
+) -> Result<Vec<String>> {
+    let stripped = stripped_modules(src, expected_blocks)?;
 
     let original = read_bytes(workbook)?;
     let mut parts = read_parts(workbook)?;
     let core = part(&parts, "docProps/core.xml")?.to_vec();
     let mut changes = Vec::new();
     for (module, path, _, after, blocks) in &stripped {
-        if let Err(e) = write_text(&path.fs(), after) {
-            restore_sources(&stripped)?;
+        if let Err(e) = write(&path.fs(), after) {
+            restore_sources(&stripped, write)?;
             return Err(e);
         }
         changes.push(format!(
@@ -136,21 +163,20 @@ pub fn apply(workbook: &Path, src: &py::PyPath) -> Result<Vec<String>> {
     }
 
     let mut touched = false;
-    let mut workbook_phase = |changes: &mut Vec<String>| -> Result<()> {
+    let workbook_phase = |changes: &mut Vec<String>| -> Result<()> {
         if count_bytes(&core, OLD_CREATOR) == 1 {
             parts.insert(
                 "docProps/core.xml".into(),
                 replace_bytes(&core, OLD_CREATOR, NEW_CREATOR),
             );
             write_deterministic(workbook, &parts)?;
-            touched = true;
             changes.push("rewrote docProps/core.xml creator".into());
         } else if count_bytes(&core, NEW_CREATOR) == 0 {
             return Err("docProps/core.xml carries neither the old nor the new creator".into());
         }
         touched = true;
         changes.extend(
-            crate::afe::sync(workbook, &src.fs())?
+            sync(workbook, &src.fs())?
                 .into_iter()
                 .filter(|change| !change.contains("already")),
         );
@@ -163,7 +189,7 @@ pub fn apply(workbook: &Path, src: &py::PyPath) -> Result<Vec<String>> {
         } else {
             Ok(())
         };
-        restore_sources(&stripped)?;
+        restore_sources(&stripped, write)?;
         restored?;
         return Err(e);
     }

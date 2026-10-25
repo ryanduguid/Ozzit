@@ -17,15 +17,18 @@ use std::time::Duration;
 
 pub const ASSETS: [&str; 3] = ["ozzit.xlsx", "provenance.json", "SHA256SUMS"];
 const CHECKSUMMED: [&str; 2] = ["ozzit.xlsx", "provenance.json"];
+/// Schema 2 names each gate by the native command that produced its evidence;
+/// schema 1 bundles staged by the retired Python tool verify from their own tags.
+pub const SCHEMA: i64 = 2;
 /// The provenance records each gate by the command its schema names.
 pub const GATE_COMMANDS: [&str; 7] = [
-    "python tools/verify_workbook.py ozzit.xlsx",
-    "python tools/verify_sources.py ozzit.xlsx src",
-    "python tools/verify_signatures.py src",
-    "python tools/verify_previous_names.py functions.csv",
-    "python tools/verify_index.py ozzit.xlsx src functions.csv",
-    "python tools/verify_cover.py ozzit.xlsx functions.csv CHANGELOG.md",
-    "python tools/verify_afe.py ozzit.xlsx src",
+    "ozzit verify_workbook ozzit.xlsx",
+    "ozzit verify_sources ozzit.xlsx src",
+    "ozzit verify_signatures src",
+    "ozzit verify_previous_names functions.csv",
+    "ozzit verify_index ozzit.xlsx src functions.csv",
+    "ozzit verify_cover ozzit.xlsx functions.csv CHANGELOG.md",
+    "ozzit verify_afe ozzit.xlsx src",
 ];
 const LIMITATIONS: [&str; 2] = [
     "The bundle copies the reviewed tracked workbook; it does not regenerate it from the earlier workbook.",
@@ -325,10 +328,17 @@ fn not_found(program: &str) -> String {
 
 /// Run one closed read-only Git query and return its trimmed output.
 pub fn git_output(root: &Path, arguments: &[&str]) -> Result<String> {
+    git_output_with(root, arguments, cache::run_process)
+}
+
+fn git_output_with<F>(root: &Path, arguments: &[&str], runner: F) -> Result<String>
+where
+    F: FnOnce(&str, &[String], Option<&Path>, Duration) -> Result<Dump>,
+{
     let args = arguments.iter().map(|a| a.to_string()).collect::<Vec<_>>();
     let mut command = vec!["git".to_string()];
     command.extend(args.iter().cloned());
-    match cache::run_process("git", &args, Some(root), GIT_TIMEOUT)? {
+    match runner("git", &args, Some(root), GIT_TIMEOUT)? {
         Dump::NotFound => Err(not_found("git")),
         Dump::TimedOut => Err(format!(
             "Command '{}' timed out after 30 seconds",
@@ -346,15 +356,22 @@ pub fn git_output(root: &Path, arguments: &[&str]) -> Result<String> {
 
 /// Bind the base manifest's Git claims to the candidate checkout.
 pub fn verify_repository_base(root: &Path, base: &Json) -> Result<()> {
-    let tracked = git_output(root, &["ls-files", "--error-unmatch", "--", "ozzit.xlsx"])?;
+    verify_repository_base_with(root, base, git_output)
+}
+
+fn verify_repository_base_with<F>(root: &Path, base: &Json, mut query: F) -> Result<()>
+where
+    F: FnMut(&Path, &[&str]) -> Result<String>,
+{
+    let tracked = query(root, &["ls-files", "--error-unmatch", "--", "ozzit.xlsx"])?;
     if tracked != "ozzit.xlsx" {
         return Err("base workbook must be tracked as ozzit.xlsx".into());
     }
-    let blob = git_output(root, &["hash-object", "--", "ozzit.xlsx"])?;
+    let blob = query(root, &["hash-object", "--", "ozzit.xlsx"])?;
     if base.get("git_blob_sha1").and_then(Json::as_str) != Some(blob.as_str()) {
         return Err("base workbook Git blob does not match the manifest".into());
     }
-    let last = git_output(root, &["log", "-1", "--format=%H", "--", "ozzit.xlsx"])?;
+    let last = query(root, &["log", "-1", "--format=%H", "--", "ozzit.xlsx"])?;
     if base.get("last_workbook_commit").and_then(Json::as_str) != Some(last.as_str()) {
         return Err("base workbook last-change commit does not match Git history".into());
     }
@@ -413,6 +430,17 @@ fn run_gate(exe: &str, args: Vec<String>, root: &Path) -> Result<(i64, String)> 
 }
 
 pub fn run_semantic_gates(root: &Path, workbook: &Path) -> Result<Vec<(String, String)>> {
+    run_semantic_gates_with(root, workbook, run_gate)
+}
+
+fn run_semantic_gates_with<F>(
+    root: &Path,
+    workbook: &Path,
+    mut runner: F,
+) -> Result<Vec<(String, String)>>
+where
+    F: FnMut(&str, Vec<String>, &Path) -> Result<(i64, String)>,
+{
     let workbook = py::resolve(workbook);
     let w = workbook.display().to_string();
     let r = |part: &str| root.join(part).display().to_string();
@@ -440,7 +468,7 @@ pub fn run_semantic_gates(root: &Path, workbook: &Path) -> Result<Vec<(String, S
     for ((gate, arguments), display) in specifications.into_iter().zip(GATE_COMMANDS) {
         let mut args = vec![gate.to_string()];
         args.extend(arguments);
-        let (code, output) = run_gate(&exe, args, root)?;
+        let (code, output) = runner(&exe, args, root)?;
         let output = normalise_gate_output(&output, root, &workbook);
         if code != 0 {
             let detail = if output.is_empty() {
@@ -493,7 +521,7 @@ pub fn provenance(base: &Json, version: &str, commit: &str, gates: &[(String, St
     object(vec![
         ("assets", strings(&ASSETS)),
         ("project", Json::str_obj("Ozzit")),
-        ("schema", Json::Int(BigInt::from(1))),
+        ("schema", Json::Int(BigInt::from(SCHEMA))),
         (
             "source",
             object(vec![
@@ -614,7 +642,7 @@ fn check_provenance_source(document: &Json) -> Result<()> {
         return Err("provenance.json has an unexpected top-level schema".into());
     }
     let get = |k| document.get(k);
-    if !int_is(get("schema"), 1) || get("project").and_then(Json::as_str) != Some("Ozzit") {
+    if !int_is(get("schema"), SCHEMA) || get("project").and_then(Json::as_str) != Some("Ozzit") {
         return Err("provenance.json identifies an unsupported bundle".into());
     }
     if !get("assets").is_some_and(|a| py_eq(a, &strings(&ASSETS))) {
@@ -694,6 +722,18 @@ fn check_claims(verification: &Json) -> Result<()> {
 
 /// Verify exact inventory, hashes, provenance and optionally every workbook gate.
 pub fn verify_bundle(bundle: &Path, root: &Path, check_semantics: bool) -> Result<Json> {
+    verify_bundle_with(bundle, root, check_semantics, run_semantic_gates)
+}
+
+fn verify_bundle_with<F>(
+    bundle: &Path,
+    root: &Path,
+    check_semantics: bool,
+    semantic_gates: F,
+) -> Result<Json>
+where
+    F: FnOnce(&Path, &Path) -> Result<Vec<(String, String)>>,
+{
     check_inventory(bundle)?;
     for (name, expected) in parse_checksums(&bundle.join("SHA256SUMS"))? {
         if sha256(&bundle.join(&name))? != expected {
@@ -720,7 +760,7 @@ pub fn verify_bundle(bundle: &Path, root: &Path, check_semantics: bool) -> Resul
     let verification = document.get("verification").expect("checked keys");
     let gates = static_gates(verification)?;
     check_claims(verification)?;
-    if check_semantics && run_semantic_gates(root, &bundle.join("ozzit.xlsx"))? != gates {
+    if check_semantics && semantic_gates(root, &bundle.join("ozzit.xlsx"))? != gates {
         return Err("semantic gate evidence does not match an independent run".into());
     }
     Ok(document)
@@ -760,6 +800,30 @@ pub fn create_bundle(
     version: &str,
     source_commit: &str,
 ) -> Result<Json> {
+    create_bundle_with(
+        root,
+        workbook,
+        base_manifest,
+        output,
+        version,
+        source_commit,
+        (run_semantic_gates, verify_bundle),
+    )
+}
+
+fn create_bundle_with<G, V>(
+    root: &Path,
+    workbook: &Path,
+    base_manifest: &Path,
+    output: &py::PyPath,
+    version: &str,
+    source_commit: &str,
+    checks: (G, V),
+) -> Result<Json>
+where
+    G: FnOnce(&Path, &Path) -> Result<Vec<(String, String)>>,
+    V: FnOnce(&Path, &Path, bool) -> Result<Json>,
+{
     validate_version(version)?;
     validate_source_commit(source_commit)?;
     let root = py::resolve(root);
@@ -779,7 +843,7 @@ pub fn create_bundle(
         let staged = dir.join("ozzit.xlsx");
         write_bytes(&staged, &read_bytes(&workbook)?)?;
         verify_base_workbook(&staged, &base_manifest)?;
-        let gates = run_semantic_gates(&root, &staged)?;
+        let gates = checks.0(&root, &staged)?;
         let document = provenance(&base, version, source_commit, &gates);
         write_bytes(&dir.join("provenance.json"), &canonical_json(&document))?;
         let checksums = CHECKSUMMED
@@ -787,7 +851,7 @@ pub fn create_bundle(
             .map(|name| Ok((name.to_string(), sha256(&dir.join(name))?)))
             .collect::<Result<Vec<_>>>()?;
         write_bytes(&dir.join("SHA256SUMS"), &checksum_bytes(&checksums))?;
-        verify_bundle(dir, &root, false)?;
+        checks.1(dir, &root, false)?;
         if output_path.symlink_metadata().is_ok() {
             return Err(format!(
                 "release bundle destination already exists: {output}"
@@ -807,6 +871,9 @@ pub fn create_bundle(
     }
     Ok(document)
 }
+
+#[cfg(test)]
+mod staging_contracts;
 
 // ---- command line -------------------------------------------------------------
 
@@ -1148,17 +1215,38 @@ pub fn parse(args: &[String]) -> std::result::Result<Arguments, Output> {
 }
 
 fn ensure_clean_checkout(root: &Path) -> Result<()> {
-    if !git_output(root, &["status", "--porcelain", "--untracked-files=all"])?.is_empty() {
+    ensure_clean_checkout_with(root, git_output)
+}
+
+fn ensure_clean_checkout_with<F>(root: &Path, mut query: F) -> Result<()>
+where
+    F: FnMut(&Path, &[&str]) -> Result<String>,
+{
+    if !query(root, &["status", "--porcelain", "--untracked-files=all"])?.is_empty() {
         return Err("candidate checkout must be clean before staging a release bundle".into());
     }
     Ok(())
 }
 
 fn current_commit(root: &Path) -> Result<String> {
-    validate_source_commit(&git_output(root, &["rev-parse", "--verify", "HEAD"])?)
+    current_commit_with(root, git_output)
+}
+
+fn current_commit_with<F>(root: &Path, mut query: F) -> Result<String>
+where
+    F: FnMut(&Path, &[&str]) -> Result<String>,
+{
+    validate_source_commit(&query(root, &["rev-parse", "--verify", "HEAD"])?)
 }
 
 fn run_create(arguments: &Arguments, root: &Path, head: String) -> Result<String> {
+    run_create_with(arguments, root, head, create_bundle)
+}
+
+fn run_create_with<C>(arguments: &Arguments, root: &Path, head: String, build: C) -> Result<String>
+where
+    C: FnOnce(&Path, &Path, &Path, &py::PyPath, &str, &str) -> Result<Json>,
+{
     let source_commit = match &arguments.source_commit {
         None => head.clone(),
         Some(requested) => validate_source_commit(requested)?,
@@ -1168,7 +1256,7 @@ fn run_create(arguments: &Arguments, root: &Path, head: String) -> Result<String
     }
     let output = py::PyPath::new(arguments.output.as_deref().expect("required"));
     let version = arguments.version.as_deref().expect("required");
-    let document = create_bundle(
+    let document = build(
         root,
         &root.join("ozzit.xlsx"),
         &root.join(BASE_MANIFEST),
@@ -1184,8 +1272,15 @@ fn run_create(arguments: &Arguments, root: &Path, head: String) -> Result<String
 }
 
 fn run_verify(arguments: &Arguments, root: &Path, head: &str) -> Result<String> {
+    run_verify_with(arguments, root, head, verify_bundle)
+}
+
+fn run_verify_with<V>(arguments: &Arguments, root: &Path, head: &str, verify: V) -> Result<String>
+where
+    V: FnOnce(&Path, &Path, bool) -> Result<Json>,
+{
     let bundle = py::PyPath::new(arguments.bundle.as_deref().expect("required"));
-    let document = verify_bundle(&bundle.fs(), root, true)?;
+    let document = verify(&bundle.fs(), root, true)?;
     let source = document
         .get("source")
         .and_then(|s| s.get("commit"))
@@ -1212,23 +1307,57 @@ fn run_verify(arguments: &Arguments, root: &Path, head: &str) -> Result<String> 
 
 fn run(arguments: &Arguments) -> Result<String> {
     let root = py::resolve(&cache::repository_root(BASE_MANIFEST));
-    ensure_clean_checkout(&root)?;
-    let head = current_commit(&root)?;
+    run_with(
+        arguments,
+        root,
+        (
+            ensure_clean_checkout,
+            current_commit,
+            verify_repository_base,
+        ),
+        (run_create, run_verify),
+    )
+}
+
+fn run_with<E, H, B, C, V>(
+    arguments: &Arguments,
+    root: PathBuf,
+    checks: (E, H, B),
+    commands: (C, V),
+) -> Result<String>
+where
+    E: FnOnce(&Path) -> Result<()>,
+    H: FnOnce(&Path) -> Result<String>,
+    B: FnOnce(&Path, &Json) -> Result<()>,
+    C: FnOnce(&Arguments, &Path, String) -> Result<String>,
+    V: FnOnce(&Arguments, &Path, &str) -> Result<String>,
+{
+    let (clean_checkout, current_head, repository_base) = checks;
+    let (create, verify) = commands;
+    clean_checkout(&root)?;
+    let head = current_head(&root)?;
     let base = verify_base_workbook(&root.join("ozzit.xlsx"), &root.join(BASE_MANIFEST))?;
-    verify_repository_base(&root, &base)?;
+    repository_base(&root, &base)?;
     if arguments.command == "create" {
-        run_create(arguments, &root, head)
+        create(arguments, &root, head)
     } else {
-        run_verify(arguments, &root, &head)
+        verify(arguments, &root, &head)
     }
 }
 
 pub fn command(args: &[String]) -> Output {
+    command_with(args, run)
+}
+
+fn command_with<F>(args: &[String], runner: F) -> Output
+where
+    F: FnOnce(&Arguments) -> Result<String>,
+{
     let arguments = match parse(args) {
         Ok(arguments) => arguments,
         Err(output) => return output,
     };
-    match run(&arguments) {
+    match runner(&arguments) {
         Ok(line) => Output::ok(vec![line]),
         Err(e) => Output::stderr(format!("ERROR: {e}")),
     }

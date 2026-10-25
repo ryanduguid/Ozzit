@@ -131,8 +131,12 @@ fn compiled(name: &str) -> compiler::Compiled {
 #[test]
 fn inserted_names_are_sorted_without_rewriting_existing_definitions() {
     let book = "<definedNames><definedName name=\"oz.Alpha\"> 1 </definedName><definedName name=\"oz.Zeta\"> 2 </definedName></definedNames>";
-    let result =
-        compiler::insert_names(book, &[compiled("oz.charlie"), compiled("oz.Beta")]).unwrap();
+    let beta = compiler::Compiled {
+        body: "4".into(),
+        stored: "4".into(),
+        ..compiled("oz.Beta")
+    };
+    let result = compiler::insert_names(book, &[compiled("oz.charlie"), beta]).unwrap();
     let doc = roxmltree::Document::parse(&result).unwrap();
     assert_eq!(
         doc.root_element()
@@ -143,6 +147,7 @@ fn inserted_names_are_sorted_without_rewriting_existing_definitions() {
         ["oz.Alpha", "oz.Beta", "oz.charlie", "oz.Zeta"]
     );
     assert!(result.contains("<definedName name=\"oz.Alpha\"> 1 </definedName>"));
+    assert!(result.contains("<definedName name=\"oz.Zeta\"> 2 </definedName>"));
 }
 #[test]
 fn inserted_names_comments_and_formulae_stay_xml_text() {
@@ -163,6 +168,7 @@ fn inserted_names_comments_and_formulae_stay_xml_text() {
         .unwrap();
     assert_eq!(inserted.attribute("name"), Some(name.name.as_str()));
     assert_eq!(inserted.attribute("comment"), Some(name.comment.as_str()));
+    assert_eq!(inserted.attributes().len(), 2);
     assert_eq!(inserted.text(), Some(name.stored.as_str()));
 }
 #[test]
@@ -188,6 +194,18 @@ fn the_archive_writer_reproduces_the_frozen_workbook_byte_for_byte() {
 fn tracked_sources_need_no_compilation_or_index_rewrite() {
     let fixture = Fixture::new();
     let before = std::fs::read(&fixture.workbook).unwrap();
+    let index_before = std::fs::read(&fixture.index).unwrap();
+    let modules = compiler::compile_sources(&fixture.src)
+        .unwrap()
+        .into_iter()
+        .map(|c| (c.name, c.module))
+        .collect();
+    let book = archive::read_book(&archive::read_parts(&fixture.workbook).unwrap()).unwrap();
+    assert_eq!(
+        compiler::render_index(&fixture.index, &book, &modules).unwrap(),
+        None
+    );
+    assert_eq!(std::fs::read(&fixture.index).unwrap(), index_before);
     assert!(
         compiler::run(&fixture.workbook, &fixture.src, true, None)
             .unwrap()
@@ -218,13 +236,28 @@ fn a_single_recompiled_definition_preserves_every_other_part_and_is_idempotent()
         ["oz.IsInListλ"]
     );
     let after = archive::read_parts(&fixture.workbook).unwrap();
+    assert!(
+        formula::tight(&archive::read_book(&after).unwrap())
+            .contains("ISNUMBER(_xlfn.XMATCH(_xlpm.Value,_xlfn.TOCOL(_xlpm.List),0))+0")
+    );
     for (name, bytes) in &before {
         if name != archive::BOOK {
             assert_eq!(after.get(name), Some(bytes), "{name}");
         }
     }
-    let before_names = compiler::shipped_names(&archive::read_book(&before).unwrap()).unwrap();
-    let after_names = compiler::shipped_names(&archive::read_book(&after).unwrap()).unwrap();
+    let before_book = archive::read_book(&before).unwrap();
+    let after_book = archive::read_book(&after).unwrap();
+    fn unchanged_segments(book: &str) -> Vec<&str> {
+        book.split("</definedName>")
+            .filter(|segment| !segment.contains("name=\"oz.IsInListλ\""))
+            .collect()
+    }
+    assert_eq!(
+        unchanged_segments(&before_book),
+        unchanged_segments(&after_book)
+    );
+    let before_names = compiler::shipped_names(&before_book).unwrap();
+    let after_names = compiler::shipped_names(&after_book).unwrap();
     for (name, content) in &before_names {
         if name != "oz.IsInListλ" {
             assert_eq!(after_names.get(name), Some(content), "{name}");
@@ -238,6 +271,14 @@ fn a_single_recompiled_definition_preserves_every_other_part_and_is_idempotent()
 }
 #[test]
 fn whitespace_inside_literals_changes_the_definition() {
+    assert_eq!(
+        formula::tight("LAMBDA( x, [0]!oz.Fλ( x))"),
+        formula::tight("LAMBDA(x,oz.Fλ(x))")
+    );
+    assert_ne!(
+        formula::tight("LAMBDA(x, \"a b\")"),
+        formula::tight("LAMBDA(x, \"ab\")")
+    );
     let fixture = Fixture::new();
     fixture.edit(
         "Financial",
@@ -272,6 +313,10 @@ fn header_changes_keep_the_name_manager_comment_and_index_together() {
         ["oz.DebtRatioλ", "functions.csv"]
     );
     let csv = Csv::read(&fixture.index).unwrap();
+    let book = archive::read_book(&archive::read_parts(&fixture.workbook).unwrap()).unwrap();
+    assert!(
+        book.contains("<definedName name=\"oz.DebtRatioλ\" comment=\"Leverage, the short way\">")
+    );
     let row = csv
         .rows
         .iter()

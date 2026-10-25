@@ -62,14 +62,16 @@ fn every_pass_is_already_applied_to_the_committed_workbook() {
     {
         let mut argv = vec![pass.to_string()];
         argv.extend(args);
-        let output = ozzit::dispatch(&argv);
-        assert_eq!(output.code, 0, "{pass}: {:?} {:?}", output.out, output.err);
-        assert!(
-            output.out.iter().any(|l| l.contains("already")),
-            "{pass}: {:?}",
-            output.out
-        );
-        assert!(before == snapshot(dir.path()), "{pass} changed a store");
+        for _ in 0..2 {
+            let output = ozzit::dispatch(&argv);
+            assert_eq!(output.code, 0, "{pass}: {:?} {:?}", output.out, output.err);
+            assert!(
+                output.out.iter().any(|l| l.contains("already")),
+                "{pass}: {:?}",
+                output.out
+            );
+            assert!(before == snapshot(dir.path()), "{pass} changed a store");
+        }
     }
 }
 

@@ -1,9 +1,152 @@
 # Ozzit Rust tooling port
 
 This crate is an unpublished migration checkpoint. CI, `RELEASING.md` and the
-postbuild run order call this binary; the Python tools stay as the reference
-implementation, and CI fails when a gate and its Python twin disagree.
+postbuild run order call this binary. CI runs all 9 native verification gates.
+Their Python references, the Python release tool and the `compare_gates`
+comparator that ran each reference beside its native gate have retired; every
+gate's test contracts already run as native tests. The live Python-versus-native
+comparison ends with them, by decision.
+
+`build_module` is native only; its former Python assertions now run in
+`tests/module_contracts.rs`, including the physical command-line checks.
+`generate_selftest_examples` is also native only, with its former assertions in
+`tests/selftest_retirement.rs` and exact decimal checks in `src/selftest.rs`.
+`cover_label`, `sheet_names` and `strip_revision_history` are native only. Their
+former assertions run in `tests/postbuild_retirement.rs`, with transaction
+failure checks beside the revision-strip implementation.
+`fy27_help_text` and `gst_help_text` are native only. Their former assertions run
+in `tests/help_text_retirement.rs`, including character lengths, note formatting,
+unchanged descriptions and the separate AFE sync step.
+`help_links` is native only. Its former apply and refusal assertions run in
+`tests/help_links_retirement.rs`, with partial-write and failed-restore checks
+beside the implementation.
+`remove_residue` is native only. Whole-workbook restoration and command checks
+run in `tests/remove_residue_retirement.rs`; component refusals and binary
+content-type checks run beside the implementation.
+`help_corrections` is native only. Its workbook/source, example, static-string,
+temporary-sibling and command checks run in `tests/help_corrections_retirement.rs`.
+Private staging callbacks test a partial source-stage failure before any replacement.
+`workbook_palette` is native only. Workbook, template, indexed-background and
+command checks run in `tests/workbook_palette_retirement.rs`; colour, theme,
+font-sharing and fixed-point assertions run beside the implementation.
+`working_capital_days` is native only. Apply, refusal and command checks run in
+`tests/working_capital_retirement.rs`; source guards, module endings and all 3
+write/compile recovery paths run beside the shared function-pass implementation.
+`rate_date_helpers` is native only. Its apply, optional-index and command checks
+run in `tests/rate_date_retirement.rs`; two-module recovery, source guards and
+newline assertions run beside the shared function-pass implementation.
+`ato_benchmarks_rate_lookup` is native only. Apply, required-index, refusal and
+command checks run in `tests/ato_retirement.rs`; two-module recovery, insertion
+anchors/followers and its source guard run beside the shared implementation.
+`aasb16_leases` is native only. Its apply, refusal and final byte-no-op checks
+run in `tests/leases_retirement.rs`; exact parser, source-guard, index, shared
+helper and CRLF recovery checks run beside the lease implementation. The final
+Python workbook helper has retired.
+`refresh_cache` is native only. Its former process-launch, timeout, failure,
+argument-selection and sanitiser-delegation assertions run beside `src/refresh.rs`.
+Diagnostic hints now name `ozzit refresh_cache`; replay adapts only the 16 old
+command-hint lines in the unchanged 76-case cache corpus.
+`sync_afe_store` is native only. Its 6 former Python test contracts run in
+`tests/afe_contracts.rs`, including both physical output encodings, exact command
+status/refusals, whole-store restoration, unrelated ZIP parts and idempotency.
+`polish_workbook` is native only. Its 13 former Python test contracts run in
+`tests/polish_retirement.rs`, reusing the unchanged 31-case corpus input. They
+retain exact presentation edits, refusals, path resolution and idempotency.
+`sanitise_workbook` is native only. Its 14 former Python test contracts run in
+`tests/sanitise_retirement.rs` and a private cell-pattern unit test. The 33-case
+replay remains unchanged. The remaining Python helper module is retired too:
+its 13 writer, permission and raw-text contracts map to `src/common_retirement.rs`
+and `tests/writer_retirement.rs`. Native tests exercise real temporary files,
+partial-write errors, panic unwinding, regular-file replacement refusal and
+platform permissions. Native stages remain open; Python's buffered-close fault
+injection has no native equivalent, and panic cleanup does not cover OS process
+termination. The original column helper assertion now runs beside the native
+help-spill implementation. Review regression fixtures use a simple
+standard-library ZIP builder.
+`compile_sources` is native only. Its 5 former command test contracts run in
+`tests/compiler_cli_retirement.rs`, with exact status, output, no-write and index
+selection checks. Its 31 remaining compiler contracts run in `tests/foundation.rs`,
+`tests/compiler_retirement.rs` and private formula tests, including exact refusals,
+index text and inline idempotency. The shared Python argument parser now belongs
+to `verify_sources`; its original test follows it. All 10 unrelated comparison
+tests remain. The obsolete Python compiler import lifecycle test is retired.
+`verify_cache` and its exclusive OPC helper are native only. Their 26 former
+test contracts run in `src/cache_retirement.rs`, with physical command refusals
+in `tests/cache_retirement_cli.rs`. Fake runners check the complete launch,
+600-second deadline, temporary-dump cleanup and unchanged workbook bytes.
+All 8 typed error-code combinations and the 12 original cases at exactly
+15,000 cells remain checked. The retained column helper assertion runs natively;
+the Python gate import checks retired with their gates.
+Generated headers retain historical Python filenames to preserve published bytes.
+`verify_signatures` is native only. Native signature
+tests cover the original mismatch fixture, floor refusal, published help defects,
+input failures and command defaults. Existing corpus and foundation cases retain
+the helper contracts. A private fixture floor leaves the public floor at 100;
+the Python-only fresh import test retired with the script.
 The workbook retains its native Excel formulas and ordinary `.xlsx` format.
+`check_gates WORKFLOW GATE [--exempt JOB ...] [--no-results]` checks aggregate
+job results, missing needs and declared removals against the first-parent base.
+It reads `RESULTS` even with `--no-results`; only `pull_request` checks the base.
+The narrow job-key grammar, directory-entry path selection and validation order
+retain the former `.github/ci/check_gates.py` contracts. All 39 baseline assertion sets transfer to
+private unit tests and physical command tests, with additional real Git cases.
+The Python helper and its tests have retired. Both ordinary aggregate jobs
+build this crate with the pinned toolchain and `cargo build --locked`, then
+run `target/debug/ozzit check_gates` with their existing arguments and RESULTS.
+They use full checkouts with fetch-depth 2 so compile-time inputs and the first
+parent remain available. Their 20-minute job limit allows toolchain installation
+and a cold build; install/build failures fail the required aggregate context.
+Job names, needs, conditions, permissions and verify's codecov exemption remain.
+Native workflow tests execute both actual workflow invocations on owned copies
+with successful, failed and missing results. The command is built within each
+unprivileged job; it needs no artifact transfer or Python runtime.
+Git uses separate arguments, inherited cwd/environment, captured streams and no
+timeout. Both Git streams and workflow files decode strictly as UTF-8 with
+universal newlines. Untrimmed Git stdout is retained. This intentionally does
+not emulate legacy Python locale/Windows ACP decoding; non-UTF-8 Git output
+fails closed. Explicit refusals preserve status and output channels, including
+declared-removal stdout before undeclared-removal stderr. Python exceptions
+become controlled category-prefixed stderr and exit 1 without tracebacks or
+exception-object identity. Git termination without an exit code reports -1.
+Release Git tests retain the 6 original checkout-binding contracts beside
+the staging tests. They check the shipped workbook against its manifest and
+full Git history, query order, all claim mismatches, dirty checkout and bad
+HEAD refusals, invocation arguments and failure propagation. A positively
+shallow clone logs the original history warning and returns from the Rust
+test; qualification requires full history and records the real binding run.
+The existing runner tests retain UTF-8 and newline decoding checks.
+Release command tests retain the 6 original execution contracts with owned
+bundle creation and verification. They cover implicit/explicit HEAD, all
+requested-claim refusals, clean-check-first ordering, exact logical output and
+the independent semantic rerun. Private callbacks retain production root
+discovery and command formatting. The Python release tool, its 44 tests and
+its attest caller have retired.
+Release static tests and the recorded replay retain the remaining 18 original
+method contracts. Added cases cover exact Boolean claims, malformed files,
+canonical values, manifest fields, checksum rows and parser refusals. The replay
+retains all 22 provenance mutations with type-strict input bindings. The original
+Python subprocess AST check retired with the tool; native invocation tests check separate
+argument vectors through the existing process runner. That transfer changed no
+production code.
+`verify_workbook` is native only. Native tests cover
+the original report fixtures, malformed XML and AFE payloads, all add-in and
+forbidden-part cases, scoped names, long names and physical command contracts.
+The private loader test adds no production seam. Python-only import coverage
+retired with the script; native XML helper errors adapt its global failure list.
+`verify_help_spills` is native only. Its 13 original test methods transfer to
+native tests. The unchanged
+corpus checks the original help model, attribute permutations, missing caches
+and dimension errors. Physical tests retain stale/current output, argument and
+read failures, UTF-8 output and input preservation. Exact trim and private
+column-index assertions add no production seam. Its obsolete Python import
+branch retires; the index import check and all 20 unrelated mixed-file methods
+remain unchanged.
+`verify_native_evidence` is native only. Its 13 original test methods transfer to
+native tests. The unchanged
+corpus covers the 43 original validation calls. Additional tests retain the
+original installed-file success fixture, supplied-file preservation and physical
+default/refusal output. Copied executables exercise root resolution on owned
+trees. Production code and the native-execution disclaimer remain unchanged.
 
 Build with the repository's pinned Rust toolchain:
 
@@ -17,6 +160,7 @@ repository root to use their usual path defaults.
 
 | Command | Purpose |
 | --- | --- |
+| `check_gates` | Check aggregate CI job results, needs and declared removals |
 | `compile_sources` | Compile source definitions and optionally rebuild the CSV index |
 | `verify_sources` | Compare source definitions with stored workbook names |
 | `verify_signatures` | Check signatures, parameter tables and worked examples |
@@ -83,14 +227,58 @@ cargo clippy --locked --manifest-path tools/ozzit/Cargo.toml --all-targets -- -D
 cargo test --locked --manifest-path tools/ozzit/Cargo.toml
 ```
 
+The stable tests replay the shared native parser fuzz harness and committed
+seeds. The separate nightly target and bounded Linux campaign are documented
+in `fuzz/README.md` at the repository root.
+
 The native tests include 1,117 captured parser observations, 76 recorded
 cache-gate findings, 64 recorded sanitiser and presentation-pass results, 834 recorded generator
 observations, 146 release-bundle argument and verification cases, 69 workbook and
 help-cache observations, 5,461 strict base64 cases, 1,332 retained-evidence/grid
 observations, archive byte checks and
 controlled writer failures. Large test fixtures are read from `tests/data/`
-when tests run. Differential scripts
+when tests run. Previous-name coverage retains the 13 original Python test
+contracts, including all header and read-failure cases and physical command
+defaults. Its small diagnostic fixtures use a private floor parameter; public
+commands retain the floor of 100. The Python gate and its tests have retired.
+Cover tests retain all 15 original gate contracts, including exact small-fixture
+reference failures, stale labels and dates, decoy strings, CSV parsing and
+physical command defaults. Their fixtures write only owned copies.
+AFE tests retain all 20 original gate contracts, reusing the helper tests and
+adding shipped-store failures, workbook/source read failures and physical
+cp1252/UTF-8 command checks. Recursive snapshots protect all owned fixture bytes
+and directory entries. The Python gate and its tests have retired.
+Index tests retain the 10 direct and 8 mixed Python contracts through native
+fixtures and physical command checks; the Python-specific import assertion
+retired with the script. They cover every original header/CSV matrix, contradictory
+duplicates, missing metadata and unreadable inputs. Production code is unchanged.
+Source gate tests retain all applicable assertions from 36 Python contracts,
+reusing the exact frozen parser cases and adding private known-list fixtures,
+canonical equality/difference pairs, read failures and physical command checks.
+The public command still uses the same known list and output. The Python gate,
+its import tests and its callers have retired.
+Differential scripts
 and their receipts are retained in the local Agent Hub evidence for this port.
-CI, `RELEASING.md` and the postbuild run order call this binary. The Python tools
-remain under test as the reference implementation until they are retired; the
-optional pyxirr comparison stays in Python.
+Release staging tests retain all 10 original staging contracts, using real
+copies, checksums, structural verification and cleanup in owned synthetic roots.
+The staged workbook matches the original Python fixture bytes, provenance.json
+and SHA256SUMS match that fixture moved to schema 2, and repeat builds
+are byte identical. Private callbacks inject gate failures, structural failures
+and a destination race; the public command keeps its real checks and operation
+order. The recorded replay remains: a test adapter moves each recorded bundle to
+schema 2 bytes, raising every integer schema by one and renaming the 7 gate labels,
+and repoints a SHA256SUMS digest only where it matched, so all 91 recorded verdicts
+keep their meaning.
+Provenance schema 2 names each static gate by its native command, such as
+`ozzit verify_workbook ozzit.xlsx`; schema 1 bundles, all staged by the retired
+Python tool, verify from their own tags. The attest workflow builds this crate in
+a job with only `contents: read`, passes the binary and its SHA-256 to the
+privileged job, and runs `prepare_release_bundle verify` there after checking the
+digest. The 7 native gates the verifier reruns still execute in the privileged
+job, as the Python gates did.
+Semantic execution tests add the 4 original independent-rerun, path-spelling
+and failed-gate contracts. They check all 7 native argument vectors, absolute
+operands, normalised evidence and exact diagnostics, including silent failures.
+Private callbacks retain the real public executable, cwd, timeouts and checks.
+CI, `RELEASING.md` and the postbuild run order call this binary. The optional
+pyxirr comparison and the QuantLib fixture generator stay in Python.

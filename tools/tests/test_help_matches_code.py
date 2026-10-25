@@ -1,6 +1,6 @@
 """Guards on help that promised something the formula did not do.
 
-verify_signatures.py compares a help's FUNCTION line, parameter table and worked
+ozzit verify_signatures compares a help's FUNCTION line, parameter table and worked
 examples with the LAMBDA's own declaration. None of that reads what an example
 claims the answer is, or whether the body applies the default the table names, so
 each of these shipped with the help and the code contradicting each other and
@@ -162,7 +162,7 @@ class HelpMatchesCodeTests(unittest.TestCase):
     def test_no_static_cell_names_a_function_the_library_never_declared(self):
         # A label column is a list of functions to go and type, and every cell in
         # one is a static literal: no formula, no covering spill anchor, so Excel
-        # never refreshes it. verify_signatures.py makes this check against src/;
+        # never refreshes it. ozzit verify_signatures makes this check against src/;
         # nothing made it against the cells, which is how the pre-rename Aboutλ,
         # DSIRatioλ and DividendPayoutRatioλ outlived the names they came from.
         self.assertGreater(len(self.declared), 100, "no declarations were read")
