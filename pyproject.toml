@@ -5,10 +5,7 @@
 [tool.ruff]
 target-version = "py314"
 line-length = 100
-# Both roots a pass imports from: tools/ for the shared verifiers and compilers,
-# tools/postbuild/ for workbook.py. Without the second, the import sorter reads
-# workbook as a third-party package and files it above the first-party block.
-src = ["tools", "tools/postbuild"]
+src = ["tools"]
 
 [tool.ruff.lint]
 # E4 import placement, E7 statement style, E9 syntax errors, F the full pyflakes

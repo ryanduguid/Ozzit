@@ -552,7 +552,7 @@ fn verify_with(
         Err(e) => return Output::failure(format!("FAIL: {e}")),
     };
     let absolute = std::path::absolute(workbook).unwrap_or_else(|_| workbook.into());
-    // Same boundary as refresh_cache.py: a modal dialog would otherwise hang the
+    // Same boundary as refresh_cache: a modal dialog would otherwise hang the
     // gate forever, and a host with no powershell.exe must FAIL, not crash.
     let dump = launch(
         "powershell.exe",

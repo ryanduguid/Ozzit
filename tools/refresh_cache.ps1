@@ -8,7 +8,7 @@
 # disagrees with itself cannot be checked by anything except Excel.
 #
 # This is the only step in the pipeline that saves through Excel. It changes no formula;
-# run tools/verify_cache.py afterwards, which is the gate that proves the saved answers.
+# run ozzit verify_cache afterwards, which is the gate that proves the saved answers.
 param([string]$Path = 'ozzit.xlsx')
 
 $ErrorActionPreference = 'Stop'
