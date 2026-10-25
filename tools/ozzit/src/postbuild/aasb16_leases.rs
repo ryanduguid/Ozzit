@@ -10,6 +10,9 @@ use std::sync::LazyLock;
 
 const MODULE: &str = "Financial";
 
+#[cfg(test)]
+mod tests;
+
 struct Function {
     name: String,
     comment: String,
@@ -60,8 +63,32 @@ fn qualified() -> Vec<String> {
 }
 
 fn build_definitions(library: &BTreeSet<String>) -> Result<Vec<Definition>> {
+    build_with(&TABLES.functions, library, formula::render)
+}
+
+fn check_source(f: &Function) -> Result<()> {
+    for bad in ["&amp;", "&lt;", "&gt;"] {
+        if f.block.contains(bad) {
+            return Err(format!(
+                "{}: {bad} is already escaped in the source",
+                f.name
+            ));
+        }
+    }
+    if f.block.contains('\t') {
+        return Err(format!("{}: tabs do not belong in the source", f.name));
+    }
+    Ok(())
+}
+
+fn build_with(
+    functions: &[Function],
+    library: &BTreeSet<String>,
+    render: impl Fn(&str, &BTreeSet<String>) -> Result<String>,
+) -> Result<Vec<Definition>> {
     let mut out = Vec::new();
-    for f in &TABLES.functions {
+    for f in functions {
+        check_source(f)?;
         let statement = formula::statements(&f.block)
             .into_iter()
             .next()
@@ -71,7 +98,7 @@ fn build_definitions(library: &BTreeSet<String>) -> Result<Vec<Definition>> {
             return Err(format!("{}: source block does not declare it", f.name));
         };
         let body = py::strip(&m[2]);
-        let stored = formula::render(body, library)?;
+        let stored = render(body, library)?;
         let want = formula::canonical(&formula::qualify(body, "oz", library))
             .chars()
             .collect::<Vec<_>>();
@@ -162,6 +189,13 @@ fn add_to_src(text: &str) -> Result<String> {
     Ok(format!("{text}\n\n\n{blocks}\n"))
 }
 
+fn oz_names(book: &str) -> Vec<String> {
+    captures(r#"<definedName name="(oz\.[^"]+)""#, book)
+        .into_iter()
+        .map(|m| m[1].clone())
+        .collect()
+}
+
 fn add_to_workbook(book: &str, definitions: &[Definition]) -> Result<String> {
     let stored_anchor = escape(&TABLES.anchor);
     let hits = count(book, &stored_anchor);
@@ -176,10 +210,7 @@ fn add_to_workbook(book: &str, definitions: &[Definition]) -> Result<String> {
     }
     let mut book = book.replacen(&stored_anchor, &format!("{stored_anchor}{addition}"), 1);
 
-    let mut existing = captures(r#"<definedName name="(oz\.[^"]+)""#, &book)
-        .into_iter()
-        .map(|m| m[1].clone())
-        .collect::<Vec<_>>();
+    let mut existing = oz_names(&book);
     let mut order = definitions.iter().collect::<Vec<_>>();
     order.sort_by_key(|d| d.name.to_lowercase());
     for d in order {
@@ -354,6 +385,29 @@ pub fn run(
     index: &py::PyPath,
     notes: &mut Vec<String>,
 ) -> Result<Vec<String>> {
+    run_optional(workbook, src, Some(index), notes)
+}
+
+fn write_with_recovery(
+    src_path: &Path,
+    before: &str,
+    after: &str,
+    write_book: impl FnOnce() -> Result<()>,
+) -> Result<()> {
+    write_text(src_path, after)?;
+    if let Err(error) = write_book() {
+        write_text(src_path, before)?;
+        return Err(error);
+    }
+    Ok(())
+}
+
+fn run_optional(
+    workbook: &Path,
+    src: &py::PyPath,
+    index: Option<&py::PyPath>,
+    notes: &mut Vec<String>,
+) -> Result<Vec<String>> {
     let src_path = src.join(&format!("{MODULE}.txt"));
     if !src_path.fs().is_file() {
         return Err(format!("src: missing {src_path}"));
@@ -379,23 +433,21 @@ pub fn run(
 
     let mut changed = Vec::new();
     if src_status == "absent" {
-        write_text(&src_path.fs(), &add_to_src(&src_text)?)?;
-        let written = add_to_workbook(&book, &definitions).and_then(|book| {
-            parts.insert(BOOK.into(), book.into_bytes());
+        write_with_recovery(&src_path.fs(), &src_text, &add_to_src(&src_text)?, || {
+            parts.insert(
+                BOOK.into(),
+                add_to_workbook(&book, &definitions)?.into_bytes(),
+            );
             write_deterministic(workbook, &parts)
-        });
-        if let Err(e) = written {
-            write_text(&src_path.fs(), &src_text)?;
-            return Err(e);
-        }
+        })?;
         changed.push(format!("src/{MODULE}.txt"));
         changed.push("workbook".into());
     }
-    if index.fs().is_file() {
+    if let Some(index) = index.filter(|index| index.fs().is_file()) {
         if update_index(&index.fs(), &definitions)? {
             changed.push(index.name().to_string());
         }
-    } else {
+    } else if let Some(index) = index {
         notes.push(format!("note: {index} not found, index not updated"));
     }
     Ok(changed)

@@ -8,7 +8,10 @@ use crate::{
     common::*,
     py, sanitise,
 };
-use std::time::Duration;
+use std::{path::Path, time::Duration};
+
+#[cfg(test)]
+mod tests;
 
 pub const SCRIPT: &str = "tools/refresh_cache.ps1";
 /// A full rebuild of this workbook takes seconds; 10 minutes is a hang, not a slow run.
@@ -16,6 +19,14 @@ pub const REFRESH_TIMEOUT_SECONDS: u64 = 600;
 
 /// The finding for `workbook` once the Excel refresh has finished.
 pub fn outcome(workbook: &py::PyPath, refresh: Result<Dump>) -> Output {
+    outcome_with(workbook, refresh, sanitise::sanitise)
+}
+
+fn outcome_with(
+    workbook: &py::PyPath,
+    refresh: Result<Dump>,
+    clean: impl FnOnce(&Path) -> Result<Vec<String>>,
+) -> Output {
     let fail = |out: Vec<String>| Output {
         code: 1,
         out,
@@ -54,7 +65,7 @@ pub fn outcome(workbook: &py::PyPath, refresh: Result<Dump>) -> Output {
         }
         return fail(out);
     }
-    match sanitise::sanitise(&workbook.fs()) {
+    match clean(&workbook.fs()) {
         Ok(log) => out.extend(log),
         Err(e) => {
             out.push(format!("FAIL: cannot sanitise {workbook}: {e}"));
@@ -67,14 +78,26 @@ pub fn outcome(workbook: &py::PyPath, refresh: Result<Dump>) -> Output {
     Output::ok(out)
 }
 
+fn workbook_argument(args: &[String]) -> py::PyPath {
+    py::PyPath::new(args.first().map_or("ozzit.xlsx", String::as_str))
+}
+
 pub fn command(args: &[String]) -> Output {
-    let workbook = py::PyPath::new(args.first().map_or("ozzit.xlsx", String::as_str));
+    command_with(args, cache::run_dumper, sanitise::sanitise)
+}
+
+fn command_with(
+    args: &[String],
+    launch: impl FnOnce(&str, &[String], Duration) -> Result<Dump>,
+    clean: impl FnOnce(&Path) -> Result<Vec<String>>,
+) -> Output {
+    let workbook = workbook_argument(args);
     if !workbook.fs().exists() {
         return Output::failure(format!("FAIL: no such workbook: {workbook}"));
     }
     // Excel automation can stop on a modal dialog, and without a timeout the gate
     // would wait for it forever.
-    let refresh = cache::run_dumper(
+    let refresh = launch(
         "powershell.exe",
         &[
             "-NoProfile".into(),
@@ -90,5 +113,5 @@ pub fn command(args: &[String]) -> Output {
         ],
         Duration::from_secs(REFRESH_TIMEOUT_SECONDS),
     );
-    outcome(&workbook, refresh)
+    outcome_with(&workbook, refresh, clean)
 }

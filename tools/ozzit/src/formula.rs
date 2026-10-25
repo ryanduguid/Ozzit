@@ -589,3 +589,49 @@ pub fn render(body: &str, library: &BTreeSet<String>) -> Result<String> {
         stored.into()
     })
 }
+
+#[cfg(test)]
+mod compiler_retirement_tests {
+    use super::unwrap_at;
+
+    #[test]
+    fn implicit_intersection_keeps_spacing_and_an_unclosed_call() {
+        for (input, expected) in [
+            ("@ First + 1", "SINGLE(First) + 1"),
+            ("@INDEX (x, 1)", "SINGLE(INDEX (x, 1))"),
+            ("@INDEX(x", "SINGLE(INDEX(x)"),
+        ] {
+            assert_eq!(unwrap_at(input).unwrap(), expected);
+        }
+    }
+
+    #[test]
+    fn implicit_intersection_without_a_name_is_refused_exactly() {
+        assert_eq!(
+            unwrap_at("@1 + x").unwrap_err(),
+            "@ is not followed by a name: '@1 + x'"
+        );
+    }
+}
+
+#[cfg(test)]
+mod source_contract_tests {
+    use super::*;
+
+    #[test]
+    fn an_unclosed_call_retains_only_the_arguments_seen_before_its_final_segment() {
+        assert_eq!(call_arguments("f(a,b", 2), ["a"]);
+    }
+
+    #[test]
+    fn a_let_without_a_result_is_read_as_an_ordinary_call() {
+        let names = ["X".to_owned()].into();
+        assert!(reads_any("LET(x, 1)", &names, ""));
+        assert!(!reads_any("LET(x, 1)", &names, "LET"));
+    }
+
+    #[test]
+    fn a_stray_closing_bracket_does_not_hide_a_read() {
+        assert!(reads_any(") x", &["X".to_owned()].into(), "SUM"));
+    }
+}

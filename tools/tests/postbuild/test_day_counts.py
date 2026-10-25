@@ -1,9 +1,9 @@
 """Day-count arithmetic for oz.DayCountRateλ, checked without Excel.
 
-tools/postbuild/rate_date_helpers.py carries the published source of the four
-rate and date helpers, and test_idempotency.py proves only that re-running the
-pass writes nothing. Nothing asserted what the day counts come to, which is how
-the Actual/Actual defect that the Unreleased CHANGELOG records reached a release.
+The native rate_date_helpers pass carries the published source of the four rate
+and date helpers. Re-running the pass proves that it writes nothing, but does
+not assert what the day counts come to. That gap let the Actual/Actual defect
+recorded in the Unreleased CHANGELOG reach a release.
 
 The arithmetic itself lives in an Excel LAMBDA, so it cannot be executed here.
 This module closes the gap in 2 halves that have to agree:
@@ -12,9 +12,9 @@ This module closes the gap in 2 halves that have to agree:
    against year fractions worked out by hand in the comments beside them.
 2. `FormulaPinTests` asserts that the shipped LAMBDA still spells those same 4
    rules, comparing whitespace-normalised text against the published source. The
-   builder's constants are byte-identical to `src/Financial.txt`, which is what
-   `verify_sources.py` proves against the workbook, so pinning the constant pins
-   the shipped function.
+   native pass's source table is byte-identical to `src/Financial.txt`, which
+   `ozzit verify_sources` proves against the workbook, so pinning the source table
+   pins the shipped function.
 
 Change the LAMBDA and the pins fail, which is the prompt to re-derive the mirror
 and its hand calculations rather than to edit the pin.
@@ -33,17 +33,12 @@ import hashlib
 import json
 import math
 import re
-import sys
 import unittest
 from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 TOOLS = ROOT / "tools"
-sys.path.insert(0, str(TOOLS))
-sys.path.insert(0, str(TOOLS / "postbuild"))
-
-import rate_date_helpers  # noqa: E402
 
 # The Convention argument's numbers, as the shipped PARAMETERS row states them.
 THIRTY_360 = 1
@@ -464,11 +459,17 @@ class FormulaPinTests(unittest.TestCase):
     """The shipped LAMBDA must still spell the rules the mirror above restates."""
 
     def setUp(self):
-        self.source = normalised(rate_date_helpers.DAY_COUNT_RATE_SRC)
+        table = ROOT / "tools/ozzit/src/data/postbuild/rate_date_helpers.json"
+        functions = json.loads(table.read_text(encoding="utf-8"))["functions"]
+        definitions = [source for module, name, _, source in functions
+                       if module == "Financial" and name == "DayCountRateλ"]
+        self.assertEqual(len(definitions), 1)
+        self.definition = definitions[0]
+        self.source = normalised(self.definition)
 
     def test_the_builder_carries_the_shipped_definition(self):
         financial = (ROOT / "src" / "Financial.txt").read_text(encoding="utf-8")
-        self.assertIn(rate_date_helpers.DAY_COUNT_RATE_SRC, financial)
+        self.assertIn(self.definition, financial)
 
     def test_the_convention_numbers_match_the_constants_used_here(self):
         self.assertIn(

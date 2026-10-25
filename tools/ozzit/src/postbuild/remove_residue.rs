@@ -7,6 +7,9 @@ use super::*;
 use num_bigint::BigInt;
 use std::collections::{BTreeMap, BTreeSet};
 
+#[cfg(test)]
+mod tests;
+
 const RESIDUE_SHEET: &str = "FMTs";
 const FREEZE: [(&str, &str); 6] = [
     ("oz.IsOccurrenceDateλ", "H"),

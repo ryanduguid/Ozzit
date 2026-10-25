@@ -7,6 +7,9 @@ use super::*;
 use std::collections::BTreeMap;
 use std::sync::LazyLock;
 
+#[cfg(test)]
+mod tests;
+
 const BLACK: &str = "000000";
 const IVORY: &str = "FFFFF0";
 const PLATINUM: &str = "E5E4E2";

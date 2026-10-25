@@ -3,8 +3,8 @@
 #   powershell -ExecutionPolicy Bypass -File tools\excel_selftest.ps1 [path\to\ozzit.xlsx]
 #
 # Requires Excel with LAMBDA support (Microsoft 365, or Excel 2024 and later). GitHub's
-# runners have no Excel, so CI runs tools/verify_workbook.py instead and this stays a
-# local gate: verify_workbook.py checks the file's structure, this checks its arithmetic.
+# runners have no Excel, so CI runs ozzit verify_workbook instead and this stays a
+# local gate: verify_workbook checks the file's structure, this checks its arithmetic.
 #
 # The workbook is opened, fully recalculated, scanned for error cells, probed with a
 # temporary sheet of assertions, then closed WITHOUT saving. It is never modified.
@@ -27,8 +27,8 @@ function Same($id, $expr, $want) {
 }
 
 # Every function's help, and every worked example the help prints that stands on its
-# own, generated from src/ by tools/generate_selftest_examples.py. A help change means
-# rerunning the generator; tools/tests fails when the fragment is stale.
+# own, generated from src/ by ozzit generate_selftest_examples. A help change means
+# rerunning the generator; the ozzit tests fail when the fragment is stale.
 . (Join-Path $PSScriptRoot 'selftest_examples.ps1')
 
 $dv = "oz.DiminishingValue$L"

@@ -261,7 +261,7 @@ impl Tally {
         }
     }
 
-    fn finish(self, modules: usize) -> Output {
+    fn finish(self, modules: usize, floor: usize) -> Output {
         let Self {
             failures,
             no_signature,
@@ -292,7 +292,7 @@ impl Tally {
                 list_or_none(not_lambda)
             ),
         ];
-        if signatures < 100 || tables < 100 {
+        if signatures < floor || tables < floor {
             return Output {
                 code: 1,
                 out,
@@ -315,6 +315,10 @@ impl Tally {
 }
 
 pub fn verify(args: &[String]) -> Output {
+    verify_with_floor(args, 100)
+}
+
+fn verify_with_floor(args: &[String], floor: usize) -> Output {
     if args.len() > 1 {
         return Output::stderr("FAIL: usage: ozzit verify_signatures [src dir]");
     }
@@ -346,5 +350,126 @@ pub fn verify(args: &[String]) -> Output {
     for statement in modules.into_iter().flatten() {
         tally.statement(&statement, &declared_names);
     }
-    tally.finish(paths.len())
+    tally.finish(paths.len(), floor)
+}
+
+#[cfg(test)]
+mod signature_contract_tests {
+    use super::*;
+
+    fn help_function(
+        name: &str,
+        params: &[&str],
+        signature: &str,
+        table: &[&str],
+        example: &str,
+    ) -> String {
+        let mut rows = vec![format!("FUNCTION:→{signature}"), "PARAMETERS:→".into()];
+        rows.extend(table.iter().map(|p| format!("{p}→a value")));
+        rows.extend([
+            "EXAMPLES:→".into(),
+            format!("EXAMPLE→{example}"),
+            "END:→".into(),
+        ]);
+        let help = rows
+            .iter()
+            .map(|row| format!("\"{row}¶\""))
+            .collect::<Vec<_>>()
+            .join(" & ");
+        let declared = params
+            .iter()
+            .map(|p| format!("[{p}]"))
+            .collect::<Vec<_>>()
+            .join(", ");
+        format!(
+            "{name} = LAMBDA({declared}, LET(Help, TRIM(TEXTSPLIT({help}, \"→\", \"¶\")), 0));\n"
+        )
+    }
+
+    fn fixture() -> (tempfile::TempDir, String, Vec<u8>) {
+        let dir = tempfile::tempdir().unwrap();
+        let src = dir.path().join("src");
+        std::fs::create_dir(&src).unwrap();
+        let mut text = help_function("Goodλ", &["x"], "Goodλ(x)", &["x"], "=Goodλ(1)");
+        text += &help_function("NotSigλ", &["x"], "not a signature", &["x"], "=NotSigλ(1)");
+        text += &help_function("WrongNameλ", &["x"], "Goodλ(x)", &["x"], "=WrongNameλ(1)");
+        text += &help_function(
+            "WrongParamsλ",
+            &["x", "y"],
+            "WrongParamsλ(x)",
+            &["x", "y"],
+            "=WrongParamsλ(1, 2)",
+        );
+        text += &help_function(
+            "WrongExampleλ",
+            &["x"],
+            "WrongExampleλ(x)",
+            &["x"],
+            "=Goodλ(1)",
+        );
+        text += &help_function(
+            "WrongTableλ",
+            &["x"],
+            "WrongTableλ(x)",
+            &["z"],
+            "=WrongTableλ(1)",
+        );
+        text += "AboutFixtureλ = TRIM(TEXTSPLIT(\"Function→Description¶\" & \"Goodλ→¶\", \"→\", \"¶\"));\nnot a declaration;\n";
+        std::fs::write(src.join("Fixture.txt"), &text).unwrap();
+        (dir, display(&src), text.into_bytes())
+    }
+
+    fn assert_preserved(dir: &Path, before: &[u8]) {
+        assert_eq!(std::fs::read_dir(dir).unwrap().count(), 1);
+        let src = dir.join("src");
+        assert_eq!(std::fs::read_dir(&src).unwrap().count(), 1);
+        assert_eq!(std::fs::read(src.join("Fixture.txt")).unwrap(), before);
+    }
+
+    #[test]
+    fn all_five_original_help_mismatches_follow_the_exact_fixture_tallies() {
+        let (dir, src, before) = fixture();
+        let result = verify_with_floor(&[src], 1);
+        assert_preserved(dir.path(), &before);
+        assert_eq!(result.code, 1);
+        assert!(result.err.is_empty());
+        assert_eq!(
+            result.out,
+            [
+                "7 declarations read: 6 signatures, 6 parameter tables and 6 example blocks checked",
+                "   no FUNCTION line (0): none",
+                "   no parameter table (0): none",
+                "   not a LAMBDA (1): AboutFixtureλ",
+                "FAIL: 5 help problem(s)",
+                "  - NotSigλ: the help's FUNCTION line is not a signature: 'not a signature'",
+                "  - WrongNameλ: its help names Goodλ",
+                "  - WrongParamsλ: its signature says (x) but it takes (x, y)",
+                "  - WrongExampleλ's worked examples never call it, they call Goodλ",
+                "  - WrongTableλ: its parameter table describes (z) but it takes (x)",
+            ]
+        );
+    }
+
+    #[test]
+    fn the_original_six_signature_fixture_fails_the_normal_floor_first() {
+        let (dir, src, before) = fixture();
+        let result = verify(&[src]);
+        assert_preserved(dir.path(), &before);
+        assert_eq!(result.code, 1);
+        assert_eq!(
+            result.out,
+            [
+                "7 declarations read: 6 signatures, 6 parameter tables and 6 example blocks checked",
+                "   no FUNCTION line (0): none",
+                "   no parameter table (0): none",
+                "   not a LAMBDA (1): AboutFixtureλ",
+            ]
+        );
+        assert_eq!(
+            result.err,
+            [
+                "only 6 signatures and 6 tables parsed from 1 module(s): the parser is not reading them"
+            ]
+        );
+    }
 }

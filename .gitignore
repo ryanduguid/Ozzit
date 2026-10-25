@@ -1,4 +1,4 @@
-# verify_signatures.py imports verify_sources.py, so the tools directory gets one
+# The Python tests import pyxirr_comparison.py, so the tools directory gets one
 __pycache__/
 *.pyc
 
@@ -23,3 +23,8 @@ __pycache__/
 
 # Rust build output
 target/
+
+# Local cargo-fuzz findings; committed seeds stay in fuzz/corpus/.
+tools/ozzit/fuzz/artifacts/
+tools/ozzit/fuzz/corpus/
+tools/ozzit/fuzz/coverage/
