@@ -61,6 +61,10 @@ impl Fixture {
                 "commit.gpgsign=false",
                 "-c",
                 "core.autocrlf=false",
+                // A commit otherwise starts a detached `git maintenance run
+                // --auto` (Unix), which can touch .git during a snapshot.
+                "-c",
+                "maintenance.auto=false",
                 "-c",
             ])
             .arg(format!(
