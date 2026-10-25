@@ -333,6 +333,11 @@ impl Decimal {
         }
     }
 
+    /// Compare the exact decimal with zero, including values outside the float range.
+    pub fn is_positive(&self) -> bool {
+        self.mantissa.is_positive()
+    }
+
     /// `repr(float(value))`: the shortest float literal that reads back as the value.
     pub fn shown(&self) -> String {
         let value = format!("{}e{}", self.mantissa, self.exponent)
@@ -561,4 +566,21 @@ pub fn command(args: &[String]) -> Output {
         "wrote {output}: {} lines",
         text.matches('\n').count()
     )])
+}
+
+#[cfg(test)]
+mod retirement_contracts {
+    use super::*;
+
+    #[test]
+    fn printed_numbers_keep_the_exact_decimal_value_and_tolerance() {
+        let decimal = |mantissa: i64, exponent| Decimal {
+            mantissa: BigInt::from(mantissa),
+            exponent,
+            negative_zero: false,
+        };
+        assert_eq!(number("831.93"), Some((decimal(83193, -2), decimal(5, -3))));
+        assert_eq!(number("25%"), Some((decimal(25, -2), decimal(5, -3))));
+        assert_eq!(number("%"), None);
+    }
 }

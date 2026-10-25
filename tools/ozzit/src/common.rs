@@ -308,6 +308,13 @@ pub fn write_bytes(path: &Path, bytes: &[u8]) -> Result<()> {
 }
 pub fn stage_bytes(path: &Path, bytes: &[u8]) -> Result<tempfile::NamedTempFile> {
     use std::io::Write;
+    stage_bytes_with(path, bytes, |file, bytes| file.write_all(bytes))
+}
+fn stage_bytes_with(
+    path: &Path,
+    bytes: &[u8],
+    write: impl FnOnce(&mut tempfile::NamedTempFile, &[u8]) -> std::io::Result<()>,
+) -> Result<tempfile::NamedTempFile> {
     let parent = path
         .parent()
         .filter(|p| !p.as_os_str().is_empty())
@@ -317,7 +324,7 @@ pub fn stage_bytes(path: &Path, bytes: &[u8]) -> Result<tempfile::NamedTempFile>
         .suffix(".tmp")
         .tempfile_in(parent)
         .map_err(|e| io_error(&e, path))?;
-    file.write_all(bytes).map_err(|e| io_error(&e, path))?;
+    write(&mut file, bytes).map_err(|e| io_error(&e, path))?;
     #[cfg(unix)]
     if let Ok(meta) = std::fs::metadata(path) {
         file.as_file()
@@ -327,11 +334,23 @@ pub fn stage_bytes(path: &Path, bytes: &[u8]) -> Result<tempfile::NamedTempFile>
     Ok(file)
 }
 pub fn replace_atomically(path: &Path, bytes: &[u8]) -> Result<()> {
-    stage_bytes(path, bytes)?
-        .persist(path)
-        .map_err(|e| io_error(&e.error, path))?;
+    replace_atomically_with(path, bytes, |file, path| file.persist(path))
+}
+fn replace_atomically_with(
+    path: &Path,
+    bytes: &[u8],
+    persist: impl FnOnce(
+        tempfile::NamedTempFile,
+        &Path,
+    ) -> std::result::Result<std::fs::File, tempfile::PersistError>,
+) -> Result<()> {
+    persist(stage_bytes(path, bytes)?, path).map_err(|e| io_error(&e.error, path))?;
     Ok(())
 }
+
+#[cfg(test)]
+#[path = "common_retirement.rs"]
+mod retirement_tests;
 
 pub fn resolve_target(part: &str, target: &str) -> String {
     let joined = if target.starts_with('/') {

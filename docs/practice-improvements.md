@@ -120,7 +120,7 @@ are feasible.
 
 The palette was verified against the live
 [website tokens](https://duguid.com.au/assets/tokens.css?v=20261013) and Ozzit's
-existing `tools/postbuild/workbook_palette.py`. It uses black `#000000`, ivory
+existing `ozzit workbook_palette` command. It uses black `#000000`, ivory
 `#FFFFF0`, Tyrian purple `#66023C` and crimson `#990024`. Platinum `#E5E4E2`
 identifies inputs. Existing financial-model conventions retain blue input text;
 the companion uses `#2455A4`. Purple headers carry ivory text. Warnings use
@@ -146,7 +146,7 @@ Excel session is open. Rebuild in this order:
 ```powershell
 node tools/build_practice_calculators.mjs
 powershell.exe -NoProfile -File tools/prepare_practice_template.ps1
-python tools/sanitise_workbook.py templates/practice-calculators.xlsx
+tools/ozzit/target/release/ozzit sanitise_workbook templates/practice-calculators.xlsx
 powershell.exe -NoProfile -File tools/excel_practice_selftest.ps1 -Out docs/practice-native-evidence.json
 ```
 

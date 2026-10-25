@@ -364,11 +364,20 @@ fn stale_report(
     if stale.len() > 20 {
         out.push(format!("  ... and {} more", stale.len() - 20));
     }
-    out.push("Run: python tools/refresh_cache.py".into());
+    out.push("Run: ozzit refresh_cache".into());
     fail(out)
 }
 
 pub fn outcome(workbook: &str, dump: Result<Dump>, dump_path: &Path) -> Output {
+    outcome_with_floor(workbook, dump, dump_path, FLOOR)
+}
+
+fn outcome_with_floor(
+    workbook: &str,
+    dump: Result<Dump>,
+    dump_path: &Path,
+    floor: usize,
+) -> Output {
     if let Some(failure) = dump_failure(dump) {
         return failure;
     }
@@ -402,9 +411,9 @@ pub fn outcome(workbook: &str, dump: Result<Dump>, dump_path: &Path) -> Output {
         return missing_report(&missing, &values.1);
     }
 
-    if both.len() < FLOOR {
+    if both.len() < floor {
         return fail(vec![format!(
-            "FAIL: only {} cells carried both a cached and a calculated value, under the floor of {FLOOR}. Something skipped most of the workbook rather than checking it.",
+            "FAIL: only {} cells carried both a cached and a calculated value, under the floor of {floor}. Something skipped most of the workbook rather than checking it.",
             both.len()
         )]);
     }
@@ -522,6 +531,14 @@ pub fn repository_root(script: &str) -> PathBuf {
 }
 
 pub fn verify(args: &[String]) -> Output {
+    verify_with(args, FLOOR, run_dumper)
+}
+
+fn verify_with(
+    args: &[String],
+    floor: usize,
+    launch: impl FnOnce(&str, &[String], Duration) -> Result<Dump>,
+) -> Output {
     let workbook = args.first().map_or("ozzit.xlsx", String::as_str);
     if !Path::new(workbook).exists() {
         return Output::failure(format!("FAIL: no such workbook: {workbook}"));
@@ -535,9 +552,9 @@ pub fn verify(args: &[String]) -> Output {
         Err(e) => return Output::failure(format!("FAIL: {e}")),
     };
     let absolute = std::path::absolute(workbook).unwrap_or_else(|_| workbook.into());
-    // Same boundary as refresh_cache.py: a modal dialog would otherwise hang the
+    // Same boundary as refresh_cache: a modal dialog would otherwise hang the
     // gate forever, and a host with no powershell.exe must FAIL, not crash.
-    let dump = run_dumper(
+    let dump = launch(
         "powershell.exe",
         &[
             "-NoProfile".into(),
@@ -552,5 +569,9 @@ pub fn verify(args: &[String]) -> Output {
         ],
         Duration::from_secs(DUMP_TIMEOUT_SECONDS),
     );
-    outcome(workbook, dump, &dump_path)
+    outcome_with_floor(workbook, dump, &dump_path, floor)
 }
+
+#[cfg(test)]
+#[path = "cache_retirement.rs"]
+mod retirement_tests;

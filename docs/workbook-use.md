@@ -33,8 +33,9 @@ The workbook tracked in this repository is the candidate the gates below run aga
    one module into another does not resolve. `oz.txt` joins the 6 module texts,
    verbatim and in build order, so that one import into a new module named `oz`
    recreates every shipped `oz.` name with its cross-module calls intact.
-   `tools/build_module.py` writes it from `src/`, and `tools/tests/test_build_module.py`
-   holds the tracked file to the current `src/`, to every `oz.` name the workbook
+   `ozzit build_module` writes it from `src/`, and the native module tests in
+   `tools/ozzit/tests/module_contracts.rs` hold the tracked file to the current
+   `src/`, to every `oz.` name the workbook
    ships (the 5 help tables included) and to `functions.csv`. Those checks bind the
    file to the workbook commit it ships with; they do not exercise the add-in's
    import route, which has not yet been run against `oz.txt` as a native gate, so
@@ -44,10 +45,10 @@ The workbook tracked in this repository is the candidate the gates below run aga
    `src/` is for reading, diffing, and pasting a single definition into Name
    Manager, where the name is yours to choose. To change a function, edit its
    definition in `src/` and follow the run order in `tools/postbuild/README.md`:
-   `tools/compile_sources.py` renders it into the stored form and writes it over the
-   defined name that ships, `tools/build_module.py` rebuilds `oz.txt`,
-   `tools/sync_afe_store.py` copies the source into the workbook's AFE store, and
-   `tools/sanitise_workbook.py` runs last.
+   `ozzit compile_sources` renders it into the stored form and writes it over the
+   defined name that ships, `ozzit build_module` rebuilds `oz.txt`,
+   `ozzit sync_afe_store` copies the source into the workbook's AFE store, and
+   `ozzit sanitise_workbook` runs last.
 
    Imported names can collide with names a workbook already holds, and a module
    import brings every function at once. Try the import in a blank workbook first,
@@ -55,7 +56,7 @@ The workbook tracked in this repository is the candidate the gates below run aga
    names in Name Manager, or delete the `oz` module in the add-in and save; both
    leave formulas that used the functions showing `#NAME?` until they are replaced.
 
-The workbook opens showing the numbers its own formulas produce, so nothing has to recalculate before it reads correctly and Excel does not ask you to save a file you never edited. That is a property the build cannot give it: the build edits the workbook as XML with no formula engine, so `tools/refresh_cache.py` recalculates it in Excel afterwards and `tools/verify_cache.py` proves every cached value matches.
+The workbook opens showing the numbers its own formulas produce, so nothing has to recalculate before it reads correctly and Excel does not ask you to save a file you never edited. That is a property the build cannot give it: the build edits the workbook as XML with no formula engine, so `ozzit refresh_cache` recalculates it in Excel afterwards and `ozzit verify_cache` proves every cached value matches.
 
 Functions with a data-validation companion (named with a `DV` suffix, such as `oz.AmortiseλDV`) diagnose argument problems when the parent function returns something unexpected.
 
@@ -88,7 +89,7 @@ those examples only. It does not test Excel for Mac, Excel for the web, the AFE
 import route or every function. Numerical agreement with another engine is
 recorded separately in the [pyxirr comparison](pyxirr-comparison.md).
 
-The normal verification sequence runs `python tools/verify_native_evidence.py`.
+The normal verification sequence runs `ozzit verify_native_evidence`.
 It checks the retained v3.4.2 records, runner byte hashes, case inventories,
 reported differences and installation values. It fails on runner drift or
 contradictory evidence. If the checkout workbook differs from v3.4.2, it labels

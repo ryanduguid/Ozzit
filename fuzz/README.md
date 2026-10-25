@@ -1,28 +1,35 @@
-The Atheris target feeds fabricated text to two parsers in `tools/`: the
-module statement splitter in `verify_sources.py`, which every gate uses to read
-`src/`, and the help-result number parser in `generate_selftest_examples.py`,
-which turns printed examples into self-test checks. The splitter must return
-strings, and every line the number parser accepts must give a finite value
-with a positive tolerance. Neither may raise. The seed corpus holds the first
-4 KiB of each `src/` module, a few printed help results and an empty file.
+The Rust target feeds fabricated text to the native module statement splitter
+and help-result number parser. Neither may panic, and every accepted number
+must have a positive exact tolerance. Rust's return types guarantee strings
+and finite decimals. Invalid UTF-8 is decoded with replacement. The seed corpus
+holds the first 4 KiB of each `src/` module, a few printed help results and an
+empty file.
 
-On Linux with Python 3.14, from the repository root, run:
-
-```sh
-python -m pip install --require-hashes --only-binary :all: -r fuzz/requirements-fuzz.txt
-python -m fuzz.ozzit_parsers fuzz/corpus -max_total_time=60 -max_len=4096 -timeout=2 -rss_limit_mb=1024
-```
-
-The tools use only the standard library, so the harness imports them from
-`tools/`. `.github/workflows/fuzzing.yml` runs the target after main pushes,
-weekly and on demand, with read-only repository access and a five-minute
-timeout; it is not a merge gate. `tools/tests/test_fuzz_harness.py` replays
-the corpus in the unit tests. Atheris does not support Windows, so
-coverage-guided fuzzing runs on Linux. A successful run is bounded evidence,
-not proof that every input is handled.
-
-After changing the pinned version, regenerate the hashes with:
+On Linux, from the repository root, run:
 
 ```sh
-uv pip compile fuzz/requirements-fuzz.in --python-version 3.14 --python-platform x86_64-unknown-linux-gnu --generate-hashes --output-file fuzz/requirements-fuzz.txt
+rustup toolchain install nightly-2026-10-15 --profile minimal
+cargo install cargo-fuzz --locked --version 0.13.2
+cargo fetch --locked --manifest-path tools/ozzit/fuzz/Cargo.toml
+corpus=$(mktemp -d)
+cp fuzz/corpus/* "$corpus/"
+cd tools/ozzit
+CARGO_NET_OFFLINE=true cargo +nightly-2026-10-15 fuzz run parsers "$corpus" -- -max_total_time=60 -max_len=4096 -timeout=2 -rss_limit_mb=1024
 ```
+
+Use an owned corpus copy because libFuzzer adds generated seeds to it. Inspect
+and retain useful failures before removing that copy. The target and its
+separate Cargo lockfile live in `tools/ozzit/fuzz/`; ordinary stable Rust tests
+in `tools/ozzit/tests/fuzz_corpus.rs` replay the same harness and all committed
+seeds, plus invalid-byte, line-boundary and very small decimal cases.
+
+`.github/workflows/fuzzing.yml` runs the target after main pushes, weekly and
+on demand, with read-only repository access and a 20-minute job timeout. Its
+random exploration lasts 60 seconds and is not a merge gate. A successful run
+is bounded evidence, not proof that every input is handled.
+
+The Python reference target, its Atheris requirements and its Python tests are
+retired. Stable Rust tests retain the seed replay and exercise the positive
+tolerance guard with a zero-tolerance refusal control. The statement parser's
+`Vec<String>` return type guarantees that every statement is a string; exact
+decimals cannot represent NaN or infinity.

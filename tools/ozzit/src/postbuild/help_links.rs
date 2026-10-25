@@ -1,6 +1,9 @@
 //! Help-link pass: repoint 2 WEBPAGE rows copied from a neighbouring function.
 use super::*;
 
+#[cfg(test)]
+mod tests;
+
 /// (context prefix, old URL, new URL). The prefix is unique to the owning function.
 const SWAPS: [(&str, &str, &str); 2] = [
     (
@@ -44,6 +47,15 @@ fn validate(text: &str, store: &str, failures: &mut Vec<String>) {
 }
 
 pub fn run(workbook: &Path, src: &py::PyPath) -> Result<Vec<String>> {
+    run_with(workbook, src, &mut write_text)
+}
+
+// Exercise failures in the production transaction with local callbacks.
+fn run_with(
+    workbook: &Path,
+    src: &py::PyPath,
+    source_write: &mut impl FnMut(&Path, &str) -> Result<()>,
+) -> Result<Vec<String>> {
     let ratios_path = src.join("Ratios.txt");
     if !ratios_path.fs().is_file() {
         return Err(format!("src: missing {ratios_path}"));
@@ -61,14 +73,14 @@ pub fn run(workbook: &Path, src: &py::PyPath) -> Result<Vec<String>> {
     let new_ratios = apply_swaps(&ratios, &forms("src"));
     let original = read_bytes(workbook)?;
     let mut changed = Vec::new();
-    let write = |changed: &mut Vec<String>, parts: &mut Parts| -> Result<()> {
+    let mut write = |changed: &mut Vec<String>, parts: &mut Parts| -> Result<()> {
         if new_book != book {
             parts.insert(BOOK.into(), new_book.clone().into_bytes());
             write_deterministic(workbook, parts)?;
             changed.push("workbook".into());
         }
         if new_ratios != ratios {
-            write_text(&ratios_path.fs(), &new_ratios)?;
+            source_write(&ratios_path.fs(), &new_ratios)?;
             changed.push("src/Ratios.txt".into());
         }
         Ok(())
@@ -76,7 +88,7 @@ pub fn run(workbook: &Path, src: &py::PyPath) -> Result<Vec<String>> {
     if let Err(e) = write(&mut changed, &mut parts) {
         // Restore the published workbook first, then the source.
         let restored = replace_atomically(workbook, &original);
-        write_text(&ratios_path.fs(), &ratios)?;
+        source_write(&ratios_path.fs(), &ratios)?;
         restored?;
         return Err(e);
     }
