@@ -95,7 +95,8 @@ fn add_to_src_appends_after_a_final_newline_either_way() {
     let original = std::fs::read_to_string(root().join("src/Financial.txt")).unwrap();
     assert_eq!(src_state(&fixtures::source(&f)).unwrap(), "absent");
     assert_eq!(src_state(&original).unwrap(), "applied");
-    // Frozen from the original Python pass on this exact reverted fixture.
+    // Frozen from the original Python pass on this exact reverted fixture;
+    // re-frozen from main's Python pass after main changed src/Financial.txt.
     // Later additions follow the shipped lease blocks, so reapply appends them anew.
     use sha2::{Digest, Sha256};
     assert_eq!(
@@ -103,7 +104,7 @@ fn add_to_src_appends_after_a_final_newline_either_way() {
             .iter()
             .map(|b| format!("{b:02x}"))
             .collect::<String>(),
-        "557bad6d52b091d44249b22e6d03e9f3bf68aa1314f5231802131d89466ff37c"
+        "233bf27dedd66e8c28603a8122c8db5730eac1d3b18d0c7c16db402beef85ddf"
     );
 }
 #[test]
