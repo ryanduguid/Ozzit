@@ -210,7 +210,7 @@ IntOnIntλ = LAMBDA(
                             "FUNCTION:      →IntOnIntλ( Principal, Rate)¶" & 
                             "DESCRIPTION:   →Calculate Interest on Interest (Interest only). Use to determine amount ¶" &
                                            "→needed to cover borrowed interest¶" & 
-                            "WEBSITE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Principal     →(Required) Principal amount¶" & 
@@ -243,7 +243,7 @@ IRRλ = LAMBDA(
     LET(Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →IRRλ( Values, Dates)¶" & 
                             "DESCRIPTION:   →Calculates IRR, correcting for when the first investment is not in the first period¶" & 
-                            "WEBSITE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Values         →(Required) A row of investments (negative) and distributions (positive)¶" & 
@@ -366,21 +366,27 @@ Cumulativeλ = LAMBDA(
                             "FUNCTION:      →Cumulativeλ( Totals, [OpeningBalance])¶" &
                             "DESCRIPTION:   →Creates a row or column of cumulative totals from a total row or column¶" & 
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
-                            "VERSION:       →20 Aug 2026¶" &
-                            "PARAMETERS:    →¶" & 
-                            "Totals         →(Required) A row or column of totals from which to run cumulative totals¶" & 
-                            "OpeningBalance →(Optional) A starting balance. This defaults to 0¶" & 
-                            "EXAMPLES:      →¶" & 
+                            "VERSION:       →24 Oct 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "Totals         →(Required) One row or one column of totals from which to run cumulative totals.¶" &
+                            "               →A block of several rows and columns returns a message¶" &
+                            "OpeningBalance →(Optional) A starting balance. This defaults to 0¶" &
+                            "EXAMPLES:      →¶" &
                             "Result         →Formula (oz is assumed to be the module's name)¶" &
                             "1,3,6          →=oz.Cumulativeλ(Sequence(,3))",
                             "→", "¶" )
-                    ),            
+                    ),
     //  Check inputs - Omitted required arguments
         Help?,          ISOMITTED( Totals),
+    //  Check inputs - SCAN runs through a block row by row, so each row would start from
+    //  the previous row's closing total
+        Block?,         AND( ROWS( Totals) > 1, COLUMNS( Totals) > 1),
+        BlockMessage,   "Totals must be one row or one column. A block would carry each row's running total into the next row.",
     //  Procedure
         Result,         SCAN( OpeningBalance, Totals, LAMBDA(PreviousAmount, CurrentAmount, PreviousAmount + CurrentAmount)),
-    //  Return Result
-        CHOOSE(Help? + 1, Result, Help)
+    //  Return Result, Help, or the message
+        Return,         IF( Help?, 2, IF( Block?, 3, 1)),
+        CHOOSE( Return, Result, Help, BlockMessage)
     )  
 );
 
@@ -398,9 +404,10 @@ RollingAvgλ = LAMBDA(
                             "DESCRIPTION:   →Creates averages for preceding values of a set size moving¶" &
                                            "→from beginning to end over a row of values¶" & 
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
-                            "VERSION:       →20 Aug 2026¶" &
+                            "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Values         →(Required) A row of values to be averaged.¶" & 
+                            "               →A column, or a block of several rows, returns a message¶" & 
                             "Size           →(Required) The number of values to average that ¶" & 
                                            "→include and precede the current value¶" & 
                             "EXAMPLES:      →¶" &
@@ -411,6 +418,10 @@ RollingAvgλ = LAMBDA(
     //  Check inputs - Omitted required arguments
         Help?,          OR( ISOMITTED( Values),
                             ISOMITTED( Size)),
+    //  Check inputs - each window is a run of columns, so a column or a block would be
+    //  added up across its rows into a single row
+        NotRow?,        ROWS( Values) > 1,
+        RowMessage,     "Values must be one row. For a column of values, pass TRANSPOSE( Values).",
     //  Procedure
         Counter,        SEQUENCE(, COLUMNS( Values)),
     //  Each window is the current column and up to Size - 1 columns before it
@@ -419,8 +430,9 @@ RollingAvgλ = LAMBDA(
                                 AVERAGE( CHOOSECOLS( Values, SEQUENCE( 1, MIN( Val, Size), MAX( 1, Val - Size + 1))))
                             )
                         ),
-    //  Return Result
-        CHOOSE(Help? + 1, Result, Help)
+    //  Return Result, Help, or the message
+        Return,         IF( Help?, 2, IF( NotRow?, 3, 1)),
+        CHOOSE( Return, Result, Help, RowMessage)
     )
 );
 
@@ -438,9 +450,10 @@ RollingMaxλ = LAMBDA(
                             "DESCRIPTION:   →Creates the maximum for preceding values of a set size moving¶" &
                                            "→from beginning to end over a row of values¶" & 
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
-                            "VERSION:       →20 Aug 2026¶" &
+                            "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Values         →(Required) A row of values to be maxed.¶" & 
+                            "               →A column, or a block of several rows, returns a message¶" & 
                             "Size           →(Required) The number of values to find the maximum of that ¶" & 
                                            "→include and precede the current value¶" & 
                             "EXAMPLES:      →¶" &
@@ -451,6 +464,10 @@ RollingMaxλ = LAMBDA(
     //  Check inputs - Omitted required arguments
         Help?,          OR( ISOMITTED( Values),
                             ISOMITTED( Size)),
+    //  Check inputs - each window is a run of columns, so a column or a block would be
+    //  added up across its rows into a single row
+        NotRow?,        ROWS( Values) > 1,
+        RowMessage,     "Values must be one row. For a column of values, pass TRANSPOSE( Values).",
     //  Procedure
         Counter,        SEQUENCE(, COLUMNS( Values)),
     //  Each window is the current column and up to Size - 1 columns before it
@@ -459,8 +476,9 @@ RollingMaxλ = LAMBDA(
                                 MAX( CHOOSECOLS( Values, SEQUENCE( 1, MIN( Val, Size), MAX( 1, Val - Size + 1))))
                             )
                         ),
-    //  Return Result
-        CHOOSE(Help? + 1, Result, Help)
+    //  Return Result, Help, or the message
+        Return,         IF( Help?, 2, IF( NotRow?, 3, 1)),
+        CHOOSE( Return, Result, Help, RowMessage)
     )
 );
 
@@ -478,9 +496,10 @@ RollingMinλ = LAMBDA(
                             "DESCRIPTION:   →Creates the minimum for preceding values of a set size moving¶" &
                                            "→from beginning to end over a row of values¶" & 
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
-                            "VERSION:       →20 Aug 2026¶" &
+                            "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Values         →(Required) A row of values to take the minimum of.¶" & 
+                            "               →A column, or a block of several rows, returns a message¶" & 
                             "Size           →(Required) The number of values to find the minimum of that ¶" & 
                                            "→include and precede the current value¶" & 
                             "EXAMPLES:      →¶" &
@@ -491,6 +510,10 @@ RollingMinλ = LAMBDA(
     //  Check inputs - Omitted required arguments
         Help?,          OR( ISOMITTED( Values),
                             ISOMITTED( Size)),
+    //  Check inputs - each window is a run of columns, so a column or a block would be
+    //  added up across its rows into a single row
+        NotRow?,        ROWS( Values) > 1,
+        RowMessage,     "Values must be one row. For a column of values, pass TRANSPOSE( Values).",
     //  Procedure
         Counter,        SEQUENCE(, COLUMNS( Values)),
     //  Each window is the current column and up to Size - 1 columns before it
@@ -499,8 +522,9 @@ RollingMinλ = LAMBDA(
                                 MIN( CHOOSECOLS( Values, SEQUENCE( 1, MIN( Val, Size), MAX( 1, Val - Size + 1))))
                             )
                         ),
-    //  Return Result
-        CHOOSE(Help? + 1, Result, Help)
+    //  Return Result, Help, or the message
+        Return,         IF( Help?, 2, IF( NotRow?, 3, 1)),
+        CHOOSE( Return, Result, Help, RowMessage)
     )
 );
 
@@ -518,9 +542,10 @@ RollingSumλ = LAMBDA(
                             "DESCRIPTION:   →Creates totals for preceding values of a set size moving¶" &
                                            "→from beginning to end over a row of values¶" & 
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
-                            "VERSION:       →20 Aug 2026¶" &
+                            "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Values         →(Required) A row of values to be totalled.¶" & 
+                            "               →A column, or a block of several rows, returns a message¶" & 
                             "Size           →(Required) The number of values to total that ¶" & 
                                            "→include and precede the current value¶" & 
                             "EXAMPLES:      →¶" &
@@ -531,6 +556,10 @@ RollingSumλ = LAMBDA(
     //  Check inputs - Omitted required arguments
         Help?,          OR( ISOMITTED( Values),
                             ISOMITTED( Size)),
+    //  Check inputs - each window is a run of columns, so a column or a block would be
+    //  added up across its rows into a single row
+        NotRow?,        ROWS( Values) > 1,
+        RowMessage,     "Values must be one row. For a column of values, pass TRANSPOSE( Values).",
     //  Procedure
         Counter,        SEQUENCE(, COLUMNS( Values)),
     //  Each window is the current column and up to Size - 1 columns before it
@@ -539,8 +568,9 @@ RollingSumλ = LAMBDA(
                                 SUM( CHOOSECOLS( Values, SEQUENCE( 1, MIN( Val, Size), MAX( 1, Val - Size + 1))))
                             )
                         ),
-    //  Return Result
-        CHOOSE(Help? + 1, Result, Help)
+    //  Return Result, Help, or the message
+        Return,         IF( Help?, 2, IF( NotRow?, 3, 1)),
+        CHOOSE( Return, Result, Help, RowMessage)
     )
 );
 
@@ -607,9 +637,10 @@ SumPeriodsλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →SumPeriodsλ( Values, Dates, PeriodStarts)¶" &
                             "DESCRIPTION:   →Summarises values where each value column is for one day ¶" & 
-                                           "→into one column for each period. ¶" & 
+                                           "→into one column for each period. ¶" &
+                            "NOTES:         →A date before the first period start is left out; one on or after the last start goes to the last period.¶" & 
                             "SEE ALSO:      →Excel 365 now has GROUPBY and PIVOTBY for formula-driven aggregation.¶" &
-                            "VERSION:       →20 Aug 2026¶" &
+                            "VERSION:       →24 Oct 2026¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
                             "PARAMETERS:→¶" & 
                             "Values         →(Required) A two dimensional array/range containing values to be summed where" & 
@@ -955,8 +986,8 @@ Depreciateλ = LAMBDA(
                             "               →[SalvageValues], [DisposalDates], [DisposalCosts], [Methods], [Factors])¶" &
                             "DESCRIPTION:   →Creates an array of CAPEX, depreciation, and book values for a model's timeline¶" & 
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit ¶" & 
-                            "VERSION:       →20 Aug 2026¶" &
-                            "NOTES:         →The methods used here differ from Excel's functions in several ways. Please see webpage for details.¶" &
+                            "VERSION:       →24 Oct 2026¶" &
+                            "NOTES:         →The methods differ from Excel's functions in several ways; see the webpage for details.¶" &
                             "PARAMETERS:    →¶" & 
                             "InitialValues  →(Required) The purchase values of each asset to depreciate¶" & 
                             "InServiceDates →(Required) The dates from which to start depreciating each asset¶" & 
@@ -965,7 +996,7 @@ Depreciateλ = LAMBDA(
                             "               →the arguments read InitialValues, InServiceDates, LifeInYears, Timeline.¶" & 
                             "Timeline       →(Required) The model's timeline or a row of period start dates. ¶" & 
                             "               →Timeline can be any interval: days, weeks, months, quarters or years¶" & 
-                            "SalvageValues  →(Optional: Default = 0) The book values of each asset after fully depreciated.¶" & 
+                            "SalvageValues  →(Optional: Default = 0) Book values once fully depreciated. Text or an error returns a message.¶" & 
                             "DisposalDates  →(Optional: Default = End of life) The dates on which the assets are removed from the books.¶" & 
                                            "→A disposal before the end of life writes the remaining book value off in that month.¶" & 
                             "DisposalCosts  →(Optional: Default = 0) The costs of removing each asset from the books, charged in the disposal period.¶" & 
@@ -998,9 +1029,16 @@ Depreciateλ = LAMBDA(
         LifeMessage,    "LifeInYears must be a whole number of years greater than 0 and no more than 100. "
                         & "Check the argument order: InitialValues, InServiceDates, LifeInYears, Timeline.",
     //  Set defaults and apply convenience conversions
-        SalvageValues,  IF( ISOMITTED( SalvageValues), 
-                            MAP( InitialValues, LAMBDA( Ele, 0)), 
-                            MAP( SalvageValues, LAMBDA(v, IFERROR( VALUE( v), 0)))),
+    //  A blank salvage cell is 0. Text that is not a number used to become 0 as well, which
+    //  depreciated an asset whose salvage was still to be decided down to nil without a word.
+    //  Text gets the message even when it reads as a number: VALUE and NUMBERVALUE also turn
+    //  "1/1/2026" into a date serial. An error gets it too: passed through, it turned the whole
+    //  schedule into one #VALUE!, whatever the error was.
+        SalvageValues,  IF( ISOMITTED( SalvageValues),
+                            MAP( InitialValues, LAMBDA( Ele, 0)),
+                            MAP( SalvageValues, LAMBDA(v, IFERROR( IF( ISNUMBER( v), v, IF( v = "", 0, NA())), NA())))),
+        BadSalvage?,    SUMPRODUCT( --ISNA( SalvageValues)) > 0,
+        SalvageMessage, "SalvageValues must be numbers or blank.",
         CvtSrvDates,    IF( NOT( ISOMITTED( InServiceDates)), 
                             IF( ISNUMBER( InServiceDates), 
                                 InServiceDates, 
@@ -1122,8 +1160,8 @@ Depreciateλ = LAMBDA(
                             )
                         ),
     //  Return Result, Help, or the message
-        Return,         IF( Help?, 2, IF( BadLife?, 3, 1)),
-        CHOOSE( Return, Result, Help, LifeMessage)
+        Return,         IF( Help?, 2, IF( BadLife?, 3, IF( BadSalvage?, 4, 1))),
+        CHOOSE( Return, Result, Help, LifeMessage, SalvageMessage)
     ) 
 );
 

@@ -3,8 +3,8 @@
   [
    "IsBetweenEλ and IsBetweenUλ default Inclusive to TRUE",
    [
-    "\"→\", \"¶\")), _xlpm.Help?, OR(_xlfn.ISOMITTED(_xlpm.Value), _xlfn.ISOMITTED(_xlpm.Low), _xlfn.ISOMITTED(_xlpm.Hi)),",
-    "\"→\", \"¶\")), _xlpm.Inclusive, IF(ISLOGICAL(_xlpm.Inclusive), _xlpm.Inclusive, TRUE), _xlpm.Help?, OR(_xlfn.ISOMITTED(_xlpm.Value), _xlfn.ISOMITTED(_xlpm.Low), _xlfn.ISOMITTED(_xlpm.Hi)),"
+    "\"→\", \"¶\" ) ), _xlpm.Help?, OR( _xlfn.ISOMITTED( _xlpm.Value), _xlfn.ISOMITTED( _xlpm.Low), _xlfn.ISOMITTED( _xlpm.Hi) ),",
+    "\"→\", \"¶\" ) ), _xlpm.Inclusive, IF( ISLOGICAL( _xlpm.Inclusive), _xlpm.Inclusive, TRUE), _xlpm.Help?, OR( _xlfn.ISOMITTED( _xlpm.Value), _xlfn.ISOMITTED( _xlpm.Low), _xlfn.ISOMITTED( _xlpm.Hi) ),"
    ],
    [
     "                        ),\n    //  Check inputs - Omitted required arguments\n        Help?,          OR( ISOMITTED( Value),\n                            ISOMITTED( Low),\n                            ISOMITTED( Hi)\n                        ),\n    //  Procedure\n        Result,         IF( Inclusive, \n",
@@ -172,6 +172,6 @@
  "SRC_INCLUSIVE_OLD": "                        ),\n    //  Check inputs - Omitted required arguments\n        Help?,          OR( ISOMITTED( Value),\n                            ISOMITTED( Low),\n                            ISOMITTED( Hi)\n                        ),\n    //  Procedure\n        Result,         IF( Inclusive, \n",
  "SRC_INCLUSIVE_TAIL": "    //  Check inputs - Omitted required arguments\n        Help?,          OR( ISOMITTED( Value),\n                            ISOMITTED( Low),\n                            ISOMITTED( Hi)\n                        ),\n    //  Procedure\n        Result,         IF( Inclusive, \n",
  "WORKBOOK_DIAGNOSTICS": "&amp; \"→¶\" &amp; \"DIAGNOSTICS →These functions diagnose problems in their associate function's arguments.¶\" &amp; \"→Should a function not work, it may be because there is a problem with the arguments.¶\" &amp; \"→Argument problems can include text where numbers should be, invalid dates, etc.¶\" &amp; \"→To see if you have argument problems, insert 'DV' between 'λ' and '('. ¶\" &amp; \"→Here is an example: CountDOWλDV( Start, End, 1). Hit enter to run diagnostics.¶\" &amp; \"→When finished, remove 'DV' to return the function to normal operation¶\" &amp; \"CountDOWλDV →¶\" &amp; \"IsBetweenλDV →¶\" &amp; \"IsOccurrenceDateλDV →¶\" &amp; \"OverLapDaysλDV →¶\" &amp; \"PeriodsλDV →¶\" &amp; \"PeriodLabelλDV →¶\" &amp; \"ScheduleRatesλDV →¶\" &amp; \"ScheduleRatesByItemsλDV→¶\" &amp; \"ScheduleValuesλDV →¶\" &amp; \"ScheduleValuesByItemsλDV→¶\" &amp; \"Timelineλ →\"",
- "WORKBOOK_INCLUSIVE_NEW": "\"→\", \"¶\")), _xlpm.Inclusive, IF(ISLOGICAL(_xlpm.Inclusive), _xlpm.Inclusive, TRUE), _xlpm.Help?, OR(_xlfn.ISOMITTED(_xlpm.Value), _xlfn.ISOMITTED(_xlpm.Low), _xlfn.ISOMITTED(_xlpm.Hi)),",
- "WORKBOOK_INCLUSIVE_OLD": "\"→\", \"¶\")), _xlpm.Help?, OR(_xlfn.ISOMITTED(_xlpm.Value), _xlfn.ISOMITTED(_xlpm.Low), _xlfn.ISOMITTED(_xlpm.Hi)),"
+ "WORKBOOK_INCLUSIVE_NEW": "\"→\", \"¶\" ) ), _xlpm.Inclusive, IF( ISLOGICAL( _xlpm.Inclusive), _xlpm.Inclusive, TRUE), _xlpm.Help?, OR( _xlfn.ISOMITTED( _xlpm.Value), _xlfn.ISOMITTED( _xlpm.Low), _xlfn.ISOMITTED( _xlpm.Hi) ),",
+ "WORKBOOK_INCLUSIVE_OLD": "\"→\", \"¶\" ) ), _xlpm.Help?, OR( _xlfn.ISOMITTED( _xlpm.Value), _xlfn.ISOMITTED( _xlpm.Low), _xlfn.ISOMITTED( _xlpm.Hi) ),"
 }

@@ -703,22 +703,25 @@ AssetTurnoverRatioλ = LAMBDA(
 /*  FUNCTION NAME:  DSIλ
     DESCRIPTION:*//**Days Sales in Inventory Ratio (aka Average age of inventory 
 indicates the average time in days that a company takes to turn its inventory 
-(Average Inventory/Annual Cost of Goods Sold x 365) */
+(Average Inventory/Cost of Goods Sold x Days, with Days 365 by default) */
 DSIλ = LAMBDA(
 //  Parameter DeclaRations
         [AverageInventory],  
         [CostOfGoodsSold],    
+        [Days],
 //  Help
     LET(Help,   TRIM(TEXTSPLIT( 
-                        "FUNCTION:          →DSIλ( AverageInventory, CostOfGoodsSold)¶" & 
+                        "FUNCTION:          →DSIλ( AverageInventory, CostOfGoodsSold, [Days])¶" & 
                         "DESCRIPTION:       →Days Sales in Inventory Ratio (aka Average age of inventory)¶" & 
                                            "→indicates the average time in days that a company takes to turn its inventory¶" & 
-                                           "→(Average Inventory/Annual Cost of Goods Sold x 365 days)¶" & 
+                                           "→(Average Inventory / Cost of Goods Sold x Days, with Days 365 by default)¶" & 
                         "WEBPAGE:           →https://www.investopedia.com/terms/d/days-sales-inventory-dsi.asp ¶" &
-                        "VERSION:           →20 Aug 2026¶" &
+                        "VERSION:           →24 Oct 2026¶" &
                         "PARAMETERS:→¶" & 
                         "AverageInventory→  (Required) Average of period open and close Inventory¶" & 
-                        "CostOfGoodsSold→   (Required) Cost of Goods Sold (COGS) for a full year ¶" & 
+                        "CostOfGoodsSold→   (Required) Cost of Goods Sold (COGS) over the same Days¶" & 
+                        "Days→              (Optional: Default = 365) Days the COGS figure covers, such as 366¶" & 
+                                           "→for a leap year or 90 for a quarter. Days of 0 or less returns #NUM!¶" & 
                         "EXAMPLES:          →Formula (oz is assumed to be the module's name)¶" &
                         "40.8949 days       →=oz.DSIλ(54.9, 490 )", 
                     "→", "¶" )
@@ -727,10 +730,12 @@ DSIλ = LAMBDA(
         Help?,          OR( ISOMITTED( AverageInventory),
                             ISOMITTED( CostOfGoodsSold)
                         ),
-    //  Constants
-        DpY,            365, //Days per Year
     //  Procedure
-        Result,         AverageInventory/CostOfGoodsSold * DpY,
+    //  An omitted Days, a blank cell or an empty string is 365, as in ReceivableDaysλ.
+    //  Anything else that is not a number is #VALUE!, so text such as "0" cannot pass the
+    //  check below and then be read as 0 by the arithmetic.
+        Period,         IF( ISOMITTED( Days), 365, IF( Days = "", 365, IF( ISNUMBER( Days), Days, #VALUE!))),
+        Result,         IF( Period <= 0, #NUM!, AverageInventory/CostOfGoodsSold * Period),
     //  Return Result
         CHOOSE(Help? + 1, Result, Help)        
     )
@@ -1851,7 +1856,7 @@ CashConversionCycleλ = LAMBDA(
     //  Help
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →CashConversionCycleλ(InventoryDays, ReceivableDays, PayableDays, [WIPDays])¶" &
-                            "DESCRIPTION:   →Cash conversion cycle: the days between paying suppliers and collecting from customers.¶NOTES!         →InventoryDays + WIPDays + ReceivableDays - PayableDays. Pass day counts,¶               →for example from DSIλ(), ReceivableDaysλ(), PayableDaysλ() and WIPDaysλ(),¶               →with every component on the same period basis. DSIλ() multiplies by 365¶               →and expects a full year's cost of goods sold, so for a shorter window¶               →annualise that window's cost of goods sold before passing it. A negative¶               →result means suppliers are paid after customers pay. An omitted or blank¶               →WIPDays counts as 0. Pass WIPDays only where WIP is not already in the¶               →inventory behind InventoryDays, or it is counted twice.¶" &
+                            "DESCRIPTION:   →Cash conversion cycle: the days between paying suppliers and collecting from customers.¶NOTES!         →InventoryDays + WIPDays + ReceivableDays - PayableDays. Pass day counts,¶               →for example from DSIλ(), ReceivableDaysλ(), PayableDaysλ() and WIPDaysλ(),¶               →with every component on the same period basis. For a shorter window, pass¶               →that window's days as the Days argument of each component. A negative¶               →result means suppliers are paid after customers pay. An omitted or blank¶               →WIPDays counts as 0. Pass WIPDays only where WIP is not already in the¶               →inventory behind InventoryDays, or it is counted twice.¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/ratio-definitions.md¶" &
                             "VERSION:       →29 Sep 2026¶" &
                             "PARAMETERS:    →¶" &

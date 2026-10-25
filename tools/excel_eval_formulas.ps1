@@ -36,6 +36,23 @@ function Format-Cell($v) {
     return '"' + ([string]$v).Replace('\', '\\').Replace('"', '\"') + '"'
 }
 
+# The rows as JSON text, or $null when the first value is null. A string return is safe:
+# only an array is flattened on the way out of a function.
+function Format-Rows($vals) {
+    if ($vals -isnot [Array]) {
+        if ($null -eq $vals) { return $null }
+        return '[' + (Format-Cell $vals) + ']'
+    }
+    if ($null -eq $vals.GetValue($vals.GetLowerBound(0), $vals.GetLowerBound(1))) { return $null }
+    $rows = @()
+    for ($i = $vals.GetLowerBound(0); $i -le $vals.GetUpperBound(0); $i++) {
+        $row = @()
+        for ($j = $vals.GetLowerBound(1); $j -le $vals.GetUpperBound(1); $j++) { $row += Format-Cell $vals.GetValue($i, $j) }
+        $rows += '[' + ($row -join ',') + ']'
+    }
+    return $rows -join ','
+}
+
 $xl = $wb = $ws = $cell = $range = $null
 $parts = @()
 try {
@@ -56,21 +73,34 @@ try {
         $ws.Cells.Clear() | Out-Null
         Invoke-Excel { $cell.Formula2 = $case.formula } | Out-Null
         Invoke-Excel { $xl.Calculate() } | Out-Null
-        # Assigned in the branches: an if-expression would enumerate the Range into its cells.
-        $range = $cell
-        if ($cell.HasSpill) { $range = $cell.SpillingToRange }
-        # Not through a function: PowerShell flattens a 2-dimensional array on return.
-        $vals = $range.Value2
-        $rows = @()
-        if ($vals -is [Array]) {
-            for ($i = $vals.GetLowerBound(0); $i -le $vals.GetUpperBound(0); $i++) {
-                $row = @()
-                for ($j = $vals.GetLowerBound(1); $j -le $vals.GetUpperBound(1); $j++) { $row += Format-Cell $vals.GetValue($i, $j) }
-                $rows += '[' + ($row -join ',') + ']'
-            }
+        # Calculate() can return before the result lands. Wait for xlDone; CalculationState
+        # comes back as the enum's name, as excel_selftest.ps1 found.
+        $deadline = [DateTime]::UtcNow.AddSeconds(60)
+        while ((Invoke-Excel { "$($xl.CalculationState)" }) -notin @('xlDone', '0')) {
+            if ([DateTime]::UtcNow -gt $deadline) { throw "Excel did not finish calculating $($case.id)." }
+            Start-Sleep -Milliseconds 100
         }
-        else { $rows += '[' + (Format-Cell $vals) + ']' }
-        $parts += '"' + $case.id + '":[' + ($rows -join ',') + ']'
+        if (-not (Invoke-Excel { $cell.HasFormula })) { throw "Excel lost the formula for $($case.id)." }
+        # A formula's cell is never empty, so a null first value was read before Excel wrote it:
+        # on 24 Oct 2026 one run read a blank for a formula that returns text, and the self-test's
+        # range read came back null once after xlDone. Keep a result only once 2 reads in a row
+        # agree on its shape and every value, so a read taken mid-write is not recorded.
+        $text = $null
+        for ($try = 1; ; $try++) {
+            # Assigned in the branches: an if-expression would enumerate the Range into its cells.
+            $range = $cell
+            if ($cell.HasSpill) { $range = $cell.SpillingToRange }
+            # Not through a function: PowerShell flattens a 2-dimensional array on return.
+            $vals = $range.Value2
+            $now = Format-Rows $vals
+            # -ceq: -eq ignores case, so READY and ready would pass as the same read.
+            if ($null -ne $now -and $now -ceq $text) { break }
+            if ($try -ge 10) { throw "Excel returned no stable value for $($case.id)." }
+            $text = $now
+            if (-not [object]::ReferenceEquals($range, $cell)) { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($range) }
+            Start-Sleep -Milliseconds $(if ($null -eq $now) { 200 } else { 50 })
+        }
+        $parts += '"' + $case.id + '":[' + $text + ']'
         # Every Range left referenced keeps the automation Excel alive after Quit().
         foreach ($com in @($range, $cell)) { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($com) }
         $range = $cell = $null

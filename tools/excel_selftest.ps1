@@ -1072,6 +1072,118 @@ Near 'FinancialMonth: text StartMonth is refused'   "--ISNUMBER(SEARCH(`"1 to 12
 Near 'FinancialQuarter: TRUE StartMonth refused'    "--ISNUMBER(SEARCH(`"1 to 12`", $fqu(DATE(2026,7,1), TRUE)))" '1'
 Near 'YearToDate: StartMonth 7.5 is refused'        "--ISNUMBER(SEARCH(`"1 to 12`", $ytd({10,20}, DATE(2026,{7,8},1), DATE(2026,8,31), 7.5)))" '1'
 
+# --- Worksheet ranges and input shapes. The generated help examples pass array constants
+# and SEQUENCE, which never show a function that mishandles a real range, and nothing
+# checked what a column or a block did to a function written for a row. The scratch sheet
+# holds 1-4 in AE1:AH1, 10-40 in AE2:AH2, the dates 30 Jun, 1 Jul, 15 Jul and 1 Sep 2026
+# in AE3:AH3, period starts 1 Jul and 1 Aug 2026 in AE4:AF4 with month ends in AE5:AF5,
+# 1-3 down AN1:AN3, the dates 30 Jun 2026, 31 Jan 2027 and 29 Feb 2028 down AP1:AP3, and
+# TBA in AL1.
+$cu  = "oz.Cumulative$L"
+$sp  = "oz.SumPeriods$L"
+$dsi = "oz.DSI$L"
+$apA = 'DATE({2026;2027;2028},{6;1;2},{30;31;29})'
+$e3A = 'DATE(2026,{6,7,7,9},{30,1,15,1})'
+$e4A = 'DATE(2026,{7,8},1)'
+$e5A = 'DATE(2026,{7,8},31)'
+# A range must give exactly what the same values give as an array, and neither may be
+# one of the refusal messages, which all say what an argument must be.
+# The same shape and the same values, and not a refusal message.
+function SameAsArray($id, $ranged, $arrayed) {
+    Near $id "LET(x, $ranged, y, $arrayed, r, TEXTJOIN(`"|`",FALSE,x), a, TEXTJOIN(`"|`",FALSE,y), --AND(ROWS(x)=ROWS(y), COLUMNS(x)=COLUMNS(y), r=a, ISERROR(SEARCH(`"must`", r))))" '1'
+}
+
+# Cumulative ran SCAN over a block row by row, so each row opened on the previous row's
+# closing total. A row and a column are the shapes its help names; a block is refused.
+Near 'Cumulative: a row range'                   "SUMPRODUCT(ABS($cu(AE1:AH1) - {1,3,6,10}))" '0'
+Near 'Cumulative: a column range'                "SUMPRODUCT(ABS($cu(AN1:AN3) - {1;3;6}))" '0'
+Near 'Cumulative: an opening balance on a range' "INDEX($cu(AE1:AH1, 100), 1, 4)" '110'
+Near 'Cumulative: a block range is refused'      "--ISNUMBER(SEARCH(`"one row or one column`", $cu(AE1:AH2)))" '1'
+Near 'Cumulative: a block array is refused'      "--ISNUMBER(SEARCH(`"one row or one column`", $cu({1,2;3,4})))" '1'
+
+# The rolling functions window over columns. A column came back as one total of the whole
+# column and a block as its rows added together, both looking like an answer.
+foreach ($r in @(@('Sum', 'AE1:AH1', '{1,3,5,7}'), @('Avg', 'AE1:AH1', '{1,1.5,2.5,3.5}'),
+                 @('Max', 'AE2:AH2', '{10,20,30,40}'), @('Min', 'AE2:AH2', '{10,10,20,30}'))) {
+    $fn = "oz.Rolling$($r[0])$L"
+    Near "Rolling$($r[0]): a row range"         "SUMPRODUCT(ABS($fn($($r[1]), 2) - $($r[2])))" '0'
+    Near "Rolling$($r[0]): a column is refused" "--ISNUMBER(SEARCH(`"must be one row`", $fn(AN1:AN3, 2)))" '1'
+    Near "Rolling$($r[0]): the column message names TRANSPOSE" "--ISNUMBER(SEARCH(`"TRANSPOSE`", $fn(AN1:AN3, 2)))" '1'
+    Near "Rolling$($r[0]): a block is refused"  "--ISNUMBER(SEARCH(`"must be one row`", $fn(AE1:AH2, 2)))" '1'
+    Near "Rolling$($r[0]): a calculated column is refused" "--ISNUMBER(SEARCH(`"must be one row`", $fn(SEQUENCE(3), 2)))" '1'
+    Near "Rolling$($r[0]): a calculated block is refused"  "--ISNUMBER(SEARCH(`"must be one row`", $fn(SEQUENCE(2,2), 2)))" '1'
+}
+Near 'RollingSum: a transposed column, as the message advises' "SUMPRODUCT(ABS(oz.RollingSum$L(TRANSPOSE(AN1:AN3), 2) - {1,3,5}))" '0'
+
+# SumPeriods leaves out a date before the first period start and gives a date after the
+# last start to the last period, as its help now says. Pin both, on ranges.
+Near 'SumPeriods: range inputs'                         "SUMPRODUCT(ABS($sp(AE1:AH2, AE3:AH3, AE4:AF4) - {5,4;50,40}))" '0'
+Near 'SumPeriods: a date before the first start is left out' "SUM(AE1:AH2) - SUM($sp(AE1:AH2, AE3:AH3, AE4:AF4))" '11'
+Near 'SumPeriods: a later date goes to the last period' "INDEX($sp(AE1:AH1, AE3:AH3, AE4:AF4), 1, 2)" '4'
+Near 'SumPeriods: a date on the last start goes to the last period' `
+     "SUMPRODUCT(ABS($sp({10,20,30}, DATE(2026,{6,7,8},{30,1,1}), DATE(2026,{7,8},1)) - {20,30}))" '0'
+
+# Depreciate read a salvage value it could not parse as 0, so an asset whose salvage was
+# still TBA depreciated to nil without a word.
+$dpTl = 'EDATE(DATE(2026,7,1), SEQUENCE( , 60, 0))'
+$dpS  = "1000, DATE(2026,7,1), 5, $dpTl"
+Near 'Depreciate: text salvage is refused'          "--ISNUMBER(SEARCH(`"SalvageValues must be`", $dp($dpS, `"TBA`")))" '1'
+Near 'Depreciate: text salvage in a cell is refused' "--ISNUMBER(SEARCH(`"SalvageValues must be`", $dp($dpS, AL1)))" '1'
+Near 'Depreciate: a blank salvage cell is 0'        "SUMPRODUCT(ABS($dp($dpS, Z1) - $dp($dpS)))" '0'
+# Text is refused even when it reads as a number, since VALUE also reads date text as a serial.
+foreach ($t in '100', '1/1/2026', '12:00') {
+    Near "Depreciate: salvage text $t is refused" "--ISNUMBER(SEARCH(`"SalvageValues must be`", $dp($dpS, `"$t`")))" '1'
+}
+Near 'Depreciate: a salvage amount still applies' `
+     "SUM(INDEX($dp($dpS, 0), 3, 0)) - SUM(INDEX($dp($dpS, 100), 3, 0))" '100' '0.005'
+# An error salvage gets the message as well. Passed through, it made the whole schedule one
+# #VALUE!, whichever error it was and however many assets were fine.
+Near 'Depreciate: an error salvage is refused' "--ISNUMBER(SEARCH(`"SalvageValues must be`", $dp($dpS, NA())))" '1'
+Near 'Depreciate: one asset''s error salvage is refused' `
+     "--ISNUMBER(SEARCH(`"SalvageValues must be`", $dp({1000;1000}, DATE(2026,7,1)*{1;1}, {5;5}, $dpTl, {100;#DIV/0!})))" '1'
+# More than one asset needs one life per asset; a single life then returns #VALUE!. A
+# multi-asset schedule separates its assets with text, so compare it as text.
+SameAsArray 'Depreciate: range inputs equal arrays' `
+     "$dp(AN1:AN2, AP2:AP3, {5;5}, $dpTl)" "$dp({1;2}, DATE({2027;2028},{1;2},{31;29}), {5;5}, $dpTl)"
+
+# DSI fixed 365 days where the other day ratios take Days.
+Near 'DSI: Days defaults to 365'      "$dsi(54.9, 490)"         '54.9/490*365'
+Near 'DSI: Days of 366'               "$dsi(54.9, 490, 366)"    '54.9/490*366'
+Near 'DSI: a quarter'                 "$dsi(54.9, 120, 90)"     '54.9/120*90'
+Near 'DSI: a blank Days cell is 365'  "$dsi(54.9, 490, Z1)"     '54.9/490*365'
+Near 'DSI: an empty Days is 365'      "$dsi(54.9, 490, `"`")" '54.9/490*365'
+Near 'DSI: negative Days is #NUM!'    "ERROR.TYPE($dsi(54.9, 490, -1))"     '6'
+Near 'DSI: an error Days passes through' "ERROR.TYPE($dsi(54.9, 490, NA()))" '7'
+Near 'DSI: a #DIV/0! Days passes through' "ERROR.TYPE($dsi(54.9, 490, 1/0))" '2'
+Near 'DSI: word Days is #VALUE!'          "ERROR.TYPE($dsi(54.9, 490, `"TBA`"))" '3'
+Near 'DSI: Days of 0 is #NUM!'        "ERROR.TYPE($dsi(54.9, 490, 0))"      '6'
+Near 'DSI: text Days is #VALUE!'      "ERROR.TYPE($dsi(54.9, 490, `"90`"))" '3'
+
+# Every date function given worksheet ranges, against the same dates as calculated arrays.
+SameAsArray 'FinancialYear: a range of dates'    "$fy(AP1:AP3)"  "$fy($apA)"
+SameAsArray 'FinancialMonth: a range of dates'   "$fmo(AP1:AP3)" "$fmo($apA)"
+SameAsArray 'FinancialQuarter: a range of dates' "$fqu(AP1:AP3)" "$fqu($apA)"
+SameAsArray 'PeriodLabel: a range of dates'      "oz.PeriodLabel$L(AP1:AP3)" "oz.PeriodLabel$L($apA)"
+SameAsArray 'DateDif: ranges of dates'           "oz.DateDif$L(AP1:AP2, AP2:AP3)" `
+                                                 "oz.DateDif$L(DATE({2026;2027},{6;1},{30;31}), DATE({2027;2028},{1;2},{31;29}))"
+SameAsArray 'PeriodStart: a range of dates'      "oz.PeriodStart$L(AF3, 1, AP1:AP3)" "oz.PeriodStart$L(DATE(2026,7,1), 1, $apA)"
+SameAsArray 'IsBetween: a range of dates'        "oz.IsBetween$L(AE3:AH3, AE4, AF4)" "oz.IsBetween$L($e3A, DATE(2026,7,1), DATE(2026,8,1))"
+SameAsArray 'IsOccurrenceDate: a range of dates' "oz.IsOccurrenceDate$L(AE3:AH3, AF3)" "oz.IsOccurrenceDate$L($e3A, DATE(2026,7,1))"
+SameAsArray 'Periods: ranges of dates'           "oz.Periods$L(AE4:AF4, AE5:AF5)" "oz.Periods$L($e4A, $e5A)"
+SameAsArray 'OverLapDays: ranges of dates'       "oz.OverLapDays$L(AE4:AF4, AE5:AF5, DATE(2026,7,15), DATE(2026,8,15))" `
+                                                 "oz.OverLapDays$L($e4A, $e5A, DATE(2026,7,15), DATE(2026,8,15))"
+SameAsArray 'CountDOW: ranges of dates'          "oz.CountDOW$L(AE4:AF4, AE5:AF5, 1)" "oz.CountDOW$L($e4A, $e5A, 1)"
+SameAsArray 'DayCountRate: a range timeline'     "oz.DayCountRate$L(AE4:AF4, 0.073)" "oz.DayCountRate$L($e4A, 0.073)"
+SameAsArray 'TimelineOffset: a range timeline'   "oz.TimelineOffset$L(AH3, AE4:AF4)" "oz.TimelineOffset$L(DATE(2026,9,1), $e4A)"
+SameAsArray 'Timeline: a start date in a cell'   "oz.Timeline$L(AF3, 3, `"M`")" "oz.Timeline$L(DATE(2026,7,1), 3, `"M`")"
+SameAsArray 'RateAtDate: ranges of dates'        "oz.RateAtDate$L(AE4:AF4, {0.05,0.06}, AF3:AH3)" `
+                                                 "oz.RateAtDate$L($e4A, {0.05,0.06}, DATE(2026,{7,7,9},{1,15,1}))"
+SameAsArray 'ScheduleRates: ranges of dates'     "oz.ScheduleRates$L(AE5:AF5, AE4:AF4, {0.05,0.06})" "oz.ScheduleRates$L($e5A, $e4A, {0.05,0.06})"
+SameAsArray 'ScheduleValues: ranges of dates'    "oz.ScheduleValues$L(AE4:AF4, AE5:AF5, {100,200}, AE4:AF4)" `
+                                                 "oz.ScheduleValues$L($e4A, $e5A, {100,200}, $e4A)"
+SameAsArray 'YearToDate: ranges of dates'        "$ytd(AE1:AH1, AE3:AH3, DATE(2026,8,31))" "$ytd({1,2,3,4}, $e3A, DATE(2026,8,31))"
+Near 'YearToDate: a range of dates totals the year to date' "$ytd(AE1:AH1, AE3:AH3, DATE(2026,8,31))" '5'
+
 # --- Randomised checks. Each trial draws fresh inputs, compares the function with an
 # independent Excel formula and, on a miss, reports the inputs that produced it so the
 # case can be reproduced by hand. A run with no failing trial reads OK. Excel has no
@@ -1187,6 +1299,16 @@ $xl = $null; $wb = $null; $tmp = $null; $exit = 0
 
 # Excel rejects incoming COM calls while it is mid-calculation (RPC_E_CALL_REJECTED),
 # so anything that can arrive at a busy moment gets retried with a backoff.
+# Write one block of values to the scratch sheet in a single call. $rows is an array of
+# rows, each an array of cell values.
+function Set-Block([string]$range, [object[]]$rows) {
+    $block = New-Object 'object[,]' $rows.Count, $rows[0].Count
+    for ($r = 0; $r -lt $rows.Count; $r++) {
+        for ($c = 0; $c -lt $rows[0].Count; $c++) { $block[$r, $c] = $rows[$r][$c] }
+    }
+    Invoke-Excel { $tmp.Range($range).Value2 = $block }
+}
+
 function Invoke-Excel([scriptblock]$op, [int]$tries = 12) {
     for ($i = 1; $i -le $tries; $i++) {
         try { return & $op }
@@ -1251,6 +1373,18 @@ try {
     Invoke-Excel { $tmp.Name = 'zz_selftest' }
     Invoke-Excel { $tmp.Range('Z1:Z3').ClearContents() }   # the deliberate blank cells
     Invoke-Excel { $tmp.Range('Y1').Value2 = 0 }          # numeric cash beside a real blank
+    # Worksheet ranges for the range-input and shape checks. A range reference is not an
+    # array to every Excel function: EDATE and EOMONTH refuse a multi-cell range that they
+    # accept once it is calculated, so these cells hold plain values, not formulas.
+    $d = { param($y, $m, $dd) (Get-Date -Year $y -Month $m -Day $dd).Date.ToOADate() }
+    Set-Block 'AE1:AH1' @(, @(1, 2, 3, 4))
+    Set-Block 'AE2:AH2' @(, @(10, 20, 30, 40))
+    Set-Block 'AE3:AH3' @(, @((& $d 2026 6 30), (& $d 2026 7 1), (& $d 2026 7 15), (& $d 2026 9 1)))
+    Set-Block 'AE4:AF4' @(, @((& $d 2026 7 1), (& $d 2026 8 1)))
+    Set-Block 'AE5:AF5' @(, @((& $d 2026 7 31), (& $d 2026 8 31)))
+    Set-Block 'AN1:AN3' @(@(1), @(2), @(3))
+    Set-Block 'AP1:AP3' @(@(& $d 2026 6 30), @(& $d 2027 1 31), @(& $d 2028 2 29))
+    Set-Block 'AL1:AL1' @(, @('TBA'))
 
     $grid = New-Object 'object[,]' $checks.Count, 1
     for ($i = 0; $i -lt $checks.Count; $i++) { $grid[$i, 0] = $checks[$i].f }
