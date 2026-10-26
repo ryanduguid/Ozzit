@@ -1,8 +1,15 @@
-# Ozzit: Excel LAMBDA functions for Australian financial modelling
+<p align="center">
+  <picture>
+    <source media="(max-width: 600px) and (prefers-color-scheme: light)" srcset=".github/assets/banner-phone-light.svg">
+    <source media="(max-width: 600px)" srcset=".github/assets/banner-phone.svg">
+    <source media="(prefers-color-scheme: light)" srcset=".github/assets/banner-light.svg">
+    <img src=".github/assets/banner.svg" width="100%" alt="Ozzit. 143 native Excel LAMBDAs. No add-ins, no macros. Pixel art of a lambda in a circle beside the Ozzit wordmark in slab-serif block letters.">
+  </picture>
+</p>
 
 <div align="center">
 
-[![verify](https://img.shields.io/github/actions/workflow/status/ryanduguid/Ozzit/verify.yml?branch=main&label=verify&labelColor=000000&style=flat)](https://github.com/ryanduguid/Ozzit/actions/workflows/verify.yml) [![Codecov](https://img.shields.io/codecov/c/github/ryanduguid/Ozzit?label=coverage&labelColor=000000&style=flat)](https://codecov.io/gh/ryanduguid/Ozzit) [![CodeQL](https://img.shields.io/github/actions/workflow/status/ryanduguid/Ozzit/codeql.yml?branch=main&label=CodeQL&labelColor=000000&style=flat)](https://github.com/ryanduguid/Ozzit/actions/workflows/codeql.yml) [![SonarCloud](https://img.shields.io/sonar/quality_gate/ryanduguid_Ozzit?server=https%3A%2F%2Fsonarcloud.io&label=SonarCloud&labelColor=000000&style=flat)](https://sonarcloud.io/summary/new_code?id=ryanduguid_Ozzit) [![Codacy code quality](https://img.shields.io/codacy/grade/ffd3c7d7645541179caea8a353bd3f86?label=Codacy&labelColor=000000&style=flat)](https://app.codacy.com/gh/ryanduguid/Ozzit/dashboard)<br> [![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/ryanduguid/Ozzit?label=Scorecard&labelColor=000000&style=flat)](https://scorecard.dev/viewer/?uri=github.com/ryanduguid/Ozzit) [![OpenSSF Best Practices](https://img.shields.io/cii/level/15420?label=Best%20Practices&labelColor=000000&style=flat)](https://www.bestpractices.dev/projects/15420) [![VirusTotal](https://img.shields.io/badge/VirusTotal-scanned-990024?labelColor=000000&style=flat&logo=virustotal&logoColor=FFD32A&color=990024)](https://github.com/ryanduguid/Ozzit/releases/latest)<br> [![release](https://img.shields.io/github/v/release/ryanduguid/Ozzit?color=66023C&labelColor=000000&style=flat)](https://github.com/ryanduguid/Ozzit/releases/latest) ![Excel: 365 or 2024+](https://img.shields.io/badge/Excel-365%20or%202024%2B-66023C?labelColor=000000&style=flat&color=66023C) [![licence: Apache-2.0](https://img.shields.io/badge/licence-Apache--2.0-66023C?labelColor=000000&style=flat&color=66023C)](LICENSE)
+[![verify](https://img.shields.io/github/actions/workflow/status/ryanduguid/Ozzit/verify.yml?branch=main&label=verify&labelColor=000000&style=flat)](https://github.com/ryanduguid/Ozzit/actions/workflows/verify.yml) [![Codecov](https://img.shields.io/codecov/c/github/ryanduguid/Ozzit?label=coverage&labelColor=000000&style=flat)](https://codecov.io/gh/ryanduguid/Ozzit) [![CodeQL](https://img.shields.io/github/actions/workflow/status/ryanduguid/Ozzit/codeql.yml?branch=main&label=CodeQL&labelColor=000000&style=flat)](https://github.com/ryanduguid/Ozzit/actions/workflows/codeql.yml) [![SonarCloud](https://img.shields.io/sonar/quality_gate/ryanduguid_Ozzit?server=https%3A%2F%2Fsonarcloud.io&label=SonarCloud&labelColor=000000&style=flat)](https://sonarcloud.io/summary/new_code?id=ryanduguid_Ozzit) [![Codacy code quality](https://img.shields.io/codacy/grade/ffd3c7d7645541179caea8a353bd3f86?label=Codacy&labelColor=000000&style=flat)](https://app.codacy.com/gh/ryanduguid/Ozzit/dashboard)<br> [![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/ryanduguid/Ozzit?label=Scorecard&labelColor=000000&style=flat)](https://scorecard.dev/viewer/?uri=github.com/ryanduguid/Ozzit) [![OpenSSF Best Practices](https://img.shields.io/cii/level/15420?label=Best%20Practices&labelColor=000000&style=flat)](https://www.bestpractices.dev/projects/15420) [![VirusTotal](https://img.shields.io/badge/VirusTotal-scanned-990024?labelColor=000000&style=flat&logo=virustotal&logoColor=FFD32A&color=990024)](https://github.com/ryanduguid/Ozzit/releases/latest)<br> [![release](https://img.shields.io/github/v/release/ryanduguid/Ozzit?color=66023C&labelColor=000000&style=flat)](https://github.com/ryanduguid/Ozzit/releases/latest) ![Excel: 365 or 2024+](https://img.shields.io/badge/Excel-365%20or%202024%2B-66023C?labelColor=000000&style=flat&color=66023C) [![licence: FSL-1.1-ALv2](https://img.shields.io/badge/licence-FSL--1.1--ALv2-66023C?labelColor=000000&style=flat&color=66023C)](LICENSE)
 
 </div>
 
@@ -18,7 +25,7 @@ bookkeeping tool and never touches a ledger.
 
 **Needs Microsoft 365 or Excel 2024 or later**, which support `LAMBDA` and dynamic
 arrays. LibreOffice, Google Sheets and earlier Excel versions cannot evaluate the
-functions. Apache-2.0 licensed.
+functions. FSL-1.1-ALv2 licensed.
 
 **Current published release: [v3.5.0](https://github.com/ryanduguid/Ozzit/releases/tag/v3.5.0)**,
 published 19 October 2026 from the cut dated 19 October 2026, with 143 functions.
@@ -126,6 +133,6 @@ v3.5.0 `ozzit.xlsx` SHA-256: `76d3722c785abd3813ffffffc5fbb2d6ab80628da10fb7f36c
 
 Ozzit's functions were written by Ryan Duguid. Ozzit is not derived from any third-party workbook or library.
 
-Apache-2.0 licensed. See [LICENSE](LICENSE). If you redistribute this work or build on it, keep the attribution in [NOTICE](NOTICE). See [DISCLAIMER.md](DISCLAIMER.md) for scope and review requirements.
+Licensed under the Functional Source License, Version 1.1, ALv2 Future License (FSL-1.1-ALv2). You may use, modify and redistribute it for any purpose except a Competing Use as defined in LICENSE (making it available to others in a competing commercial product or service), and each version becomes available under Apache-2.0 two years after it is made available. See [LICENSE](LICENSE) and [NOTICE](NOTICE). If you redistribute this work or build on it, keep the copyright notices in [NOTICE](NOTICE). See [DISCLAIMER.md](DISCLAIMER.md) for scope and review requirements.
 
 </details>
