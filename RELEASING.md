@@ -40,7 +40,7 @@ request with a merge commit, never a squash: the manifest names the workbook
 commit, and the native release test `tracked_base_manifest_matches_the_current_workbook`
 (run by `cargo test`) fails unless it is the last commit on the branch to change the workbook. A squash replaces it. Pull requests that change only documentation may be squashed.
 
-Apache-2.0 covers the whole repository, `ozzit.xlsx`, `src/` and `functions.csv` included.
+FSL-1.1-ALv2 covers the whole repository, `ozzit.xlsx`, `src/` and `functions.csv` included.
 Every source archive must still include `LICENSE` and `NOTICE`.
 
 ## Approval and tag

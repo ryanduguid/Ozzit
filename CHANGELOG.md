@@ -43,6 +43,8 @@ They reach the workbook through `ozzit variance_fy_periods`, which writes
 
 ### Changed
 
+- Relicensed from Apache-2.0 to FSL-1.1-ALv2 (Functional Source License, with
+  Apache-2.0 as the future licence). Released versions keep their licence.
 - `oz.DSIλ(AverageInventory, CostOfGoodsSold, [Days])` takes the days the cost of goods
   sold covers, 365 when omitted or blank, as `oz.ReceivableDaysλ` and `oz.PayableDaysλ`
   already did. It used to fix 365, so a leap year or a quarter needed the cost of goods
