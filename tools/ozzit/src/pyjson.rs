@@ -481,6 +481,7 @@ fn unicode_escape(s: &[char], next: usize) -> Result<(char, usize), DecodeError>
         Some(ch) => Ok((ch, end)),
         // shortcut: Python keeps a lone surrogate in the string, and the
         // builder could never write it out; it is refused at the escape.
+        // Use a surrogate-preserving string type if a real input carries one.
         None => Err(decode_error(
             "Unpaired surrogate in \\uXXXX escape",
             s,
