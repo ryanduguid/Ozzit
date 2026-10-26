@@ -19,6 +19,7 @@ DEPENDABOT = ROOT / ".github" / "dependabot.yml"
 MYPY_CONFIG = ROOT / "mypy.ini"
 EDITORCONFIG = ROOT / ".editorconfig"
 CITATION = ROOT / "CITATION.cff"
+LICENSE_URL = "https://github.com/ryanduguid/Ozzit/blob/main/LICENSE"
 CHANGELOG = ROOT / "CHANGELOG.md"
 README = ROOT / "README.md"
 AGENTS = ROOT / "AGENTS.md"
@@ -407,7 +408,7 @@ class RepositoryPolicyTests(unittest.TestCase):
             )
 
         changelog = "## Unreleased: v1.3.0 candidate\n" + changelog
-        citation = "version: 1.3.0\nlicense: Apache-2.0\nabstract: unreleased\n"
+        citation = f"version: 1.3.0\nlicense-url: {LICENSE_URL}\nabstract: unreleased\n"
         readme += "v1.3.0 candidate is unreleased; historical version under MIT\n"
         self.assert_citation_matches_history(changelog, citation, readme, [])
         with self.assertRaises(AssertionError):
@@ -415,7 +416,7 @@ class RepositoryPolicyTests(unittest.TestCase):
 
     def test_candidate_citation_rejects_quoted_release_dates(self):
         changelog = "## Unreleased: v1.3.0 candidate\n## v1.2.3, 9 May 2024, synthetic release\n"
-        citation = "version: 1.3.0\nlicense: Apache-2.0\nabstract: unreleased\n"
+        citation = f"version: 1.3.0\nlicense-url: {LICENSE_URL}\nabstract: unreleased\n"
         readme = (
             "releases/tag/v1.2.3 dated 9 May 2024\n"
             "v1.3.0 candidate is unreleased; historical version under MIT\n"
@@ -443,7 +444,8 @@ class RepositoryPolicyTests(unittest.TestCase):
             self.assertEqual(metadata.get("version"), candidate.group(1))
             self.assertNotIn("date-released", metadata)
             self.assertIn("unreleased", citation)
-            self.assertEqual(metadata.get("license"), "Apache-2.0")
+            self.assertNotIn("license", metadata)
+            self.assertEqual(metadata.get("license-url"), LICENSE_URL)
         else:
             self.assertEqual(metadata.get("version"), version)
             self.assertEqual(str(metadata.get("date-released")), released.isoformat())
