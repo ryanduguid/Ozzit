@@ -2,6 +2,9 @@
 
 ## 4.0.0 (in progress, unpublished)
 
+Relicensed from Apache-2.0 to FSL-1.1-ALv2 (Functional Source License, with
+Apache-2.0 as the future licence). Released versions keep their licence.
+
 Retire the 7 Python gate references (`verify_workbook`, `verify_sources`,
 `verify_signatures`, `verify_previous_names`, `verify_index`, `verify_cover` and
 `verify_afe`), their 115 Python test methods, whose contracts already run as

@@ -1,6 +1,6 @@
 # Ozzit
 
-> Native Excel LAMBDA functions and help tables for dynamic-array financial modelling, with Australian GST, financial-year, depreciation and AASB 16 lessee helpers. An ordinary .xlsx with no VBA, macros, add-ins or external dependencies. Needs Microsoft 365 or Excel 2024 or later; LibreOffice and older Excel versions do not evaluate the functions. Apache-2.0 licensed.
+> Native Excel LAMBDA functions and help tables for dynamic-array financial modelling, with Australian GST, financial-year, depreciation and AASB 16 lessee helpers. An ordinary .xlsx with no VBA, macros, add-ins or external dependencies. Needs Microsoft 365 or Excel 2024 or later; LibreOffice and older Excel versions do not evaluate the functions. Licensed under FSL-1.1-ALv2; each version becomes available under Apache-2.0 two years after it is made available.
 
 The latest release is listed at https://github.com/ryanduguid/Ozzit/releases/latest. v3.5.0 (published 19 October 2026) ships 143 functions and 5 help tables; v3.4.2 (20 September 2026) shipped 133. v3.5.0 adds the 4 working-capital functions (`oz.ReceivableDaysλ`, `oz.PayableDaysλ`, `oz.WIPDaysλ`, `oz.CashConversionCycleλ`), the 5 ATO benchmark functions (`oz.ATOTurnoverλ`, `oz.ATOBenchmarkRatioλ`, `oz.ATOTotalExpensesRatioλ`, `oz.ATOCostOfSalesRatioλ`, `oz.ATOLabourRatioλ`), `oz.RateAtDateλ` and the other changes listed under v3.5.0 in the changelog. Describe only the functions in the version the reader has.
 
