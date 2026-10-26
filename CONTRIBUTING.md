@@ -59,3 +59,5 @@ For `templates/practice-calculators.xlsx`, run
 and sanitising order in [the companion guide](docs/practice-improvements.md#native-preparation-and-checks).
 Its portable tests bind the saved workbook, authoring tools and native runner to
 that receipt; they do not recalculate formulas without Excel.
+
+Contributions are accepted under FSL-1.1-ALv2; see [LICENSE](LICENSE) and [NOTICE](NOTICE).
