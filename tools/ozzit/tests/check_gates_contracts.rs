@@ -5,7 +5,7 @@ const WORKFLOW: &str = ".github/workflows/current.yml";
 const GATE: &str = "aggregate";
 fn workflow(jobs: &[&str], comments: &str) -> String {
     format!(
-        "name: fixture\njobs:\n{}{comments}",
+        "name: fixture\non: pull_request\njobs:\n{}{comments}",
         jobs.iter().map(|j| format!("  {j}:\n")).collect::<String>()
     )
 }
@@ -185,11 +185,12 @@ fn same_path_real_git_and_sorted_mixed_removals() {
     );
 }
 #[test]
-fn same_path_wins_over_another_gate_workflow() {
-    let text = workflow(&[GATE, "lint"], "");
+fn same_path_wins_over_another_workflow_with_the_gate_id() {
+    let other =
+        "name: fixture\non: pull_request\njobs:\n  aggregate:\n    name: other-gates\n  lint:\n";
     let f = Fixture::base(&[
-        (WORKFLOW, text.clone()),
-        (".github/workflows/other.yml", text),
+        (WORKFLOW, workflow(&[GATE, "lint"], "")),
+        (".github/workflows/other.yml", other.into()),
     ]);
     f.commit();
     assert_eq!(f.pr(), (0, "".into(), "".into()));
@@ -229,7 +230,78 @@ fn ambiguous_real_predecessors_refuse() {
     ]);
     f.write(WORKFLOW, &text);
     f.commit();
-    assert_eq!(f.pr(), (1, "".into(), "More than one base workflow has a job named aggregate; the gate check needs updating\n".into()));
+    assert_eq!(
+        f.pr(),
+        (
+            1,
+            "".into(),
+            "More than one base job can precede aggregate; the gate check needs updating\n".into()
+        )
+    );
+}
+fn removal(names: &str) -> (i32, String, String) {
+    (
+        1,
+        "".into(),
+        format!(
+            "These jobs were removed from {WORKFLOW}: {names}. If that is intended, add the comment '# removed-jobs: {names}' to that file.\n"
+        ),
+    )
+}
+#[test]
+fn renamed_gate_keeps_the_jobs_of_the_base_job_reporting_its_context() {
+    let old = ".github/workflows/old.yml";
+    let base = "name: fixture\non: pull_request\njobs:\n  old-gate:\n    name: aggregate\n  lint:\n  extra:\n";
+    let f = Fixture::base(&[(old, base.into())]);
+    fs::remove_file(f.root().join(old)).unwrap();
+    f.write(WORKFLOW, &workflow(&[GATE, "lint"], ""));
+    f.commit();
+    assert_eq!(f.pr(), removal("extra, old-gate"));
+}
+#[test]
+fn occupied_destination_does_not_hide_the_context_source() {
+    let occupied = "name: fixture\non: pull_request\njobs:\n  aggregate:\n    name: unrelated\n";
+    let source = "name: fixture\non: pull_request\njobs:\n  verify:\n    name: aggregate\n  lint:\n  extra:\n";
+    let old = ".github/workflows/old.yml";
+    let f = Fixture::base(&[(WORKFLOW, occupied.into()), (old, source.into())]);
+    fs::remove_file(f.root().join(old)).unwrap();
+    f.write(WORKFLOW, &workflow(&[GATE, "lint"], ""));
+    f.commit();
+    assert_eq!(f.pr(), removal("extra, verify"));
+}
+#[test]
+fn moved_gate_with_a_new_context_keeps_its_same_id_predecessor() {
+    let old = ".github/workflows/old.yml";
+    let base = "name: fixture\non: pull_request\njobs:\n  aggregate:\n    name: old-gates\n  lint:\n  extra:\n";
+    let f = Fixture::base(&[(old, base.into())]);
+    fs::remove_file(f.root().join(old)).unwrap();
+    f.write(WORKFLOW, &workflow(&[GATE, "lint"], ""));
+    f.commit();
+    assert_eq!(f.pr(), removal("extra"));
+}
+#[test]
+fn unrelated_new_context_has_no_predecessor() {
+    let old = ".github/workflows/old.yml";
+    let base = "name: fixture\non: pull_request\njobs:\n  old-gate:\n    name: old-gates\n  lint:\n  extra:\n";
+    let f = Fixture::base(&[(old, base.into())]);
+    fs::remove_file(f.root().join(old)).unwrap();
+    f.write(WORKFLOW, &workflow(&[GATE, "lint"], ""));
+    f.commit();
+    assert_eq!(f.pr(), (0, "".into(), "".into()));
+}
+#[cfg(unix)]
+#[test]
+fn cr_and_lf_paths_keep_their_predecessor_removals() {
+    let source = "name: fixture\non: pull_request\njobs:\n  old-gate:\n    name: aggregate\n  lint:\n  extra:\n";
+    let unrelated = "name: fixture\non: pull_request\njobs:\n  unrelated:\n";
+    let f = Fixture::base(&[
+        (".github/workflows/ci\r.yml", source.into()),
+        (".github/workflows/ci\n.yml", unrelated.into()),
+    ]);
+    fs::remove_file(f.root().join(".github/workflows/ci\r.yml")).unwrap();
+    f.write(WORKFLOW, &workflow(&[GATE, "lint"], ""));
+    f.commit();
+    assert_eq!(f.pr(), removal("extra, old-gate"));
 }
 #[test]
 fn missing_parent_is_a_controlled_failure() {
@@ -247,7 +319,7 @@ fn utf8_and_crlf_workflow_and_git_text_are_normalised() {
     assert_eq!(f.pr(), (0, "".into(), "".into()));
     f.write(
         WORKFLOW,
-        "name: fixture\r\njobs:\r\n  aggregate:\r\n  é:\r\n",
+        "name: fixture\r\non: pull_request\r\njobs:\r\n  aggregate:\r\n  é:\r\n",
     );
     assert_eq!(
         f.run(WORKFLOW, &[], Some("{}"), "push"),
