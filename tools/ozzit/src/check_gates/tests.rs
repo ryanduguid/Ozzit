@@ -318,6 +318,35 @@ fn implicit_matrix_names_keep_possible_suffixes() {
     assert!(!possible(jobs, "build", "protected"));
 }
 #[test]
+fn implicit_matrix_matches_fail_closed_in_the_resolver() {
+    let source = yaml(
+        "  build:
+    strategy:
+      matrix:
+        os: [linux]
+",
+    );
+    for context in ["build", "build (linux)"] {
+        assert_eq!(
+            base_of(
+                &[(OLD, source.clone())],
+                &format!(
+                    "  replacement:
+    name: {context}
+"
+                )
+            )
+            .unwrap_err(),
+            format!("Cannot resolve a possible gate context in {OLD}; update the reader"),
+            "{context}"
+        );
+    }
+    let head = "  replacement:
+    name: build-gates
+";
+    assert_eq!(base_of(&[(OLD, source)], head).unwrap(), Jobs::new());
+}
+#[test]
 fn reusable_jobs_keep_possible_called_job_names() {
     let jobs = "  call:\n    name: component\n    uses: ./.github/workflows/package.yml\n";
     assert!(possible(jobs, "call", "component / protected"));
