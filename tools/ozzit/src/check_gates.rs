@@ -684,8 +684,10 @@ fn check_results(results: &Json) -> Result<()> {
 
 fn declarations(text: &str, jobs: &Jobs) -> Result<Jobs> {
     let mut declared = Jobs::new();
-    for line in py::splitlines(text) {
-        if let Some(names) = py::strip(line).strip_prefix("# removed-jobs:") {
+    // A declaration counts only at the start of a line, where it cannot be part of a
+    // YAML value; only "\n" ends a YAML line, so NEL and U+2028 never split one.
+    for line in text.split('\n') {
+        if let Some(names) = line.strip_prefix("# removed-jobs:") {
             declared.extend(names.split(',').map(|name| py::strip(name).to_string()));
         }
     }

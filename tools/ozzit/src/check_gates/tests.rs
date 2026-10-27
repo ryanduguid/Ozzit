@@ -965,7 +965,7 @@ fn live_declarations_are_sorted_and_precede_base_lookup() {
     Fixture {
         text: workflow(
             &[GATE, "zeta", "alpha"],
-            "  # removed-jobs: zeta, alpha, zeta\n",
+            "# removed-jobs: zeta, alpha, zeta\n",
         ),
         results: Some(r#"{"zeta":{"result":"success"},"alpha":{"result":"success"}}"#.into()),
         ..Fixture::default()
@@ -1005,7 +1005,7 @@ fn declared_removals_print_once_in_sorted_order() {
     let (out, calls) = Fixture {
         text: workflow(
             &[GATE, "lint"],
-            "  # removed-jobs: zeta, alpha,zeta, unused,\n",
+            "# removed-jobs: zeta, alpha,zeta, unused,\n",
         ),
         base: Ok(set(&[GATE, "lint", "zeta", "alpha"])),
         ..Fixture::pr()
@@ -1129,13 +1129,52 @@ fn duplicate_results_and_python_whitespace_keep_reference_semantics() {
     }
     .success(&["resolve", "read-utf8"]);
     let (out, _) = Fixture {
-        text: workflow(&[GATE, "lint"], "\u{1c}# removed-jobs: \u{a0}old\u{85}\n"),
+        text: workflow(&[GATE, "lint"], "# removed-jobs: \u{a0}old\u{85}\n"),
         base: Ok(set(&[GATE, "lint", "old"])),
         ..Fixture::pr()
     }
     .invoke();
     assert_eq!(out.code, 0);
     assert_eq!(out.out, [format!("Declared removals from {WORKFLOW}: old")]);
+}
+
+#[test]
+fn declarations_count_only_at_the_start_of_a_line() {
+    let removal = format!(
+        "These jobs were removed from {WORKFLOW}: old. If that is intended, add the comment '# removed-jobs: old' to that file."
+    );
+    for value in [
+        "    env:\n      NOTE: |\n        # removed-jobs: old\n",
+        // YAML 1.2 does not break lines at NEL, U+2028 or a file separator.
+        "    env:\n      NOTE: text\u{85}# removed-jobs: old\n",
+        "    env:\n      NOTE: text\u{2028}# removed-jobs: old\n",
+        "    env:\n      NOTE: text\u{1c}# removed-jobs: old\n",
+    ] {
+        let jobs =
+            |extra: &str| format!("name: fixture\njobs:\n  {GATE}:\n{value}  lint:\n{extra}");
+        // Value text naming a live job is not a stale declaration ...
+        Fixture {
+            text: jobs("  old:\n"),
+            results: Some(r#"{"lint":{"result":"success"},"old":{"result":"success"}}"#.into()),
+            ..Fixture::default()
+        }
+        .success(&["resolve", "read-utf8"]);
+        // ... and never waives the removal of a base job.
+        Fixture {
+            text: jobs(""),
+            base: Ok(set(&[GATE, "lint", "old"])),
+            ..Fixture::pr()
+        }
+        .refuse(&removal, &["resolve", "read-utf8", "base"]);
+    }
+    for prefix in ["  ", "\t", "\u{1c}"] {
+        Fixture {
+            text: workflow(&[GATE, "lint"], &format!("{prefix}# removed-jobs: old\n")),
+            base: Ok(set(&[GATE, "lint", "old"])),
+            ..Fixture::pr()
+        }
+        .refuse(&removal, &["resolve", "read-utf8", "base"]);
+    }
 }
 
 #[test]
