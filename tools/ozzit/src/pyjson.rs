@@ -491,7 +491,7 @@ fn unicode_escape(s: &[char], next: usize) -> Result<(char, usize), DecodeError>
 }
 
 /// The C `scanstring`: `end` is the index after the opening quote.
-fn scanstring(s: &[char], end: usize) -> Result<(String, usize), DecodeError> {
+pub(crate) fn scanstring(s: &[char], end: usize) -> Result<(String, usize), DecodeError> {
     let len = s.len();
     let begin = end - 1;
     let mut out = String::new();
