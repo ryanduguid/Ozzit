@@ -205,6 +205,9 @@ pub fn fold(text: &str) -> String {
     text.replace("\r\n", "\\n").replace(['\n', '\r'], "\\n")
 }
 
+/// Whether a cached cell matches Excel's live value: the same error, the same
+/// folded text, or finite numbers within 1e-9, absolute or relative: a stated
+/// tolerance, not Heisenberg's uncertainty.
 pub fn agree(cached: &CellValue, live: &CellValue) -> bool {
     if cached.is_error != live.is_error {
         return false;
