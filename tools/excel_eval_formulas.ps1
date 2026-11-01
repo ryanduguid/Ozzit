@@ -21,6 +21,50 @@ $before = (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLower()
 # ForEach-Object unrolls the array: Windows PowerShell 5.1 emits it as one pipeline object.
 $caseList = @([IO.File]::ReadAllText($Cases, [Text.Encoding]::UTF8) | ConvertFrom-Json | ForEach-Object { $_ })
 
+# A busy Excel rejects calls with RPC_E_CALL_REJECTED. A method call then throws, as
+# Range('A1') did outside Invoke-Excel, but a rejected property read comes back $null:
+# on 1 November 2026 HasFormula read null for a formula cell and was right 100 ms later.
+# This COM message filter, Microsoft's documented remedy for automation clients, has COM
+# retry a rejected call every 100 ms for up to 60 s, so no read returns a rejection.
+Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+
+[ComImport, Guid("00000016-0000-0000-C000-000000000046"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+public interface IOzzitOleMessageFilter {
+    [PreserveSig] int HandleInComingCall(int callType, IntPtr caller, int tickCount, IntPtr interfaceInfo);
+    [PreserveSig] int RetryRejectedCall(IntPtr callee, int tickCount, int rejectType);
+    [PreserveSig] int MessagePending(IntPtr callee, int tickCount, int pendingType);
+}
+
+public class OzzitMessageFilter : IOzzitOleMessageFilter {
+    [DllImport("ole32.dll")]
+    static extern int CoRegisterMessageFilter(IOzzitOleMessageFilter filter, out IOzzitOleMessageFilter previous);
+
+    // Fails outside a single-threaded apartment, where a filter cannot apply.
+    public static void Register() {
+        IOzzitOleMessageFilter previous;
+        Marshal.ThrowExceptionForHR(CoRegisterMessageFilter(new OzzitMessageFilter(), out previous));
+    }
+
+    public static void Revoke() {
+        IOzzitOleMessageFilter previous;
+        CoRegisterMessageFilter(null, out previous);
+    }
+
+    // SERVERCALL_ISHANDLED
+    public int HandleInComingCall(int callType, IntPtr caller, int tickCount, IntPtr interfaceInfo) { return 0; }
+
+    // Retry SERVERCALL_RETRYLATER after 100 ms until 60 s have passed; -1 cancels the call.
+    public int RetryRejectedCall(IntPtr callee, int tickCount, int rejectType) {
+        return rejectType == 2 && tickCount < 60000 ? 100 : -1;
+    }
+
+    // PENDINGMSG_WAITDEFPROCESS
+    public int MessagePending(IntPtr callee, int tickCount, int pendingType) { return 2; }
+}
+'@
+
 function Invoke-Excel([scriptblock]$op, [int]$tries = 12) {
     for ($i = 1; $i -le $tries; $i++) {
         try { return & $op }
@@ -56,6 +100,7 @@ function Format-Rows($vals) {
 $xl = $wb = $ws = $cell = $range = $null
 $parts = @()
 try {
+    [OzzitMessageFilter]::Register()
     $xl = New-Object -ComObject Excel.Application
     # No Excel was running before this line, so the only EXCEL.EXE now is this one. Record
     # its PID beside the output so a caller that times out can stop exactly this process.
@@ -121,6 +166,7 @@ finally {
             $com = $range = $cell = $ws = $wb = $xl = $null
             [GC]::Collect(); [GC]::WaitForPendingFinalizers()
             [GC]::Collect(); [GC]::WaitForPendingFinalizers()
+            [OzzitMessageFilter]::Revoke()
         }
     }
 }
