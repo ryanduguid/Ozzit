@@ -396,7 +396,7 @@ fn physical_defaults_and_explicit_arguments_force_utf8_and_preserve_inputs() {
             let name = args.first().map_or("ozzit.xlsx", String::as_str);
             assert_eq!(
                 result.stdout,
-                format!("OK: {name}, 153 functions, 169 parts{}", newline()).into_bytes()
+                format!("OK: {name}, 155 functions, 169 parts{}", newline()).into_bytes()
             );
         }
     }

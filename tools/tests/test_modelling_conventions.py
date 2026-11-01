@@ -62,9 +62,9 @@ class ModellingConventionsTest(unittest.TestCase):
     page = " ".join(DOCUMENT.read_text(encoding="utf-8").split())
 
     def test_the_function_and_help_table_counts(self) -> None:
-        self.assertEqual(len(function_bodies()), 148)
-        self.assertIn("a library of 148 LAMBDA functions and 5 help tables", self.page)
-        self.assertIn("Ozzit's 148 functions exist to be called from cells", self.page)
+        self.assertEqual(len(function_bodies()), 150)
+        self.assertIn("a library of 150 LAMBDA functions and 5 help tables", self.page)
+        self.assertIn("Ozzit's 150 functions exist to be called from cells", self.page)
         tables = set()
         for path in (ROOT / "src").glob("*.txt"):
             tables |= set(re.findall(r"^(About\w+λ)\s*=", path.read_text(encoding="utf-8"), re.MULTILINE))
@@ -83,10 +83,10 @@ class ModellingConventionsTest(unittest.TestCase):
         self.assertIn("Utilities repeats the 16 Essentials functions with a `U` suffix", self.page)
 
     def test_if_and_nested_if(self) -> None:
-        self.assertEqual(len(calling(r"\bIF\(")), 79)
+        self.assertEqual(len(calling(r"\bIF\(")), 81)
         nested = {n for n, lines in function_bodies().items() if any(len(re.findall(r"\bIF\(", line)) > 1 for line in lines)}
         self.assertGreaterEqual(len(nested), 22)
-        self.assertIn("79 functions call `IF`", self.page)
+        self.assertIn("81 functions call `IF`", self.page)
         self.assertIn("At least 22 functions nest one `IF` inside another", self.page)
 
     def test_help_tables_and_the_closing_choose(self) -> None:
@@ -105,8 +105,8 @@ class ModellingConventionsTest(unittest.TestCase):
                 for parameter in re.findall(r"^\s*\[(\w+)\]", block.split("LET(", 1)[0], re.MULTILINE):
                     with self.subTest(function=name, parameter=parameter):
                         self.assertRegex(block, r'"\s*' + parameter + r"\s*→\s*\((Required|Optional)")
-        self.assertEqual(len(calling(r"\bINDEX\(")), 16)
-        self.assertIn("use `INDEX` (16 functions)", self.page)
+        self.assertEqual(len(calling(r"\bINDEX\(")), 17)
+        self.assertIn("use `INDEX` (17 functions)", self.page)
 
     def test_offset_indirect_and_npv(self) -> None:
         self.assertEqual(calling(r"\bOFFSET\("), {"RangeToDAλ", "RangeToDAEλ", "RangeToDAUλ"})

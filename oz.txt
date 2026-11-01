@@ -1579,7 +1579,11 @@ AboutFinancialλ = TRIM(TEXTSPLIT(
                                            "REPORTING          →¶" &
                                            "Varianceλ          →Actual less budget, positive when favourable for income and expenses¶" &
                                            "VariancePctλ       →Variance as a fraction of the budget's size, keeping its sign¶" &
-                                           "YearToDateλ        →Totals each row from the start of the financial year to an as-at date¶" & 
+                                           "YearToDateλ        →Totals each row from the start of the financial year to an as-at date¶" &
+                                           "→¶" &
+                                           "LOANS              →¶" &
+                                           "LevelPaymentλ      →Level payment that repays a loan over a row of period rates¶" &
+                                           "CorkscrewRateλ     →Corkscrew with interest on the average balance, added to the balance¶" & 
                                            
     "→¶" &
     "SUBROUTINES        →Functions used by other functions or general purpose functions.¶" & 
@@ -4198,6 +4202,134 @@ YearToDateλ = LAMBDA(
     //  Return Result, Help or the message
         Return,         IF(Help?, 2, IF(NOT(ValidStart?), 3, IF(NOT(Shaped?), 4, IF(NOT(OneDate?), 5, IF(NOT(Numbers?), 6, 1))))),
         CHOOSE( Return, Result, Help, StartMessage, ShapeMessage, AsAtMessage, ValuesMessage)
+    )
+);
+
+
+
+/*  FUNCTION NAME:  LevelPaymentλ
+    DESCRIPTION:*//**The level payment at the end of each period that repays a loan over a row of period rates, which may differ from period to period*/
+
+LevelPaymentλ = LAMBDA(
+//  Parameter Declaration
+    [Principal],
+    [Rates],
+    [Balloon],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →LevelPaymentλ(Principal, Rates, [Balloon])¶" &
+                            "DESCRIPTION:   →The level payment at the end of each period that repays a loan over a row of period rates.¶NOTES!         →One payment for each rate, at the end of its period. Each period's balance¶               →grows by its own rate before the payment comes off, so after the last¶               →payment the balance is Balloon, 0 by default. Pass DayCountRateλ() as Rates¶               →to repay a loan under actual day counts. With the same rate in every period¶               →the result is -PMT(rate, periods, Principal, -Balloon). A positive Principal¶               →gives a positive payment. Principal and Balloon must be single numbers and¶               →Rates one row of numbers above -1; anything else returns a message, and an¶               →error shows.¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "VERSION:       →1 Nov 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "Principal      →(Required) The amount borrowed at the start of the first period.¶" &
+                            "Rates          →(Required) One row of interest rates, one for each period, such as the result of DayCountRateλ().¶" &
+                            "Balloon        →(Optional: Default = 0) The balance left after the last payment.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.LevelPaymentλ(1000, {0.01,0.01,0.01})¶" &
+                            "→Result¶" &
+                            "→340.02",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR(ISOMITTED(Principal), ISOMITTED(Rates)),
+    //  Set defaults. A single blank Balloon is no balloon.
+        Final,          IF(ISOMITTED(Balloon), 0, IF(AND(ROWS(Balloon) = 1, COLUMNS(Balloon) = 1), IF(Balloon = "", 0, Balloon), Balloon)),
+    //  Arithmetic would read "1000" as 1000 and TRUE as 1. An error passes so it shows.
+        Amounts?,       AND(ROWS(Principal) = 1, COLUMNS(Principal) = 1, ROWS(Final) = 1, COLUMNS(Final) = 1,
+                            ISNUMBER(Principal) + ISERROR(Principal), ISNUMBER(Final) + ISERROR(Final)),
+    //  A rate of -1 or below has no discount factor; a blank rate is a missing period
+        ValidRates?,    AND(ROWS(Rates) = 1, IFERROR(ISNUMBER(Rates) * (Rates > -1) = 1, TRUE)),
+        AmountMessage,  "LevelPaymentλ needs Principal and Balloon to be single numbers.",
+        RatesMessage,   "LevelPaymentλ needs Rates to be one row of numbers above -1.",
+    //  The loan is the present value of the payments and the balloon. Discounting each
+    //  period end through the rates before it gives the factors, so the level payment is
+    //  the principal less the balloon's present value, over the sum of the factors.
+        Factors,        SCAN(1, Rates, LAMBDA(Acc, Rate, Acc / (1 + Rate))),
+        Result,         (Principal - Final * TAKE(Factors, , -1)) / SUM(Factors),
+    //  Return Result, Help or the message
+        Return,         IF(Help?, 2, IF(NOT(Amounts?), 3, IF(NOT(ValidRates?), 4, 1))),
+        CHOOSE( Return, Result, Help, AmountMessage, RatesMessage)
+    )
+);
+
+
+/*  FUNCTION NAME:  CorkscrewRateλ
+    DESCRIPTION:*//**Create a corkscrew whose interest is charged on the average of each period's opening and closing balances and added to the balance*/
+
+CorkscrewRateλ = LAMBDA(
+//  Parameter Declaration
+    [Opening],
+    [Rates],
+    [Flow1],
+    [Flow2],
+    [Flow3],
+    [Flow4],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →CorkscrewRateλ(Opening, Rates, Flow1, [Flow2], [Flow3], [Flow4])¶" &
+                            "DESCRIPTION:   →Create a corkscrew whose interest is charged on the average balance and added to it.¶NOTES!         →Each period's interest is its rate times the average of its opening and¶               →closing balances, and the closing balance includes that interest. Each¶               →period is solved in closed form, without iteration or a circular reference:¶               →closing = (opening * (2 + rate) + 2 * flows) / (2 - rate). The rows are the¶               →opening balance, the flows, the interest and the closing balance. Every rate¶               →must be a number above -1 and below 2; anything else returns a message.¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "VERSION:       →1 Nov 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "Opening        →(Required) First periods opening balance.¶" &
+                            "Rates          →(Required) The interest rate per period: one rate for every period, or one row with a rate for each, such as DayCountRateλ().¶" &
+                            "Flow1          →(Required) First row (or array of rows) of numbers to include in period totals.¶" &
+                            "Flow2          →(Optional) Second row (or array of rows) of numbers to include in period totals.¶" &
+                            "Flow3          →(Optional) Third row (or array of rows) of numbers to include in period totals.¶" &
+                            "Flow4          →(Optional) Fourth row (or array of rows) of numbers to include in period totals.¶" &
+                            "NOTE!          →All flows are added. To subtract a flow make it negative.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.CorkscrewRateλ(1000, 0.01, {100,100})¶" &
+                            "→Result¶" &
+                            "→1000.00, 1110.55¶" &
+                            "→100.00, 100.00¶" &
+                            "→10.55, 11.66¶" &
+                            "→1110.55, 1222.22",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR(ISOMITTED(Opening), ISOMITTED(Rates), ISOMITTED(Flow1)),
+    //  Procedure
+        Cols,           COLUMNS(Flow1),
+        Rows,           IF(ISOMITTED(Flow2), 1,
+                            IF(ISOMITTED(Flow3), 2,
+                                IF(ISOMITTED(Flow4), 3, 4)
+                            )
+                        ),
+        PeriodArray,    SWITCH(Rows,
+                            1, Flow1,
+                            2, VSTACK(Flow1, Flow2),
+                            3, VSTACK(Flow1, Flow2, Flow3),
+                            4, VSTACK(Flow1, Flow2, Flow3, Flow4)
+                        ),
+        PeriodTotal,    BYCOL(PeriodArray, LAMBDA(Col, SUM(Col))),
+    //  One rate applies to every period; otherwise there is one for each
+        Shaped?,        AND(ROWS(Rates) = 1, OR(COLUMNS(Rates) = 1, COLUMNS(Rates) = Cols)),
+        RateRow,        IF(COLUMNS(Rates) = 1, EXPAND(Rates, 1, Cols, INDEX(Rates, 1, 1)), Rates),
+    //  At a rate of 2 the closed form divides by nought; a blank rate is a missing period
+        ValidRates?,    AND(IFERROR(ISNUMBER(RateRow) * (RateRow > -1) * (RateRow < 2) = 1, TRUE)),
+        ShapeMessage,   "CorkscrewRateλ needs Rates to be one rate, or one row with a rate for each period.",
+        RateMessage,    "CorkscrewRateλ needs every rate to be a number above -1 and below 2.",
+    //  Interest on the average balance, I = r * (O + C) / 2, with C = O + F + I, gives
+    //  C = (O * (2 + r) + 2 * F) / (2 - r). The closing balance is the only state carried
+    //  from one period to the next, so solve the closings in one pass and read the rest off.
+        Closings,       SCAN(Opening, SEQUENCE( , Cols),
+                            LAMBDA(Acc, Col,
+                                LET(Rate, INDEX(RateRow, 1, Col),
+                                    (Acc * (2 + Rate) + 2 * INDEX(PeriodTotal, 1, Col)) / (2 - Rate))
+                            )
+                        ),
+        Openings,       IF(Cols = 1, Opening, HSTACK(Opening, DROP(Closings, , -1))),
+        Interest,       RateRow * (Openings + Closings) / 2,
+        Result,         VSTACK(Openings, PeriodArray, Interest, Closings),
+    //  Return Result, Help or the message
+        Return,         IF(Help?, 2, IF(NOT(Shaped?), 3, IF(NOT(ValidRates?), 4, 1))),
+        CHOOSE( Return, Result, Help, ShapeMessage, RateMessage)
     )
 );
 

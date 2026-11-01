@@ -77,6 +77,10 @@ const COMMANDS: &[(&str, Handler)] = &[
         "variance_fy_periods",
         postbuild::function_pass::variance_fy_periods,
     ),
+    (
+        "level_payment_corkscrew_rate",
+        postbuild::function_pass::level_payment_corkscrew_rate,
+    ),
 ];
 pub fn dispatch(args: &[String]) -> Output {
     let command = args.first().map(String::as_str);

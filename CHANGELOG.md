@@ -41,6 +41,28 @@ They reach the workbook through `ozzit variance_fy_periods`, which writes
 `functions.csv` at once, as the earlier function passes did. The cover label moves to
 148 functions.
 
+#### Level payment and average-balance corkscrew
+
+Two functions take the library from 148 to 150. [The derivations](docs/level-payment-and-corkscrew-rate.md)
+are written out with the checks behind them.
+
+- `oz.LevelPaymentλ(Principal, Rates, [Balloon])` returns the level payment at the end
+  of each period that leaves Balloon, 0 by default, after the last payment, where each
+  period has its own rate. Pass `oz.DayCountRateλ()` as Rates to repay a loan under
+  actual day counts, which until now fed only the sculpting functions. With one rate in
+  every period it equals `-PMT(rate, periods, Principal, -Balloon)`. Principal and
+  Balloon must be single numbers and Rates one row of numbers above -1; anything else
+  returns a message.
+- `oz.CorkscrewRateλ(Opening, Rates, Flow1, [Flow2], [Flow3], [Flow4])` is a corkscrew
+  whose interest is its rate times the average of the period's opening and closing
+  balances, added to the closing balance. Each period is solved in closed form, so the
+  circular reference a worksheet would need is gone. Rates is one rate for every period
+  or one for each; a rate must be a number above -1 and below 2, or the result is a
+  message.
+
+They reach the workbook through `ozzit level_payment_corkscrew_rate`, under a new LOANS
+heading in the Financial About table. The cover label moves to 150 functions.
+
 ### Changed
 
 - Relicensed from Apache-2.0 to FSL-1.1-ALv2 (Functional Source License, with

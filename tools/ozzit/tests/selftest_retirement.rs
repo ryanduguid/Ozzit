@@ -52,7 +52,7 @@ fn every_shipped_function_keeps_its_help_assertion() {
             &text
         )
         .len(),
-        153
+        155
     );
     for expected in [
         r#"Same 'help: CountDOW${L}' "INDEX(oz.CountDOW${L}(),1,1)" 'FUNCTION:'"#,

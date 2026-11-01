@@ -898,6 +898,44 @@ Near 'DayCount: Actual/Actual, leap into common' "INDEX($dc(DATE(2024,12,28) + {
 Near 'DayCount: Actual/Actual, financial year'  "INDEX($dc(EDATE(DATE(2023,7,1), {0,12,24}), 0.073, 4),1,1) - 0.073*(184/365 + 182/366)" '0' '0.0000000001'
 Near 'DayCount: one date is an error'         "--ISERROR($dc(DATE(2026,7,1), 0.073))" '1'
 Near 'DayCount: unknown convention is an error' "--ISERROR($dc($jul, 0.073, 5))" '1'
+
+# --- Level payment. Checked against PMT() where the rate is flat, and under actual day
+# counts by running the loan forward period by period, payment off at each period end,
+# which is not the discount-factor sum the function solves.
+$lp = "oz.LevelPayment$L"
+$lpR = "$dc(EDATE(DATE(2026,7,1), SEQUENCE(1, 24, 0)), 0.073, 4)"
+Near 'LevelPayment: agrees with PMT, 30 years monthly' "$lp(250000, SEQUENCE(1, 360, 0.005, 0)) + PMT(0.005, 360, 250000)" '0' '0.0000001'
+Near 'LevelPayment: agrees with PMT with a balloon'    "$lp(100000, SEQUENCE(1, 60, 0.004, 0), 20000) + PMT(0.004, 60, 100000, -20000)" '0' '0.0000001'
+Near 'LevelPayment: actual days close to nil' `
+     "LET(r, $lpR, x, $lp(50000, r), REDUCE(50000, r, LAMBDA(b, k, b * (1 + k) - x)))" '0' '0.0000001'
+Near 'LevelPayment: actual days close on the balloon' `
+     "LET(r, $lpR, x, $lp(50000, r, 10000), REDUCE(50000, r, LAMBDA(b, k, b * (1 + k) - x)))" '10000' '0.0000001'
+Near 'LevelPayment: nil rates divide the principal'      "$lp(1200, {0,0,0})"      '400'
+Near 'LevelPayment: a blank balloon cell is none'        "$lp(1000, {0.01,0.01,0.01}, Z1) - $lp(1000, {0.01,0.01,0.01})" '0'
+foreach ($bad in @('1000, {0.01,-1}', '1000, {0.01;0.01}', '"1000", {0.01,0.01}', '1000, {0.01,0.01}, TRUE', '1000, AI1:AK1', '{1000,2000}, {0.01,0.01}')) {
+    Same "LevelPayment refuses ($bad)" "IF(ISTEXT($lp($bad)),`"diagnostic`",`"number`")" 'diagnostic'
+}
+Near 'LevelPayment: an error in Rates shows' "--ISNA($lp(1000, {0.01,#N/A}))" '1'
+
+# --- CorkscrewRate. Interest is on the average balance and added to it. The check solves
+# each period again by fixed-point iteration, I = r * (2 * O + F + I) / 2, rather than the
+# closed form, and every column must add up: opening + flows + interest = closing.
+$crr = "oz.CorkscrewRate$L"
+$crrRun = "$crr(25000, $lpR, SEQUENCE(1, 24, 500, 25), SEQUENCE(1, 24, -300, 0))"
+Near 'CorkscrewRate: every column adds up' `
+     "LET(s, $crrRun, n, ROWS(s), MAX(ABS(INDEX(s, n, 0) - INDEX(s, 1, 0) - INDEX(s, 2, 0) - INDEX(s, 3, 0) - INDEX(s, 4, 0))))" '0' '0.0000001'
+Near 'CorkscrewRate: each opening is the last closing' `
+     "LET(s, $crrRun, MAX(ABS(DROP(INDEX(s, 1, 0), , 1) - DROP(INDEX(s, 5, 0), , -1))))" '0' '0.0000001'
+Near 'CorkscrewRate: closings agree with an iterated solve' `
+     "LET(r, $lpR, f, SEQUENCE(1, 24, 500, 25) + SEQUENCE(1, 24, -300, 0), ref, SCAN(25000, SEQUENCE(1, 24), LAMBDA(b, k, LET(rr, INDEX(r, 1, k), ff, INDEX(f, 1, k), b + ff + REDUCE(0, SEQUENCE(60), LAMBDA(i, n, rr * (2 * b + ff + i) / 2))))), MAX(ABS(INDEX($crrRun, 5, 0) - ref)))" '0' '0.0000001'
+Near 'CorkscrewRate: first interest by hand'     "INDEX($crr(1000, 0.01, {100,100}), 3, 1)" '2210/1.99 - 1100' '0.0000000001'
+Near 'CorkscrewRate: one rate is every period'   "SUM(ABS($crr(1000, 0.01, {100,200,300}) - $crr(1000, {0.01,0.01,0.01}, {100,200,300})))" '0'
+Near 'CorkscrewRate: nil rate is Corkscrew'      "SUM(ABS(TAKE($crr(1000, 0, {100,200,300}), -1) - TAKE(oz.Corkscrew$L(1000, {100,200,300}), -1)))" '0'
+Near 'CorkscrewRate: one period'                 "INDEX($crr(1000, 0.01, 100), 4, 1)" '2210/1.99' '0.0000000001'
+Near 'CorkscrewRate: range flows match an array' "SUM(ABS($crr(100, 0.01, AE1:AH1) - $crr(100, 0.01, {1,2,3,4})))" '0'
+foreach ($bad in @('{0.01,2}, {1,2}', '{0.01,0.01,0.01}, {1,2}', '"0.01", {1,2}', '{0.01;0.01}, {1,2}', '-1, {1,2}')) {
+    Same "CorkscrewRate refuses rates ($bad)" "IF(ISTEXT(INDEX($crr(100, $bad),1,1)),`"diagnostic`",`"number`")" 'diagnostic'
+}
 Near 'DayCount: EndDates given as 1'          "SUMPRODUCT(ABS($dc(EOMONTH(DATE(2026,7,1), {0,1,2}), 0.073, 3, 1) - $dc($jul, 0.073)))" '0' '0.0000000001'
 Near 'DayCount: a column of APRs gives a row' "COLUMNS($dc(TRANSPOSE($jul), {0.05;0.06;0.07}))*10 + ROWS($dc(TRANSPOSE($jul), {0.05;0.06;0.07}))" '31'
 Near 'DayCount: month-end starts, last period' "INDEX($dc(EDATE(DATE(2025,12,31), {0,1,2}), 0.073),1,3) - 0.073*31/365" '0' '0.0000000001'

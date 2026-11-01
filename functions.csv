@@ -25,6 +25,7 @@ oz.CashConversionCycleλ,Ratios,,"CashConversionCycleλ(InventoryDays, Receivabl
 oz.CashFlowMarginλ,Ratios,nabla.r.CashFlowMarginλ,"CashFlowMarginλ( CashFlowFromOperatingActivities, Revenue)",Cash Flow Margin is a trusted metric of a company’s profitability and efficiency and its earnings quality (Cash Flow From Operating Activities/Revenue).
 oz.CashRatioλ,Ratios,nabla.r.CashRatioλ,"CashRatioλ( Cash, Liabilities)",Evaluates ability to repay short-term debt w/cash or near-cash resources (Cash and Cash Equivalents / Current Liabilities)
 oz.CorkScrewReversalλ,Financial,nabla.f.CorkScrewReversalλ,"CorkScrewReversalλ( Opening, ReversalFlags, Flow1, [Flow2], [Flow3], [Flow4])",Create a corkscrew where the opening balance is reversed in the next period based on a timing parameter.
+oz.CorkscrewRateλ,Financial,,"CorkscrewRateλ(Opening, Rates, Flow1, [Flow2], [Flow3], [Flow4])",Create a corkscrew whose interest is charged on the average of each period's opening and closing balances and added to the balance
 oz.Corkscrewλ,Financial,nabla.f.Corkscrewλ,"Corkscrewλ( Opening, Flow1, [Flow2], [Flow3], [Flow4])",Create a corkscrew section that sums the opening balance and up to 4 independent flows.
 oz.CorkscrewλDV,Financial,nabla.f.CorkscrewλDV,CorkscrewλDV,Provides extended data validation of arguments for Corkscrewλ.
 oz.CountAColsUλ,Utilities,nabla.u.CountAColsλ,CountAColsUλ( Array ),Count everything in each column
@@ -85,6 +86,7 @@ oz.LabelDepreciateλ,Financial,nabla.f.LabelDepreciateλ,LabelDepreciateλ( Asse
 oz.LeaseLiabilityλ,Financial,,"LeaseLiabilityλ(Payments, Rate, [InAdvance])",Present value of the lease payments that are not paid at the commencement date
 oz.LeaseRemeasureλ,Financial,,"LeaseRemeasureλ(RevisedPayments, Rate, CarryingLiability, CarryingROU, [InAdvance])",Remeasures an AASB 16 lease liability for revised payments and adjusts the right-of-use asset
 oz.LeaseScheduleλ,Financial,,"LeaseScheduleλ(Payments, Rate, [InAdvance])","Unwinds an AASB 16 lease liability: opening, payment, interest and closing for each period"
+oz.LevelPaymentλ,Financial,,"LevelPaymentλ(Principal, Rates, [Balloon])","The level payment at the end of each period that repays a loan over a row of period rates, which may differ from period to period"
 oz.MaxColsUλ,Utilities,nabla.u.MaxColsλ,MaxColsUλ( Array),Get the maximum for each Column
 oz.MaxColsλ,Essentials,nabla.e.MaxColsλ,MaxColsλ( Array),Get the maximum for each Column
 oz.MaxRowsUλ,Utilities,nabla.u.MaxRowsλ,MaxRowsUλ( Array),Get the maximum for each row
