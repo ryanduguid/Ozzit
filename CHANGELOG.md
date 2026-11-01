@@ -91,7 +91,8 @@ functions are tested on rows, columns and blocks.
 `tools/excel_eval_formulas.ps1` now waits for Excel to finish calculating and records a
 result only once 2 reads in a row match exactly, failing after 10 reads: one cross-check
 run had recorded a blank for a formula that returns text. It also registers a COM
-message filter, so a call that a busy Excel rejects is retried for up to 60 seconds.
+message filter, so a call that a busy Excel rejects is retried for up to 60 seconds,
+and reads HasFormula and HasSpill again until they come back true or false.
 Rejected calls had failed 4 of 6 runs on an unchanged workbook: 2 threw
 RPC_E_CALL_REJECTED and 2 read HasFormula as blank for a formula cell.
 

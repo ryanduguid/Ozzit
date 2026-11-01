@@ -25,7 +25,8 @@ $caseList = @([IO.File]::ReadAllText($Cases, [Text.Encoding]::UTF8) | ConvertFro
 # Range('A1') did outside Invoke-Excel, but a rejected property read comes back $null:
 # on 1 November 2026 HasFormula read null for a formula cell and was right 100 ms later.
 # This COM message filter, Microsoft's documented remedy for automation clients, has COM
-# retry a rejected call every 100 ms for up to 60 s, so no read returns a rejection.
+# retry a rejected call every 100 ms for up to 60 s; Read-Flag below retries a flag that
+# still reads null.
 Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
@@ -41,15 +42,23 @@ public class OzzitMessageFilter : IOzzitOleMessageFilter {
     [DllImport("ole32.dll")]
     static extern int CoRegisterMessageFilter(IOzzitOleMessageFilter filter, out IOzzitOleMessageFilter previous);
 
+    static IOzzitOleMessageFilter previous;
+    static bool registered;
+
     // Fails outside a single-threaded apartment, where a filter cannot apply.
     public static void Register() {
-        IOzzitOleMessageFilter previous;
         Marshal.ThrowExceptionForHR(CoRegisterMessageFilter(new OzzitMessageFilter(), out previous));
+        registered = true;
     }
 
+    // Restores the thread's earlier filter, if any. Not checked: it runs last in the cleanup,
+    // where a throw would hide the error that ended the run.
     public static void Revoke() {
-        IOzzitOleMessageFilter previous;
-        CoRegisterMessageFilter(null, out previous);
+        if (!registered) return;
+        IOzzitOleMessageFilter ours;
+        CoRegisterMessageFilter(previous, out ours);
+        previous = null;
+        registered = false;
     }
 
     // SERVERCALL_ISHANDLED
@@ -70,6 +79,12 @@ function Invoke-Excel([scriptblock]$op, [int]$tries = 12) {
         try { return & $op }
         catch { if ($i -eq $tries) { throw }; Start-Sleep -Milliseconds (250 * $i) }
     }
+}
+
+# A rejected property read comes back $null rather than throwing, so a flag such as
+# HasFormula counts only once it reads as true or false.
+function Read-Flag([scriptblock]$read) {
+    Invoke-Excel { $flag = & $read; if ($flag -isnot [bool]) { throw 'Excel returned no flag.' }; $flag }
 }
 
 function Format-Cell($v) {
@@ -114,8 +129,9 @@ try {
     $ws = Invoke-Excel { $wb.Worksheets.Add() }
     $excel = "{0} build {1}" -f $xl.Version, $xl.Build
     foreach ($case in $caseList) {
-        $cell = $ws.Range('A1')
-        $ws.Cells.Clear() | Out-Null
+        # The comma stops the Range being enumerated into its cells on the way out.
+        $cell = Invoke-Excel { , $ws.Range('A1') }
+        Invoke-Excel { $ws.Cells.Clear() } | Out-Null
         Invoke-Excel { $cell.Formula2 = $case.formula } | Out-Null
         Invoke-Excel { $xl.Calculate() } | Out-Null
         # Calculate() can return before the result lands. Wait for xlDone; CalculationState
@@ -125,7 +141,7 @@ try {
             if ([DateTime]::UtcNow -gt $deadline) { throw "Excel did not finish calculating $($case.id)." }
             Start-Sleep -Milliseconds 100
         }
-        if (-not (Invoke-Excel { $cell.HasFormula })) { throw "Excel lost the formula for $($case.id)." }
+        if (-not (Read-Flag { $cell.HasFormula })) { throw "Excel lost the formula for $($case.id)." }
         # A formula's cell is never empty, so a null first value was read before Excel wrote it:
         # on 24 Oct 2026 one run read a blank for a formula that returns text, and the self-test's
         # range read came back null once after xlDone. Keep a result only once 2 reads in a row
@@ -134,7 +150,10 @@ try {
         for ($try = 1; ; $try++) {
             # Assigned in the branches: an if-expression would enumerate the Range into its cells.
             $range = $cell
-            if ($cell.HasSpill) { $range = $cell.SpillingToRange }
+            # A null HasSpill read as false would record only the spill's first value.
+            if (Read-Flag { $cell.HasSpill }) {
+                $range = Invoke-Excel { $spill = $cell.SpillingToRange; if ($null -eq $spill) { throw 'Excel returned no spill range.' }; , $spill }
+            }
             # Not through a function: PowerShell flattens a 2-dimensional array on return.
             $vals = $range.Value2
             $now = Format-Rows $vals
