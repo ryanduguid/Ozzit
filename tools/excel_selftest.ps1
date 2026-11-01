@@ -914,7 +914,7 @@ Near 'LevelPayment: actual days close on the balloon' `
      "LET(r, $lpR, x, $lp(50000, r, 10000), REDUCE(50000, r, LAMBDA(b, k, b * (1 + k) - x)))" '10000' '0.0000001'
 Near 'LevelPayment: nil rates divide the principal'      "$lp(1200, {0,0,0})"      '400'
 Near 'LevelPayment: a blank balloon cell is none'        "$lp(1000, {0.01,0.01,0.01}, Z1) - $lp(1000, {0.01,0.01,0.01})" '0'
-foreach ($bad in @('1000, {0.01,-1}', '1000, {0.01;0.01}', '"1000", {0.01,0.01}', '1000, {0.01,0.01}, TRUE', '1000, AI1:AK1', '{1000,2000}, {0.01,0.01}')) {
+foreach ($bad in @('1000, {0.01,-1}', '1000, {0.01;0.01}', '"1000", {0.01,0.01}', '1000, {0.01,0.01}, TRUE', '1000, AI1:AK1', '1000, Z1', '{1000,2000}, {0.01,0.01}')) {
     Same "LevelPayment refuses ($bad)" "LET(x, $lp($bad), IF(AND(ROWS(x) = 1, COLUMNS(x) = 1, ISTEXT(x)),`"diagnostic`",`"other`"))" 'diagnostic'
 }
 Near 'LevelPayment: an error in Rates shows' "--ISNA($lp(1000, {0.01,#N/A}))" '1'

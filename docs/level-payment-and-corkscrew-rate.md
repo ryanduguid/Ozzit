@@ -89,9 +89,9 @@ $C = (1000 \times 2.01 + 200)/1.99 = 1110.55$ and $I = 10.55$. Period 2 opens on
 
 ## Checks
 
-The native self-test (`tools/excel_selftest.ps1`) carries 29 hand-written assertions for
+The native self-test (`tools/excel_selftest.ps1`) carries 30 hand-written assertions for
 the 2 functions, and `ozzit generate_selftest_examples` adds 5 more from their help. On
-1 November 2026, Excel 16.0 build 20527 ran all 1,261 assertions in the library with
+1 November 2026, Excel 16.0 build 20527 ran all 1,262 assertions in the library with
 0 failures, recalculated 1,129 formulas with 0 in error, and `ozzit verify_cache`
 found every cached value equal to what its formula produces.
 
@@ -106,8 +106,8 @@ found every cached value equal to what its formula produces.
 - Nil rates divide the principal less the balloon equally; a blank balloon cell is no
   balloon.
 - Refused with a message: a rate of -1, a column of rates, text principal, a logical
-  balloon, blank rate cells and a principal of more than one cell. An error in Rates
-  shows.
+  balloon, blank rate cells, a single blank rate cell and a principal of more than one
+  cell. An error in Rates shows.
 
 `oz.CorkscrewRateλ`, on 24 months of the same day-count rates with 2 flow rows:
 
@@ -122,6 +122,16 @@ found every cached value equal to what its formula produces.
   column of rates, a rate of -1, a blank rate cell and a row with a blank rate cell. An
   error in Rates shows.
 - Each refusal check requires a single text cell, so returning the help would fail it.
+
+On 1 November 2026 the self-test also ran against copies of the workbook with each
+function deliberately broken, and failed every time:
+
+- blank rates read as nil: the blank-rate refusals of each function failed;
+- every refusal returning the help: all 20 refusal checks failed, those for
+  `oz.CorkScrewReversalλ` included;
+- discount factors of $1 - r$ in place of $1/(1 + r)$, and interest on the opening
+  balance in place of the average: the PMT, forward-run, column, iterated-solve and
+  hand-worked checks failed.
 
 No check yet compares either function with an outside calculator or a published loan
 schedule.
