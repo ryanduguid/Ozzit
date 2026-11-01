@@ -89,6 +89,19 @@ Near 'Movement, per-row opening'       "INDEX($mv({100;`"`";50},{110,120;5,6;60,
 Near 'Movement, blank opening row'     "INDEX($mv({100;`"`";50},{110,120;5,6;60,70}),2,1)" '5'
 Near 'Movement, default opening'       "INDEX($mv(,{100,110,130,100}),1,4)" '-30'
 
+# --- CorkScrewReversal. A flag of 1 reverses the period's opening balance, 0 or a blank
+# leaves it. The flag multiplied the balance, so a 2 reversed it twice over and the
+# period closed on minus its opening; TRUE and the text "1" passed as 1.
+$cr = "oz.CorkScrewReversal$L"
+Same 'CorkScrewReversal, a 1 reverses its period' "TEXTJOIN(`",`",FALSE,TAKE($cr(100,{0,1,0},{10,20,30}),-1))" '110,20,50'
+Near 'CorkScrewReversal, the reversal row'        "INDEX($cr(100,{0,1,0},{10,20,30}),2,2)" '-110'
+Same 'CorkScrewReversal, blank and 1 flag cells'  "TEXTJOIN(`",`",FALSE,TAKE($cr(100,AD1:AE1,{10,20}),-1))" '110,20'
+foreach ($flag in '2', '-1', '0.5', 'TRUE', '"1"') {
+    Same "CorkScrewReversal refuses a flag of $flag" `
+         "IF(ISTEXT(INDEX($cr(100,{0,$flag,0},{10,20,30}),1,1)),`"diagnostic`",`"number`")" 'diagnostic'
+}
+Same 'CorkScrewReversal refuses a text flag cell' "IF(ISTEXT(INDEX($cr(100,AI1:AL1,{10,20,30,40}),1,1)),`"diagnostic`",`"number`")" 'diagnostic'
+
 # --- Financial year. The headline use is labelling a COLUMN of dates, so the array
 # path matters more than the scalar one.
 Same 'FY 30 Jun 2026'          "$fy(DATE(2026,6,30))"  'FY2026'
@@ -581,6 +594,15 @@ Near 'Depreciate: a life of 100 years is still a life' `
 Near 'Depreciate: a repeated timeline date collects the same money' `
      "SUM(INDEX($dp($dpA, $amRepeat),3,0)) - SUM(INDEX($dp($dpA, $amSpan),3,0))" '0' '0.005'
 Same 'Depreciate: help with no args' "INDEX($dp(),1,1)" 'FUNCTION:'
+# Revenue from Sale (row 5) is the salvage value in the disposal period, not a sale
+# price, as the help says; DV and PC set salvage to 0, so their row is 0.
+$dpTL24 = "EDATE(DATE(2026,1,1), SEQUENCE( , 24, 0))"
+Near 'Depreciate: revenue from sale is the salvage value' `
+     "SUM(INDEX($dp(10000, DATE(2026,1,1), 1, $dpTL24, 1000),5,0))" '1000'
+Near 'Depreciate: DV revenue from sale is 0' `
+     "SUM(INDEX($dp(10000, DATE(2026,1,1), 1, $dpTL24, 1000, , , `"DV`"),5,0))" '0'
+Near 'Depreciate: PC revenue from sale is 0' `
+     "SUM(INDEX($dp(10000, DATE(2026,1,1), 1, $dpTL24, 1000, , , `"PC`"),5,0))" '0'
 
 # --- Diagnostic companions. The workbook guide sends a reader to these when a schedule
 # looks wrong, so they must accept every input the parent calculates. Amortise and

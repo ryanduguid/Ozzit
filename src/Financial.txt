@@ -150,10 +150,11 @@ CorkScrewReversalλ=LAMBDA(
                         "FUNCTION:      →CorkScrewReversalλ( Opening, ReversalFlags, Flow1, [Flow2], [Flow3], [Flow4])¶" & 
                         "DESCRIPTION:   →Create a corkscrew where the opening balance is reversed in the next period based on a timing parameter¶" & 
                         "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
-                        "VERSION:       →20 Aug 2026¶" & 
-                        "PARAMETERS:→¶" & 
-                        "Opening        →(Required) First periods opening balance.¶" & 
-                        "ReversalFlags  →(Required) A row of ones and blanks (or zeros) indicating when to reverse period totals.¶" & 
+                        "VERSION:       →1 Nov 2026¶" &
+                        "PARAMETERS:→¶" &
+                        "Opening        →(Required) First periods opening balance.¶" &
+                        "ReversalFlags  →(Required) A row of ones and blanks (or zeros) indicating when to reverse period totals.¶" &
+                        "               →Any other value, including TRUE or a 1 typed as text, returns a message.¶" &
                         "Flow1          →(Required) First row (or array of rows) of numbers to include in period totals.¶" & 
                         "Flow2          →(Optional) Second row (or array of rows) of numbers to include in period totals.¶" & 
                         "Flow3          →(Optional) Third row (or array of rows) of numbers to include in period totals.¶" & 
@@ -183,7 +184,11 @@ CorkScrewReversalλ=LAMBDA(
     //  closes on its opening balance, less that balance where the flag reverses it, plus
     //  its flows. Solve the closings in one pass and read every other row off them.
         Flags,          INDEX( ReversalFlags, 1, SEQUENCE( , Cols)),
-        Closings,       SCAN( Opening, SEQUENCE( , Cols),
+    //  The flag multiplies the balance, so only 1 and 0 (a blank reads as 0) are safe:
+    //  a 2 reversed it twice over. TRUE and the text "1" equal neither and are refused.
+        BadFlags?,      SUM( --NOT( ( Flags = 0) + ( Flags = 1))) > 0,
+        FlagMessage,    "ReversalFlags must be 1, 0 or blank in every period.",
+        Closings,      SCAN( Opening, SEQUENCE( , Cols),
                             LAMBDA( Acc, Col,
                                 Acc * ( 1 - INDEX( Flags, 1, Col)) + INDEX( PeriodTotal, 1, Col)
                             )
@@ -191,8 +196,9 @@ CorkScrewReversalλ=LAMBDA(
         Openings,       IF( Cols = 1, Opening, HSTACK( Opening, DROP( Closings, , -1))),
         Reversals,      -Flags * Openings,
         Result,         VSTACK( Openings, Reversals, PeriodArray, Closings),
-    //  Return Result
-        CHOOSE(Help? + 1, Result, Help)
+    //  Return Result, Help, or the message
+        Return,         IF( Help?, 2, IF( BadFlags?, 3, 1)),
+        CHOOSE( Return, Result, Help, FlagMessage)
     )  
 );
 
@@ -983,19 +989,20 @@ Depreciateλ = LAMBDA(
 //  Help
         Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →Depreciateλ(InitialValues, InServiceDates, LifeInYears, Timeline, ¶" &
-                            "               →[SalvageValues], [DisposalDates], [DisposalCosts], [Methods], [Factors])¶" &
+                                           "→[SalvageValues], [DisposalDates], [DisposalCosts], [Methods], [Factors])¶" &
                             "DESCRIPTION:   →Creates an array of CAPEX, depreciation, and book values for a model's timeline¶" & 
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit ¶" & 
-                            "VERSION:       →24 Oct 2026¶" &
+                            "VERSION:       →1 Nov 2026¶" &
                             "NOTES:         →The methods differ from Excel's functions in several ways; see the webpage for details.¶" &
+                                           "→Revenue from Sale is salvage value, not sale proceeds; 0 for DV and PC.¶" &
                             "PARAMETERS:    →¶" & 
                             "InitialValues  →(Required) The purchase values of each asset to depreciate¶" & 
                             "InServiceDates →(Required) The dates from which to start depreciating each asset¶" & 
                             "LifeInYears    →(Required) The whole number of years over which to depreciate each asset.¶" & 
-                            "               →More than 0 and no more than 100. A date here is not a life:¶" & 
-                            "               →the arguments read InitialValues, InServiceDates, LifeInYears, Timeline.¶" & 
+                                           "→More than 0 and no more than 100. A date here is not a life:¶" & 
+                                           "→the arguments read InitialValues, InServiceDates, LifeInYears, Timeline.¶" & 
                             "Timeline       →(Required) The model's timeline or a row of period start dates. ¶" & 
-                            "               →Timeline can be any interval: days, weeks, months, quarters or years¶" & 
+                                           "→Timeline can be any interval: days, weeks, months, quarters or years¶" & 
                             "SalvageValues  →(Optional: Default = 0) Book values once fully depreciated. Text or an error returns a message.¶" & 
                             "DisposalDates  →(Optional: Default = End of life) The dates on which the assets are removed from the books.¶" & 
                                            "→A disposal before the end of life writes the remaining book value off in that month.¶" & 

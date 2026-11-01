@@ -75,6 +75,13 @@ They reach the workbook through `ozzit variance_fy_periods`, which writes
 - `oz.SumPeriodsλ` help now states what the function already did: a date before the
   first period start is left out of every period, and a date on or after the last
   start goes to the last period. The arithmetic is unchanged.
+- `oz.CorkScrewReversalλ` multiplied the balance by its flag, so a ReversalFlags value
+  of 2 reversed the opening balance twice over and the period closed on minus it, and
+  TRUE or a 1 typed as text passed as 1. Any flag other than 1, 0 or blank now returns
+  a message. Rows of ones and blanks or zeros give the same result as before.
+- `oz.Depreciateλ` help now says that its Revenue from Sale row is the salvage value,
+  shown in the disposal period, not sale proceeds, and that DV and PC make it 0. The
+  arithmetic is unchanged.
 
 The native self-test gains range-input and shape checks. Each date function is given
 worksheet ranges and must match the same dates passed as calculated arrays, because
