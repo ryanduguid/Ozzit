@@ -913,7 +913,7 @@ Near 'LevelPayment: actual days close on the balloon' `
 Near 'LevelPayment: nil rates divide the principal'      "$lp(1200, {0,0,0})"      '400'
 Near 'LevelPayment: a blank balloon cell is none'        "$lp(1000, {0.01,0.01,0.01}, Z1) - $lp(1000, {0.01,0.01,0.01})" '0'
 foreach ($bad in @('1000, {0.01,-1}', '1000, {0.01;0.01}', '"1000", {0.01,0.01}', '1000, {0.01,0.01}, TRUE', '1000, AI1:AK1', '{1000,2000}, {0.01,0.01}')) {
-    Same "LevelPayment refuses ($bad)" "IF(ISTEXT($lp($bad)),`"diagnostic`",`"number`")" 'diagnostic'
+    Same "LevelPayment refuses ($bad)" "LET(x, $lp($bad), IF(AND(ROWS(x) = 1, COLUMNS(x) = 1, ISTEXT(x)),`"diagnostic`",`"other`"))" 'diagnostic'
 }
 Near 'LevelPayment: an error in Rates shows' "--ISNA($lp(1000, {0.01,#N/A}))" '1'
 
@@ -933,9 +933,11 @@ Near 'CorkscrewRate: one rate is every period'   "SUM(ABS($crr(1000, 0.01, {100,
 Near 'CorkscrewRate: nil rate is Corkscrew'      "SUM(ABS(TAKE($crr(1000, 0, {100,200,300}), -1) - TAKE(oz.Corkscrew$L(1000, {100,200,300}), -1)))" '0'
 Near 'CorkscrewRate: one period'                 "INDEX($crr(1000, 0.01, 100), 4, 1)" '2210/1.99' '0.0000000001'
 Near 'CorkscrewRate: range flows match an array' "SUM(ABS($crr(100, 0.01, AE1:AH1) - $crr(100, 0.01, {1,2,3,4})))" '0'
-foreach ($bad in @('{0.01,2}, {1,2}', '{0.01,0.01,0.01}, {1,2}', '"0.01", {1,2}', '{0.01;0.01}, {1,2}', '-1, {1,2}')) {
-    Same "CorkscrewRate refuses rates ($bad)" "IF(ISTEXT(INDEX($crr(100, $bad),1,1)),`"diagnostic`",`"number`")" 'diagnostic'
+# Z1 is blank and Y1:Z1 holds 0 then a blank: a missing rate is refused, not read as nil.
+foreach ($bad in @('{0.01,2}, {1,2}', '{0.01,0.01,0.01}, {1,2}', '"0.01", {1,2}', '{0.01;0.01}, {1,2}', '-1, {1,2}', 'Z1, {1,2}', 'Y1:Z1, {1,2}')) {
+    Same "CorkscrewRate refuses rates ($bad)" "LET(x, $crr(100, $bad), IF(AND(ROWS(x) = 1, COLUMNS(x) = 1, ISTEXT(x)),`"diagnostic`",`"other`"))" 'diagnostic'
 }
+Near 'CorkscrewRate: an error in Rates shows' "--ISNA(INDEX($crr(100, {0.01,#N/A}, {1,2}), 4, 2))" '1'
 Near 'DayCount: EndDates given as 1'          "SUMPRODUCT(ABS($dc(EOMONTH(DATE(2026,7,1), {0,1,2}), 0.073, 3, 1) - $dc($jul, 0.073)))" '0' '0.0000000001'
 Near 'DayCount: a column of APRs gives a row' "COLUMNS($dc(TRANSPOSE($jul), {0.05;0.06;0.07}))*10 + ROWS($dc(TRANSPOSE($jul), {0.05;0.06;0.07}))" '31'
 Near 'DayCount: month-end starts, last period' "INDEX($dc(EDATE(DATE(2025,12,31), {0,1,2}), 0.073),1,3) - 0.073*31/365" '0' '0.0000000001'

@@ -89,9 +89,9 @@ $C = (1000 \times 2.01 + 200)/1.99 = 1110.55$ and $I = 10.55$. Period 2 opens on
 
 ## Checks
 
-The native self-test (`tools/excel_selftest.ps1`) carries 26 hand-written assertions for
+The native self-test (`tools/excel_selftest.ps1`) carries 29 hand-written assertions for
 the 2 functions, and `ozzit generate_selftest_examples` adds 5 more from their help. On
-1 November 2026, Excel 16.0 build 20527 ran all 1,258 assertions in the library with
+1 November 2026, Excel 16.0 build 20527 ran all 1,261 assertions in the library with
 0 failures, recalculated 1,129 formulas with 0 in error, and `ozzit verify_cache`
 found every cached value equal to what its formula produces.
 
@@ -119,7 +119,9 @@ found every cached value equal to what its formula produces.
   same rate given for every period; a nil rate gives `oz.Corkscrewλ`'s closing row; a
   single period works; worksheet ranges give the same result as arrays.
 - Refused with a message: a rate of 2, a rate row of the wrong length, a text rate, a
-  column of rates and a rate of -1.
+  column of rates, a rate of -1, a blank rate cell and a row with a blank rate cell. An
+  error in Rates shows.
+- Each refusal check requires a single text cell, so returning the help would fail it.
 
 No check yet compares either function with an outside calculator or a published loan
 schedule.
