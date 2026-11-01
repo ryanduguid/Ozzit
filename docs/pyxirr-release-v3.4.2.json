@@ -1,5 +1,5 @@
 {
-  "recorded": "2026-10-24",
+  "recorded": "2026-11-01",
   "excel": "16.0 build 20527",
   "workbook": "ozzit.xlsx",
   "workbook_sha256": "0306793a7e473ce70e78149fea1e107fc0f714d61ab50960c16f6fd528878f6f",
@@ -111,9 +111,9 @@
     }
   ],
   "expected_sha256": "0306793a7e473ce70e78149fea1e107fc0f714d61ab50960c16f6fd528878f6f",
-  "runner_commit": "075b866cac9c3b64d3a76bd488871c83c72e3dac",
+  "runner_commit": "4b725787a00ff87fe5f284fdb418953656f9dec7",
   "runner_files": {
     "tools/pyxirr_comparison.py": "a9052e3e35b4e715733034761542817e6a3a2ce09dbf6e68adc27aa1c51eb968",
-    "tools/excel_eval_formulas.ps1": "aee39f1b218986b4b291bb72b0ae8c2c571c39b7e4e77320debe2edc0962f90e"
+    "tools/excel_eval_formulas.ps1": "49beb6affa1eb953ad28b69fd6a2f7f3599a28a71f83385bae78bde280360c88"
   }
 }
