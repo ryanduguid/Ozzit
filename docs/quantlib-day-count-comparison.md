@@ -6,8 +6,9 @@ across 18 boundary pairs. Desktop Excel 16.0 build 20527 evaluated the shipped
 formatting-only palette change, on 19 October 2026 after the ATO benchmark and
 rate functions were added, on 20 October 2026 after the variance and
 financial-year period functions were added, on 24 October 2026 after the input-shape
-and help-field changes, and on 1 November 2026 after the corkscrew flag check and again after the level payment and rate corkscrew
-were added, with identical results each time. The largest absolute difference was
+and help-field changes, and on 1 November 2026 after the corkscrew flag check, after the
+level payment and rate corkscrew were added and after the rate corkscrew's input checks,
+with identical results each time. The largest absolute difference was
 `4.163336342344337e-17`, below the comparison tolerance of `1e-12`.
 
 The retained record is

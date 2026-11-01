@@ -278,7 +278,7 @@
   "absolute_tolerance": 1e-12,
   "excel": {
     "excel": "16.0 build 20527",
-    "workbook_sha256": "27a06d2ad0d809cf92115d940a84c4e04b53ee66a24ee66267b0e6b1b0b32af4",
+    "workbook_sha256": "c71207d6992dd60a477a049415706592b0ed03b1f8636a9520a01bbfc5dc2777",
     "results": {
       "zero_leap_day_1": [
         [
@@ -644,7 +644,7 @@
     "cases_sha256": "a1cf3093945895eb4011a6257bddf2e4ecd7709bfa7953cdb633eadf84b1977a",
     "helper_sha256": "49beb6affa1eb953ad28b69fd6a2f7f3599a28a71f83385bae78bde280360c88",
     "evidence_helper_sha256": "4f0db804f1d5ef13ddd8f2d635b51052db175e1c634ddaee5ad6af3dd42e6f59",
-    "evaluated_at_utc": "2026-11-01T07:18:46.9134883Z"
+    "evaluated_at_utc": "2026-11-01T07:47:28.9972406Z"
   },
   "scope": "First period of two supplied boundary dates, APR=1, explicit convention, default EndDates. Subsequent inferred periods and other timeline behaviour are not qualified.",
   "max_abs_difference": 4.163336342344337e-17
