@@ -7,7 +7,7 @@ accounting classification; the reviewer decides how a model uses the results.
 
 ## LevelPaymentλ
 
-### Setting
+### The loan
 
 A loan of principal $P$ runs over $n$ periods. Period $k$ has its own rate $r_k$, such
 as one row of `oz.DayCountRateλ()`, so a 31-day month accrues more than a 30-day one.
@@ -15,7 +15,7 @@ A level payment $X$ comes off at the end of each period, and the balance after t
 payment is the balloon $B$, 0 by default. Each rate must exceed $-1$, so that
 $1 + r_k > 0$.
 
-### Derivation
+### Deriving the payment
 
 The balance at the end of period $k$ is
 
@@ -51,7 +51,7 @@ each period's own rate. The function computes the factors with one `SCAN`,
 
 ## CorkscrewRateλ
 
-### Setting
+### The corkscrew
 
 A corkscrew opens each period on $O$, adds its flows $F$ (the sum of the flow rows in that
 column) and interest $I$, and closes on $C$. Interest is the period's rate $r$ times the
@@ -61,7 +61,7 @@ $$I = r\,\frac{O + C}{2}, \qquad C = O + F + I.$$
 
 $C$ depends on $I$ and $I$ on $C$: on a worksheet that is a circular reference.
 
-### Derivation
+### Deriving the closing balance
 
 Substituting $C$ into $I$:
 
