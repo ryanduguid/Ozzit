@@ -96,11 +96,13 @@ $cr = "oz.CorkScrewReversal$L"
 Same 'CorkScrewReversal, a 1 reverses its period' "TEXTJOIN(`",`",FALSE,TAKE($cr(100,{0,1,0},{10,20,30}),-1))" '110,20,50'
 Near 'CorkScrewReversal, the reversal row'        "INDEX($cr(100,{0,1,0},{10,20,30}),2,2)" '-110'
 Same 'CorkScrewReversal, blank and 1 flag cells'  "TEXTJOIN(`",`",FALSE,TAKE($cr(100,AD1:AE1,{10,20}),-1))" '110,20'
+# A refusal is the message alone in one cell, so returning the help or a schedule fails.
+$crRefused = 'ReversalFlags must be 1, 0 or blank in every period.'
 foreach ($flag in '2', '-1', '0.5', 'TRUE', '"1"') {
     Same "CorkScrewReversal refuses a flag of $flag" `
-         "IF(ISTEXT(INDEX($cr(100,{0,$flag,0},{10,20,30}),1,1)),`"diagnostic`",`"number`")" 'diagnostic'
+         "LET(x, $cr(100,{0,$flag,0},{10,20,30}), IF(AND(ROWS(x) = 1, COLUMNS(x) = 1), x, `"array`"))" $crRefused
 }
-Same 'CorkScrewReversal refuses a text flag cell' "IF(ISTEXT(INDEX($cr(100,AI1:AL1,{10,20,30,40}),1,1)),`"diagnostic`",`"number`")" 'diagnostic'
+Same 'CorkScrewReversal refuses a text flag cell' "LET(x, $cr(100,AI1:AL1,{10,20,30,40}), IF(AND(ROWS(x) = 1, COLUMNS(x) = 1), x, `"array`"))" $crRefused
 
 # --- Financial year. The headline use is labelling a COLUMN of dates, so the array
 # path matters more than the scalar one.
