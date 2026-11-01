@@ -19,12 +19,12 @@ HELPER = Path(__file__).resolve().parents[1] / "excel_eval_formulas.ps1"
 WINDOWS = sys.platform == "win32" and shutil.which("powershell.exe")
 
 
-def filter_source(text: str) -> str:
+def filter_source(text: str) -> str:  # pragma: no cover - Windows only; the coverage job runs on Ubuntu
     start = text.index("Add-Type -TypeDefinition @'\n") + len("Add-Type -TypeDefinition @'\n")
     return text[start:text.index("\n'@", start)]
 
 
-def function(text: str, name: str) -> str:
+def function(text: str, name: str) -> str:  # pragma: no cover - Windows only; the coverage job runs on Ubuntu
     """A top-level function's definition, from its first line to its closing brace."""
     found = re.search(rf"^function {name}\b.*?^\}}$", text, re.MULTILINE | re.DOTALL)
     if found is None:
@@ -32,7 +32,7 @@ def function(text: str, name: str) -> str:
     return found.group(0)
 
 
-def powershell(script: str) -> subprocess.CompletedProcess[str]:
+def powershell(script: str) -> subprocess.CompletedProcess[str]:  # pragma: no cover - Windows only; the coverage job runs on Ubuntu
     return subprocess.run(
         ["powershell.exe", "-NoProfile", "-NonInteractive", "-STA", "-Command", script],
         capture_output=True, text=True, timeout=120, check=False,
@@ -55,7 +55,7 @@ class MessageFilterTests(unittest.TestCase):
                 )
 
     @unittest.skipUnless(WINDOWS, "needs Windows PowerShell")
-    def test_only_a_retry_later_rejection_is_retried_within_60_seconds(self):
+    def test_only_a_retry_later_rejection_is_retried_within_60_seconds(self):  # pragma: no cover - Windows only; the coverage job runs on Ubuntu
         with tempfile.TemporaryDirectory() as tmp:
             source = Path(tmp) / "filter.cs"
             source.write_text(filter_source(HELPER.read_text(encoding="utf-8")), encoding="utf-8")
@@ -74,7 +74,7 @@ class MessageFilterTests(unittest.TestCase):
         self.assertEqual(run.stdout.strip(), "100,100,-1,-1")
 
     @unittest.skipUnless(WINDOWS, "needs Windows PowerShell")
-    def test_a_null_flag_is_read_again_rather_than_taken_as_false(self):
+    def test_a_null_flag_is_read_again_rather_than_taken_as_false(self):  # pragma: no cover - Windows only; the coverage job runs on Ubuntu
         text = HELPER.read_text(encoding="utf-8")
         run = powershell(
             function(text, "Invoke-Excel") + "\n" + function(text, "Read-Flag") + "\n"
