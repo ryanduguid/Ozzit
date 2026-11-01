@@ -89,9 +89,9 @@ $C = (1000 \times 2.01 + 200)/1.99 = 1110.55$ and $I = 10.55$. Period 2 opens on
 
 ## Checks
 
-The native self-test (`tools/excel_selftest.ps1`) carries 30 hand-written assertions for
+The native self-test (`tools/excel_selftest.ps1`) carries 39 hand-written assertions for
 the 2 functions, and `ozzit generate_selftest_examples` adds 5 more from their help. On
-1 November 2026, Excel 16.0 build 20527 ran all 1,262 assertions in the library with
+1 November 2026, Excel 16.0 build 20527 ran all 1,271 assertions in the library with
 0 failures, recalculated 1,129 formulas with 0 in error, and `ozzit verify_cache`
 found every cached value equal to what its formula produces.
 
@@ -119,9 +119,12 @@ found every cached value equal to what its formula produces.
   same rate given for every period; a nil rate gives `oz.Corkscrewλ`'s closing row; a
   single period works; worksheet ranges give the same result as arrays.
 - Refused with a message: a rate of 2, a rate row of the wrong length, a text rate, a
-  column of rates, a rate of -1, a blank rate cell and a row with a blank rate cell. An
-  error in Rates shows.
-- Each refusal check requires a single text cell, so returning the help would fail it.
+  column of rates, a rate of -1, a blank rate cell and a row with a blank rate cell; an
+  Opening of text, `TRUE` or more than one cell; and a flow of text or `TRUE`, which
+  `SUM` would leave out of the closing balance whilst the flows row still showed it. An
+  error in Rates or in a flow shows; a blank Opening and a `""` flow are nil.
+- Each refusal check requires the function's exact message alone in one cell, so
+  returning the help, a schedule or another message fails it.
 
 On 1 November 2026 the self-test also ran against copies of the workbook with each
 function deliberately broken, and failed every time:
@@ -146,5 +149,6 @@ schedule.
    which leaves the balance alone, is not offered; there the closing balance does not
    depend on the interest, so no closed form is needed.
 4. Average-balance interest assumes the period's flows arrive evenly through it.
-5. Rates must lie above -1, and below 2 for `oz.CorkscrewRateλ`.
+5. Rates must lie above -1, and below 2 for `oz.CorkscrewRateλ`, whose Opening must be a
+   single number and whose flows must be numbers or blank.
 6. Both functions sit under a new LOANS heading in `oz.AboutFinancialλ`.

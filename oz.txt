@@ -4271,7 +4271,7 @@ CorkscrewRateλ = LAMBDA(
     //  Help
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →CorkscrewRateλ(Opening, Rates, Flow1, [Flow2], [Flow3], [Flow4])¶" &
-                            "DESCRIPTION:   →Create a corkscrew whose interest is charged on the average balance and added to it.¶NOTES!         →Each period's interest is its rate times the average of its opening and¶               →closing balances, and the closing balance includes that interest. Each¶               →period is solved in closed form, without iteration or a circular reference:¶               →closing = (opening * (2 + rate) + 2 * flows) / (2 - rate). The rows are the¶               →opening balance, the flows, the interest and the closing balance. Every rate¶               →must be a number above -1 and below 2; anything else returns a message.¶" &
+                            "DESCRIPTION:   →Create a corkscrew whose interest is charged on the average balance and added to it.¶NOTES!         →Each period's interest is its rate times the average of its opening and¶               →closing balances, and the closing balance includes that interest. Each¶               →period is solved in closed form, without iteration or a circular reference:¶               →closing = (opening * (2 + rate) + 2 * flows) / (2 - rate). The rows are the¶               →opening balance, the flows, the interest and the closing balance. Every rate¶               →must be a number above -1 and below 2, Opening a single number and every¶               →flow a number or blank; anything else returns a message.¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
                             "VERSION:       →1 Nov 2026¶" &
                             "PARAMETERS:    →¶" &
@@ -4308,6 +4308,11 @@ CorkscrewRateλ = LAMBDA(
                             4, VSTACK(Flow1, Flow2, Flow3, Flow4)
                         ),
         PeriodTotal,    BYCOL(PeriodArray, LAMBDA(Col, SUM(Col))),
+    //  SUM leaves text and TRUE out of a total, so a flow typed as text would show but not
+    //  count. A blank or "" is nil, and an error passes so it shows.
+        ValidFlows?,    NOT(OR(IFERROR(ISLOGICAL(PeriodArray) + ISTEXT(PeriodArray) * (PeriodArray <> ""), FALSE))),
+        ValidOpening?,  AND(ROWS(Opening) = 1, COLUMNS(Opening) = 1, IFERROR(ISNUMBER(Opening) + (Opening = ""), TRUE)),
+        Start,          IF(Opening = "", 0, Opening),
     //  One rate applies to every period; otherwise there is one for each
         Shaped?,        AND(ROWS(Rates) = 1, OR(COLUMNS(Rates) = 1, COLUMNS(Rates) = Cols)),
         RateRow,        IF(COLUMNS(Rates) = 1, EXPAND(Rates, 1, Cols, INDEX(Rates, 1, 1)), Rates),
@@ -4315,21 +4320,24 @@ CorkscrewRateλ = LAMBDA(
         ValidRates?,    AND(IFERROR(ISNUMBER(RateRow) * (RateRow > -1) * (RateRow < 2) = 1, TRUE)),
         ShapeMessage,   "CorkscrewRateλ needs Rates to be one rate, or one row with a rate for each period.",
         RateMessage,    "CorkscrewRateλ needs every rate to be a number above -1 and below 2.",
+        OpeningMessage, "CorkscrewRateλ needs Opening to be a single number.",
+        FlowMessage,    "CorkscrewRateλ needs every flow to be a number or blank.",
     //  Interest on the average balance, I = r * (O + C) / 2, with C = O + F + I, gives
     //  C = (O * (2 + r) + 2 * F) / (2 - r). The closing balance is the only state carried
     //  from one period to the next, so solve the closings in one pass and read the rest off.
-        Closings,       SCAN(Opening, SEQUENCE( , Cols),
+        Closings,       SCAN(Start, SEQUENCE( , Cols),
                             LAMBDA(Acc, Col,
                                 LET(Rate, INDEX(RateRow, 1, Col),
                                     (Acc * (2 + Rate) + 2 * INDEX(PeriodTotal, 1, Col)) / (2 - Rate))
                             )
                         ),
-        Openings,       IF(Cols = 1, Opening, HSTACK(Opening, DROP(Closings, , -1))),
+        Openings,       IF(Cols = 1, Start, HSTACK(Start, DROP(Closings, , -1))),
         Interest,       RateRow * (Openings + Closings) / 2,
         Result,         VSTACK(Openings, PeriodArray, Interest, Closings),
     //  Return Result, Help or the message
-        Return,         IF(Help?, 2, IF(NOT(Shaped?), 3, IF(NOT(ValidRates?), 4, 1))),
-        CHOOSE( Return, Result, Help, ShapeMessage, RateMessage)
+        Return,         IF(Help?, 2, IF(NOT(Shaped?), 3, IF(NOT(ValidRates?), 4,
+                            IF(NOT(ValidOpening?), 5, IF(NOT(ValidFlows?), 6, 1))))),
+        CHOOSE( Return, Result, Help, ShapeMessage, RateMessage, OpeningMessage, FlowMessage)
     )
 );
 

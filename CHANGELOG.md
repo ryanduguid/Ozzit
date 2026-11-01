@@ -57,8 +57,9 @@ are written out with the checks behind them.
   whose interest is its rate times the average of the period's opening and closing
   balances, added to the closing balance. Each period is solved in closed form, so the
   circular reference a worksheet would need is gone. Rates is one rate for every period
-  or one for each; a rate must be a number above -1 and below 2, or the result is a
-  message.
+  or one for each; a rate must be a number above -1 and below 2, Opening a single number
+  and every flow a number or blank, or the result is a message. A flow typed as text
+  would otherwise show in the flows row but be left out of the closing balance.
 
 They reach the workbook through `ozzit level_payment_corkscrew_rate`, under a new LOANS
 heading in the Financial About table. The cover label moves to 150 functions.
