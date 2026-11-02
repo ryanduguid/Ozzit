@@ -33,7 +33,7 @@ The passes run through the native tools. Build them once with
 below keeps the arguments of the Python pass it replaces. Rust tests preserve
 the former Python apply, refusal, recovery and byte-no-op contracts.
 `cover_label`, `sheet_names`, `strip_revision_history`, `fy27_help_text`,
-`gst_help_text`, `help_links`, `remove_residue`, `help_corrections` and
+`gst_help_text`, `help_links`, `remove_residue`, `help_corrections`,
 `workbook_palette`, `working_capital_days`, `rate_date_helpers` and
 `ato_benchmarks_rate_lookup` are native only; Rust tests cover their validation,
 output, help text, palette, insertion and rollback contracts.
@@ -74,8 +74,8 @@ an Excel save leaves named cell styles unused, renumbers the worksheet parts and
 splits long string literals, and those 2 passes put the file back into the
 state every gate expects.
 
-All postbuild passes are idempotent: on a current workbook each reports "already
-applied" and writes nothing. A workbook whose anchors do not match the recorded counts
+All postbuild passes are idempotent: on a current workbook each reports
+`already applied` and writes nothing. A workbook whose anchors do not match the recorded counts
 fails loudly rather than writing a partial result.
 
 ## Changing a function
@@ -128,7 +128,7 @@ and rate pass adds 5 ratio functions that restate the ATO's
 tax return benchmark ratios (`oz.ATOTurnoverλ`, `oz.ATOBenchmarkRatioλ`,
 `oz.ATOTotalExpensesRatioλ`, `oz.ATOCostOfSalesRatioλ` and `oz.ATOLabourRatioλ`) under
 a new heading in the Ratios About table, and `oz.RateAtDateλ` to the Dates group. Its
-blocks go before the ones the two earlier passes appended, so their own contract tests
+blocks go before the ones the 2 earlier passes appended, so their own contract tests
 still find them at the end of each module. The variance and financial-year period pass
 exists only as the native `ozzit variance_fy_periods`: it adds
 `oz.Varianceλ`, `oz.VariancePctλ` and `oz.YearToDateλ` under a new REPORTING heading in
@@ -140,7 +140,7 @@ corkscrew pass is the last text pass and exists only as the native
 `ozzit level_payment_corkscrew_rate`: it adds `oz.LevelPaymentλ` and `oz.CorkscrewRateλ`
 under a new LOANS heading after the REPORTING rows of the Financial About table, with
 their blocks after the variance pass's and before the rate helpers'. The cover-label pass is one swap in `xl/sharedStrings.xml`:
-Cover!A3 kept reading 20 August 2026 and 130 functions after three cuts, and
+Cover!A3 kept reading 20 August 2026 and 130 functions after 3 cuts, and
 `ozzit verify_cover` now keeps that label equal to `functions.csv` and the
 changelog's current cut. The pass accepts any earlier label it records, so it also
 carries the count from 133 to 137 for the working-capital functions, to 143 with the
