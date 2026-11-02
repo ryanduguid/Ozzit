@@ -589,7 +589,7 @@ for (const name of names) sheet(name, name === 'Read me' ? 'Ozzit practice calcu
   result(s,10,'Benefit inputs','=""','@');tableStatus(s,'D10','I',33);
   result(s,11,'Modelled FBT','=IF(AND(D9="Ready",D10="Ready"),SUM(H14:H33),NA())');
   note(s,'F5','Enter final taxable values after reviewer classification and adjustments. No exemptions, rebates or reportability decisions are made.');
-  note(s,'F7','Illustrative rates checked 19 Oct 2026. Confirm the applicable period and employer treatment.');
+  note(s,'F7','Rates for FBT years ending 31 March 2023 to 31 March 2027, checked 3 Nov 2026. Confirm the applicable FBT year and employer treatment.');
   header(s,13,['Benefit / employee','Final type 1 taxable value','Final type 2 taxable value','Type 1 grossed up','Type 2 grossed up','Grossed-up total','Modelled FBT','Input status']);
   for(let r=14;r<=33;r++) {
     input(s,`B${r}`,r===14?'Example benefits':null,'@');input(s,`C${r}`,r===14?10000:null);input(s,`D${r}`,r===14?5000:null);

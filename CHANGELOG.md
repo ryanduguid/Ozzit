@@ -105,6 +105,10 @@ heading in the Financial About table. The cover label moves to 150 functions.
 - `oz.Depreciateλ` help now says that its Revenue from Sale row is the salvage value,
   shown in the disposal period, not sale proceeds, and that DV and PC make it 0. The
   arithmetic is unchanged.
+- The practice companion's Benefit totals sheet prefills the 47% FBT rate and the
+  2.0802 and 1.8868 gross-up factors under a note that called them illustrative and
+  named no period. The note now names the FBT years they apply to, ending 31 March 2023
+  to 31 March 2027, as the ATO publishes them. The values are unchanged.
 
 The native self-test gains range-input and shape checks. Each date function is given
 worksheet ranges and must match the same dates passed as calculated arrays, because

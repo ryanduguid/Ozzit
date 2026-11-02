@@ -92,6 +92,23 @@ class PracticeTemplateTests(unittest.TestCase):
                     expected = {("B1", "'Read me'!B2")}
                 self.assertEqual(actual, expected, name)
 
+    def test_fbt_rate_note_names_its_fbt_years(self):
+        relationship_ns = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+        with zipfile.ZipFile(ROOT / "templates/practice-calculators.xlsx") as archive:
+            book = ET.fromstring(archive.read("xl/workbook.xml"))
+            rels = ET.fromstring(archive.read("xl/_rels/workbook.xml.rels"))
+            targets = {r.attrib["Id"]: r.attrib["Target"] for r in rels}
+            sheet = next(s for s in book.findall("s:sheets/s:sheet", NS) if s.attrib["name"] == "Benefit totals")
+            target = targets[sheet.attrib[f"{{{relationship_ns}}}id"]]
+            part = target.lstrip("/") if target.startswith("/") else "xl/" + target
+            cell = ET.fromstring(archive.read(part)).find("s:sheetData/s:row/s:c[@r='F7']", NS)
+            if cell.attrib.get("t") == "s":
+                strings = ET.fromstring(archive.read("xl/sharedStrings.xml")).findall("s:si", NS)
+                text = "".join(strings[int(cell.find("s:v", NS).text)].itertext())
+            else:
+                text = "".join(cell.itertext())
+        self.assertIn("FBT years ending 31 March 2023 to 31 March 2027", text)
+
     def test_text_contrast_on_every_populated_cell_and_conditional_style(self):
         with zipfile.ZipFile(ROOT / "templates/practice-calculators.xlsx") as archive:
             styles = ET.fromstring(archive.read("xl/styles.xml"))
