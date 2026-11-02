@@ -59,7 +59,7 @@ The function returns the unrounded binary-float result,
 
 **Human decision:** Does the evidence establish that the whole supply is taxable?
 
-[Browse ten worked formulas](https://duguid.com.au/tools/ozzit/#functions),
+[Browse 10 worked formulas](https://duguid.com.au/tools/ozzit/#functions),
 including arguments, expected results and limits for v3.4.2.
 
 <details>
@@ -77,7 +77,7 @@ check above used a different workbook file.
 
 You do not need all 143 functions. Start with the task you need to complete.
 The loan and depreciation guides show the spilled result for a synthetic input
-you can check by hand; the lease guide explains the four lessee functions.
+you can check by hand; the lease guide explains the 4 lessee functions.
 
 | Task | Formula | Guide |
 | --- | --- | --- |
@@ -115,7 +115,7 @@ The screenshot uses a disposable copy with a synthetic label, an explicit argume
 - [Modules, worksheets and formula walkthroughs](docs/function-guide.md)
 - [Australian conventions and lease modelling](docs/australian-modelling.md)
 - [Separate 13-week cash-flow template](docs/cash-flow-template.md)
-- [Practice calculators and Between The Spreadsheets coverage](docs/between-spreadsheets.md): twenty-one standalone arithmetic workflows and the remaining gaps across its 32 public product listings.
+- [Practice calculators and Between The Spreadsheets coverage](docs/between-spreadsheets.md): 21 standalone arithmetic workflows and the remaining gaps across its 32 public product listings.
 - [Similar tools, improvement decisions and Mermaid colours](docs/practice-improvements.md)
 - [Comparing a modelling schedule with an accounting carrying amount](docs/depreciation-comparison.md)
 - [Ratio definitions: the arithmetic, periods and balances each ratio expects](docs/ratio-definitions.md)
