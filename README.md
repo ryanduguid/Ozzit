@@ -11,6 +11,8 @@
 
 [![verify](https://github.com/ryanduguid/Ozzit/actions/workflows/verify.yml/badge.svg?branch=main)](https://github.com/ryanduguid/Ozzit/actions/workflows/verify.yml) [![Codecov](https://codecov.io/gh/ryanduguid/Ozzit/graph/badge.svg)](https://codecov.io/gh/ryanduguid/Ozzit) [![CodeQL](https://github.com/ryanduguid/Ozzit/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/ryanduguid/Ozzit/actions/workflows/codeql.yml) [![SonarCloud](https://sonarcloud.io/api/project_badges/measure?project=ryanduguid_Ozzit&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=ryanduguid_Ozzit) [![Codacy code quality](https://app.codacy.com/project/badge/Grade/ffd3c7d7645541179caea8a353bd3f86)](https://app.codacy.com/gh/ryanduguid/Ozzit/dashboard)<br> [![OpenSSF Scorecard](https://raw.githubusercontent.com/ryanduguid/.github/badges/ryanduguid/Ozzit.svg)](https://scorecard.dev/viewer/?uri=github.com/ryanduguid/Ozzit) [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/15420/badge)](https://www.bestpractices.dev/projects/15420) [![VirusTotal](.github/assets/badges/virustotal.svg)](https://github.com/ryanduguid/Ozzit/releases/latest)<br> [![release](https://badgen.net/github/release/ryanduguid/Ozzit/stable?label=release&color=66023C&labelColor=000000)](https://github.com/ryanduguid/Ozzit/releases/latest) ![Excel: 365 or 2024+](.github/assets/badges/excel.svg) [![licence: FSL-1.1-ALv2](.github/assets/badges/licence.svg)](LICENSE)
 
+[Start with a task](#start-with-a-task) · [Use the workbook](docs/workbook-use.md) · [Function guide](docs/function-guide.md) · [Function index](functions.csv) · [Changes](CHANGELOG.md) · [Licence](LICENSE)
+
 </div>
 
 One Excel workbook holding 143 native LAMBDA functions and 5 named help tables under
@@ -60,7 +62,7 @@ The function returns the unrounded binary-float result,
 **Human decision:** Does the evidence establish that the whole supply is taxable?
 
 [Browse 10 worked formulas](https://duguid.com.au/tools/ozzit/#functions),
-including arguments, expected results and limits for v3.4.2.
+including arguments, expected results and limits for v3.5.0.
 
 <details>
 <summary>Historical v3.2.0 screenshot</summary>
@@ -133,7 +135,7 @@ v3.5.0 `ozzit.xlsx` SHA-256: `76d3722c785abd3813ffffffc5fbb2d6ab80628da10fb7f36c
 
 Ozzit's functions were written by Ryan Duguid. Ozzit is not derived from any third-party workbook or library.
 
-Licensed under the Functional Source License, Version 1.1, ALv2 Future License (FSL-1.1-ALv2). You may use, modify and redistribute it for any purpose except a Competing Use as defined in LICENSE (making it available to others in a competing commercial product or service), and each version becomes available under Apache-2.0 two years after it is made available. See [LICENSE](LICENSE) and [NOTICE](NOTICE). If you redistribute this work or build on it, keep the copyright notices in [NOTICE](NOTICE). See [DISCLAIMER.md](DISCLAIMER.md) for scope and review requirements.
+Licensed under the Functional Source License, Version 1.1, ALv2 Future License (FSL-1.1-ALv2). You may use, modify and redistribute it for any purpose except a Competing Use as defined in LICENSE (making it available to others in a competing commercial product or service), and each version becomes available under Apache-2.0 2 years after it is made available. See [LICENSE](LICENSE) and [NOTICE](NOTICE). If you redistribute this work or build on it, keep the copyright notices in [NOTICE](NOTICE). See [DISCLAIMER.md](DISCLAIMER.md) for scope and review requirements.
 
 </details>
 
