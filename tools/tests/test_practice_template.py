@@ -102,11 +102,10 @@ class PracticeTemplateTests(unittest.TestCase):
             target = targets[sheet.attrib[f"{{{relationship_ns}}}id"]]
             part = target.lstrip("/") if target.startswith("/") else "xl/" + target
             cell = ET.fromstring(archive.read(part)).find("s:sheetData/s:row/s:c[@r='F7']", NS)
-            if cell.attrib.get("t") == "s":
-                strings = ET.fromstring(archive.read("xl/sharedStrings.xml")).findall("s:si", NS)
-                text = "".join(strings[int(cell.find("s:v", NS).text)].itertext())
-            else:
-                text = "".join(cell.itertext())
+            # Native Excel preparation stores the note as a shared string.
+            self.assertEqual(cell.attrib.get("t"), "s")
+            strings = ET.fromstring(archive.read("xl/sharedStrings.xml")).findall("s:si", NS)
+            text = "".join(strings[int(cell.find("s:v", NS).text)].itertext())
         self.assertIn("FBT years ending 31 March 2023 to 31 March 2027", text)
 
     def test_text_contrast_on_every_populated_cell_and_conditional_style(self):
