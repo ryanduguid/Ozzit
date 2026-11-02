@@ -48,6 +48,15 @@ tools/ozzit/target/release/ozzit verify_help_spills ozzit.xlsx
 tools/ozzit/target/release/ozzit verify_native_evidence
 ```
 
+After mypy, the `lint` job checks the workflows on Linux with pinned ShellCheck
+and actionlint:
+
+```bash
+curl --proto '=https' --proto-redir '=https' -sSLO https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.linux.x86_64.tar.xz && echo "8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198  shellcheck-v0.11.0.linux.x86_64.tar.xz" | sha256sum --check && tar -xJf shellcheck-v0.11.0.linux.x86_64.tar.xz shellcheck-v0.11.0/shellcheck
+curl --proto '=https' --proto-redir '=https' -sSLO https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz && echo "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  actionlint_1.7.12_linux_amd64.tar.gz" | sha256sum --check && tar -xzf actionlint_1.7.12_linux_amd64.tar.gz actionlint
+./actionlint -shellcheck ./shellcheck-v0.11.0/shellcheck
+```
+
 For native cache evidence, first ensure no user Excel process is running; never
 close or attach to one. Then use `tools/excel_selftest.ps1` and
 `ozzit verify_cache` as specified in `RELEASING.md`, recording the required

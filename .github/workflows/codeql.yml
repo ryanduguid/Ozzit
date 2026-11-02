@@ -66,6 +66,12 @@ jobs:
           fetch-depth: 2
       - name: Install the pinned Rust toolchain
         run: rustup toolchain install
+      - name: Restore the dependency build cache
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: tools/ozzit
+          # Pull requests read main's cache and never write their own.
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Build the native aggregate gate
         run: cargo build --locked --manifest-path tools/ozzit/Cargo.toml
       - name: Require every job to be listed, kept and successful
