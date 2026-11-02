@@ -23,7 +23,7 @@ separate Cargo lockfile live in `tools/ozzit/fuzz/`; ordinary stable Rust tests
 in `tools/ozzit/tests/fuzz_corpus.rs` replay the same harness and all committed
 seeds, plus invalid-byte, line-boundary and very small decimal cases.
 
-`.github/workflows/fuzzing.yml` runs the target after main pushes, weekly and
+`.github/workflows/fuzzing.yml` runs the target weekly and
 on demand, with read-only repository access and a 20-minute job timeout. Its
 random exploration lasts 60 seconds and is not a merge gate. A successful run
 is bounded evidence, not proof that every input is handled.
