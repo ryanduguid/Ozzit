@@ -70,11 +70,11 @@ utilities copies. The 5 About tables take words instead: `oz.AboutFinancialλ`,
 | `oz.RangeToDAEλ` | Convert a static range into a dynamic array |
 | `oz.FinancialRatios` | Three dozen financial Ratios |
 
-The other 104 named formulas have no dedicated worksheet: 100 LAMBDA functions
+The other 106 named formulas have no dedicated worksheet: 102 LAMBDA functions
 and 4 About tables. They include all of Ratios, Utilities, Debt and the AASB 16
 lease helpers. Call a LAMBDA with no arguments for inline help; reference an About
 table by name without parentheses. `oz.FinancialRatios` demonstrates the ratio
-suite on one worksheet, and [functions.csv](../functions.csv) indexes all 148 names.
+suite on one worksheet, and [functions.csv](../functions.csv) indexes all 150 names.
 
 ## Dynamic-array formula walkthrough
 

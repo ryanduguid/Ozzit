@@ -8,14 +8,15 @@ use ozzit::{
 use std::{path::Path, process::Command};
 
 const STRINGS: &str = "xl/sharedStrings.xml";
-const OLD_LABELS: [&str; 4] = [
+const OLD_LABELS: [&str; 5] = [
     "Version 20 August 2026    -    130 functions    -    Microsoft 365 or Excel 2024 and later",
     "Version 16 September 2026    -    133 functions    -    Microsoft 365 or Excel 2024 and later",
     "Version 16 September 2026    -    137 functions    -    Microsoft 365 or Excel 2024 and later",
     "Version 19 October 2026    -    143 functions    -    Microsoft 365 or Excel 2024 and later",
+    "Version 19 October 2026    -    148 functions    -    Microsoft 365 or Excel 2024 and later",
 ];
 const LABEL: &str =
-    "Version 19 October 2026    -    148 functions    -    Microsoft 365 or Excel 2024 and later";
+    "Version 19 October 2026    -    150 functions    -    Microsoft 365 or Excel 2024 and later";
 const OLD_CREATOR: &str = "<dc:creator>Ryan Duguid; Ozzit project</dc:creator>";
 const CREATOR: &str = "<dc:creator>Ozzit project</dc:creator>";
 
@@ -127,7 +128,7 @@ fn ambiguous_and_unrecognised_cover_labels_are_refused_without_writing() {
     let f = Fixture::new();
     for text in [
         format!("{LABEL}</t><t>{}", OLD_LABELS[1]),
-        LABEL.replace("148", "999"),
+        LABEL.replace("150", "999"),
     ] {
         f.write(&strings(&text));
         let before = std::fs::read(f.book()).unwrap();
