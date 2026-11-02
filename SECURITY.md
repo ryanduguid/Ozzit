@@ -24,9 +24,13 @@ an extract containing client information remains sensitive.
 
 ## What this library does and does not do
 
-Ozzit is an Excel LAMBDA workbook plus Python tools that verify and rebuild it.
-The tools read local files and make no network call. They hold no credentials
-and have no runtime dependencies outside the Python standard library.
+Ozzit is an Excel LAMBDA workbook plus the tools that build and verify it: the
+`ozzit` Rust command in `tools/ozzit` (which also runs the merge gates),
+PowerShell self-tests that drive a local Excel and a Node script that builds the
+practice calculator template. Python runs only the repository tests and an
+optional comparison script. The tools read local files and make no network
+call, and they hold no credentials. The Rust command's 12 direct crates are
+pinned in `tools/ozzit/Cargo.lock`.
 
 Do not run the tools with elevated privileges. Treat `ozzit.xlsx` and `src/`
 as published artefacts from this repository, not as untrusted user input.
