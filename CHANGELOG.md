@@ -105,6 +105,13 @@ heading in the Financial About table. The cover label moves to 150 functions.
 - `oz.Depreciateλ` help now says that its Revenue from Sale row is the salvage value,
   shown in the disposal period, not sale proceeds, and that DV and PC make it 0. The
   arithmetic is unchanged.
+- `oz.Depreciateλ` and `oz.CorkScrewReversalλ` help had no worked example, though
+  every other function's help has one. Both now end with one, which the native
+  self-test checks. To stay under Excel's 8,192-character limit for a defined name
+  and fit above the settings on its worksheet, `oz.Depreciateλ` help puts its method
+  codes on 3 rows and each LifeInYears and Timeline note on one row, with the same
+  meaning. The arithmetic is unchanged. A test now fails when a demonstration sheet's
+  help has no room to spill; `ozzit verify_help_spills` skipped such a cell.
 - The practice companion's Benefit totals sheet prefills the 47% FBT rate and the
   2.0802 and 1.8868 gross-up factors under a note that called them illustrative and
   named no period. The note now names the FBT years they apply to, ending 31 March 2023

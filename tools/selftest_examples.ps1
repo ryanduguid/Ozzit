@@ -158,7 +158,7 @@ Same 'help: DebtSculptVariableLRV${L}' "INDEX(oz.DebtSculptVariableLRV${L}(),1,1
 Same 'help: DebtSculptVariable${L}' "INDEX(oz.DebtSculptVariable${L}(),1,1)" 'FUNCTION:'
 Same 'help: InterestLRV${L}' "INDEX(oz.InterestLRV${L}(),1,1)" 'FUNCTION:'
 
-# --- 158 worked examples that stand on their own, as the help prints them
+# --- 160 worked examples that stand on their own, as the help prints them
 Near 'example: CountDOW${L} #1' "oz.CountDOW${L}(`"23/7/2026`", `"11/8/2026`",  1)" '3.0' '0.5'
 Near 'example: IsBetween${L} #1' "N(oz.IsBetween${L}(1, 2, 4))" '0'
 Near 'example: IsBetween${L} #2' "N(oz.IsBetween${L}(Today(), Today(), Today()+1))" '1'
@@ -206,6 +206,8 @@ Near 'example: IsInList${L} #1' "N(oz.IsInList${L}(1, {2,3,4}))" '0'
 Near 'example: IsInList${L} #2' "N(oz.IsInList${L}(1, {1,3,5}))" '1'
 Near 'example: Corkscrew${L} #1' "COUNT(oz.Corkscrew${L}(0, Sequence(1,5)))" '15'
 Near 'example: Corkscrew${L} #1' "SUM(oz.Corkscrew${L}(0, Sequence(1,5)))" '70.0' '7.5'
+Near 'example: CorkScrewReversal${L} #1' "COUNT(oz.CorkScrewReversal${L}(100, {0,1,0,1}, {10,20,30,40}))" '16'
+Near 'example: CorkScrewReversal${L} #1' "SUM(oz.CorkScrewReversal${L}(100, {0,1,0,1}, {10,20,30,40}))" '440.0' '8.0'
 Near 'example: IntOnInt${L} #1' "oz.IntOnInt${L}( 1000, 5%)" '52.63' '0.005'
 Near 'example: IRR${L} #1' "LET(Dates, EDATE(`"1/7/2026`", SEQUENCE(,24, 0)), Values, {0,0,-150,0,-100,10,20,30,40,50,60,70}, oz.IRR${L}( Values, Dates))" '0.25' '0.005'
 Near 'example: Movement${L} #1' "COUNT(oz.Movement${L}(,{100,110,130,100}))" '4'
@@ -225,6 +227,8 @@ Near 'example: RollingSum${L} #1' "SUM(oz.RollingSum${L}(SEQUENCE(, 5), 3))" '31
 Near 'example: SumPeriods${L} #1' "COUNT(oz.SumPeriods${L}({1,2,3,4;4,3,2,1;10,20,30,40}, {1,2,3,4}, {1,3}))" '6'
 Near 'example: SumPeriods${L} #1' "SUM(oz.SumPeriods${L}({1,2,3,4;4,3,2,1;10,20,30,40}, {1,2,3,4}, {1,3}))" '120.0' '3.0'
 Near 'example: Amortise${L} #1' "SUMPRODUCT(--ISERROR(oz.Amortise${L}(10000, 5%, 4 * 12, `"2026-07-01`")))" '0'
+Near 'example: Depreciate${L} #1' "COUNT(oz.Depreciate${L}(1200, DATE(2026,7,1), 2, DATE({2026,2027},7,1)))" '12'
+Near 'example: Depreciate${L} #1' "SUM(oz.Depreciate${L}(1200, DATE(2026,7,1), 2, DATE({2026,2027},7,1)))" '4800.0' '6.0'
 Near 'example: Allocate${L} #1' "COUNT(oz.Allocate${L}({999.99, 2000}, `"Y`", `"Q`"))" '8'
 Near 'example: Allocate${L} #1' "SUM(oz.Allocate${L}({999.99, 2000}, `"Y`", `"Q`"))" '2999.99' '3.505'
 Near 'example: PeriodDiff${L} #1' "oz.PeriodDiff${L}(`"2026-01-01`", `"2026-04-15`", `"Q`")" '2.0' '0.5'

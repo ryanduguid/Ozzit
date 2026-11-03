@@ -162,9 +162,16 @@ CorkScrewReversalλ=LAMBDA(
                         "Flow1          →(Required) First row (or array of rows) of numbers to include in period totals.¶" & 
                         "Flow2          →(Optional) Second row (or array of rows) of numbers to include in period totals.¶" & 
                         "Flow3          →(Optional) Third row (or array of rows) of numbers to include in period totals.¶" & 
-                        "Flow4          →(Optional) Fourth row (or array of rows) of numbers to include in period totals.¶" & 
-                        "NOTE!          →All flows are added. To subtract a flow make it negative.", 
-                        "→", "¶")), 
+                        "Flow4          →(Optional) Fourth row (or array of rows) of numbers to include in period totals.¶" &
+                        "NOTE!          →All flows are added. To subtract a flow make it negative.¶" &
+                        "→¶" &
+                        "EXAMPLES:      →NOTE! oz is assumed to be the module's name¶" &
+                        "Formula:       →=oz.CorkScrewReversalλ(100, {0,1,0,1}, {10,20,30,40})¶" &
+                        "Result:        →100, 110, 20, 50¶" &
+                                       "→0, -110, 0, -50¶" &
+                                       "→10, 20, 30, 40¶" &
+                                       "→110, 20, 50, 40",
+                        "→", "¶")),
     //  Check inputs - Omitted required arguments
         Help?,          OR( ISOMITTED( Opening), 
                             ISOMITTED( ReversalFlags), 
@@ -990,36 +997,39 @@ Depreciateλ = LAMBDA(
     [Methods],
     [Factors],
     LET(
-//  Help
+//  Help. The definition sits near Excel's 8,192-character limit for a defined name, so its
+//  help labels carry no padding inside the strings; TRIM gives the same help either way.
         Help,           TRIM(TEXTSPLIT( 
-                            "FUNCTION:      →Depreciateλ(InitialValues, InServiceDates, LifeInYears, Timeline, ¶" &
+                            "FUNCTION:→Depreciateλ(InitialValues, InServiceDates, LifeInYears, Timeline,¶" &
                                            "→[SalvageValues], [DisposalDates], [DisposalCosts], [Methods], [Factors])¶" &
-                            "DESCRIPTION:   →Creates an array of CAPEX, depreciation, and book values for a model's timeline¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit ¶" & 
-                            "VERSION:       →1 Nov 2026¶" &
-                            "NOTES:         →The methods differ from Excel's functions in several ways; see the webpage for details.¶" &
+                            "DESCRIPTION:→Creates an array of CAPEX, depreciation, and book values for a model's timeline¶" &
+                            "WEBPAGE:→https://github.com/ryanduguid/Ozzit¶" &
+                            "VERSION:→1 Nov 2026¶" &
+                            "NOTES:→The methods differ from Excel's functions in several ways; see the webpage for details.¶" &
                                            "→Revenue from Sale is salvage value, not sale proceeds; 0 for DV and PC.¶" &
-                            "PARAMETERS:    →¶" & 
-                            "InitialValues  →(Required) The purchase values of each asset to depreciate¶" & 
-                            "InServiceDates →(Required) The dates from which to start depreciating each asset¶" & 
-                            "LifeInYears    →(Required) The whole number of years over which to depreciate each asset.¶" & 
-                                           "→More than 0 and no more than 100. A date here is not a life:¶" & 
-                                           "→the arguments read InitialValues, InServiceDates, LifeInYears, Timeline.¶" & 
-                            "Timeline       →(Required) The model's timeline or a row of period start dates. ¶" & 
-                                           "→Timeline can be any interval: days, weeks, months, quarters or years¶" & 
-                            "SalvageValues  →(Optional: Default = 0) Book values once fully depreciated. Text or an error returns a message.¶" & 
-                            "DisposalDates  →(Optional: Default = End of life) The dates on which the assets are removed from the books.¶" & 
-                                           "→A disposal before the end of life writes the remaining book value off in that month.¶" & 
-                            "DisposalCosts  →(Optional: Default = 0) The costs of removing each asset from the books, charged in the disposal period.¶" & 
-                            "Methods        →(Optional: Default = SLN) The desired depreciation method. Must be one of these method codes: ¶" & 
-                                           "→SLN=Straight Line Depreciation¶" & 
-                                           "→SYD=Sum of Year's Digits¶" & 
-                                           "→DB =Declining Balance¶" & 
-                                           "→DDB=Double Declining Balance¶" & 
-                                           "→VDB=Variable Declining Balance¶" & 
-                                           "→DV =Diminishing balance at 200% of straight line. Salvage value ignored¶" & 
-                                           "→PC =Straight line, whole years. Salvage value ignored¶" & 
-                            "Factors        →(Optional: Default = 2) Only applicable to DDB and VDB methods.", 
+                            "PARAMETERS:→¶" &
+                            "InitialValues→(Required) The purchase values of each asset to depreciate¶" &
+                            "InServiceDates→(Required) The dates from which to start depreciating each asset¶" &
+                            "LifeInYears→(Required) The whole number of years over which to depreciate each asset.¶" &
+                                           "→More than 0 and no more than 100. A date here is not a life: check the argument order.¶" &
+                            "Timeline→(Required) The model's timeline or a row of period start dates, at any interval: days, weeks, months, quarters or years¶" &
+                            "SalvageValues→(Optional: Default = 0) Book values once fully depreciated. Text or an error returns a message.¶" &
+                            "DisposalDates→(Optional: Default = End of life) The dates on which the assets are removed from the books.¶" &
+                                           "→A disposal before the end of life writes the remaining book value off in that month.¶" &
+                            "DisposalCosts→(Optional: Default = 0) The costs of removing each asset from the books, charged in the disposal period.¶" &
+                            "Methods→(Optional: Default = SLN) One of these method codes:¶" &
+                                           "→SLN=Straight Line Depreciation; SYD=Sum of Year's Digits; DB=Declining Balance¶" &
+                                           "→DDB=Double Declining Balance; VDB=Variable Declining Balance¶" &
+                                           "→DV=Diminishing balance at 200% of straight line; PC=Straight line, whole years; both ignore salvage value¶" &
+                            "Factors→(Optional: Default = 2) Only applicable to DDB and VDB methods.¶" &
+                            "EXAMPLES:→NOTE! oz is the module's name¶" &
+                            "Formula:→=oz.Depreciateλ(1200, DATE(2026,7,1), 2, DATE({2026,2027},7,1))¶" &
+                            "Result:→1200,0¶" &
+                                           "→1200,600¶" &
+                                           "→600,600¶" &
+                                           "→600,0¶" &
+                                           "→0,0¶" &
+                                           "→0,0",
                             "→", "¶"
                             )
                         ),
