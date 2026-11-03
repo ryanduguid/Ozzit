@@ -44,7 +44,7 @@ CountDOWλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                         "FUNCTION:      →CountDOWλ(Starts, Ends, DayOfWeek)¶" & 
                         "DESCRIPTION:   →Count instances of a specific day of the week between two dates.¶" & 
-                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                         "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" & 
                         "Starts         →(Required) One of more start dates (text or numeric) in a row or column¶" & 
@@ -91,7 +91,7 @@ IsBetweenλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                         "FUNCTION:      →IsBetweenλ(Values, Low, High, [Inclusive])¶" &
                         "DESCRIPTION:   →Determine if a value is between a lower and upper limit.¶" & 
-                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit ¶" &
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                         "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" & 
                         "Values         →(Required) one or more values to compare.¶" & 
@@ -138,7 +138,7 @@ IsOccurrenceDateλ = LAMBDA(
                         "FUNCTION:      →IsOccurrenceDateλ(Dates, FirstOccurrence, [LastOccurrence], [Repeats])¶" &
                         "DESCRIPTION:   →Returns TRUE if a Date is when something happens.¶" &
                         "               →Developed for budgeting, where expenses start and sometimes repeat at regular intervals.¶" &  
-                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                         "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" &
                         "Dates          →(Required) Date to test. Normally this is horizontal timeline by day¶" &
@@ -238,7 +238,7 @@ OverLapDaysλ = LAMBDA(
         Help,       TRIM(TEXTSPLIT(
                         "FUNCTION:      →OverLapDaysλ(Period1Start, Period1End, Period2Start, Period2End)¶" &
                         "DESCRIPTION:   →Count days shared between two sets of periods.¶" & 
-                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                         "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" & 
                         "Period1Start   →(Required) First period's start date.¶" & 
@@ -299,7 +299,7 @@ PeriodLabelλ = LAMBDA(
         Help,       TRIM(TEXTSPLIT( 
                         "FUNCTION:      →PeriodLabelλ(Date, [Interval])¶" &
                         "DESCRIPTION:   →Creates a label for a date based on period interval¶" & 
-                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
                         "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" & 
                         "Date           →(Required) A single date or array of date(s) where the first date is the first date of a calendar year.¶" & 
@@ -364,7 +364,7 @@ Periodsλ = LAMBDA(
                                        "→* Interval includes Weeks & Quarters¶" & 
                                        "→* Counts the period starts crossed, so a part period at the end counts¶" & 
                                        "→* Returns negative values if Starts is after Ends¶" & 
-                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                         "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" &
                         "Starts         →(Required) First date (normally older). A single date or an array of dates.¶" &
@@ -438,7 +438,7 @@ ScheduleRatesλ = LAMBDA(
                         "FUNCTION:      →ScheduleRatesλ(PeriodEnds, RateStarts, Rates)¶" &
                         "DESCRIPTION:   →Schedules rates that persist until replaced in a timeline from a schedule in a table.¶" & 
                         "NOTE!          →If 2 rates are scheduled within the same period, only the last rate will be selected.¶" & 
-                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
                         "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" & 
                         "PeriodEnds     →(Required) A row of period end dates (timeline).¶" & 
@@ -490,7 +490,7 @@ ScheduleRatesByItemsλ = LAMBDA(
                         "DESCRIPTION:   →Schedules each item's rates by period until another rate takes effect.¶" & 
                         "NOTE!          →If 2 rates are scheduled within the same period for the same item, .¶" & 
                                        "→only the last rate will be selected.¶" & 
-                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
                         "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" & 
                         "PeriodEnds     →(Required) A row of period end dates (timeline).¶" & 
@@ -560,7 +560,7 @@ ScheduleValuesλ = LAMBDA(
         Help,       TRIM(TEXTSPLIT( 
                         "FUNCTION:      →ScheduleValuesλ(PeriodStarts, PeriodEnds, Values, EffectiveDates)¶" &
                         "DESCRIPTION:   →Place values from a table into a timeline's appropriate period.¶" & 
-                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit ¶" &
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                         "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" & 
                         "PeriodStarts   →(Required) A row of period start dates (timeline).¶" & 
@@ -624,7 +624,7 @@ ScheduleValuesByItemsλ = LAMBDA(
         Help,       TRIM(TEXTSPLIT( 
                         "FUNCTION:      →ScheduleValuesByItemsλ(PeriodStarts, PeriodEnds, ItemFilter, ItemList, EffectiveList, ValueList)¶" &
                         "DESCRIPTION:   →Schedule and sum values in a timeline for each item.¶" & 
-                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
                         "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" & 
                         "PeriodStarts   →(Required) A row of period start dates (timeline).¶" & 
@@ -689,7 +689,7 @@ Timelineλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →Timelineλ(StartDate, Periods, Interval, PeriodStarts?)¶" &
                             "DESCRIPTION:   →Creates a horizontal list of period dates.¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
                             "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:        →¶" & 
                             "StartDate      →(Required) First period's start date. May be entered as text.¶" &
@@ -747,7 +747,7 @@ FinancialYearλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →FinancialYearλ(Dates, [StartMonth])¶" &
                             "DESCRIPTION:   →Labels dates with their Australian financial year, which starts on 1 July.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Dates          →(Required) One or more dates, numeric or text. A blank cell returns a blank.¶" &

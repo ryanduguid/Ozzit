@@ -55,7 +55,7 @@ fn a_generated_definition_that_drifts_from_its_source_is_refused() {
     .unwrap();
     assert_eq!(
         error,
-        "LeaseLiabilityλ: generated definition does not reproduce its source at character 2774\n  src   : EXPONENTS),CHOOSE(HELP?+1,RESULT,HELP)))\n  stored: EXPONENTS),CHOOSE(HELP?+1,RESULT,HELP)))+1"
+        "LeaseLiabilityλ: generated definition does not reproduce its source at character 2813\n  src   : EXPONENTS),CHOOSE(HELP?+1,RESULT,HELP)))\n  stored: EXPONENTS),CHOOSE(HELP?+1,RESULT,HELP)))+1"
     );
 }
 #[test]
@@ -104,7 +104,7 @@ fn add_to_src_appends_after_a_final_newline_either_way() {
             .iter()
             .map(|b| format!("{b:02x}"))
             .collect::<String>(),
-        "ca25d77a54c86e1c37654ee10c3177cb56acff92ebe82b35944a5f01fa9e90d5"
+        "6e23cca1069b60f8d09457f8b1642b12d1ad43dea5e7ead05d1421f264a2c6b2"
     );
 }
 #[test]

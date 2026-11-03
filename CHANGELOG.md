@@ -116,6 +116,14 @@ heading in the Financial About table. The cover label moves to 150 functions.
   `oz.DebtSculptVariableλ`, `oz.DebtSculptVariableLRVλ` and `oz.InterestLRVλ`, were
   in no About table. `oz.AboutFinancialλ` now lists them under DEBT MODULE, and a test
   fails when a function is missing from every About table.
+- 100 function help tables gave the repository's front page as their WEBPAGE. 81 now
+  link the page that explains the function: its own document, the Australian
+  modelling, comparison or workbook-use page, or the function guide's worksheet
+  catalogue, which also describes the Utilities copies and each Debt function. The
+  other 19 have no page of their own and keep the front page. `oz.Depreciateλ`
+  NOTES said to see the webpage for how the methods differ from Excel's; it now says
+  that DB and DDB differ in the final year and points to their help. A test fails
+  when a WEBPAGE inside the repository names no file on `main`.
 - The practice companion's Benefit totals sheet prefills the 47% FBT rate and the
   2.0802 and 1.8868 gross-up factors under a note that called them illustrative and
   named no period. The note now names the FBT years they apply to, ending 31 March 2023

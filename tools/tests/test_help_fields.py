@@ -16,6 +16,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "src"
+REPOSITORY = "https://github.com/ryanduguid/Ozzit"
 
 FUNCTION = re.compile(r"^([A-Za-z0-9_]*λ[A-Za-z0-9_]*)\s*=\s*LAMBDA\(", re.MULTILINE)
 ROW = re.compile(r'^\s*"([A-Z][A-Z ]*):\s*→\s*([^"]*?)\s*¶?"', re.MULTILINE)
@@ -62,6 +63,18 @@ class HelpFieldTests(unittest.TestCase):
                 self.assertNotIn("WEBSITE", rows, "label the link WEBPAGE, as every other help does")
                 self.assertTrue(rows.get("WEBPAGE", "").startswith("https://"), rows.get("WEBPAGE"))
                 self.assertRegex(rows.get("VERSION", ""), rf"^{DATE.pattern}$")
+
+    def test_every_webpage_in_this_repository_is_a_file_on_main(self):
+        # A WEBPAGE inside the repository names the page that explains the function; the
+        # repository root is kept only where no page does. A renamed page breaks the link.
+        on_main = REPOSITORY + "/blob/main/"
+        for name, rows in self.rows.items():
+            link = rows.get("WEBPAGE", "")
+            if link == REPOSITORY or not link.startswith(REPOSITORY + "/"):
+                continue
+            with self.subTest(function=name):
+                self.assertTrue(link.startswith(on_main), link)
+                self.assertTrue((ROOT / link.removeprefix(on_main)).is_file(), link)
 
 
 if __name__ == "__main__":

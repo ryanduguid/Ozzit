@@ -40,7 +40,7 @@ CountCUλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →CountCUλ( Text, Characters)¶" &
                             "DESCRIPTION:   →Count how many of one or more characters are in a string.¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Text           →(Required) The string to interrogate. Empty text returns 0¶" & 
@@ -76,7 +76,7 @@ SumRowsUλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →SumRowsUλ( Array)¶" &
                             "DESCRIPTION:   →Get the total of each row¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing values to be totalled by row.¶" & 
@@ -105,7 +105,7 @@ SumColsUλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →SumColsUλ( Array)¶" &
                             "DESCRIPTION:   →Get the total of each column¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing values to be totalled by column.¶" & 
@@ -134,7 +134,7 @@ AvgRowsUλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →AvgRowsUλ( Array)¶" &
                             "DESCRIPTION:   →Get the average of each row¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing values to be averaged by row.¶" & 
@@ -163,7 +163,7 @@ AvgColsUλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →AvgColsUλ( Array)¶" &
                             "DESCRIPTION:   →Get the average for each Column¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing values to be averaged by column.¶" & 
@@ -192,7 +192,7 @@ MinRowsUλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →MinRowsUλ( Array)¶" &
                             "DESCRIPTION:   →Get the minimum of each row¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing values to find the minimum by row.¶" & 
@@ -221,7 +221,7 @@ MinColsUλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →MinColsUλ( Array)¶" &
                             "DESCRIPTION:   →Get the minimum for each Column¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing values to find the minimum by column.¶" & 
@@ -250,7 +250,7 @@ MaxRowsUλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →MaxRowsUλ( Array)¶" &
                             "DESCRIPTION:   →Get the maximum of each row¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing values to find the maximum by row.¶" & 
@@ -279,7 +279,7 @@ MaxColsUλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →MaxColsUλ( Array)¶" &
                             "DESCRIPTION:   →Get the maximum for each Column¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing values to find the maximum by column.¶" & 
@@ -308,7 +308,7 @@ CountARowsUλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →CountARowsUλ( Array)¶" &
                             "DESCRIPTION:   →Count everything in each row¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing values to be counted.¶" & 
@@ -337,7 +337,7 @@ CountAColsUλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →CountAColsUλ( Array )¶" &
                             "DESCRIPTION:   →Count everything in each column¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing values to be counted.¶" & 
@@ -366,7 +366,7 @@ CountRowsUλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →CountRowsUλ( Array)¶" &
                             "DESCRIPTION:   →Count numbers in each row¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing numbers to be counted.¶" & 
@@ -395,7 +395,7 @@ CountColsUλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →CountColsUλ( Array)¶" &
                             "DESCRIPTION:   →Count numbers in each column¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing numbers to be counted.¶" & 
@@ -427,7 +427,7 @@ IsBetweenUλ = LAMBDA(
     LET(Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →IsBetweenUλ( Value, Low, Hi, [Inclusive])¶" &
                             "DESCRIPTION:   →Determine if a value is between a lower and upper limit.¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Value          →(Required) A value or array of values to compare.¶" & 
@@ -472,7 +472,7 @@ IsInListUλ = LAMBDA(
     LET(Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →IsInListUλ( Value, List)¶" &
                             "DESCRIPTION:   →Determine if a value is one of a list of items.¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/workbook-use.md¶" &
                             "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Value          →(Required) A value or array of values to compare.¶" & 
@@ -513,7 +513,7 @@ RangeToDAUλ = LAMBDA(
                             "FUNCTION:          →RangeToDAUλ(Range, [Rows], [Columns])¶" &
                             "DESCRIPTION:       →Convert a range reference to a dynamic array reference.¶" & 
                             "SEE ALSO:      →Excel 365 now has TRIMRANGE and trim references (.:.) for this.¶" &
-                            "WEBPAGE:           →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:           →https://github.com/ryanduguid/Ozzit/blob/main/docs/workbook-use.md¶" &
                             "VERSION:           →24 Oct 2026¶" &
                             "PARAMETERS:        →¶" & 
                             "Range              →(Required) A reference to the range to be converted.¶" &

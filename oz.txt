@@ -49,7 +49,7 @@ CountDOWλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                         "FUNCTION:      →CountDOWλ(Starts, Ends, DayOfWeek)¶" & 
                         "DESCRIPTION:   →Count instances of a specific day of the week between two dates.¶" & 
-                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                         "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" & 
                         "Starts         →(Required) One of more start dates (text or numeric) in a row or column¶" & 
@@ -96,7 +96,7 @@ IsBetweenλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                         "FUNCTION:      →IsBetweenλ(Values, Low, High, [Inclusive])¶" &
                         "DESCRIPTION:   →Determine if a value is between a lower and upper limit.¶" & 
-                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit ¶" &
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                         "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" & 
                         "Values         →(Required) one or more values to compare.¶" & 
@@ -143,7 +143,7 @@ IsOccurrenceDateλ = LAMBDA(
                         "FUNCTION:      →IsOccurrenceDateλ(Dates, FirstOccurrence, [LastOccurrence], [Repeats])¶" &
                         "DESCRIPTION:   →Returns TRUE if a Date is when something happens.¶" &
                         "               →Developed for budgeting, where expenses start and sometimes repeat at regular intervals.¶" &  
-                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                         "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" &
                         "Dates          →(Required) Date to test. Normally this is horizontal timeline by day¶" &
@@ -243,7 +243,7 @@ OverLapDaysλ = LAMBDA(
         Help,       TRIM(TEXTSPLIT(
                         "FUNCTION:      →OverLapDaysλ(Period1Start, Period1End, Period2Start, Period2End)¶" &
                         "DESCRIPTION:   →Count days shared between two sets of periods.¶" & 
-                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                         "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" & 
                         "Period1Start   →(Required) First period's start date.¶" & 
@@ -304,7 +304,7 @@ PeriodLabelλ = LAMBDA(
         Help,       TRIM(TEXTSPLIT( 
                         "FUNCTION:      →PeriodLabelλ(Date, [Interval])¶" &
                         "DESCRIPTION:   →Creates a label for a date based on period interval¶" & 
-                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
                         "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" & 
                         "Date           →(Required) A single date or array of date(s) where the first date is the first date of a calendar year.¶" & 
@@ -369,7 +369,7 @@ Periodsλ = LAMBDA(
                                        "→* Interval includes Weeks & Quarters¶" & 
                                        "→* Counts the period starts crossed, so a part period at the end counts¶" & 
                                        "→* Returns negative values if Starts is after Ends¶" & 
-                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                         "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" &
                         "Starts         →(Required) First date (normally older). A single date or an array of dates.¶" &
@@ -443,7 +443,7 @@ ScheduleRatesλ = LAMBDA(
                         "FUNCTION:      →ScheduleRatesλ(PeriodEnds, RateStarts, Rates)¶" &
                         "DESCRIPTION:   →Schedules rates that persist until replaced in a timeline from a schedule in a table.¶" & 
                         "NOTE!          →If 2 rates are scheduled within the same period, only the last rate will be selected.¶" & 
-                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
                         "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" & 
                         "PeriodEnds     →(Required) A row of period end dates (timeline).¶" & 
@@ -495,7 +495,7 @@ ScheduleRatesByItemsλ = LAMBDA(
                         "DESCRIPTION:   →Schedules each item's rates by period until another rate takes effect.¶" & 
                         "NOTE!          →If 2 rates are scheduled within the same period for the same item, .¶" & 
                                        "→only the last rate will be selected.¶" & 
-                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
                         "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" & 
                         "PeriodEnds     →(Required) A row of period end dates (timeline).¶" & 
@@ -565,7 +565,7 @@ ScheduleValuesλ = LAMBDA(
         Help,       TRIM(TEXTSPLIT( 
                         "FUNCTION:      →ScheduleValuesλ(PeriodStarts, PeriodEnds, Values, EffectiveDates)¶" &
                         "DESCRIPTION:   →Place values from a table into a timeline's appropriate period.¶" & 
-                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit ¶" &
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                         "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" & 
                         "PeriodStarts   →(Required) A row of period start dates (timeline).¶" & 
@@ -629,7 +629,7 @@ ScheduleValuesByItemsλ = LAMBDA(
         Help,       TRIM(TEXTSPLIT( 
                         "FUNCTION:      →ScheduleValuesByItemsλ(PeriodStarts, PeriodEnds, ItemFilter, ItemList, EffectiveList, ValueList)¶" &
                         "DESCRIPTION:   →Schedule and sum values in a timeline for each item.¶" & 
-                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
                         "VERSION:       →24 Oct 2026¶" &
                         "PARAMETERS:    →¶" & 
                         "PeriodStarts   →(Required) A row of period start dates (timeline).¶" & 
@@ -694,7 +694,7 @@ Timelineλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →Timelineλ(StartDate, Periods, Interval, PeriodStarts?)¶" &
                             "DESCRIPTION:   →Creates a horizontal list of period dates.¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
                             "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:        →¶" & 
                             "StartDate      →(Required) First period's start date. May be entered as text.¶" &
@@ -752,7 +752,7 @@ FinancialYearλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →FinancialYearλ(Dates, [StartMonth])¶" &
                             "DESCRIPTION:   →Labels dates with their Australian financial year, which starts on 1 July.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Dates          →(Required) One or more dates, numeric or text. A blank cell returns a blank.¶" &
@@ -1023,7 +1023,7 @@ CountCλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →CountCλ( Text, Characters)¶" &
                             "DESCRIPTION:   →Count how many of one or more characters are in a string.¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Text           →(Required) The string to interrogate. Empty text returns 0¶" & 
@@ -1059,7 +1059,7 @@ SumRowsλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →SumRowsλ( Array)¶" &
                             "DESCRIPTION:   →Get the total of each row¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing values to be totalled by row.¶" & 
@@ -1088,7 +1088,7 @@ SumColsλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →SumColsλ( Array)¶" &
                             "DESCRIPTION:   →Get the total of each column¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing values to be totalled by column.¶" & 
@@ -1117,7 +1117,7 @@ AvgRowsλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →AvgRowsλ( Array)¶" &
                             "DESCRIPTION:   →Get the average of each row¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing values to be averaged by row.¶" & 
@@ -1146,7 +1146,7 @@ AvgColsλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →AvgColsλ( Array)¶" &
                             "DESCRIPTION:   →Get the average for each Column¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing values to be averaged by column.¶" & 
@@ -1175,7 +1175,7 @@ MinRowsλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →MinRowsλ( Array)¶" &
                             "DESCRIPTION:   →Get the minimum of each row¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing values to find the minimum by row.¶" & 
@@ -1204,7 +1204,7 @@ MinColsλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →MinColsλ( Array)¶" &
                             "DESCRIPTION:   →Get the minimum for each Column¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing values to find the minimum by column.¶" & 
@@ -1233,7 +1233,7 @@ MaxRowsλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →MaxRowsλ( Array)¶" &
                             "DESCRIPTION:   →Get the maximum of each row¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing values to find the maximum by row.¶" & 
@@ -1262,7 +1262,7 @@ MaxColsλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →MaxColsλ( Array)¶" &
                             "DESCRIPTION:   →Get the maximum for each Column¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing values to find the maximum by column.¶" & 
@@ -1291,7 +1291,7 @@ CountARowsλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →CountARowsλ( Array)¶" &
                             "DESCRIPTION:   →Count everything in each row¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing values to be counted.¶" & 
@@ -1320,7 +1320,7 @@ CountAColsλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →CountAColsλ( Array )¶" &
                             "DESCRIPTION:   →Count everything in each column¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing values to be counted.¶" & 
@@ -1349,7 +1349,7 @@ CountRowsλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →CountRowsλ( Array)¶" &
                             "DESCRIPTION:   →Count numbers in each row¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing numbers to be counted.¶" & 
@@ -1378,7 +1378,7 @@ CountColsλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →CountColsλ( Array)¶" &
                             "DESCRIPTION:   →Count numbers in each column¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing numbers to be counted.¶" & 
@@ -1410,7 +1410,7 @@ IsBetweenEλ = LAMBDA(
     LET(Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →IsBetweenEλ( Value, Low, Hi, [Inclusive])¶" &
                             "DESCRIPTION:   →Determine if a value is between a lower and upper limit.¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Value          →(Required) A value or array of values to compare.¶" & 
@@ -1454,7 +1454,7 @@ IsInListλ = LAMBDA(
     LET(Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →IsInListλ( Value, List)¶" &
                             "DESCRIPTION:   →Determine if a value is one of a list of items.¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/workbook-use.md¶" &
                             "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Value          →(Required) A value or array of values to compare.¶" & 
@@ -1495,7 +1495,7 @@ RangeToDAEλ = LAMBDA(
                             "FUNCTION:          →RangeToDAEλ(Range, [Rows], [Columns])¶" &
                             "DESCRIPTION:       →Convert a range reference to a dynamic array reference.¶" & 
                             "SEE ALSO:      →Excel 365 now has TRIMRANGE and trim references (.:.) for this.¶" &
-                            "WEBPAGE:           →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:           →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:           →24 Oct 2026¶" &
                             "PARAMETERS:        →¶" & 
                             "Range              →(Required) A reference to the range to be converted.¶" &
@@ -1622,7 +1622,7 @@ Corkscrewλ = LAMBDA(
         Help,       TRIM(TEXTSPLIT( 
                         "FUNCTION:      →Corkscrewλ( Opening, Flow1, [Flow2], [Flow3], [Flow4])¶" &
                         "DESCRIPTION:   →Create a corkscrew section that sums the opening balance and up to 4 independent flows¶" & 
-                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
                         "VERSION:       →20 Aug 2026¶" &
                         "PARAMETERS:→¶" & 
                         "Opening        →(Required) First periods opening balance.¶" & 
@@ -1755,7 +1755,7 @@ IntOnIntλ = LAMBDA(
                             "FUNCTION:      →IntOnIntλ( Principal, Rate)¶" & 
                             "DESCRIPTION:   →Calculate Interest on Interest (Interest only). Use to determine amount ¶" &
                                            "→needed to cover borrowed interest¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Principal     →(Required) Principal amount¶" & 
@@ -1788,7 +1788,7 @@ IRRλ = LAMBDA(
     LET(Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →IRRλ( Values, Dates)¶" & 
                             "DESCRIPTION:   →Calculates IRR, correcting for when the first investment is not in the first period¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/pyxirr-comparison.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Values         →(Required) A row of investments (negative) and distributions (positive)¶" & 
@@ -1835,7 +1835,7 @@ Movementλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →Movementλ( [BeginningValues], Values)¶" &
                             "DESCRIPTION:   →Create a row of differences from column to column¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "BeginningValues→(Optional) Defaults to 0. One value, or one per row of Values¶" & 
@@ -1875,7 +1875,7 @@ Reversalλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →Reversalλ( [OpeningValue], RowToReverse)¶" &
                             "DESCRIPTION:   →Create a row that reverses input values in the next period.¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "OpeningValue   →(Optional) Defaults to 0¶" & 
@@ -1910,7 +1910,7 @@ Cumulativeλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →Cumulativeλ( Totals, [OpeningBalance])¶" &
                             "DESCRIPTION:   →Creates a row or column of cumulative totals from a total row or column¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Totals         →(Required) One row or one column of totals from which to run cumulative totals.¶" &
@@ -2086,7 +2086,7 @@ RollingSumλ = LAMBDA(
                             "FUNCTION:      →RollingSumλ( Values, Size)¶" &
                             "DESCRIPTION:   →Creates totals for preceding values of a set size moving¶" &
                                            "→from beginning to end over a row of values¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/rolling-sum-benchmark.md¶" &
                             "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Values         →(Required) A row of values to be totalled.¶" & 
@@ -2137,7 +2137,7 @@ SumContainsλ = LAMBDA(
                             "DESCRIPTION:   →Creates a row of column totals for each row in an array where¶" & 
                                            "→its labels contain a unique letter, word, or phrase.¶" & 
                             "SEE ALSO:      →Excel 365 now has GROUPBY and PIVOTBY for formula-driven aggregation.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "ValuesToFilter →(Required) An array of values to be filtered¶" &                   
@@ -2186,7 +2186,7 @@ SumPeriodsλ = LAMBDA(
                             "NOTES:         →A date before the first period start is left out; one on or after the last start goes to the last period.¶" & 
                             "SEE ALSO:      →Excel 365 now has GROUPBY and PIVOTBY for formula-driven aggregation.¶" &
                             "VERSION:       →24 Oct 2026¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "PARAMETERS:→¶" & 
                             "Values         →(Required) A two dimensional array/range containing values to be summed where" & 
                                             "each column is for a specific day¶" & 
@@ -2238,7 +2238,7 @@ Amortiseλ = LAMBDA(
                                        "→Payments are assumed monthly. Each month lands in the period holding its start. Flows add up; balances show the first opening and last closing. Periods without a loan month are nil.¶" &
                                        "→Use LabelAmortiseλ() to apply labels to this function's results:¶" & 
                                        "→Use SumAmortiseλ() to apply totals to this function's results:¶" & 
-                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                         "VERSION:       →20 Aug 2026¶" &
                         "PARAMETERS:→¶" & 
                         "Principals     →(Required) Loan/debt amounts.¶" & 
@@ -2414,7 +2414,7 @@ LabelAmortiseλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →LabelAmortiseλ(LoanNames, [LoanAmounts], [LoanAPRs], [LoanTerms])¶" &
                             "DESCRIPTION:   →Create row labels for the amortisation schedule array produced by Amortiseλ¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "LoanNames     →(Required) Names or descriptions of each loan in the amortisation schedule produced by Amortiseλ¶" &                  
@@ -2477,7 +2477,7 @@ SumAmortiseλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →SumAmortiseλ(AmortisationSchedule)¶" &
                             "DESCRIPTION:   →Create row totals for Amortiseλ¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "AmortisationSchedule→(Required) An array produced by Amortiseλ¶" &                  
@@ -2531,9 +2531,9 @@ Depreciateλ = LAMBDA(
                             "FUNCTION:→Depreciateλ(InitialValues, InServiceDates, LifeInYears, Timeline,¶" &
                                            "→[SalvageValues], [DisposalDates], [DisposalCosts], [Methods], [Factors])¶" &
                             "DESCRIPTION:→Creates an array of CAPEX, depreciation, and book values for a model's timeline¶" &
-                            "WEBPAGE:→https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:→https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
                             "VERSION:→1 Nov 2026¶" &
-                            "NOTES:→The methods differ from Excel's functions in several ways; see the webpage for details.¶" &
+                            "NOTES:→DB and DDB differ from Excel's in the final year; see the DBλ and DDBλ help.¶" &
                                            "→Revenue from Sale is salvage value, not sale proceeds; 0 for DV and PC.¶" &
                             "PARAMETERS:→¶" &
                             "InitialValues→(Required) The purchase values of each asset to depreciate¶" &
@@ -2727,7 +2727,7 @@ LabelDepreciateλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →LabelDepreciateλ( AssetNames)¶" &
                             "DESCRIPTION:   →Create row labels for the depreciation schedule array produced by Depreciateλ¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "AssetNames     →(Required) The names or descriptions of each asset in the depreciation schedule produced by Depreciateλ¶" &                   
@@ -2773,7 +2773,7 @@ SumDepreciateλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →SumDepreciateλ(DepreciationSchedule)¶" &
                             "DESCRIPTION:   →Create row totals for Depreciateλ¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "DepreciationSchedule→(Required) An array produced by Depreciateλ¶" &
@@ -2819,7 +2819,7 @@ Allocateλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →Allocateλ(Amounts, [FromInterval], [ToInterval])¶" &
                             "DESCRIPTION:   →Divide one or more amounts equally across smaller periods¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/modelling-conventions.md¶" & 
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Amounts        →(Required) One amount or a row of amounts to allocate.¶" &                   
@@ -3453,7 +3453,7 @@ TimelineOffsetλ = LAMBDA(
                             "FUNCTION:      →TimelineOffsetλ(Date, Timeline)¶" &
                             "DESCRIPTION:   →Determines in which period, relative to the timeline's start and interval,¶" &
                                            "→a date falls within.¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Date           →(Required) A starting date¶" & 
@@ -3512,7 +3512,7 @@ TimelinePositionλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →TimelinePositionλ(Array, Timeline, Offset)¶" &
                             "DESCRIPTION:   →Position an array relative to the model's timeline¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) The array to be positioned relative to a model's timeline¶" & 
@@ -3578,7 +3578,7 @@ FilterContainsλ = LAMBDA(
                             "FUNCTION:      →FilterContainsλ( ArrayToFilter, FilterByArray, FilterByText, [IgnoreCase?] )¶" &
                             "DESCRIPTION:   →Filter an array by another array that contains specific text.¶" & 
                             "SEE ALSO:      →Excel 365 now has REGEXTEST and REGEXEXTRACT for pattern matching.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/workbook-use.md¶" & 
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "ArrayToFilter  →(Required) An array to be filtered¶" &                   
@@ -3623,7 +3623,7 @@ RangeToDAλ = LAMBDA(
                             "FUNCTION:      →RangeToDAλ( Cell, [Rows], [Columns])¶" &
                             "DESCRIPTION:   →Create a dynamic array from a static range¶" & 
                             "SEE ALSO:      →Excel 365 now has TRIMRANGE and trim references (.:.) for this.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/workbook-use.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Cell           →(Required) The upper left cell of a range to convert¶" & 
@@ -3712,7 +3712,7 @@ DiminishingValueλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →DiminishingValueλ(Cost, Life)¶" &
                             "DESCRIPTION:   →Diminishing-balance depreciation schedule at 200% of the straight-line rate, writing the residual off in the final period. A modelling schedule, not a tax calculation.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/depreciation-comparison.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Cost           →(Required) Asset's cost.¶" &
@@ -3759,7 +3759,7 @@ PrimeCostλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →PrimeCostλ(Cost, Life)¶" &
                             "DESCRIPTION:   →Straight-line depreciation schedule for one asset or asset class, in whole years. A modelling schedule, not a tax calculation.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/depreciation-comparison.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Cost           →(Required) Asset's cost.¶" &
@@ -3802,7 +3802,7 @@ GSTAddλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →GSTAddλ(Amounts, [Rate])¶" &
                             "DESCRIPTION:   →Adds GST to one or more GST-exclusive amounts.¶NOTES!         →The 10% default and one-eleventh extraction reflect the basic rule¶               →for a taxable supply in A New Tax System (Goods and Services Tax)¶               →Act 1999 ss 9-70 and 9-75 (source checked 20 August 2026).¶               →Recheck the current Act. These helpers apply arithmetic only: they¶               →do not decide whether a supply is taxable, GST-free, input taxed,¶               →outside the GST system, or subject to a special rule.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Amounts        →(Required) One or more GST-exclusive amounts.¶" &
@@ -3841,7 +3841,7 @@ GSTExtractλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →GSTExtractλ(Amounts, [Rate])¶" &
                             "DESCRIPTION:   →Returns the GST contained in one or more GST-inclusive amounts.¶NOTES!         →The 10% default and one-eleventh extraction reflect the basic rule¶               →for a taxable supply in A New Tax System (Goods and Services Tax)¶               →Act 1999 ss 9-70 and 9-75 (source checked 20 August 2026).¶               →Recheck the current Act. These helpers apply arithmetic only: they¶               →do not decide whether a supply is taxable, GST-free, input taxed,¶               →outside the GST system, or subject to a special rule.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Amounts        →(Required) One or more GST-inclusive amounts.¶" &
@@ -3881,7 +3881,7 @@ LeaseLiabilityλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →LeaseLiabilityλ(Payments, Rate, [InAdvance])¶" &
                             "DESCRIPTION:   →Present value of the lease payments that are not paid at the commencement date.¶NOTES!         →AASB 16 paragraph 26 measures the lease liability at the present value¶               →of the lease payments not paid at the commencement date, discounted at¶               →the interest rate implicit in the lease where that rate can be readily¶               →determined and at the lessee's incremental borrowing rate where it¶               →cannot. When InAdvance is TRUE, the first supplied payment is paid at¶               →the measurement date and excluded from the liability. Add a payment¶               →made at or before commencement to the right-of-use asset cost instead.¶               →Rate is per period. Convert an effective annual rate with¶               →PeriodRateλ(AnnualRate, PeriodsPerYear). Divide a nominal annual rate¶               →by PeriodsPerYear only when its compounding periods match the payments.¶               →Include an amount expected to be payable under a¶               →residual value guarantee, or the exercise price of a purchase option,¶               →in the final period where paragraph 27 brings it into the lease¶               →payments. IRRλ() over the same cash flows gives an implicit rate per year;¶               →convert it to the rate per period, (1 + annual) ^ (1 / 12) - 1 for months,¶               →before passing it here.¶               →Arithmetic only: this does not determine the lease term, decide what is¶               →a lease payment, or decide whether the arrangement contains a lease.¶               →AASB 16 compilation checked 24 August 2026.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
                             "VERSION:       →24 Aug 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Payments       →(Required) One row or one column of lease payments, one per period, entered positive. Include the measurement-date payment first when InAdvance is TRUE.¶" &
@@ -3926,7 +3926,7 @@ LeaseScheduleλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →LeaseScheduleλ(Payments, Rate, [InAdvance])¶" &
                             "DESCRIPTION:   →Unwinds an AASB 16 lease liability over its term.¶NOTES!         →Returns four rows: opening liability, payment, interest, closing¶               →liability. When InAdvance is TRUE, the first supplied payment is paid¶               →at the measurement date and is excluded from both the opening liability¶               →and the payment row. Each remaining payment follows one period of¶               →interest, so closing is opening plus interest less payment and the last¶               →closing balance is nil. The result has one fewer column for payments in¶               →advance; a sole measurement-date payment returns one zero column. The¶               →opening balance is LeaseLiabilityλ() on the same arguments. Pair this¶               →with ROUScheduleλ() for the asset that sits opposite it: the two¶               →together give the front-loaded expense profile AASB 16 produces.¶               →Arithmetic only, on the payments and rate you supply.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
                             "VERSION:       →24 Aug 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Payments       →(Required) One row or one column of lease payments, one per period, entered positive. Include the measurement-date payment first when InAdvance is TRUE.¶" &
@@ -3982,7 +3982,7 @@ LeaseRemeasureλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →LeaseRemeasureλ(RevisedPayments, Rate, CarryingLiability, CarryingROU, [InAdvance])¶" &
                             "DESCRIPTION:   →Remeasures a lease liability for revised payments and adjusts the asset.¶NOTES!         →Returns four rows: revised lease liability, adjustment, revised¶               →right-of-use asset, amount recognised in profit or loss. AASB 16¶               →paragraph 42(b) remeasures the liability where future payments change¶               →because an index or a rate used to determine them has changed, and¶               →only when the cash flows change. Paragraph 43 keeps the discount rate¶               →unchanged for that revision, and uses a revised rate only where the¶               →change arises from a floating interest rate, so pass the original rate¶               →unless it is the rate itself that moved. When InAdvance is TRUE, the¶               →first revised payment is paid at the remeasurement date and excluded¶               →from the revised liability. Paragraph 39 takes the remeasurement to the¶               →right-of-use asset, and where that asset is reduced to nil any further¶               →reduction goes to profit or loss: row four carries that remainder,¶               →negative, because it is a credit. Arithmetic only.¶               →AASB 16 compilation checked 24 August 2026.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
                             "VERSION:       →24 Aug 2026¶" &
                             "PARAMETERS:    →¶" &
                             "RevisedPayments→(Required) Revised lease payments for the remaining term, one per period, positive. Include a payment made at the remeasurement date first when InAdvance is TRUE.¶" &
@@ -4030,7 +4030,7 @@ ROUScheduleλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →ROUScheduleλ(Cost, Periods)¶" &
                             "DESCRIPTION:   →Depreciates a right-of-use asset in a straight line over the lease term.¶NOTES!         →Returns three rows: opening carrying amount, depreciation, closing¶               →carrying amount. AASB 16 paragraph 24 measures the asset at cost,¶               →comprising the initial lease liability, lease payments made at or¶               →before the commencement date less incentives received, initial direct¶               →costs, and an estimate of dismantling and restoration costs. Add those¶               →up yourself and pass the total as Cost. Depreciate over the lease term¶               →where ownership does not transfer, and over the useful life where it¶               →does. Cost and Periods are single values, not arrays. Arithmetic only.¶               →AASB 16 compilation checked 24 August 2026.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
                             "VERSION:       →24 Aug 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Cost           →(Required) Initial carrying amount of the right-of-use asset.¶" &
@@ -4237,7 +4237,7 @@ LevelPaymentλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →LevelPaymentλ(Principal, Rates, [Balloon])¶" &
                             "DESCRIPTION:   →The level payment at the end of each period that repays a loan over a row of period rates.¶NOTES!         →One payment for each rate, at the end of its period. Each period's balance¶               →grows by its own rate before the payment comes off, so after the last¶               →payment the balance is Balloon, 0 by default. Pass DayCountRateλ() as Rates¶               →to repay a loan under actual day counts. With the same rate in every period¶               →the result is -PMT(rate, periods, Principal, -Balloon). A positive Principal¶               →gives a positive payment. Principal and Balloon must be single numbers and¶               →Rates one row of numbers above -1; anything else returns a message, and an¶               →error shows.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/level-payment-and-corkscrew-rate.md¶" &
                             "VERSION:       →1 Nov 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Principal      →(Required) The amount borrowed at the start of the first period.¶" &
@@ -4289,7 +4289,7 @@ CorkscrewRateλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →CorkscrewRateλ(Opening, Rates, Flow1, [Flow2], [Flow3], [Flow4])¶" &
                             "DESCRIPTION:   →Create a corkscrew whose interest is charged on the average balance and added to it.¶NOTES!         →Each period's interest is its rate times the average of its opening and¶               →closing balances, and the closing balance includes that interest. Each¶               →period is solved in closed form, without iteration or a circular reference:¶               →closing = (opening * (2 + rate) + 2 * flows) / (2 - rate). The rows are the¶               →opening balance, the flows, the interest and the closing balance. Every rate¶               →must be a number above -1 and below 2, Opening a single number and every¶               →flow a number or blank; anything else returns a message.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/level-payment-and-corkscrew-rate.md¶" &
                             "VERSION:       →1 Nov 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Opening        →(Required) First periods opening balance.¶" &
@@ -4372,7 +4372,7 @@ PeriodRateλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →PeriodRateλ(AnnualRate, [PeriodsPerYear])¶" &
                             "DESCRIPTION:   →Converts an effective annual rate to the equivalent rate per period.¶NOTES!         →(1 + AnnualRate) ^ (1 / PeriodsPerYear) - 1, so compounding the result¶               →PeriodsPerYear times gives the annual rate back. This is the rate per¶               →period that LeaseLiabilityλ(), LeaseScheduleλ() and LeaseRemeasureλ()¶               →take. It is for an effective annual rate. A nominal annual percentage¶               →rate that compounds monthly is already APR / 12 per month, so do not¶               →pass it here; EFFECT() turns one into the effective rate this takes.¶               →AnnualRateλ() is the inverse.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
                             "VERSION:       →6 Sep 2026¶" &
                             "PARAMETERS:    →¶" &
                             "AnnualRate     →(Required) Effective annual rate, or a row or column of them.¶" &
@@ -4450,7 +4450,7 @@ DayCountRateλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →DayCountRateλ(Timeline, APR, [Convention], [EndDates])¶" &
                             "DESCRIPTION:   →Interest rate for each period of a timeline under a day count convention.¶NOTES!         →Returns a row with one rate per timeline period, whichever way the¶               →timeline runs: APR multiplied by the days in the period and divided by¶               →the days in the year, as the convention counts them. Pass the result to¶               →DebtSculptVariableλ() or DebtSculptVariableLRVλ() as PeriodRates in place¶               →of a flat twelfth of the APR. With start dates each period runs from its¶               →date to the day before the next, and the last period takes its length¶               →from the one before it; with end dates each runs from the day after the¶               →previous date to its own, and the first period is the one inferred. A¶               →gap of 28 days or more is read as whole calendar months, a shorter one¶               →as days. 30/360 counts every month as 30 days on the European rule.¶               →Under Actual/Actual each calendar year uses its own length as the¶               →denominator (the ISDA rule), including periods spanning several years.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/quantlib-day-count-comparison.md¶" &
                             "VERSION:       →10 Sep 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Timeline       →(Required) A row or column of period dates, at least two, evenly spaced.¶" &
@@ -6452,7 +6452,7 @@ CountCUλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →CountCUλ( Text, Characters)¶" &
                             "DESCRIPTION:   →Count how many of one or more characters are in a string.¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Text           →(Required) The string to interrogate. Empty text returns 0¶" & 
@@ -6488,7 +6488,7 @@ SumRowsUλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →SumRowsUλ( Array)¶" &
                             "DESCRIPTION:   →Get the total of each row¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing values to be totalled by row.¶" & 
@@ -6517,7 +6517,7 @@ SumColsUλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →SumColsUλ( Array)¶" &
                             "DESCRIPTION:   →Get the total of each column¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing values to be totalled by column.¶" & 
@@ -6546,7 +6546,7 @@ AvgRowsUλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →AvgRowsUλ( Array)¶" &
                             "DESCRIPTION:   →Get the average of each row¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing values to be averaged by row.¶" & 
@@ -6575,7 +6575,7 @@ AvgColsUλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →AvgColsUλ( Array)¶" &
                             "DESCRIPTION:   →Get the average for each Column¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing values to be averaged by column.¶" & 
@@ -6604,7 +6604,7 @@ MinRowsUλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →MinRowsUλ( Array)¶" &
                             "DESCRIPTION:   →Get the minimum of each row¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing values to find the minimum by row.¶" & 
@@ -6633,7 +6633,7 @@ MinColsUλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →MinColsUλ( Array)¶" &
                             "DESCRIPTION:   →Get the minimum for each Column¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing values to find the minimum by column.¶" & 
@@ -6662,7 +6662,7 @@ MaxRowsUλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →MaxRowsUλ( Array)¶" &
                             "DESCRIPTION:   →Get the maximum of each row¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing values to find the maximum by row.¶" & 
@@ -6691,7 +6691,7 @@ MaxColsUλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →MaxColsUλ( Array)¶" &
                             "DESCRIPTION:   →Get the maximum for each Column¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing values to find the maximum by column.¶" & 
@@ -6720,7 +6720,7 @@ CountARowsUλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →CountARowsUλ( Array)¶" &
                             "DESCRIPTION:   →Count everything in each row¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing values to be counted.¶" & 
@@ -6749,7 +6749,7 @@ CountAColsUλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →CountAColsUλ( Array )¶" &
                             "DESCRIPTION:   →Count everything in each column¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing values to be counted.¶" & 
@@ -6778,7 +6778,7 @@ CountRowsUλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →CountRowsUλ( Array)¶" &
                             "DESCRIPTION:   →Count numbers in each row¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing numbers to be counted.¶" & 
@@ -6807,7 +6807,7 @@ CountColsUλ = LAMBDA(
     LET(Help,       TRIM(TEXTSPLIT( 
                             "FUNCTION:      →CountColsUλ( Array)¶" &
                             "DESCRIPTION:   →Count numbers in each column¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) A two dimensional array/range containing numbers to be counted.¶" & 
@@ -6839,7 +6839,7 @@ IsBetweenUλ = LAMBDA(
     LET(Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →IsBetweenUλ( Value, Low, Hi, [Inclusive])¶" &
                             "DESCRIPTION:   →Determine if a value is between a lower and upper limit.¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Value          →(Required) A value or array of values to compare.¶" & 
@@ -6884,7 +6884,7 @@ IsInListUλ = LAMBDA(
     LET(Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →IsInListUλ( Value, List)¶" &
                             "DESCRIPTION:   →Determine if a value is one of a list of items.¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/workbook-use.md¶" &
                             "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Value          →(Required) A value or array of values to compare.¶" & 
@@ -6925,7 +6925,7 @@ RangeToDAUλ = LAMBDA(
                             "FUNCTION:          →RangeToDAUλ(Range, [Rows], [Columns])¶" &
                             "DESCRIPTION:       →Convert a range reference to a dynamic array reference.¶" & 
                             "SEE ALSO:      →Excel 365 now has TRIMRANGE and trim references (.:.) for this.¶" &
-                            "WEBPAGE:           →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:           →https://github.com/ryanduguid/Ozzit/blob/main/docs/workbook-use.md¶" &
                             "VERSION:           →24 Oct 2026¶" &
                             "PARAMETERS:        →¶" & 
                             "Range              →(Required) A reference to the range to be converted.¶" &
@@ -6973,7 +6973,7 @@ AmortiseBλ = LAMBDA(
                         "               →Repayment¶" &
                         "               →Closing Balance¶" &
                         "               →Principal Portion¶" &
-                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/pyxirr-comparison.md¶" &
                         "VERSION:       →20 Aug 2026¶" &
                         "PARAMETERS:    →¶" &
                         "Principal      →(Required) Principal opening balance.¶" &
@@ -7061,7 +7061,7 @@ DebtSculptFixedλ = LAMBDA(
                         "                   →Interest on Principal Balance¶" &
                         "                   →Debt service (interest and principal)¶" &
                         "                   →Debt closing balance¶" &
-                        "WEBPAGE:           →https://github.com/ryanduguid/Ozzit¶" &
+                        "WEBPAGE:           →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                         "VERSION:           →10 Sep 2026¶" &
                         "PARAMETERS:        →¶" &
                         "OpeningBalance     →(Optional) Model's debt on opening. Defaults to 0¶" &
@@ -7155,7 +7155,7 @@ DebtSculptVariableLRVλ = LAMBDA(
                         "                   →Interest on Principal Balance¶" &
                         "                   →Principal repayments¶" &
                         "                   →Debt closing balance¶" &
-                        "WEBPAGE:           →https://github.com/ryanduguid/Ozzit¶" &
+                        "WEBPAGE:           →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                         "VERSION:           →10 Sep 2026¶" &
                         "PARAMETERS:        →¶" &
                         "OpeningBalance     →(Optional) Model's debt on opening. Defaults to 0¶" &
@@ -7261,7 +7261,7 @@ DebtSculptVariableλ = LAMBDA(
                         "                   →Interest on Principal Balance¶" &
                         "                   →Debt service (interest and principal)¶" &
                         "                   →Debt closing balance¶" &
-                        "WEBPAGE:           →https://github.com/ryanduguid/Ozzit¶" &
+                        "WEBPAGE:           →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                         "VERSION:           →10 Sep 2026¶" &
                         "PARAMETERS:        →¶" &
                         "OpeningBalance     →(Optional) Model's debt on opening. Defaults to 0¶" &
@@ -7360,7 +7360,7 @@ InterestLRVλ = LAMBDA(
                                        "→principal repaid capped at the principal outstanding. The average balance¶" &
                                        "→depends on the interest and the interest on the average balance, which¶" &
                                        "→is solved in closed form rather than by iteration.¶" &
-                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                         "VERSION:       →20 Aug 2026¶" &
                         "PARAMETERS:    →¶" &
                         "CFADS          →(Required) Cash Flow Available for Debt Service for this period¶" &

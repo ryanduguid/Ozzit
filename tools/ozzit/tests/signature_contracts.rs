@@ -115,7 +115,7 @@ fn the_first_coming_soon_webpage_is_rejected() {
         "Financial",
         "\"WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶\"",
         "\"WEBPAGE:       →<Coming Soon>¶\"",
-        46,
+        15,
     );
     f.refuses("Coming Soon");
 }
