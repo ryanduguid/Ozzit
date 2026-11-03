@@ -122,7 +122,7 @@ jobs:
     # unless every job it needs succeeded, when a job in this file is missing
     # from needs, or when a pull request removes a job without adding a
     # "# removed-jobs: <job>" comment to this file.
-    needs: [lint, verify, rust, coverage, dependency-audit]
+    needs: [lint, verify, rust, coverage, dependency-audit, rust-coverage]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -231,3 +231,29 @@ jobs:
       - name: Audit the native tools' locked dependencies
         working-directory: tools/ozzit
         run: cargo audit --deny warnings
+
+  # Holds the native tools' tests to their measured line coverage. It sits with
+  # the CI-only jobs because it needs cargo-llvm-cov, which the contributor
+  # commands above do not. The floor is the measured line coverage, rounded down
+  # (95.75% on 3 November 2026). Raise it with the tests, never lower it to pass.
+  rust-coverage:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # The native tests read history, as in rust.
+          fetch-depth: 0
+      - name: Install the pinned Rust toolchain
+        run: rustup toolchain install
+      - name: Add the coverage instrumentation tools
+        run: rustup component add llvm-tools
+      - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
+        with:
+          tool: cargo-llvm-cov@0.9.1
+          fallback: none
+      - name: Run the native tools' tests under line coverage
+        run: cargo llvm-cov --locked --manifest-path tools/ozzit/Cargo.toml --fail-under-lines 95
