@@ -422,8 +422,8 @@ const CALLERS: [(&str, &str, &str, &str); 2] = [
     (
         "verify.yml",
         "verify-gates",
-        "needs: [lint, verify, rust, coverage]",
-        r#"{"lint":{"result":"success"},"verify":{"result":"success"},"rust":{"result":"success"},"coverage":{"result":"success"}}"#,
+        "needs: [lint, verify, rust, coverage, dependency-audit]",
+        r#"{"lint":{"result":"success"},"verify":{"result":"success"},"rust":{"result":"success"},"coverage":{"result":"success"},"dependency-audit":{"result":"success"}}"#,
     ),
     (
         "codeql.yml",
