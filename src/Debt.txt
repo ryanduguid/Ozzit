@@ -22,8 +22,8 @@ AmortiseBλ = LAMBDA(
                         "               →Repayment¶" &
                         "               →Closing Balance¶" &
                         "               →Principal Portion¶" &
-                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
-                        "VERSION:       →20 Aug 2026¶" &
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/pyxirr-comparison.md¶" &
+                        "VERSION:       →16 Sep 2026¶" &
                         "PARAMETERS:    →¶" &
                         "Principal      →(Required) Principal opening balance.¶" &
                         "APR            →(Required) Annual percentage rate.¶" &
@@ -110,8 +110,8 @@ DebtSculptFixedλ = LAMBDA(
                         "                   →Interest on Principal Balance¶" &
                         "                   →Debt service (interest and principal)¶" &
                         "                   →Debt closing balance¶" &
-                        "WEBPAGE:           →https://github.com/ryanduguid/Ozzit¶" &
-                        "VERSION:           →10 Sep 2026¶" &
+                        "WEBPAGE:           →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
+                        "VERSION:           →23 Sep 2026¶" &
                         "PARAMETERS:        →¶" &
                         "OpeningBalance     →(Optional) Model's debt on opening. Defaults to 0¶" &
                         "Debt               →(Required) One row of new debt, at least two periods. Every period input must have this same width¶" &
@@ -204,8 +204,8 @@ DebtSculptVariableLRVλ = LAMBDA(
                         "                   →Interest on Principal Balance¶" &
                         "                   →Principal repayments¶" &
                         "                   →Debt closing balance¶" &
-                        "WEBPAGE:           →https://github.com/ryanduguid/Ozzit¶" &
-                        "VERSION:           →10 Sep 2026¶" &
+                        "WEBPAGE:           →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
+                        "VERSION:           →29 Sep 2026¶" &
                         "PARAMETERS:        →¶" &
                         "OpeningBalance     →(Optional) Model's debt on opening. Defaults to 0¶" &
                         "Debt               →(Required) One row of new debt, at least two periods. Every period input must have this same width¶" &
@@ -310,8 +310,8 @@ DebtSculptVariableλ = LAMBDA(
                         "                   →Interest on Principal Balance¶" &
                         "                   →Debt service (interest and principal)¶" &
                         "                   →Debt closing balance¶" &
-                        "WEBPAGE:           →https://github.com/ryanduguid/Ozzit¶" &
-                        "VERSION:           →10 Sep 2026¶" &
+                        "WEBPAGE:           →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
+                        "VERSION:           →23 Sep 2026¶" &
                         "PARAMETERS:        →¶" &
                         "OpeningBalance     →(Optional) Model's debt on opening. Defaults to 0¶" &
                         "Debt               →(Required) One row of new debt, at least two periods. Every period input must have this same width¶" &
@@ -409,8 +409,8 @@ InterestLRVλ = LAMBDA(
                                        "→principal repaid capped at the principal outstanding. The average balance¶" &
                                        "→depends on the interest and the interest on the average balance, which¶" &
                                        "→is solved in closed form rather than by iteration.¶" &
-                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
-                        "VERSION:       →20 Aug 2026¶" &
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
+                        "VERSION:       →16 Sep 2026¶" &
                         "PARAMETERS:    →¶" &
                         "CFADS          →(Required) Cash Flow Available for Debt Service for this period¶" &
                         "DSCR           →(Required) Debt Service Coverage Ratio for this period¶" &

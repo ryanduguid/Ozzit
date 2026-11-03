@@ -1,3 +1,4 @@
+import re
 import unittest
 import xml.etree.ElementTree as ET
 import zipfile
@@ -78,6 +79,21 @@ class WorkbookPresentationTests(unittest.TestCase):
                 if int(style.attrib.get("fillId", "0")) in mint_fill_ids:
                     used.append(f"{name}!{cell.attrib['r']}")  # pragma: no cover - on failure only
         self.assertEqual(used, [])
+
+    def test_every_help_anchor_has_room_to_spill(self):
+        # A demonstration sheet spills its function's help from a bare =oz.Nameλ() call.
+        # A help that grows past the cells below it caches #SPILL!, which the file stores
+        # as an error value; ozzit verify_help_spills skips such an anchor.
+        anchors = [
+            (name, cell)
+            for name, path in self.sheets.items()
+            for cell in ET.fromstring(self.parts[path]).iter(f"{{{NS['m']}}}c")
+            if re.fullmatch(r"oz\.\w+\(\)", cell.findtext("m:f", "", NS))
+        ]
+        self.assertGreaterEqual(len(anchors), 40)
+        for name, cell in anchors:
+            with self.subTest(sheet=name, cell=cell.attrib["r"]):
+                self.assertNotEqual(cell.attrib.get("t"), "e", "the help has no room to spill here")
 
     def test_populated_dates_do_not_use_locale_dependent_builtin_14(self):
         bad = []
