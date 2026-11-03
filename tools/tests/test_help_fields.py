@@ -11,17 +11,20 @@ VERSION is the date the function's formula last changed. Up to v3.5.0 nothing
 checked that, and 29 functions changed after the date their help gave: Amortiseλ
 gained FinalPeriodEnd and still read 20 Aug 2026. The formula here is the LAMBDA
 without its comments, whitespace or help text, so a help-only edit leaves VERSION
-alone, and the gate compares it with HEAD's first parent, which in CI is the base
-a pull request merges into.
+alone. The gate compares it with VERSION_BASE, which CI sets on a push to main to
+the commit main pointed at before it, or else with HEAD's first parent, which in a
+pull request is the base it merges into.
 """
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import unittest
 from datetime import date, datetime
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "src"
@@ -66,24 +69,22 @@ def committed_functions(revision: str) -> dict[str, str] | None:
 
 
 TEXT_OR_COMMENT = re.compile(r'"(?:[^"]|"")*"|//[^\n]*|/\*.*?\*/', re.DOTALL)
+# The help: the Help binding's TEXTSPLIT up to its "→" and "¶" delimiters.
+HELP = re.compile(r'\bHelp,\s*TRIM\(\s*TEXTSPLIT\(.*?"→",\s*"¶"', re.DOTALL)
 
 
 def kept(match: re.Match[str]) -> str:
-    """A literal stays, help text becomes one marker and a comment goes."""
-    found = match[0]
-    if not found.startswith('"'):
-        return ""
-    return '"¶"' if "→" in found or "¶" in found else found
+    """A literal stays and a comment goes."""
+    return match[0] if match[0].startswith('"') else ""
 
 
 def formula(body: str) -> str:
     """The LAMBDA without comments, whitespace or help text.
 
-    Help text is any literal holding the help separators. A help is one run of them
-    joined by &, so it becomes one marker whatever its row count.
+    The help becomes one marker whatever its rows say; every other literal, message
+    text included, is part of the formula.
     """
-    flat = re.sub(r"\s+", "", TEXT_OR_COMMENT.sub(kept, body))
-    return re.sub(r'"¶"(?:&"¶")+', '"¶"', flat)
+    return re.sub(r"\s+", "", TEXT_OR_COMMENT.sub(kept, HELP.sub("Help,¶", body)))
 
 
 def version(body: str) -> date:
@@ -141,9 +142,11 @@ class HelpFieldTests(unittest.TestCase):
                 self.assertTrue((ROOT / link.removeprefix(on_main)).is_file(), link)
 
     def test_a_changed_formula_moves_its_version(self):
-        base = committed_functions("HEAD^1")
-        if base is None:  # pragma: no cover - CI checks out the full history
+        named = os.environ.get("VERSION_BASE", "")
+        base = committed_functions(named or "HEAD^1")
+        if base is None and not named:  # pragma: no cover - CI checks out the full history
             self.skipTest("needs HEAD's first parent; a shallow clone or archive has none")
+        self.assertTrue(base, f"no functions under src/ at {named or 'HEAD^1'}")
         self.assertEqual(unmoved(self.functions, base, date.today()), [],
                          "the formula changed: set VERSION to the date of the change")
 
@@ -169,6 +172,17 @@ class HelpFieldTests(unittest.TestCase):
                 self.assertEqual(unmoved({"Fλ": current}, base, today), expected)
         self.assertEqual(unmoved({"Fλ": base["Fλ"], "Gλ": base["Fλ"]}, base, today), [])
         self.assertIsNone(committed_functions("no-such-revision"))
+        # Help separators in a message outside the help are formula text.
+        arrow = {"Fλ": body("1 Sep 2026", "", 'IF(X, "A→B¶", 1)')}
+        changed = {"Fλ": body("1 Sep 2026", "", 'IF(X, "A→C¶", 1)')}
+        self.assertEqual(unmoved(changed, arrow, today), ["Fλ"])
+
+    def test_a_named_base_is_read_and_one_that_cannot_be_read_fails(self):
+        with mock.patch.dict(os.environ, {"VERSION_BASE": "HEAD"}):
+            self.test_a_changed_formula_moves_its_version()
+        with mock.patch.dict(os.environ, {"VERSION_BASE": "no-such-revision"}):
+            with self.assertRaisesRegex(AssertionError, "no functions under src/ at no-such-revision"):
+                self.test_a_changed_formula_moves_its_version()
 
 
 if __name__ == "__main__":
