@@ -29,6 +29,7 @@ python -m unittest discover -s tools/tests -v
 rustup toolchain install
 cargo fmt --manifest-path tools/ozzit/Cargo.toml --check
 cargo clippy --locked --manifest-path tools/ozzit/Cargo.toml --all-targets -- -D warnings
+cargo fetch --locked --manifest-path tools/ozzit/fuzz/Cargo.toml
 cargo test --locked --manifest-path tools/ozzit/Cargo.toml
 cargo build --locked --release --manifest-path tools/ozzit/Cargo.toml
 tools/ozzit/target/release/ozzit verify_workbook ozzit.xlsx
