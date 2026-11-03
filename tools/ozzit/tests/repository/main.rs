@@ -133,9 +133,23 @@ pub fn index(text: &str, needle: &str, start: usize) -> usize {
         .unwrap_or_else(|| panic!("{needle:?} not found"))
 }
 
-/// `assertAlmostEqual(first, second, places=places)`.
-pub fn almost_equal(first: f64, second: f64, places: i32) -> bool {
-    first == second || ((first - second).abs() * 10f64.powi(places)).round_ties_even() == 0.0
+/// `assertAlmostEqual(first, second, places=places)`. Python's `round(difference, places)`
+/// rounds the exact binary value, so the difference is formatted exactly rather than
+/// scaled: `5e-10 * 1e9` is exactly 0.5, but `5e-10` itself lies above it.
+pub fn almost_equal(first: f64, second: f64, places: usize) -> bool {
+    first == second
+        || format!("{:.*}", places, (first - second).abs())
+            .bytes()
+            .all(|b| b == b'0' || b == b'.')
+}
+
+#[test]
+fn almost_equal_rounds_the_difference_as_python_does() {
+    // round(5e-10, 9) is 1e-09 and round(4e-10, 9) is 0.0; NaN and infinity never round to 0.
+    assert!(!almost_equal(5e-10, 0.0, 9));
+    assert!(almost_equal(4e-10, 0.0, 9));
+    assert!(almost_equal(0.5, 0.0, 0) && !almost_equal(1.5, 0.0, 0));
+    assert!(!almost_equal(f64::NAN, 0.0, 9) && !almost_equal(f64::INFINITY, 0.0, 9));
 }
 
 /// `assertAlmostEqual(first, second, delta=delta)`.

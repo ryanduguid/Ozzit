@@ -224,19 +224,35 @@ fn a_changed_formula_moves_its_version() {
     );
 }
 
+/// The version gate run in a child test process with `VERSION_BASE` set, so the gate's
+/// own reading of the variable is under test; the output joins stdout and stderr.
+fn gate_with_base(named: &str) -> (bool, String) {
+    let output = std::process::Command::new(std::env::current_exe().unwrap())
+        .args([
+            "--exact",
+            "help_fields::a_changed_formula_moves_its_version",
+            "--test-threads=1",
+        ])
+        .env("VERSION_BASE", named)
+        .output()
+        .unwrap();
+    let text = format!(
+        "{}{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    (output.status.success(), text)
+}
+
 #[test]
 fn a_named_base_is_read_and_one_that_cannot_be_read_fails() {
-    let head = base("HEAD")
-        .unwrap_or_else(|e| panic!("{e}"))
-        .expect("a named base");
-    assert_eq!(
-        unmoved(&functions(), &head, today()),
-        Vec::<String>::new(),
-        "the formula changed: set VERSION to the date of the change"
-    );
-    assert_eq!(
-        base("no-such-revision").unwrap_err(),
-        "no functions under src/ at no-such-revision"
+    let (passed, output) = gate_with_base("HEAD");
+    assert!(passed && output.contains("1 passed"), "{output}");
+    let (passed, output) = gate_with_base("no-such-revision");
+    assert!(!passed && output.contains("1 failed"), "{output}");
+    assert!(
+        output.contains("no functions under src/ at no-such-revision"),
+        "{output}"
     );
 }
 

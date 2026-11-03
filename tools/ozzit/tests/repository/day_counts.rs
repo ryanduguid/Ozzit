@@ -94,7 +94,7 @@ fn year_fraction(start: NaiveDate, following: NaiveDate, convention: i64) -> f64
     fraction(start, following, convention).unwrap_or_else(|e| panic!("{e}"))
 }
 
-fn assert_places(first: f64, second: f64, places: i32) {
+fn assert_places(first: f64, second: f64, places: usize) {
     assert!(
         almost_equal(first, second, places),
         "{first} != {second} within {places} places"
