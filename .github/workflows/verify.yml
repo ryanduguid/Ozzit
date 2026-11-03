@@ -98,6 +98,11 @@ jobs:
         run: cargo fmt --manifest-path tools/ozzit/Cargo.toml --check
       - name: Lint the native tools
         run: cargo clippy --locked --manifest-path tools/ozzit/Cargo.toml --all-targets -- -D warnings
+      - name: Check the fuzz crate's lockfile still resolves
+        # The fuzz crate depends on the native tools by path, so raising one of
+        # their requirements also needs fuzz/Cargo.lock updated. Without this,
+        # only the scheduled fuzz run finds it, after the merge.
+        run: cargo fetch --locked --manifest-path tools/ozzit/fuzz/Cargo.toml
       - name: Run the native tools' tests
         run: cargo test --locked --manifest-path tools/ozzit/Cargo.toml
       - name: Build the native tools
