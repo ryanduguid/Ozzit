@@ -43,7 +43,12 @@ The workbook tracked in this repository is the candidate the gates below run aga
    `functions.csv`. Vertex42's LAMBDA Library and BigSpill publish their libraries
    the same single-module way. The workbook is the authority for the `oz.` names.
    `src/` is for reading, diffing, and pasting a single definition into Name
-   Manager, where the name is yours to choose. To change a function, edit its
+   Manager, where the name is yours to choose. A pasted definition stands alone
+   except for 4 that call other functions by name; define their callees first,
+   under the names the definition uses: `Depreciateλ` calls `Allocateλ`, `DBλ`,
+   `DDBλ`, `DiminishingValueλ`, `PeriodDiffλ`, `PrimeCostλ`, `SLNλ`, `SYDλ` and
+   `VDBλ`; `LeaseScheduleλ` and `LeaseRemeasureλ` call `LeaseLiabilityλ`; and
+   `DebtSculptVariableLRVλ` calls `InterestLRVλ`. To change a function, edit its
    definition in `src/` and follow the run order in `tools/postbuild/README.md`:
    `ozzit compile_sources` renders it into the stored form and writes it over the
    defined name that ships, `ozzit build_module` rebuilds `oz.txt`,
