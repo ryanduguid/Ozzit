@@ -30,4 +30,4 @@ Help tables are text tables, not LAMBDAs: reference them without parentheses, as
 - [Website overview](https://duguid.com.au/tools/ozzit/): worked example and requirements.
 - [Whole library as one Advanced Formula Environment module](https://github.com/ryanduguid/Ozzit/blob/main/oz.txt)
 - [Release and native verification](https://github.com/ryanduguid/Ozzit/blob/main/RELEASING.md)
-- [Disclaimer](https://github.com/ryanduguid/Ozzit/blob/main/DISCLAIMER.md): not advice; names the bodies the project is not affiliated with.
+- [Disclaimer](https://github.com/ryanduguid/Ozzit/blob/main/DISCLAIMER.md): not advice; GST, depreciation and AASB 16 results need independent verification.
