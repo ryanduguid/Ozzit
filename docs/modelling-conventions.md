@@ -99,5 +99,5 @@ The Code's text is reserved, so this page quotes its section headings only.
 
 Both documents were read on 29 September 2026. The figures above come from
 [`src/`](../src/) and `ozzit.xlsx` at the same commit;
-`tools/tests/test_modelling_conventions.py` recomputes each of them and fails
-when one changes.
+`tools/ozzit/tests/repository/modelling_conventions.rs` recomputes each of them and
+fails when one changes.

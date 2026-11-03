@@ -77,8 +77,9 @@ heading in the Financial About table. The cover label moves to 150 functions.
 - Every function help table now has a WEBPAGE and a VERSION row. 17 had no VERSION, 4 had
   no link, and 10 labelled the link WEBSITE. A copied function carries only its own
   help, so this is where a reader sees which version it came from. Added VERSION rows
-  read 24 October 2026, the date the row was added. `tools/tests/test_help_fields.py`
-  now fails when a help table lacks either row.
+  read 24 October 2026, the date the row was added.
+  `tools/ozzit/tests/repository/help_fields.rs` now fails when a help table lacks
+  either row.
 
 ### Fixed
 
@@ -128,11 +129,12 @@ heading in the Financial About table. The cover label moves to 150 functions.
   function could not be told from an older copy: `oz.Amortiseλ` gained
   `FinalPeriodEnd` on 29 September 2026 and still read 20 Aug 2026. Each VERSION now
   gives the date of the last commit that changed its formula, from the Git history
-  of `src/`. `tools/tests/test_help_fields.py` now fails when a formula differs from
-  its base (a pull request's base, or for a push to `main` the commit `main` held
-  before it) and its VERSION is neither later nor within a day of today. Comments,
-  spacing outside literals and the help block are not the formula, so a help-only
-  edit keeps its VERSION; any other text, such as a message and its spacing, is.
+  of `src/`. `tools/ozzit/tests/repository/help_fields.rs` now fails when a formula
+  differs from its base (a pull request's base, or for a push to `main` the commit
+  `main` held before it) and its VERSION is neither later nor within a day of
+  today. Comments, spacing outside literals and the help block are not the formula,
+  so a help-only edit keeps its VERSION; any other text, such as a message and its
+  spacing, is.
 - The practice companion's Benefit totals sheet prefills the 47% FBT rate and the
   2.0802 and 1.8868 gross-up factors under a note that called them illustrative and
   named no period. The note now names the FBT years they apply to, ending 31 March 2023

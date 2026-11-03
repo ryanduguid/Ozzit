@@ -76,11 +76,11 @@ the QuantLib comparison. The additional native qualification below covers
 positive schedules and records the remaining limitations.
 
 Normal CI checks the retained native record against the current workbook
-hash and exact evaluated formulas, compares the Python arithmetic with the
-independent values, rejects the recorded wrong variants and retains the
-formula-text pins. CI does not start
-Excel. A workbook change requires new native evidence before this record can
-qualify the changed workbook.
+hash and exact evaluated formulas, compares the restated arithmetic in
+`tools/ozzit/tests/repository/day_counts.rs` with the independent values,
+rejects the recorded wrong variants and retains the formula-text pins. CI
+does not start Excel. A workbook change requires new native evidence before
+this record can qualify the changed workbook.
 
 ## Native schedule and input qualification
 
