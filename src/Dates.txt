@@ -748,7 +748,7 @@ FinancialYearλ = LAMBDA(
                             "FUNCTION:      →FinancialYearλ(Dates, [StartMonth])¶" &
                             "DESCRIPTION:   →Labels dates with their Australian financial year, which starts on 1 July.¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
-                            "VERSION:       →20 Aug 2026¶" &
+                            "VERSION:       →29 Sep 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Dates          →(Required) One or more dates, numeric or text. A blank cell returns a blank.¶" &
                             "StartMonth     →(Optional: Default = 7) Month the financial year starts. Blank cells and empty text use 7.¶" &
@@ -937,7 +937,7 @@ DateDifλ = LAMBDA(
                             "FUNCTION:      →DateDifλ(StartDate, EndDate, [Unit])¶" &
                             "DESCRIPTION:   →Whole years, months or days between two dates, and the remainders.¶NOTES!         →Excel documents DATEDIF as a legacy compatibility function and warns¶               →its MD unit can return a negative or wrong day count. This counts a¶               →month as complete when EDATE() of the start date has arrived, so a¶               →month after 31 January is the last day of February, and takes every¶               →remainder from there. A reversed range or an unknown unit returns #NUM!.¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
-                            "VERSION:       →6 Sep 2026¶" &
+                            "VERSION:       →28 Sep 2026¶" &
                             "PARAMETERS:    →¶" &
                             "StartDate      →(Required) The earlier date, numeric or text.¶" &
                             "EndDate        →(Required) The later date, numeric or text.¶" &

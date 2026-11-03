@@ -124,6 +124,14 @@ heading in the Financial About table. The cover label moves to 150 functions.
   NOTES said to see the webpage for how the methods differ from Excel's; it now says
   that DB and DDB differ in the final year and points to their help. A test fails
   when a WEBPAGE inside the repository names no file on `main`.
+- 29 functions' formulas changed after the date their VERSION row gave, so a copied
+  function could not be told from an older copy: `oz.Amortiseλ` gained
+  `FinalPeriodEnd` on 29 September 2026 and still read 20 Aug 2026. Each VERSION now
+  gives the date of the last commit that changed its formula, from the Git history
+  of `src/`. `tools/tests/test_help_fields.py` now fails when a formula differs from
+  HEAD's first parent, in CI the pull request's base, and its VERSION is neither
+  later nor within a day of today. Comments, spacing and help text are not the
+  formula, so a help-only edit keeps its VERSION.
 - The practice companion's Benefit totals sheet prefills the 47% FBT rate and the
   2.0802 and 1.8868 gross-up factors under a note that called them illustrative and
   named no period. The note now names the FBT years they apply to, ending 31 March 2023

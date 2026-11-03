@@ -23,7 +23,7 @@ AmortiseBλ = LAMBDA(
                         "               →Closing Balance¶" &
                         "               →Principal Portion¶" &
                         "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/pyxirr-comparison.md¶" &
-                        "VERSION:       →20 Aug 2026¶" &
+                        "VERSION:       →16 Sep 2026¶" &
                         "PARAMETERS:    →¶" &
                         "Principal      →(Required) Principal opening balance.¶" &
                         "APR            →(Required) Annual percentage rate.¶" &
@@ -111,7 +111,7 @@ DebtSculptFixedλ = LAMBDA(
                         "                   →Debt service (interest and principal)¶" &
                         "                   →Debt closing balance¶" &
                         "WEBPAGE:           →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
-                        "VERSION:           →10 Sep 2026¶" &
+                        "VERSION:           →23 Sep 2026¶" &
                         "PARAMETERS:        →¶" &
                         "OpeningBalance     →(Optional) Model's debt on opening. Defaults to 0¶" &
                         "Debt               →(Required) One row of new debt, at least two periods. Every period input must have this same width¶" &
@@ -205,7 +205,7 @@ DebtSculptVariableLRVλ = LAMBDA(
                         "                   →Principal repayments¶" &
                         "                   →Debt closing balance¶" &
                         "WEBPAGE:           →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
-                        "VERSION:           →10 Sep 2026¶" &
+                        "VERSION:           →29 Sep 2026¶" &
                         "PARAMETERS:        →¶" &
                         "OpeningBalance     →(Optional) Model's debt on opening. Defaults to 0¶" &
                         "Debt               →(Required) One row of new debt, at least two periods. Every period input must have this same width¶" &
@@ -311,7 +311,7 @@ DebtSculptVariableλ = LAMBDA(
                         "                   →Debt service (interest and principal)¶" &
                         "                   →Debt closing balance¶" &
                         "WEBPAGE:           →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
-                        "VERSION:           →10 Sep 2026¶" &
+                        "VERSION:           →23 Sep 2026¶" &
                         "PARAMETERS:        →¶" &
                         "OpeningBalance     →(Optional) Model's debt on opening. Defaults to 0¶" &
                         "Debt               →(Required) One row of new debt, at least two periods. Every period input must have this same width¶" &
@@ -410,7 +410,7 @@ InterestLRVλ = LAMBDA(
                                        "→depends on the interest and the interest on the average balance, which¶" &
                                        "→is solved in closed form rather than by iteration.¶" &
                         "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
-                        "VERSION:       →20 Aug 2026¶" &
+                        "VERSION:       →16 Sep 2026¶" &
                         "PARAMETERS:    →¶" &
                         "CFADS          →(Required) Cash Flow Available for Debt Service for this period¶" &
                         "DSCR           →(Required) Debt Service Coverage Ratio for this period¶" &

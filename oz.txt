@@ -753,7 +753,7 @@ FinancialYearλ = LAMBDA(
                             "FUNCTION:      →FinancialYearλ(Dates, [StartMonth])¶" &
                             "DESCRIPTION:   →Labels dates with their Australian financial year, which starts on 1 July.¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
-                            "VERSION:       →20 Aug 2026¶" &
+                            "VERSION:       →29 Sep 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Dates          →(Required) One or more dates, numeric or text. A blank cell returns a blank.¶" &
                             "StartMonth     →(Optional: Default = 7) Month the financial year starts. Blank cells and empty text use 7.¶" &
@@ -942,7 +942,7 @@ DateDifλ = LAMBDA(
                             "FUNCTION:      →DateDifλ(StartDate, EndDate, [Unit])¶" &
                             "DESCRIPTION:   →Whole years, months or days between two dates, and the remainders.¶NOTES!         →Excel documents DATEDIF as a legacy compatibility function and warns¶               →its MD unit can return a negative or wrong day count. This counts a¶               →month as complete when EDATE() of the start date has arrived, so a¶               →month after 31 January is the last day of February, and takes every¶               →remainder from there. A reversed range or an unknown unit returns #NUM!.¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
-                            "VERSION:       →6 Sep 2026¶" &
+                            "VERSION:       →28 Sep 2026¶" &
                             "PARAMETERS:    →¶" &
                             "StartDate      →(Required) The earlier date, numeric or text.¶" &
                             "EndDate        →(Required) The later date, numeric or text.¶" &
@@ -1024,7 +1024,7 @@ CountCλ = LAMBDA(
                             "FUNCTION:      →CountCλ( Text, Characters)¶" &
                             "DESCRIPTION:   →Count how many of one or more characters are in a string.¶" & 
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
-                            "VERSION:       →20 Aug 2026¶" &
+                            "VERSION:       →14 Sep 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Text           →(Required) The string to interrogate. Empty text returns 0¶" & 
                             "Characters     →(Required) A single character, or CSV of characters to find in Text¶" & 
@@ -1836,7 +1836,7 @@ Movementλ = LAMBDA(
                             "FUNCTION:      →Movementλ( [BeginningValues], Values)¶" &
                             "DESCRIPTION:   →Create a row of differences from column to column¶" & 
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
-                            "VERSION:       →20 Aug 2026¶" &
+                            "VERSION:       →27 Sep 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "BeginningValues→(Optional) Defaults to 0. One value, or one per row of Values¶" & 
                             "Values         →(Required) A row (or rows) of values to compare column to column¶" & 
@@ -2239,7 +2239,7 @@ Amortiseλ = LAMBDA(
                                        "→Use LabelAmortiseλ() to apply labels to this function's results:¶" & 
                                        "→Use SumAmortiseλ() to apply totals to this function's results:¶" & 
                         "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
-                        "VERSION:       →20 Aug 2026¶" &
+                        "VERSION:       →29 Sep 2026¶" &
                         "PARAMETERS:→¶" & 
                         "Principals     →(Required) Loan/debt amounts.¶" & 
                         "APRs           →(Required) Annual Percentage Rates for interest.¶" & 
@@ -2415,7 +2415,7 @@ LabelAmortiseλ = LAMBDA(
                             "FUNCTION:      →LabelAmortiseλ(LoanNames, [LoanAmounts], [LoanAPRs], [LoanTerms])¶" &
                             "DESCRIPTION:   →Create row labels for the amortisation schedule array produced by Amortiseλ¶" & 
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
-                            "VERSION:       →20 Aug 2026¶" &
+                            "VERSION:       →1 Sep 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "LoanNames     →(Required) Names or descriptions of each loan in the amortisation schedule produced by Amortiseλ¶" &                  
                             "LoanAmounts   →(Optional) Amount borrowed¶" &                  
@@ -2882,7 +2882,7 @@ PeriodDiffλ = LAMBDA(
                             "DESCRIPTION:   →Determine the number of periods between two dates.¶" &
                             "NOTES!         →This improves on, and corrects problems w/Excel's deprecated DATEDIF() function.¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
-                            "VERSION:       →20 Aug 2026¶" &
+                            "VERSION:       →16 Sep 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "StartDate      →(Required) Start Date.¶" &                   
                             "EndDate        →(Required) End Date¶" & 
@@ -2932,7 +2932,7 @@ SLNλ = LAMBDA(
                             "FUNCTION:      →SLNλ(Cost, Salvage, Life)¶" &
                             "DESCRIPTION:   →Straight Line Depreciation Method for one asset or asset class.¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
-                            "VERSION:       →20 Aug 2026¶" &
+                            "VERSION:       →13 Sep 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Cost           →(Required) Asset's initial cost.¶" &                   
                             "Salvage        →(Required) Asset's value and end of life¶" & 
@@ -3017,7 +3017,7 @@ DBλ = LAMBDA(
                             "FUNCTION:      →DBλ(Cost, Salvage, Life, [Months])¶" &
                             "DESCRIPTION:   →Fixed declining balance depreciation method for one asset or asset class¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
-                            "VERSION:       →20 Aug 2026¶" &
+                            "VERSION:       →13 Sep 2026¶" &
                             "NOTES:         →For a positive whole-number Life, returns Life schedule values.¶" &
                             "               →The first Life-1 values use Excel's DB calculation.¶" &
                             "               →The final value makes total depreciation equal Cost minus Salvage.¶" &
@@ -3068,7 +3068,7 @@ DDBλ = LAMBDA(
                             "FUNCTION:      →DDBλ(Cost, Salvage, Life, [Factor])¶" &
                             "DESCRIPTION:   →Double-declining balance depreciation method for one asset or asset class.¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
-                            "VERSION:       →20 Aug 2026¶" &
+                            "VERSION:       →13 Sep 2026¶" &
                             "NOTES:         →For a positive whole-number Life, returns Life schedule values.¶" &
                             "               →The first Life-1 values use Excel's DDB calculation.¶" &
                             "               →The final value makes total depreciation equal Cost minus Salvage.¶" &
@@ -3454,7 +3454,7 @@ TimelineOffsetλ = LAMBDA(
                             "DESCRIPTION:   →Determines in which period, relative to the timeline's start and interval,¶" &
                                            "→a date falls within.¶" & 
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
-                            "VERSION:       →20 Aug 2026¶" &
+                            "VERSION:       →13 Sep 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Date           →(Required) A starting date¶" & 
                             "Timeline       →(Required) A model's timeline (Row of period start dates)¶" &                   
@@ -3513,7 +3513,7 @@ TimelinePositionλ = LAMBDA(
                             "FUNCTION:      →TimelinePositionλ(Array, Timeline, Offset)¶" &
                             "DESCRIPTION:   →Position an array relative to the model's timeline¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
-                            "VERSION:       →20 Aug 2026¶" &
+                            "VERSION:       →13 Sep 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Array          →(Required) The array to be positioned relative to a model's timeline¶" & 
                             "Timeline       →(Required) A model's timeline¶" & 
@@ -3713,7 +3713,7 @@ DiminishingValueλ = LAMBDA(
                             "FUNCTION:      →DiminishingValueλ(Cost, Life)¶" &
                             "DESCRIPTION:   →Diminishing-balance depreciation schedule at 200% of the straight-line rate, writing the residual off in the final period. A modelling schedule, not a tax calculation.¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/depreciation-comparison.md¶" &
-                            "VERSION:       →20 Aug 2026¶" &
+                            "VERSION:       →27 Sep 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Cost           →(Required) Asset's cost.¶" &
                             "Life           →(Required) Asset's effective life in years.¶" &
@@ -3760,7 +3760,7 @@ PrimeCostλ = LAMBDA(
                             "FUNCTION:      →PrimeCostλ(Cost, Life)¶" &
                             "DESCRIPTION:   →Straight-line depreciation schedule for one asset or asset class, in whole years. A modelling schedule, not a tax calculation.¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/depreciation-comparison.md¶" &
-                            "VERSION:       →20 Aug 2026¶" &
+                            "VERSION:       →27 Sep 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Cost           →(Required) Asset's cost.¶" &
                             "Life           →(Required) Asset's effective life in years.¶" &
@@ -3803,7 +3803,7 @@ GSTAddλ = LAMBDA(
                             "FUNCTION:      →GSTAddλ(Amounts, [Rate])¶" &
                             "DESCRIPTION:   →Adds GST to one or more GST-exclusive amounts.¶NOTES!         →The 10% default and one-eleventh extraction reflect the basic rule¶               →for a taxable supply in A New Tax System (Goods and Services Tax)¶               →Act 1999 ss 9-70 and 9-75 (source checked 20 August 2026).¶               →Recheck the current Act. These helpers apply arithmetic only: they¶               →do not decide whether a supply is taxable, GST-free, input taxed,¶               →outside the GST system, or subject to a special rule.¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
-                            "VERSION:       →20 Aug 2026¶" &
+                            "VERSION:       →27 Sep 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Amounts        →(Required) One or more GST-exclusive amounts.¶" &
                             "Rate           →(Optional: Default = 0.1) GST rate as a fraction.¶" &
@@ -3842,7 +3842,7 @@ GSTExtractλ = LAMBDA(
                             "FUNCTION:      →GSTExtractλ(Amounts, [Rate])¶" &
                             "DESCRIPTION:   →Returns the GST contained in one or more GST-inclusive amounts.¶NOTES!         →The 10% default and one-eleventh extraction reflect the basic rule¶               →for a taxable supply in A New Tax System (Goods and Services Tax)¶               →Act 1999 ss 9-70 and 9-75 (source checked 20 August 2026).¶               →Recheck the current Act. These helpers apply arithmetic only: they¶               →do not decide whether a supply is taxable, GST-free, input taxed,¶               →outside the GST system, or subject to a special rule.¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
-                            "VERSION:       →20 Aug 2026¶" &
+                            "VERSION:       →27 Sep 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Amounts        →(Required) One or more GST-inclusive amounts.¶" &
                             "Rate           →(Optional: Default = 0.1) GST rate as a fraction.¶" &
@@ -3882,7 +3882,7 @@ LeaseLiabilityλ = LAMBDA(
                             "FUNCTION:      →LeaseLiabilityλ(Payments, Rate, [InAdvance])¶" &
                             "DESCRIPTION:   →Present value of the lease payments that are not paid at the commencement date.¶NOTES!         →AASB 16 paragraph 26 measures the lease liability at the present value¶               →of the lease payments not paid at the commencement date, discounted at¶               →the interest rate implicit in the lease where that rate can be readily¶               →determined and at the lessee's incremental borrowing rate where it¶               →cannot. When InAdvance is TRUE, the first supplied payment is paid at¶               →the measurement date and excluded from the liability. Add a payment¶               →made at or before commencement to the right-of-use asset cost instead.¶               →Rate is per period. Convert an effective annual rate with¶               →PeriodRateλ(AnnualRate, PeriodsPerYear). Divide a nominal annual rate¶               →by PeriodsPerYear only when its compounding periods match the payments.¶               →Include an amount expected to be payable under a¶               →residual value guarantee, or the exercise price of a purchase option,¶               →in the final period where paragraph 27 brings it into the lease¶               →payments. IRRλ() over the same cash flows gives an implicit rate per year;¶               →convert it to the rate per period, (1 + annual) ^ (1 / 12) - 1 for months,¶               →before passing it here.¶               →Arithmetic only: this does not determine the lease term, decide what is¶               →a lease payment, or decide whether the arrangement contains a lease.¶               →AASB 16 compilation checked 24 August 2026.¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
-                            "VERSION:       →24 Aug 2026¶" &
+                            "VERSION:       →27 Aug 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Payments       →(Required) One row or one column of lease payments, one per period, entered positive. Include the measurement-date payment first when InAdvance is TRUE.¶" &
                             "Rate           →(Required) Discount rate per period, not per year.¶" &
@@ -3927,7 +3927,7 @@ LeaseScheduleλ = LAMBDA(
                             "FUNCTION:      →LeaseScheduleλ(Payments, Rate, [InAdvance])¶" &
                             "DESCRIPTION:   →Unwinds an AASB 16 lease liability over its term.¶NOTES!         →Returns four rows: opening liability, payment, interest, closing¶               →liability. When InAdvance is TRUE, the first supplied payment is paid¶               →at the measurement date and is excluded from both the opening liability¶               →and the payment row. Each remaining payment follows one period of¶               →interest, so closing is opening plus interest less payment and the last¶               →closing balance is nil. The result has one fewer column for payments in¶               →advance; a sole measurement-date payment returns one zero column. The¶               →opening balance is LeaseLiabilityλ() on the same arguments. Pair this¶               →with ROUScheduleλ() for the asset that sits opposite it: the two¶               →together give the front-loaded expense profile AASB 16 produces.¶               →Arithmetic only, on the payments and rate you supply.¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
-                            "VERSION:       →24 Aug 2026¶" &
+                            "VERSION:       →27 Aug 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Payments       →(Required) One row or one column of lease payments, one per period, entered positive. Include the measurement-date payment first when InAdvance is TRUE.¶" &
                             "Rate           →(Required) Discount rate per period, not per year.¶" &
@@ -3983,7 +3983,7 @@ LeaseRemeasureλ = LAMBDA(
                             "FUNCTION:      →LeaseRemeasureλ(RevisedPayments, Rate, CarryingLiability, CarryingROU, [InAdvance])¶" &
                             "DESCRIPTION:   →Remeasures a lease liability for revised payments and adjusts the asset.¶NOTES!         →Returns four rows: revised lease liability, adjustment, revised¶               →right-of-use asset, amount recognised in profit or loss. AASB 16¶               →paragraph 42(b) remeasures the liability where future payments change¶               →because an index or a rate used to determine them has changed, and¶               →only when the cash flows change. Paragraph 43 keeps the discount rate¶               →unchanged for that revision, and uses a revised rate only where the¶               →change arises from a floating interest rate, so pass the original rate¶               →unless it is the rate itself that moved. When InAdvance is TRUE, the¶               →first revised payment is paid at the remeasurement date and excluded¶               →from the revised liability. Paragraph 39 takes the remeasurement to the¶               →right-of-use asset, and where that asset is reduced to nil any further¶               →reduction goes to profit or loss: row four carries that remainder,¶               →negative, because it is a credit. Arithmetic only.¶               →AASB 16 compilation checked 24 August 2026.¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
-                            "VERSION:       →24 Aug 2026¶" &
+                            "VERSION:       →29 Sep 2026¶" &
                             "PARAMETERS:    →¶" &
                             "RevisedPayments→(Required) Revised lease payments for the remaining term, one per period, positive. Include a payment made at the remeasurement date first when InAdvance is TRUE.¶" &
                             "Rate           →(Required) Discount rate per period. Unchanged, unless a floating rate moved.¶" &
@@ -4373,7 +4373,7 @@ PeriodRateλ = LAMBDA(
                             "FUNCTION:      →PeriodRateλ(AnnualRate, [PeriodsPerYear])¶" &
                             "DESCRIPTION:   →Converts an effective annual rate to the equivalent rate per period.¶NOTES!         →(1 + AnnualRate) ^ (1 / PeriodsPerYear) - 1, so compounding the result¶               →PeriodsPerYear times gives the annual rate back. This is the rate per¶               →period that LeaseLiabilityλ(), LeaseScheduleλ() and LeaseRemeasureλ()¶               →take. It is for an effective annual rate. A nominal annual percentage¶               →rate that compounds monthly is already APR / 12 per month, so do not¶               →pass it here; EFFECT() turns one into the effective rate this takes.¶               →AnnualRateλ() is the inverse.¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
-                            "VERSION:       →6 Sep 2026¶" &
+                            "VERSION:       →28 Sep 2026¶" &
                             "PARAMETERS:    →¶" &
                             "AnnualRate     →(Required) Effective annual rate, or a row or column of them.¶" &
                             "PeriodsPerYear →(Optional: Default = 12) Periods in a year: 12 for months, 4 for quarters, 1 for years.¶" &
@@ -4411,7 +4411,7 @@ AnnualRateλ = LAMBDA(
                             "FUNCTION:      →AnnualRateλ(PeriodRate, [PeriodsPerYear])¶" &
                             "DESCRIPTION:   →Converts a rate per period to the effective annual rate.¶NOTES!         →(1 + PeriodRate) ^ PeriodsPerYear - 1, the inverse of PeriodRateλ().¶               →Use it to state a rate per period, such as a lease rate solved per¶               →month, as the annual figure a reader expects.¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
-                            "VERSION:       →6 Sep 2026¶" &
+                            "VERSION:       →28 Sep 2026¶" &
                             "PARAMETERS:    →¶" &
                             "PeriodRate     →(Required) Rate per period, or a row or column of them.¶" &
                             "PeriodsPerYear →(Optional: Default = 12) Periods in a year: 12 for months, 4 for quarters, 1 for years.¶" &
@@ -5059,7 +5059,7 @@ DebtToEquityRatioλ = LAMBDA(
                         "DESCRIPTION:       →Measures the degree to which a company is financing operations¶" &
                                            "→with debt rather than its own resources. (Total Liabilities/Shareholders' Equity)¶" & 
                         "WEBPAGE:           →https://www.investopedia.com/terms/d/debtequityratio.asp ¶" &
-                        "VERSION:           →20 Aug 2026¶" &
+                        "VERSION:           →1 Sep 2026¶" &
                         "PARAMETERS:        →¶" & 
                         "TotalLiabilities   →(Required) Total Liabilities¶" & 
                         "ShareholdersEquity →(Required) Shareholders' Equity (total assets - total liabilities) ¶" & 
@@ -5844,7 +5844,7 @@ BVPSλ = LAMBDA(
                         "DESCRIPTION:       →Book value per share ratio is an indicator of the value of a company’s stock¶" & 
                                            "→(Shareholders' Equity - Preferred Stock)/Average Shares Outstanding)¶" & 
                         "WEBPAGE:           →https://corporatefinanceinstitute.com/resources/valuation/book-value-per-share-bvps/ ¶" &
-                        "VERSION:           →20 Aug 2026¶" &
+                        "VERSION:           →1 Sep 2026¶" &
                         "PARAMETERS:→¶" & 
                         "ShareholdersEquity →(Required) Shareholders' Equity (total assets - total liabilities), intangibles kept ¶" & 
                         "PreferredStock     →(Required) Preferred Stock (securities that represent ownership in a corporation).¶" & 
@@ -6453,7 +6453,7 @@ CountCUλ = LAMBDA(
                             "FUNCTION:      →CountCUλ( Text, Characters)¶" &
                             "DESCRIPTION:   →Count how many of one or more characters are in a string.¶" & 
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
-                            "VERSION:       →20 Aug 2026¶" &
+                            "VERSION:       →14 Sep 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Text           →(Required) The string to interrogate. Empty text returns 0¶" & 
                             "Characters     →(Required) A single character, or CSV of characters to find in Text¶" & 
@@ -6974,7 +6974,7 @@ AmortiseBλ = LAMBDA(
                         "               →Closing Balance¶" &
                         "               →Principal Portion¶" &
                         "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/pyxirr-comparison.md¶" &
-                        "VERSION:       →20 Aug 2026¶" &
+                        "VERSION:       →16 Sep 2026¶" &
                         "PARAMETERS:    →¶" &
                         "Principal      →(Required) Principal opening balance.¶" &
                         "APR            →(Required) Annual percentage rate.¶" &
@@ -7062,7 +7062,7 @@ DebtSculptFixedλ = LAMBDA(
                         "                   →Debt service (interest and principal)¶" &
                         "                   →Debt closing balance¶" &
                         "WEBPAGE:           →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
-                        "VERSION:           →10 Sep 2026¶" &
+                        "VERSION:           →23 Sep 2026¶" &
                         "PARAMETERS:        →¶" &
                         "OpeningBalance     →(Optional) Model's debt on opening. Defaults to 0¶" &
                         "Debt               →(Required) One row of new debt, at least two periods. Every period input must have this same width¶" &
@@ -7156,7 +7156,7 @@ DebtSculptVariableLRVλ = LAMBDA(
                         "                   →Principal repayments¶" &
                         "                   →Debt closing balance¶" &
                         "WEBPAGE:           →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
-                        "VERSION:           →10 Sep 2026¶" &
+                        "VERSION:           →29 Sep 2026¶" &
                         "PARAMETERS:        →¶" &
                         "OpeningBalance     →(Optional) Model's debt on opening. Defaults to 0¶" &
                         "Debt               →(Required) One row of new debt, at least two periods. Every period input must have this same width¶" &
@@ -7262,7 +7262,7 @@ DebtSculptVariableλ = LAMBDA(
                         "                   →Debt service (interest and principal)¶" &
                         "                   →Debt closing balance¶" &
                         "WEBPAGE:           →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
-                        "VERSION:           →10 Sep 2026¶" &
+                        "VERSION:           →23 Sep 2026¶" &
                         "PARAMETERS:        →¶" &
                         "OpeningBalance     →(Optional) Model's debt on opening. Defaults to 0¶" &
                         "Debt               →(Required) One row of new debt, at least two periods. Every period input must have this same width¶" &
@@ -7361,7 +7361,7 @@ InterestLRVλ = LAMBDA(
                                        "→depends on the interest and the interest on the average balance, which¶" &
                                        "→is solved in closed form rather than by iteration.¶" &
                         "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
-                        "VERSION:       →20 Aug 2026¶" &
+                        "VERSION:       →16 Sep 2026¶" &
                         "PARAMETERS:    →¶" &
                         "CFADS          →(Required) Cash Flow Available for Debt Service for this period¶" &
                         "DSCR           →(Required) Debt Service Coverage Ratio for this period¶" &

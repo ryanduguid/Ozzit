@@ -497,6 +497,13 @@ fn mutate_published_store(fixture: &Fixture, change: impl FnOnce(&mut serde_json
     }
 }
 
+/// A module's text with its first VERSION date a year earlier: a stale store copy.
+fn backdated(text: &str) -> Option<String> {
+    let row = text.find("VERSION:")?;
+    let year = row + text[row..].find(" 2026")? + 1;
+    Some(format!("{}2025{}", &text[..year], &text[year + 4..]))
+}
+
 #[test]
 fn gate_rejects_the_original_six_stale_version_lines_in_both_encodings() {
     let fixture = Fixture::published("stale-dates.xlsx");
@@ -506,10 +513,10 @@ fn gate_rejects_the_original_six_stale_version_lines_in_both_encodings() {
         let mut affected = 0;
         for item in files {
             assert!(item["path"].as_str().unwrap().starts_with("/projects/"));
-            let text = item["text"].as_str().unwrap();
-            let replacement = text.replacen("20 Aug 2026", "19 Aug 2026", 1);
-            affected += usize::from(replacement != text);
-            item["text"] = replacement.into();
+            if let Some(stale) = backdated(item["text"].as_str().unwrap()) {
+                affected += 1;
+                item["text"] = stale.into();
+            }
         }
         assert_eq!(affected, 6);
     });
@@ -525,7 +532,7 @@ fn gate_rejects_the_original_six_stale_version_lines_in_both_encodings() {
         ] {
             assert!(stdout.contains(&format!("/projects/{module}")));
         }
-        for fragment in ["at character ", "19 Aug 2026", "20 Aug 2026"] {
+        for fragment in ["at character ", " 2025"] {
             assert_eq!(stdout.matches(fragment).count(), 6);
         }
         let details = stdout
@@ -533,6 +540,7 @@ fn gate_rejects_the_original_six_stale_version_lines_in_both_encodings() {
             .filter(|line| line.starts_with("  - AFE module "))
             .collect::<Vec<_>>();
         assert_eq!(details.len(), 6);
+        assert!(details.iter().all(|line| line.contains(" 2026")));
         let arrow = if encoding == "cp1252" {
             r"\u2192"
         } else {
@@ -878,10 +886,7 @@ fn stale_dates_parts(original: &archive::Parts, current: &Json) -> archive::Part
         .iter_mut()
         .find(|file| file["path"] == "/projects/Dates")
         .unwrap();
-    let text = dates["text"].as_str().unwrap();
-    let changed = text.replacen("20 Aug 2026", "19 Aug 2026", 1);
-    assert_ne!(text, changed);
-    dates["text"] = changed.into();
+    dates["text"] = backdated(dates["text"].as_str().unwrap()).unwrap().into();
     let replacement = base64::engine::general_purpose::STANDARD.encode(
         stale
             .to_string()

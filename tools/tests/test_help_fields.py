@@ -6,12 +6,21 @@ Up to v3.5.0, 17 help tables had no VERSION row, 4 had no link, and 10 labelled
 the link WEBSITE where the rest say WEBPAGE. The module About tables are
 a different layout, with their own REPOSITORY and WEBSITE rows, and are not read
 here: they are assigned with TRIM(TEXTSPLIT(...)), not LAMBDA.
+
+VERSION is the date the function's formula last changed. Up to v3.5.0 nothing
+checked that, and 29 functions changed after the date their help gave: Amortiseλ
+gained FinalPeriodEnd and still read 20 Aug 2026. The formula here is the LAMBDA
+without its comments, whitespace or help text, so a help-only edit leaves VERSION
+alone, and the gate compares it with HEAD's first parent, which in CI is the base
+a pull request merges into.
 """
 
 from __future__ import annotations
 
 import re
+import subprocess
 import unittest
+from datetime import date, datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -27,16 +36,71 @@ DATE = re.compile(r"[1-9]\d? (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) 2
 WITHOUT_HELP = {"AmortiseλDV", "CorkscrewλDV", "DepreciateλDV"}
 
 
+def split(text: str) -> dict[str, str]:
+    """Each LAMBDA's text in one module, from its assignment to the next one."""
+    starts = [(m.start(), m.group(1)) for m in FUNCTION.finditer(text)] + [(len(text), "")]
+    return {name: text[start:end] for (start, name), (end, _) in zip(starts, starts[1:])}
+
+
 def functions() -> dict[str, str]:
-    """Each LAMBDA's text, from its assignment to the next one in the module."""
+    """Each LAMBDA's text in src/."""
     found: dict[str, str] = {}
     for path in sorted(SRC.glob("*.txt")):
-        text = path.read_text(encoding="utf-8")
-        starts = [(m.start(), m.group(1)) for m in FUNCTION.finditer(text)]
-        for index, (start, name) in enumerate(starts):
-            end = starts[index + 1][0] if index + 1 < len(starts) else len(text)
-            found[name] = text[start:end]
+        found.update(split(path.read_text(encoding="utf-8")))
     return found
+
+
+def committed_functions(revision: str) -> dict[str, str] | None:
+    """Each LAMBDA's text in src/ at a commit, or None when Git cannot show it."""
+    found: dict[str, str] = {}
+    try:
+        names = subprocess.run(["git", "ls-tree", "--name-only", revision, "src/"], cwd=ROOT,
+                               capture_output=True, text=True, check=True).stdout.split()
+        for name in [n for n in names if n.endswith(".txt")]:
+            shown = subprocess.run(["git", "show", f"{revision}:{name}"], cwd=ROOT,
+                                   capture_output=True, check=True).stdout
+            found.update(split(shown.decode("utf-8")))
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return found
+
+
+TEXT_OR_COMMENT = re.compile(r'"(?:[^"]|"")*"|//[^\n]*|/\*.*?\*/', re.DOTALL)
+
+
+def kept(match: re.Match[str]) -> str:
+    """A literal stays, help text becomes one marker and a comment goes."""
+    found = match[0]
+    if not found.startswith('"'):
+        return ""
+    return '"¶"' if "→" in found or "¶" in found else found
+
+
+def formula(body: str) -> str:
+    """The LAMBDA without comments, whitespace or help text.
+
+    Help text is any literal holding the help separators. A help is one run of them
+    joined by &, so it becomes one marker whatever its row count.
+    """
+    flat = re.sub(r"\s+", "", TEXT_OR_COMMENT.sub(kept, body))
+    return re.sub(r'"¶"(?:&"¶")+', '"¶"', flat)
+
+
+def version(body: str) -> date:
+    return datetime.strptime(dict(ROW.findall(body))["VERSION"], "%d %b %Y").date()
+
+
+def unmoved(current: dict[str, str], base: dict[str, str], today: date) -> list[str]:
+    """Functions whose formula changed since base while VERSION stayed put.
+
+    A function changed again on the day its VERSION was set keeps that date, so a
+    VERSION within a day of today passes; the day allows for time zones.
+    """
+    return [
+        name for name, body in current.items()
+        if name in base and name not in WITHOUT_HELP and formula(body) != formula(base[name])
+        and version(body) <= version(base[name]) and abs((version(body) - today).days) > 1
+    ]
 
 
 class HelpFieldTests(unittest.TestCase):
@@ -75,6 +139,36 @@ class HelpFieldTests(unittest.TestCase):
             with self.subTest(function=name):
                 self.assertTrue(link.startswith(on_main), link)
                 self.assertTrue((ROOT / link.removeprefix(on_main)).is_file(), link)
+
+    def test_a_changed_formula_moves_its_version(self):
+        base = committed_functions("HEAD^1")
+        if base is None:  # pragma: no cover - CI checks out the full history
+            self.skipTest("needs HEAD's first parent; a shallow clone or archive has none")
+        self.assertEqual(unmoved(self.functions, base, date.today()), [],
+                         "the formula changed: set VERSION to the date of the change")
+
+    def test_the_version_gate_reads_formulas_not_help(self):
+        def body(version: str, rows: str, code: str) -> str:
+            return (f'Fλ = LAMBDA([X], LET(\n    Help, TRIM(TEXTSPLIT("FUNCTION:→Fλ(X)¶" &\n'
+                    f'        "VERSION:   →{version}¶" &\n{rows}        "→", "¶")),\n'
+                    f'    // the arithmetic\n    {code}));\n')
+
+        base = {"Fλ": body("1 Sep 2026", "", "X + 1")}
+        today = date(2026, 11, 3)
+        cases = {
+            "formula changed, VERSION kept": (body("1 Sep 2026", "", "X + 2"), ["Fλ"]),
+            "formula changed, VERSION moved": (body("2 Nov 2026", "", "X + 2"), []),
+            "formula changed on the VERSION's day": (body("4 Nov 2026", "", "X+2"), []),
+            "help row added": (body("1 Sep 2026", '        "NOTE!→More.¶" &\n', "X + 1"), []),
+            "comment and spacing": (body("1 Sep 2026", "", "X  +\n        1").replace(
+                "// the arithmetic", "/* add one */"), []),
+            "message text changed": (body("1 Sep 2026", "", 'IF(X, "Bad.", 1)'), ["Fλ"]),
+        }
+        for case, (current, expected) in cases.items():
+            with self.subTest(case=case):
+                self.assertEqual(unmoved({"Fλ": current}, base, today), expected)
+        self.assertEqual(unmoved({"Fλ": base["Fλ"], "Gλ": base["Fλ"]}, base, today), [])
+        self.assertIsNone(committed_functions("no-such-revision"))
 
 
 if __name__ == "__main__":

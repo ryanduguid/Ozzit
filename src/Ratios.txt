@@ -532,7 +532,7 @@ DebtToEquityRatioλ = LAMBDA(
                         "DESCRIPTION:       →Measures the degree to which a company is financing operations¶" &
                                            "→with debt rather than its own resources. (Total Liabilities/Shareholders' Equity)¶" & 
                         "WEBPAGE:           →https://www.investopedia.com/terms/d/debtequityratio.asp ¶" &
-                        "VERSION:           →20 Aug 2026¶" &
+                        "VERSION:           →1 Sep 2026¶" &
                         "PARAMETERS:        →¶" & 
                         "TotalLiabilities   →(Required) Total Liabilities¶" & 
                         "ShareholdersEquity →(Required) Shareholders' Equity (total assets - total liabilities) ¶" & 
@@ -1317,7 +1317,7 @@ BVPSλ = LAMBDA(
                         "DESCRIPTION:       →Book value per share ratio is an indicator of the value of a company’s stock¶" & 
                                            "→(Shareholders' Equity - Preferred Stock)/Average Shares Outstanding)¶" & 
                         "WEBPAGE:           →https://corporatefinanceinstitute.com/resources/valuation/book-value-per-share-bvps/ ¶" &
-                        "VERSION:           →20 Aug 2026¶" &
+                        "VERSION:           →1 Sep 2026¶" &
                         "PARAMETERS:→¶" & 
                         "ShareholdersEquity →(Required) Shareholders' Equity (total assets - total liabilities), intangibles kept ¶" & 
                         "PreferredStock     →(Required) Preferred Stock (securities that represent ownership in a corporation).¶" & 
