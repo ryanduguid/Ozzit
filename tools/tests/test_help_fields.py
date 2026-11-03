@@ -68,23 +68,19 @@ def committed_functions(revision: str) -> dict[str, str] | None:
     return found
 
 
-TEXT_OR_COMMENT = re.compile(r'"(?:[^"]|"")*"|//[^\n]*|/\*.*?\*/', re.DOTALL)
+# A literal (group 1), a comment or a run of whitespace; only literals are kept.
+TOKEN = re.compile(r'("(?:[^"]|"")*")|//[^\n]*|/\*.*?\*/|\s+', re.DOTALL)
 # The help: the Help binding's TEXTSPLIT up to its "→" and "¶" delimiters.
 HELP = re.compile(r'\bHelp,\s*TRIM\(\s*TEXTSPLIT\(.*?"→",\s*"¶"', re.DOTALL)
 
 
-def kept(match: re.Match[str]) -> str:
-    """A literal stays and a comment goes."""
-    return match[0] if match[0].startswith('"') else ""
-
-
 def formula(body: str) -> str:
-    """The LAMBDA without comments, whitespace or help text.
+    """The LAMBDA without comments, whitespace outside literals or help text.
 
     The help becomes one marker whatever its rows say; every other literal, message
-    text included, is part of the formula.
+    text and its spacing included, is part of the formula.
     """
-    return re.sub(r"\s+", "", TEXT_OR_COMMENT.sub(kept, HELP.sub("Help,¶", body)))
+    return TOKEN.sub(lambda m: m[1] or "", HELP.sub("Help,¶", body))
 
 
 def version(body: str) -> date:
@@ -172,10 +168,12 @@ class HelpFieldTests(unittest.TestCase):
                 self.assertEqual(unmoved({"Fλ": current}, base, today), expected)
         self.assertEqual(unmoved({"Fλ": base["Fλ"], "Gλ": base["Fλ"]}, base, today), [])
         self.assertIsNone(committed_functions("no-such-revision"))
-        # Help separators in a message outside the help are formula text.
-        arrow = {"Fλ": body("1 Sep 2026", "", 'IF(X, "A→B¶", 1)')}
-        changed = {"Fλ": body("1 Sep 2026", "", 'IF(X, "A→C¶", 1)')}
-        self.assertEqual(unmoved(changed, arrow, today), ["Fλ"])
+        # Help separators in a message outside the help, and the spacing inside any
+        # literal, are formula text.
+        for before, after in [('"A→B¶"', '"A→C¶"'), ('"A B"', '"AB"')]:
+            message = {"Fλ": body("1 Sep 2026", "", f"IF(X, {before}, 1)")}
+            changed = {"Fλ": body("1 Sep 2026", "", f"IF(X, {after}, 1)")}
+            self.assertEqual(unmoved(changed, message, today), ["Fλ"], after)
 
     def test_a_named_base_is_read_and_one_that_cannot_be_read_fails(self):
         with mock.patch.dict(os.environ, {"VERSION_BASE": "HEAD"}):

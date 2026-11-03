@@ -131,8 +131,8 @@ heading in the Financial About table. The cover label moves to 150 functions.
   of `src/`. `tools/tests/test_help_fields.py` now fails when a formula differs from
   its base (a pull request's base, or for a push to `main` the commit `main` held
   before it) and its VERSION is neither later nor within a day of today. Comments,
-  spacing and the help block are not the formula, so a help-only edit keeps its
-  VERSION; any other text, such as a message, is.
+  spacing outside literals and the help block are not the formula, so a help-only
+  edit keeps its VERSION; any other text, such as a message and its spacing, is.
 - The practice companion's Benefit totals sheet prefills the 47% FBT rate and the
   2.0802 and 1.8868 gross-up factors under a note that called them illustrative and
   named no period. The note now names the FBT years they apply to, ending 31 March 2023
