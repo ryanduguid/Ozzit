@@ -1584,6 +1584,13 @@ AboutFinancialλ = TRIM(TEXTSPLIT(
                                            "LOANS              →¶" &
                                            "LevelPaymentλ      →Level payment that repays a loan over a row of period rates¶" &
                                            "CorkscrewRateλ     →Corkscrew with interest on the average balance, added to the balance¶" & 
+                                           "→¶" &
+                                           "DEBT MODULE        →¶" &
+                                           "AmortiseBλ         →Creates an amortisation schedule for a debt/loan across a model's periods¶" &
+                                           "DebtSculptFixedλ   →Creates a debt sculpting schedule where APR and DSCR are fixed for all periods¶" &
+                                           "DebtSculptVariableλ →Creates a debt sculpting schedule where APR and DSCR are set for each period¶" &
+                                           "DebtSculptVariableLRVλ →Creates a debt sculpting schedule where APR and DSCR are set for each period, with interest charged on the average balance¶" &
+                                           "InterestLRVλ       →Calculates debt sculpting interest on the average balance over the period, the method presented by Lance Rubin¶" &
                                            
     "→¶" &
     "SUBROUTINES        →Functions used by other functions or general purpose functions.¶" & 

@@ -71,6 +71,17 @@ class ModellingConventionsTest(unittest.TestCase):
         self.assertEqual(len(tables), 5)
         self.assertIn("5 About tables list each module's functions", self.page)
 
+    def test_every_function_is_listed_in_an_about_table(self) -> None:
+        # An About table row opens with the function's name; the diagnostic companions
+        # are listed with the function they check.
+        listed: set[str] = set()
+        for path in (ROOT / "src").glob("*.txt"):
+            text = path.read_text(encoding="utf-8")
+            for table in re.findall(r"^About\w+λ\s*=\s*TRIM\(.*?\);$", text, re.MULTILINE | re.DOTALL):
+                listed |= set(re.findall(r'"(\w+λ)\s*→', table))
+        unlisted = {name for name in function_bodies() if not name.endswith("λDV")} - listed
+        self.assertEqual(unlisted, set())
+
     def test_utilities_repeats_the_essentials_functions(self) -> None:
         def defined(module: str) -> set[str]:
             return set(DEFINITION.findall((ROOT / "src" / f"{module}.txt").read_text(encoding="utf-8")))

@@ -104,7 +104,7 @@ fn add_to_src_appends_after_a_final_newline_either_way() {
             .iter()
             .map(|b| format!("{b:02x}"))
             .collect::<String>(),
-        "7648f23ce8253fdc88b2295e9349dfb7d0ab2e4226bad5960cbb43fd46b8bd59"
+        "ca25d77a54c86e1c37654ee10c3177cb56acff92ebe82b35944a5f01fa9e90d5"
     );
 }
 #[test]

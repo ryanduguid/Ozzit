@@ -112,6 +112,10 @@ heading in the Financial About table. The cover label moves to 150 functions.
   codes on 3 rows and each LifeInYears and Timeline note on one row, with the same
   meaning. The arithmetic is unchanged. A test now fails when a demonstration sheet's
   help has no room to spill; `ozzit verify_help_spills` skipped such a cell.
+- The Debt module's 5 functions, `oz.AmortiseBλ`, `oz.DebtSculptFixedλ`,
+  `oz.DebtSculptVariableλ`, `oz.DebtSculptVariableLRVλ` and `oz.InterestLRVλ`, were
+  in no About table. `oz.AboutFinancialλ` now lists them under DEBT MODULE, and a test
+  fails when a function is missing from every About table.
 - The practice companion's Benefit totals sheet prefills the 47% FBT rate and the
   2.0802 and 1.8868 gross-up factors under a note that called them illustrative and
   named no period. The note now names the FBT years they apply to, ending 31 March 2023
