@@ -23,6 +23,7 @@ import unittest
 from pathlib import Path
 
 HELPER = Path(__file__).resolve().parents[1] / "excel_eval_formulas.ps1"
+DUMPER = Path(__file__).resolve().parents[1] / "dump_values.ps1"
 WINDOWS = sys.platform == "win32" and shutil.which("powershell.exe")
 
 
@@ -78,6 +79,19 @@ class MessageFilterTests(unittest.TestCase):
         )
         self.assertEqual(run.returncode, 0, run.stderr)
         self.assertEqual(run.stdout.strip(), "True,3,False")
+
+    @unittest.skipUnless(WINDOWS, "needs Windows PowerShell")
+    def test_a_null_position_is_read_again_and_fails_if_it_stays_null(self):  # pragma: no cover - Windows only; the coverage job runs on Ubuntu
+        text = DUMPER.read_text(encoding="utf-8")
+        run = powershell(
+            function(text, "Invoke-Excel") + "\n" + function(text, "Read-Position") + "\n"
+            "$script:reads = 0;"
+            "$late = Read-Position { $script:reads++; if ($script:reads -le 2) { $null } else { 19 } };"
+            "$stuck = try { Read-Position { $null } } catch { $_.Exception.Message };"
+            "\"$late,$($script:reads),$stuck\""
+        )
+        self.assertEqual(run.returncode, 0, run.stderr)
+        self.assertEqual(run.stdout.strip(), "19,3,Excel returned no position.")
 
 
 if __name__ == "__main__":

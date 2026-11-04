@@ -153,6 +153,11 @@ and reads HasFormula and HasSpill again until they come back true or false.
 Rejected calls had failed 4 of 6 runs on an unchanged workbook: 2 threw
 RPC_E_CALL_REJECTED and 2 read HasFormula as blank for a formula cell.
 
+`tools/dump_values.ps1` now registers the same filter and reads each sheet's first
+row and column again until they come back as numbers. `ozzit verify_cache` had failed
+1 of 3 runs on an unchanged workbook with an invalid cell position, on the line that
+holds the first cell of a sheet, where a blank read would write a position of 0.
+
 ## v3.5.0, 19 October 2026, ATO benchmark ratios, a dated rate lookup and Apache-2.0
 
 Cut on 19 October 2026 from the changes on `main` since v3.4.2, and published the same
