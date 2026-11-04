@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan Duguid
-// SPDX-License-Identifier: FSL-1.1-ALv2
+// SPDX-License-Identifier: LicenseRef-Duguid-Public-Attribution-1.0
 
 //! Physical help-cache contracts supplement the unchanged model fixture replay.
 use base64::{Engine, engine::general_purpose::STANDARD};

@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan Duguid
-// SPDX-License-Identifier: FSL-1.1-ALv2
+// SPDX-License-Identifier: LicenseRef-Duguid-Public-Attribution-1.0
 
 //! Physical CI-helper commands on owned trees and real first-parent Git history.
 use std::{collections::BTreeMap, fs, path::Path, process::Command};

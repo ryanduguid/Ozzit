@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan Duguid
-// SPDX-License-Identifier: FSL-1.1-ALv2
+// SPDX-License-Identifier: LicenseRef-Duguid-Public-Attribution-1.0
 
 //! Original sanitiser fixtures, physical commands and independent ZIP checks.
 use ozzit::{archive, common::display, sanitise};
