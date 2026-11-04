@@ -6,9 +6,9 @@ part of the name.
 
 | Group | Named formulas | Covers |
 |---|---|---|
-| Dates | 15 | Dates and timelines: periods, schedules, overlaps, occurrence tests, financial-year labels, dated rate lookup |
+| Dates | 17 | Dates and timelines: periods, schedules, overlaps, occurrence tests, financial-year labels, dated rate lookup |
 | Essentials | 17 | Array essentials: row and column totals, averages, counts, range conversion |
-| Financial | 46 | Financial building blocks: amortisation, depreciation, corkscrews, IRR, rolling sums, GST, AASB 16 leases |
+| Financial | 51 | Financial building blocks: amortisation, depreciation, corkscrews, IRR, rolling sums, GST, AASB 16 leases |
 | Ratios | 48 | Financial ratios: liquidity, leverage, margins, returns, market multiples, working-capital days, ATO benchmark ratios |
 | Utilities | 17 | Standalone copies of the Essentials functions, each carrying a `U` suffix |
 | Debt | 5 | Debt sculpting: amortisation schedule, fixed and variable DSCR sculpting, sculpting interest |
@@ -70,11 +70,11 @@ utilities copies. The 5 About tables take words instead: `oz.AboutFinancialλ`,
 | `oz.RangeToDAEλ` | Convert a static range into a dynamic array |
 | `oz.FinancialRatios` | Three dozen financial Ratios |
 
-The other 106 named formulas have no dedicated worksheet: 102 LAMBDA functions
+The other 111 named formulas have no dedicated worksheet: 107 LAMBDA functions
 and 4 About tables. They include all of Ratios, Utilities, Debt and the AASB 16
 lease helpers. Call a LAMBDA with no arguments for inline help; reference an About
 table by name without parentheses. `oz.FinancialRatios` demonstrates the ratio
-suite on one worksheet, and [functions.csv](../functions.csv) indexes all 150 names.
+suite on one worksheet, and [functions.csv](../functions.csv) indexes all 155 names.
 
 ## Dynamic-array formula walkthrough
 
