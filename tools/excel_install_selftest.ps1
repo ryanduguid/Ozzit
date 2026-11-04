@@ -1,6 +1,3 @@
-# Copyright 2026 Ryan Duguid
-# SPDX-License-Identifier: FSL-1.1-ALv2
-
 # Test the documented copy-cell route in a fresh workbook using desktop Excel.
 # The source opens read-only. Only the new destination workbook is saved.
 param(
