@@ -12,10 +12,84 @@ param([string]$Path, [string]$Out)
 $ErrorActionPreference = 'Stop'
 $Path = (Resolve-Path $Path).Path
 
+# A busy Excel rejects calls with RPC_E_CALL_REJECTED. A method call then throws, but a
+# rejected property read comes back $null, and a null row or column turns the cell's
+# position into 0, which `ozzit verify_cache` refuses. This is the COM message filter in
+# excel_eval_formulas.ps1: COM retries a rejected call every 100 ms for up to 60 s.
+Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+
+[ComImport, Guid("00000016-0000-0000-C000-000000000046"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+public interface IOzzitOleMessageFilter {
+    [PreserveSig] int HandleInComingCall(int callType, IntPtr caller, int tickCount, IntPtr interfaceInfo);
+    [PreserveSig] int RetryRejectedCall(IntPtr callee, int tickCount, int rejectType);
+    [PreserveSig] int MessagePending(IntPtr callee, int tickCount, int pendingType);
+}
+
+public class OzzitMessageFilter : IOzzitOleMessageFilter {
+    [DllImport("ole32.dll")]
+    static extern int CoRegisterMessageFilter(IOzzitOleMessageFilter filter, out IOzzitOleMessageFilter previous);
+
+    static IOzzitOleMessageFilter previous;
+    static bool registered;
+
+    // Fails outside a single-threaded apartment, where a filter cannot apply.
+    public static void Register() {
+        Marshal.ThrowExceptionForHR(CoRegisterMessageFilter(new OzzitMessageFilter(), out previous));
+        registered = true;
+    }
+
+    // Restores the thread's earlier filter, if any. Not checked: it runs last in the cleanup,
+    // where a throw would hide the error that ended the run.
+    public static void Revoke() {
+        if (!registered) return;
+        IOzzitOleMessageFilter ours;
+        CoRegisterMessageFilter(previous, out ours);
+        previous = null;
+        registered = false;
+    }
+
+    // SERVERCALL_ISHANDLED
+    public int HandleInComingCall(int callType, IntPtr caller, int tickCount, IntPtr interfaceInfo) { return 0; }
+
+    // Retry SERVERCALL_RETRYLATER after 100 ms until 60 s have passed; -1 cancels the call.
+    public int RetryRejectedCall(IntPtr callee, int tickCount, int rejectType) {
+        return rejectType == 2 && tickCount < 60000 ? 100 : -1;
+    }
+
+    // PENDINGMSG_WAITDEFPROCESS
+    public int MessagePending(IntPtr callee, int tickCount, int pendingType) { return 2; }
+}
+'@
+
 function Invoke-Excel([scriptblock]$op, [int]$tries = 12) {
     for ($i = 1; $i -le $tries; $i++) {
         try { return & $op }
         catch { if ($i -eq $tries) { throw }; Start-Sleep -Milliseconds (250 * $i) }
+    }
+}
+
+# A sheet's position, shape and values, all from one range, or a throw that retries. A
+# rejected property read comes back $null rather than throwing, so a position counts only
+# as a positive number and values only in the range's shape; only an empty one-cell range has none.
+# The range stays in a variable and the result in a hashtable: PowerShell enumerates a
+# range and flattens a 2-dimensional array returned through a function.
+function Read-Block($ws) {
+    Invoke-Excel {
+        $ur = $ws.UsedRange
+        if ($null -eq $ur) { throw 'Excel returned no range.' }
+        $r = $ur.Row; $c = $ur.Column; $rows = $ur.Rows.Count; $columns = $ur.Columns.Count
+        foreach ($n in @($r, $c, $rows, $columns)) {
+            if ($n -isnot [int] -or $n -lt 1) { throw 'Excel returned no position.' }
+        }
+        $values = $ur.Value2
+        $one = $rows -eq 1 -and $columns -eq 1
+        $fits = if ($null -eq $values) { $one -and $ur.Formula -ceq '' }
+                elseif ($one) { $values -isnot [Array] }
+                else { $values -is [object[,]] -and $values.GetLength(0) -eq $rows -and $values.GetLength(1) -eq $columns }
+        if (-not $fits) { throw 'Excel returned values that do not fit the range.' }
+        @{ Row = $r; Column = $c; Values = $values }
     }
 }
 
@@ -27,6 +101,7 @@ if (@(Get-Process EXCEL -ErrorAction SilentlyContinue).Count -gt 0) {
     exit 2
 }
 
+[OzzitMessageFilter]::Register()
 $xl = New-Object -ComObject Excel.Application
 # msoAutomationSecurityForceDisable (3), not Low (1): reading values needs no macros.
 $xl.Visible = $false; $xl.DisplayAlerts = $false; $xl.AutomationSecurity = 3
@@ -52,11 +127,8 @@ try {
     $pos = 0
     foreach ($ws in $wb.Worksheets) {
         $pos++
-        $ur = $ws.UsedRange
-        $r0 = $ur.Row; $c0 = $ur.Column
-        # Not Invoke-Excel: PowerShell flattens a 2-dimensional array returned through a
-        # function, which turns the whole sheet into one row and hides every difference.
-        $vals = $ur.Value2
+        $block = Read-Block $ws
+        $r0 = $block.Row; $c0 = $block.Column; $vals = $block.Values
         if ($null -eq $vals) { continue }
         if ($vals -isnot [object[,]]) {
             $kind = if ($vals -is [int]) { 'error' } else { 'value' }
@@ -84,5 +156,6 @@ finally {
     try { $xl.Quit() } catch {}
     [void][Runtime.InteropServices.Marshal]::ReleaseComObject($xl)
     [GC]::Collect(); [GC]::WaitForPendingFinalizers()
+    [OzzitMessageFilter]::Revoke()
 }
 exit $exit
