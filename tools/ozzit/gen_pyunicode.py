@@ -1,6 +1,3 @@
-# Copyright 2026 Ryan Duguid
-# SPDX-License-Identifier: FSL-1.1-ALv2
-
 """Generate src/pyunicode.rs from this CPython's Unicode data.
 
 The tables let the native tools reproduce the str predicates and the re classes
