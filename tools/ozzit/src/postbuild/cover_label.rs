@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Cover-label pass: Cover!A3 states the current cut and function count.
 use super::*;
 

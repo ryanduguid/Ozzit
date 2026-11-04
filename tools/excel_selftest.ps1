@@ -1,3 +1,6 @@
+# Copyright 2026 Ryan Duguid
+# SPDX-License-Identifier: FSL-1.1-ALv2
+
 # End-to-end check of ozzit.xlsx in a real Excel calculation engine.
 #
 #   powershell -ExecutionPolicy Bypass -File tools\excel_selftest.ps1 [path\to\ozzit.xlsx]

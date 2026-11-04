@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! The tracked Debt module's debt functions no longer call themselves by name.
 use super::{piece, read};
 use ozzit::common;

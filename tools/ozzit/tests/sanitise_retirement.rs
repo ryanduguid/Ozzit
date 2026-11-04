@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Original sanitise pass contracts and physical CLI assertions on owned inputs.
 #[path = "sanitise_retirement/mod.rs"]
 mod fixtures;

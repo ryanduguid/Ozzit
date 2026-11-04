@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Replay the active fuzz target without requiring nightly Rust or libFuzzer.
 #[path = "../fuzz/harness.rs"]
 mod harness;

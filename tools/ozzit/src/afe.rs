@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! The AFE JSON store is a publication view, not a formula engine.
 use crate::{
     archive::*,

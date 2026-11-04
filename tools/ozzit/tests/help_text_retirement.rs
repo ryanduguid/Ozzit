@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Contracts retained from the FY27 and GST Python help-text writer tests.
 use ozzit::{
     archive::{BOOK, Parts, read_parts, write_deterministic},

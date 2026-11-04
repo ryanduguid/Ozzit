@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Apply, refusal and command contracts retained from the Python help-link tests.
 use ozzit::{
     archive::{BOOK, Parts, read_parts, write_deterministic},

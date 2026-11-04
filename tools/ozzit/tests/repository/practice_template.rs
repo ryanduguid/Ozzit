@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Bind the companion's saved native result to its workbook and test inputs.
 //!
 //! This checks retained evidence, not Excel calculation on this host. Run the

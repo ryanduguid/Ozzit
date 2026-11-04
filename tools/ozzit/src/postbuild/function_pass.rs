@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! The function-adding passes that compile through `compile_sources`:
 //! working-capital days, rate and date helpers, ATO benchmark and rate lookup,
 //! variance and financial-year periods, and the level payment and rate corkscrew.

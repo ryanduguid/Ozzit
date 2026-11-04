@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Correction pass: argument defaults, help text and worksheet examples.
 //!
 //! Each correction is spelt out in both stores' serialisations with an asserted

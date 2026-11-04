@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Text-stream compatibility for AFE helpers, which retain Python's stream encoding.
 use std::io::{self, Write};
 

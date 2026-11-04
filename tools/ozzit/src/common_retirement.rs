@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Former Python writer contracts at the native staging and replacement boundary.
 //!
 //! Native stages remain open and use RAII. Write errors and panic unwinding are

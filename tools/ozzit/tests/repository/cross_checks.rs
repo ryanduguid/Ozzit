@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Cross-check fixtures: synthetic cases with independently computed expected values.
 //!
 //! Each case is an Excel formula and the grid it should return, worked out here

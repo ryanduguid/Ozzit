@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! AASB 16 lease pass: 4 lessee functions added to the Financial group.
 //!
 //! One spec per function generates both stores: the stored form is rendered

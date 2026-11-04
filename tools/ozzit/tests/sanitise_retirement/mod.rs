@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Original sanitiser fixtures, physical commands and independent ZIP checks.
 use ozzit::{archive, common::display, sanitise};
 use serde_json::Value;

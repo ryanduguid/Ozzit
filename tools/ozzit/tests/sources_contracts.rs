@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Source helper and command contracts retained from the Python tests.
 use ozzit::{archive, common::*, formula, sources};
 use std::{

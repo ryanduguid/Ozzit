@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Revision-history pass: remove per-function REVISIONS blocks and the creator credit.
 //!
 //! Three stores hold the revision text and are rewritten together: `src/*.txt`,

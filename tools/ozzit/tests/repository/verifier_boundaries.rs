@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! The Excel value dump opens its output only inside its Excel cleanup.
 use super::{index, read};
 

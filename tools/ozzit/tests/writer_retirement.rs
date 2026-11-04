@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Original archive contracts use the independently frozen level-9 workbook bytes.
 use ozzit::archive;
 use std::path::Path;

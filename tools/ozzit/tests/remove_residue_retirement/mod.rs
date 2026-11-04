@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Owned workbook fixtures: reintroduce each residue without requiring Python.
 use ozzit::{
     archive::{BOOK, Parts, read_parts, write_deterministic},
