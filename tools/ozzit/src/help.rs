@@ -67,7 +67,7 @@ pub fn worked_examples(body: &str) -> Vec<String> {
     for (label, text) in rows(body) {
         if label.starts_with("EXAMPLE") {
             started = true;
-        } else if started && label.ends_with(':') {
+        } else if started && label.ends_with(':') && label != "Formula:" {
             break;
         } else if !started {
             continue;

@@ -26,6 +26,14 @@ pub const KNOWN: [(&str, &str); 5] = [
     ("LeaseRemeasureλ", "InAdvance"),
     ("LeaseScheduleλ", "InAdvance"),
 ];
+/// LET bindings the published sources leave unread. `_` opts a new binding out, but
+/// renaming or removing one of these changes its defined name, so each waits for a
+/// workbook change.
+pub const KNOWN_UNREAD: [(&str, &str); 3] = [
+    ("Depreciateλ", "Mpy"),
+    ("Reversalλ", "BeginningValue"),
+    ("ScheduleRatesλ", "s"),
+];
 const SCALAR: &str = "AND AREAS AVERAGE COLUMNS COUNT COUNTA COUNTBLANK ISOMITTED ISREF MAX MIN OR ROWS SUM SUMPRODUCT XOR BYCOL BYROW LAMBDA MAKEARRAY MAP REDUCE SCAN";
 const SHAPE: &str = "AREAS COLUMNS ISOMITTED ISREF ROWS";
 pub fn listed(words: &str, word: &str) -> bool {
@@ -249,6 +257,40 @@ pub fn dead_conversions(body: &str) -> BTreeSet<String> {
         .filter(|s| seen.iter().filter(|v| v == s).count() == 1)
         .cloned()
         .collect()
+}
+/// The LET bindings in `body` that nothing after them reads, a binding's own value
+/// not counting. A `_` prefix marks one left unread on purpose.
+// shortcut: a name rebound by a nested LET or LAMBDA counts as read. Telling them
+// apart needs scope tracking, so such a binding passes.
+pub fn unread_bindings(body: &str) -> BTreeSet<String> {
+    let code = split_literals(body)
+        .into_iter()
+        .map(|(lit, s)| if lit { "\"\"" } else { s })
+        .collect::<String>();
+    let mut unread = BTreeSet::new();
+    for m in re(r"(?i)(?<![A-Za-z0-9_.?λ])LET\s*\(").find_iter(&code) {
+        let args = call_arguments(&code, m.expect("LET matching").end());
+        if args.len() < 3 || args.len().is_multiple_of(2) {
+            continue;
+        }
+        let mentioned = args
+            .iter()
+            .map(|arg| {
+                captures(r"[A-Za-z_][A-Za-z0-9_.?λ]*", arg)
+                    .into_iter()
+                    .map(|name| name[0].to_uppercase())
+                    .collect::<HashSet<_>>()
+            })
+            .collect::<Vec<_>>();
+        for i in (0..args.len() - 1).step_by(2) {
+            let bound = py::strip(&args[i]);
+            let name = bound.to_uppercase();
+            if !bound.starts_with('_') && !mentioned[i + 2..].iter().any(|m| m.contains(&name)) {
+                unread.insert(bound.to_owned());
+            }
+        }
+    }
+    unread
 }
 /// verify_sources' `call_arguments`: the top-level arguments of the call whose "("
 /// ends at `start`. Only parentheses and braces nest (an unmatched "]" is text), and

@@ -369,7 +369,7 @@ fn source_and_help_checks_read_the_whole_shipped_library() {
     let result = help::verify(&[display(&fixture.src)]);
     assert_eq!(result.code, 0, "{result:?}");
     assert!(result.out[0].starts_with(
-        "155 declarations read: 147 signatures, 147 parameter tables and 144 example blocks"
+        "155 declarations read: 147 signatures, 147 parameter tables and 147 example blocks"
     ));
 }
 #[test]
@@ -417,6 +417,12 @@ fn wrapped_help_rows_and_worked_examples_are_read_in_order() {
     assert_eq!(help::parameter_table(body), Some(vec!["x".into()]));
     assert_eq!(help::worked_examples(body), ["Fλ", "Fλ"]);
     assert_eq!(help::literals("head\"a\"\"b"), "a\"b");
+}
+#[test]
+fn a_formula_row_under_examples_is_a_worked_example() {
+    // Corkscrewλ, CorkScrewReversalλ and Depreciateλ lay out their examples this way.
+    let body = "LAMBDA(x, \"EXAMPLES:→NOTE! Aside¶Formula:→=oz.Fλ(1)¶Result:→=oz.Gλ(1)\")";
+    assert_eq!(help::worked_examples(body), ["Fλ"]);
 }
 #[test]
 fn help_floor_refuses_an_empty_or_incomplete_library() {

@@ -5,6 +5,17 @@
 Relicensed from Apache-2.0 to FSL-1.1-ALv2 (Functional Source License, with
 Apache-2.0 as the future licence). Released versions keep their licence.
 
+`verify_sources` now fails a LET binding nothing reads, not only an unread date
+conversion. A `_` prefix marks one left unread on purpose. The 3 that main
+already holds are listed in `KNOWN_UNREAD`, because removing them changes the
+defined names; the gate fails when one is cleared and its entry stays. Native
+tests now hold every function's help to having a worked example, and the
+callees in `docs/workbook-use.md` to the calls in `src/`.
+
+`verify_signatures` stopped reading a help's examples at a `Formula:` row, so it
+never checked the examples of `Corkscrewλ`, `CorkScrewReversalλ` and
+`Depreciateλ`. It now reads all 147 example blocks, up from 144.
+
 Port the documentation, template and repository tests to `tests/repository/`,
 one module per former Python file: 134 original test methods become 164 native
 tests and an ignored one that rewrites the cross-check cases. The cargo test and
