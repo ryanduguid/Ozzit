@@ -72,7 +72,7 @@ function Invoke-Excel([scriptblock]$op, [int]$tries = 12) {
 
 # A sheet's position, shape and values, all from one range, or a throw that retries. A
 # rejected property read comes back $null rather than throwing, so a position counts only
-# as a number and values only in the range's shape; only an empty one-cell range has none.
+# as a positive number and values only in the range's shape; only an empty one-cell range has none.
 # The range stays in a variable and the result in a hashtable: PowerShell enumerates a
 # range and flattens a 2-dimensional array returned through a function.
 function Read-Block($ws) {
@@ -81,7 +81,7 @@ function Read-Block($ws) {
         if ($null -eq $ur) { throw 'Excel returned no range.' }
         $r = $ur.Row; $c = $ur.Column; $rows = $ur.Rows.Count; $columns = $ur.Columns.Count
         foreach ($n in @($r, $c, $rows, $columns)) {
-            if ($n -isnot [int]) { throw 'Excel returned no position.' }
+            if ($n -isnot [int] -or $n -lt 1) { throw 'Excel returned no position.' }
         }
         $values = $ur.Value2
         $one = $rows -eq 1 -and $columns -eq 1

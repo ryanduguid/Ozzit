@@ -95,14 +95,18 @@ class MessageFilterTests(unittest.TestCase):
             " $ws };"
             "$grid = New-Object 'object[,]' 2,2;"
             "$bad = @($null, (Fake $null 2 2 $grid), (Fake 5 2 2 $null), (Fake 5 2 2 7), (Fake 5 2 3 $grid));"
+            "$outside = @(0, -1) | ForEach-Object { Read-Block (Sheet @((Fake $_ 2 2 $grid), (Fake 5 2 2 $grid))); $script:reads };"
+            "$offside = Fake 5 2 2 $grid; $offside.Column = 0;"
+            "$null = Read-Block (Sheet @($offside, (Fake 5 2 2 $grid))); $columnReads = $script:reads;"
+            "$unshaped = @((Fake 5 0 2 $grid), (Fake 5 2 -2 $grid)) | ForEach-Object { $script:reads = 0 ; Read-Block (Sheet @($_, (Fake 5 2 2 $grid))); $script:reads };"
             "$block = Read-Block (Sheet ($bad + (Fake 5 2 2 $grid)));"
             "$took = $script:reads;"
             "$empty = Read-Block (Sheet @(Fake 1 1 1 $null ''));"
             "$stuck = try { Read-Block (Sheet @(Fake 5 2 2 $null)) } catch { $_.Exception.Message };"
-            "\"$($block.Row),$($block.Values.GetLength(1)),$took,$($null -eq $empty.Values),$stuck\""
+            "\"$($block.Row),$($block.Values.GetLength(1)),$took,$($null -eq $empty.Values),$stuck,$(@($outside)[1]),$(@($outside)[3]),$columnReads,$(@($unshaped)[1]),$(@($unshaped)[3])\""
         )
         self.assertEqual(run.returncode, 0, run.stderr)
-        self.assertEqual(run.stdout.strip(), "5,2,6,True,Excel returned values that do not fit the range.")
+        self.assertEqual(run.stdout.strip(), "5,2,6,True,Excel returned values that do not fit the range.,2,2,2,2,2")
 
 
 if __name__ == "__main__":
