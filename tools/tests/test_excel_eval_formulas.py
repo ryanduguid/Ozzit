@@ -5,6 +5,10 @@ back $null in PowerShell. On 1 November 2026 that made HasFormula read null for 
 cell, so 3 of 4 runs on an unchanged workbook failed. The helper registers a COM message
 filter that retries a rejected call every 100 ms for up to 60 s, and reads HasFormula and
 HasSpill again until they come back true or false.
+
+The check that every flag read goes through the filter runs in Rust, in
+tools/ozzit/tests/repository/excel_eval_formulas.rs. These 2 run the filter itself
+and need Windows PowerShell.
 """
 
 import re
@@ -40,20 +44,6 @@ def powershell(script: str) -> subprocess.CompletedProcess[str]:  # pragma: no c
 
 
 class MessageFilterTests(unittest.TestCase):
-    def test_the_filter_covers_every_excel_call_and_is_revoked_last(self):
-        text = HELPER.read_text(encoding="utf-8")
-        # The main try opens with the filter, so the finally that quits Excel also revokes it.
-        main = text.index("try {\n    [OzzitMessageFilter]::Register()\n")
-        self.assertLess(main, text.index("New-Object -ComObject Excel.Application"))
-        self.assertLess(text.rindex("finally {"), text.index("[OzzitMessageFilter]::Revoke()"))
-        for flag in ("HasFormula", "HasSpill"):
-            with self.subTest(flag=flag):
-                # Every read of the flag goes through Read-Flag.
-                self.assertGreater(text.count(f"Read-Flag {{ $cell.{flag} }}"), 0)
-                self.assertEqual(
-                    text.count(f"$cell.{flag}"), text.count(f"Read-Flag {{ $cell.{flag} }}")
-                )
-
     @unittest.skipUnless(WINDOWS, "needs Windows PowerShell")
     def test_only_a_retry_later_rejection_is_retried_within_60_seconds(self):  # pragma: no cover - Windows only; the coverage job runs on Ubuntu
         with tempfile.TemporaryDirectory() as tmp:

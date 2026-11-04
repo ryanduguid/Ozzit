@@ -9,8 +9,8 @@ was written by reading the formulas in the source at commit `56ef006`; no workbo
 value was recalculated for it. The four working-capital functions in the table were
 added in September 2026, and the five ATO benchmark functions at its end in October
 2026.
-`tools/tests/test_ratio_definitions.py` fails when a formula on this page no longer
-matches the source.
+`tools/ozzit/tests/repository/ratio_definitions.rs` fails when a formula on this
+page no longer matches the source.
 
 ### Conventions that apply to every ratio
 

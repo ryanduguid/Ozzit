@@ -5,6 +5,13 @@
 Relicensed from Apache-2.0 to FSL-1.1-ALv2 (Functional Source License, with
 Apache-2.0 as the future licence). Released versions keep their licence.
 
+Port the documentation, template and repository tests to `tests/repository/`,
+one module per former Python file: 134 original test methods become 164 native
+tests and an ignored one that rewrites the cross-check cases. The cargo test and
+coverage jobs now set `VERSION_BASE`. The pyxirr comparison, the attestation,
+citation and signature checks and the 2 Windows PowerShell filter tests stay in
+Python. Production code is unchanged.
+
 Retire the 7 Python gate references (`verify_workbook`, `verify_sources`,
 `verify_signatures`, `verify_previous_names`, `verify_index`, `verify_cover` and
 `verify_afe`), their 115 Python test methods, whose contracts already run as
