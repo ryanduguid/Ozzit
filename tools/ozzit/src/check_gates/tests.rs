@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan Duguid
-// SPDX-License-Identifier: FSL-1.1-ALv2
+// SPDX-License-Identifier: LicenseRef-Duguid-Public-Attribution-1.0
 
 //! Assertion sets transferred from tools/tests/test_check_gates.py.
 //! Exception identities adapt to controlled errors; process launch is also tested physically.

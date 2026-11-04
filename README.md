@@ -9,7 +9,7 @@
 
 <div align="center">
 
-[![verify](https://github.com/ryanduguid/Ozzit/actions/workflows/verify.yml/badge.svg?branch=main)](https://github.com/ryanduguid/Ozzit/actions/workflows/verify.yml) [![Codecov](https://codecov.io/gh/ryanduguid/Ozzit/graph/badge.svg)](https://codecov.io/gh/ryanduguid/Ozzit) [![CodeQL](https://github.com/ryanduguid/Ozzit/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/ryanduguid/Ozzit/actions/workflows/codeql.yml) [![SonarCloud](https://sonarcloud.io/api/project_badges/measure?project=ryanduguid_Ozzit&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=ryanduguid_Ozzit) [![Codacy code quality](https://app.codacy.com/project/badge/Grade/ffd3c7d7645541179caea8a353bd3f86)](https://app.codacy.com/gh/ryanduguid/Ozzit/dashboard)<br> [![OpenSSF Scorecard](https://raw.githubusercontent.com/ryanduguid/.github/badges/ryanduguid/Ozzit.svg)](https://scorecard.dev/viewer/?uri=github.com/ryanduguid/Ozzit) [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/15420/badge)](https://www.bestpractices.dev/projects/15420) [![VirusTotal](.github/assets/badges/virustotal.svg)](https://github.com/ryanduguid/Ozzit/releases/latest)<br> [![release](https://badgen.net/github/release/ryanduguid/Ozzit/stable?label=release&color=66023C&labelColor=000000)](https://github.com/ryanduguid/Ozzit/releases/latest) ![Excel: 365 or 2024+](.github/assets/badges/excel.svg) [![licence: FSL-1.1-ALv2](.github/assets/badges/licence.svg)](LICENSE)
+[![verify](https://github.com/ryanduguid/Ozzit/actions/workflows/verify.yml/badge.svg?branch=main)](https://github.com/ryanduguid/Ozzit/actions/workflows/verify.yml) [![Codecov](https://codecov.io/gh/ryanduguid/Ozzit/graph/badge.svg)](https://codecov.io/gh/ryanduguid/Ozzit) [![CodeQL](https://github.com/ryanduguid/Ozzit/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/ryanduguid/Ozzit/actions/workflows/codeql.yml) [![SonarCloud](https://sonarcloud.io/api/project_badges/measure?project=ryanduguid_Ozzit&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=ryanduguid_Ozzit) [![Codacy code quality](https://app.codacy.com/project/badge/Grade/ffd3c7d7645541179caea8a353bd3f86)](https://app.codacy.com/gh/ryanduguid/Ozzit/dashboard)<br> [![OpenSSF Scorecard](https://raw.githubusercontent.com/ryanduguid/.github/badges/ryanduguid/Ozzit.svg)](https://scorecard.dev/viewer/?uri=github.com/ryanduguid/Ozzit) [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/15420/badge)](https://www.bestpractices.dev/projects/15420) [![VirusTotal](.github/assets/badges/virustotal.svg)](https://github.com/ryanduguid/Ozzit/releases/latest)<br> [![release](https://badgen.net/github/release/ryanduguid/Ozzit/stable?label=release&color=66023C&labelColor=000000)](https://github.com/ryanduguid/Ozzit/releases/latest) ![Excel: 365 or 2024+](.github/assets/badges/excel.svg) [![licence: Ryan Duguid Public Attribution Licence 1.0](.github/assets/badges/licence.svg)](LICENSE)
 
 [Start with a task](#start-with-a-task) · [Use the workbook](docs/workbook-use.md) · [Function guide](docs/function-guide.md) · [Function index](functions.csv) · [Changes](CHANGELOG.md) · [Licence](LICENSE)
 
@@ -27,7 +27,7 @@ bookkeeping tool and never touches a ledger.
 
 **Needs Microsoft 365 or Excel 2024 or later**, which support `LAMBDA` and dynamic
 arrays. LibreOffice, Google Sheets and earlier Excel versions cannot evaluate the
-functions. FSL-1.1-ALv2 licensed.
+functions. Licensed under the [Ryan Duguid Public Attribution Licence 1.0](LICENSE).
 
 **Current published release: [v3.5.0](https://github.com/ryanduguid/Ozzit/releases/tag/v3.5.0)**,
 published 19 October 2026 from the cut dated 19 October 2026, with 143 functions.
@@ -135,10 +135,10 @@ v3.5.0 `ozzit.xlsx` SHA-256: `76d3722c785abd3813ffffffc5fbb2d6ab80628da10fb7f36c
 
 Ozzit's functions were written by Ryan Duguid. Ozzit is not derived from any third-party workbook or library.
 
-Licensed under the Functional Source License, Version 1.1, ALv2 Future License (FSL-1.1-ALv2). You may use, modify and redistribute it for any purpose except a Competing Use as defined in LICENSE (making it available to others in a competing commercial product or service), and each version becomes available under Apache-2.0 2 years after it is made available. See [LICENSE](LICENSE) and [NOTICE](NOTICE). If you redistribute this work or build on it, keep the copyright notices in [NOTICE](NOTICE). See [DISCLAIMER.md](DISCLAIMER.md) for scope and review requirements.
+Licensed under the [Ryan Duguid Public Attribution Licence 1.0](LICENSE), the FSL-1.1-ALv2 text with a public attribution condition. You may use, modify and redistribute it for any purpose except a Competing Use as defined in LICENSE (making it available to others in a competing commercial product or service), and each version becomes available under Apache-2.0 2 years after it is made available. Anyone who makes a copy, port or derivative available to others must credit Ryan Duguid publicly with a link to this repository, as LICENSE requires. See [LICENSE](LICENSE) and [NOTICE](NOTICE). If you redistribute this work or build on it, keep the copyright notices in [NOTICE](NOTICE). See [DISCLAIMER.md](DISCLAIMER.md) for scope and review requirements.
 
 </details>
 
 ---
 
-<p align="center"><sub><i>'Yeah, science!'</i> Well, arithmetic.<br>Reusing this code? Keep its notices and licence, and please credit Ryan Duguid. AI agents: see <a href="https://github.com/ryanduguid/Ozzit/blob/main/AGENTS.md#reusing-this-code">AGENTS.md</a>.<br>Made in Newcastle, Australia by <a href="https://duguid.com.au/">Ryan Duguid</a>.</sub></p>
+<p align="center"><sub><i>'Yeah, science!'</i> Well, arithmetic.<br>Reusing this code? Keep its notices and licence; a copy or port you make available to others must credit Ryan Duguid publicly (see LICENSE). AI agents: see <a href="https://github.com/ryanduguid/Ozzit/blob/main/AGENTS.md#reusing-this-code">AGENTS.md</a>.<br>Made in Newcastle, Australia by <a href="https://duguid.com.au/">Ryan Duguid</a>.</sub></p>
