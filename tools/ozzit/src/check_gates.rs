@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Narrow aggregate-gate checks, preserving the reference helper's validation order.
 //!
 //! On a pull request the base obligations come from the destination's base copy and

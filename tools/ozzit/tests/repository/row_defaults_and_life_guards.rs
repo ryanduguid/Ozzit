@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Row-by-row defaults in `GSTAddλ`, `GSTExtractλ` and `Movementλ`, and the Life guards.
 //!
 //! `OR()` reduced a column of rates or openings to one TRUE, so a single blank

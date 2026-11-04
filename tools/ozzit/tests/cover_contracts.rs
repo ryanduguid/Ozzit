@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Native counterparts of the original cover gate fixtures and command contracts.
 use ozzit::{archive::*, common::*, cover};
 use std::{

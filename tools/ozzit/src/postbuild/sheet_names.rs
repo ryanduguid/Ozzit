@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Sheet-name pass: the oz.SumContains tab gains the λ every sibling carries.
 use super::*;
 

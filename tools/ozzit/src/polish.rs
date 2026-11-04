@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Apply Ozzit's presentation rules to an existing workbook.
 //!
 //! Targeted OOXML surgery: formula text, cached values, drawings, namespace

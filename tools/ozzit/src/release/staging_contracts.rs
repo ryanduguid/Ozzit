@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! The original Python release staging contracts, using real owned files.
 use super::*;
 use std::{cell::Cell, collections::BTreeMap, fs};

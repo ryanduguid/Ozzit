@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Guards on help that promised something the formula did not do.
 //!
 //! `ozzit verify_signatures` compares a help's FUNCTION line, parameter table and

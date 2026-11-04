@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Former Python compiler command contracts, on owned synthetic or shipped copies.
 use ozzit::{archive, common::display, formula};
 use serde_json::Value;

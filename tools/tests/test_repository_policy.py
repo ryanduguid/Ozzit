@@ -1,3 +1,6 @@
+# Copyright 2026 Ryan Duguid
+# SPDX-License-Identifier: FSL-1.1-ALv2
+
 """Repository policy checks that need Python's YAML and syntax-tree parsers.
 
 The rest of the repository policy runs as Rust, in

@@ -1,3 +1,6 @@
+# Copyright 2026 Ryan Duguid
+# SPDX-License-Identifier: FSL-1.1-ALv2
+
 # Exercise the cash-flow template in Excel, closing without saving any test inputs.
 param([string]$Path = "$PSScriptRoot\..\templates\13-week-cash-flow-forecast.xlsx")
 

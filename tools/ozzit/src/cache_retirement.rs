@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Original cache/OPC contracts, with a fake dumper through the real gate sequence.
 use super::*;
 

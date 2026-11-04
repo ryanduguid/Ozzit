@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Native counterparts of the compiler, source, help and index contracts.
 use ozzit::{archive, common::*, compiler, formula, help, index, sources};
 use std::{

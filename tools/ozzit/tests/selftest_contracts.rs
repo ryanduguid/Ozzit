@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Replay generate_selftest_examples.py's recorded parsing and assertion results.
 use ozzit::selftest;
 use serde_json::{Value, json};

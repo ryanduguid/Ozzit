@@ -1,3 +1,6 @@
+# Copyright 2026 Ryan Duguid
+# SPDX-License-Identifier: FSL-1.1-ALv2
+
 # Recalculate ozzit.xlsx in Excel and save, so the values in the file are the values its
 # own formulas produce.
 #

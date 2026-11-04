@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Original refresh assertions use owned placeholders and fake process outcomes.
 use super::*;
 use std::{cell::RefCell, path::PathBuf};

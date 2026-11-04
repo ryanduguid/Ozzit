@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! The formula helper's COM message filter covers every Excel call.
 //!
 //! A rejected method call throws `RPC_E_CALL_REJECTED`, but a rejected property

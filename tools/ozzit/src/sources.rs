@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! The published typed definitions must reproduce the workbook's names.
 use crate::{archive::*, common::*, compiler, formula::*, py};
 use indexmap::IndexMap;

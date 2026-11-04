@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! AFE contracts from test_afe_paths.py, plus native writer safety checks.
 use base64::Engine;
 use ozzit::{

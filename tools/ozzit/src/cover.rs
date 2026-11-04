@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! The displayed cover label must agree with the published inventory and cut date.
 use crate::{archive::*, common::*, py};
 use num_bigint::BigInt;

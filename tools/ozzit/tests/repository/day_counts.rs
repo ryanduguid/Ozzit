@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Day-count arithmetic for `oz.DayCountRateλ`, checked without Excel.
 //!
 //! The native `rate_date_helpers` pass carries the published source of the four

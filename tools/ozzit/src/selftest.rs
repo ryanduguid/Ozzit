@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Turn the help's worked examples and help tables into native self-test assertions.
 //!
 //! Every EXAMPLES block in `src/` is read; each example that stands on its own

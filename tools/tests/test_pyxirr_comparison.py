@@ -1,3 +1,6 @@
+# Copyright 2026 Ryan Duguid
+# SPDX-License-Identifier: FSL-1.1-ALv2
+
 """The recorded Excel-versus-pyxirr comparison matches its cases and its published table.
 
 CI has neither desktop Excel nor pyxirr, so this does not rerun the comparison. It checks

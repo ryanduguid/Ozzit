@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Strip the parts Excel adds on save and rebuild the archive deterministically.
 //!
 //! An Excel save adds printer settings, the save path, always-calculate flags,

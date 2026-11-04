@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Workbook palette pass: theme, styles, sheets and drawings to the Mermaid palette.
 //!
 //! `--template` applies only the colour roles, for the workbooks in `templates/`.

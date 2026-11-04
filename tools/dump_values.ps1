@@ -1,3 +1,6 @@
+# Copyright 2026 Ryan Duguid
+# SPDX-License-Identifier: FSL-1.1-ALv2
+
 # Write every calculated cell value in a workbook to a tab-separated file, so a checker can
 # compare what Excel produces against what the file has cached. Columns are
 # sheet, row, column, value kind (error/value), then the newline-folded value.

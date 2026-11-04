@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Independent signature, parameter-table and worked-example checks.
 use crate::{common::*, formula, py};
 use std::{

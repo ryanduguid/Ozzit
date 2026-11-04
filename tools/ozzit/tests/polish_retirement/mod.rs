@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Reuse the frozen Python corpus input; keep expected presentation text explicit.
 use base64::Engine;
 use ozzit::{archive, common::display, polish};
