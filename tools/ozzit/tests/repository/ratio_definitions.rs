@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! `docs/ratio-definitions.md`, held to the ratio formulas in `src/Ratios.txt`.
 //!
 //! The page states each ratio function's arithmetic. This reads the `Result`

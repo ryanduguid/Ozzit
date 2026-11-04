@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Per-function reference data read from each definition's own help block.
 //!
 //! Every LAMBDA carries its documentation as the first argument of the

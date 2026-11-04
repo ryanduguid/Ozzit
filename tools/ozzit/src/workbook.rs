@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Structural workbook checks, without evaluating formulas or altering evidence.
 use crate::{afe, archive::*, common::*, py, pyjson};
 use num_bigint::BigInt;

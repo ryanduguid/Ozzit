@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Replay the original direct workbook/report and help-cache fixture paths.
 use base64::Engine;
 use ozzit::{afe, archive::Parts, spills, workbook};

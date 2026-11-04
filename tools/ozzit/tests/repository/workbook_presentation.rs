@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! The shipped workbook's fills, dates, straplines, fonts and Cover wording.
 use super::xml::{self, MAIN, REL};
 use super::{part, parts};

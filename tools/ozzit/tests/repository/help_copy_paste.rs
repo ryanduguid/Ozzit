@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Guards on help text that was copied from a neighbour.
 //!
 //! `ozzit verify_signatures` already reads FUNCTION lines, parameter tables and

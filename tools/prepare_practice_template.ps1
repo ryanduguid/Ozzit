@@ -1,3 +1,6 @@
+# Copyright 2026 Ryan Duguid
+# SPDX-License-Identifier: FSL-1.1-ALv2
+
 # Finish native navigation after the artifact builder exports ordinary formulas.
 # The authoring runtime cannot export HYPERLINK formula results for Excel.
 param([string]$Path = "$PSScriptRoot\..\templates\practice-calculators.xlsx")

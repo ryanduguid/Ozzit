@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Reuse owned store copies; only reversal and command details differ by pass.
 pub use super::copies::{Fixture, root};
 use super::tooling;

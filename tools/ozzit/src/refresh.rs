@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Recalculate the workbook in Excel, then sanitise what Excel adds on save.
 //!
 //! `tools/refresh_cache.ps1` opens the workbook in Excel, forces a full rebuild

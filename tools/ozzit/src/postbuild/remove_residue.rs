@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Residue pass: parts the workbook carries that nothing in it reads.
 //!
 //! Drops the hidden FMTs sheet, the per-sheet custom properties, the stale

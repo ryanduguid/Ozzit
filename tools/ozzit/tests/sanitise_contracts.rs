@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Replay the recorded CLI results of tools/sanitise_workbook.py and
 //! tools/polish_workbook.py, and the refresh
 //! command's handling of each Excel refresh result.

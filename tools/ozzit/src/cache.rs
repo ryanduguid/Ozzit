@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Native Excel's recalculated values compared with the values the workbook caches.
 //!
 //! Excel stays the formula engine: `tools/dump_values.ps1` drives it over COM and

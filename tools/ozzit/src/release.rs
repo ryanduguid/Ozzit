@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Create and independently verify Ozzit's copy-only workbook release bundle.
 //!
 //! The tool copies the exact tracked workbook, proves it matches the reviewed

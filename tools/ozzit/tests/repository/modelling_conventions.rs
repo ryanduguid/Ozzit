@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! `docs/modelling-conventions.md`, held to the facts it states about `src/` and `ozzit.xlsx`.
 //!
 //! The page records where Ozzit follows or departs from the FAST Standard and

@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Compatibility at the text and filesystem boundaries of the Python tools.
 use crate::py;
 use fancy_regex::{Captures, Regex, RegexBuilder};

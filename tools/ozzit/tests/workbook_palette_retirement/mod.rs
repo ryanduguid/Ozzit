@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Owned real and synthetic workbook fixtures, plus physical command checks.
 use ozzit::{
     archive::{Parts, write_deterministic},

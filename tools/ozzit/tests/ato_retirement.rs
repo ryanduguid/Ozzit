@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! ATO apply, refusal and physical command contracts retained from Python.
 use ozzit as tooling;
 #[path = "working_capital_retirement/mod.rs"]

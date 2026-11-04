@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! The postbuild passes: deterministic, idempotent text surgery on the workbook
 //! and `src/`. No COM, no recalculation; every pass writes through the
 //! deterministic archive writer and reports "already applied" on a current

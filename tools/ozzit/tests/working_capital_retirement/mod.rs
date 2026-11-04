@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Only task-owned copies are written; source reversal keeps the original checks.
 use super::tooling::{
     archive::{BOOK, read_parts, write_deterministic},

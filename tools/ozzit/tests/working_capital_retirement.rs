@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Apply, refusal and physical CLI contracts migrated from the Python writer.
 use ozzit as tooling;
 #[path = "working_capital_retirement/mod.rs"]

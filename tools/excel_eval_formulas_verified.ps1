@@ -1,3 +1,6 @@
+# Copyright 2026 Ryan Duguid
+# SPDX-License-Identifier: FSL-1.1-ALv2
+
 # Retain native evidence only after the existing Excel helper completes successfully.
 # The input bytes are frozen before evaluation. Output identifies both helper versions.
 param([string]$Cases, [string]$Out, [string]$Path = "$PSScriptRoot\..\ozzit.xlsx")

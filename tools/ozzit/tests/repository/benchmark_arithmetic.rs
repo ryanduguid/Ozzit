@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Independent arithmetic and formula pins for the ATO benchmark and rate helpers.
 //!
 //! The arithmetic lives in Excel LAMBDAs, so it cannot run here. The pins hold

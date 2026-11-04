@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Preserve the original Python generator assertions against the native tools.
 use ozzit::{common::*, formula, selftest};
 use std::{collections::BTreeSet, path::PathBuf, process::Command};

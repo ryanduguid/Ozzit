@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Replay observations from the immutable Python test behaviours.
 use ozzit::{formula, help};
 use serde_json::{Value, json};
