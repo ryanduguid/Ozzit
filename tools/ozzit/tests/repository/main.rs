@@ -27,6 +27,7 @@ mod repository_policy;
 mod row_defaults_and_life_guards;
 mod verifier_boundaries;
 mod workbook_presentation;
+mod workbook_use;
 mod xml;
 
 use ozzit::{archive::Parts, common};

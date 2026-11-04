@@ -20,7 +20,10 @@
 use super::{modules, root};
 use chrono::NaiveDate;
 use indexmap::IndexMap;
-use ozzit::common::{self, bounded};
+use ozzit::{
+    common::{self, bounded},
+    help,
+};
 use std::collections::{BTreeSet, HashMap};
 use std::process::Command;
 
@@ -192,6 +195,30 @@ fn every_help_names_its_webpage_and_version() {
             "function={name}: VERSION {version:?}"
         );
     }
+}
+
+/// The functions outside `WITHOUT_HELP` whose help has no worked example.
+fn without_example(functions: &Functions) -> Vec<String> {
+    functions
+        .iter()
+        .filter(|(name, body)| {
+            !WITHOUT_HELP.contains(&name.as_str()) && help::worked_examples(body).is_empty()
+        })
+        .map(|(name, _)| name.clone())
+        .collect()
+}
+
+#[test]
+fn every_help_has_a_worked_example() {
+    // docs/modelling-conventions.md promises one in every help but the 3 validators'.
+    // `ozzit verify_signatures` reads an example only once there is one, so an example
+    // removed from a help would otherwise go unnoticed.
+    assert_eq!(without_example(&functions()), Vec::<String>::new());
+    let bare = one("Fλ", body("1 Sep 2026", "", "X + 1"));
+    assert_eq!(without_example(&bare), ["Fλ"]);
+    let row = "        \"EXAMPLES:→¶\" &\n        \"100→=oz.Fλ(1)¶\" &\n";
+    let shown = one("Fλ", body("1 Sep 2026", row, "X + 1"));
+    assert_eq!(without_example(&shown), Vec::<String>::new());
 }
 
 #[test]

@@ -80,7 +80,7 @@ impl Fixture {
 
 fn success(book: &str, src: &str) -> String {
     format!(
-        "OK: {src}/ reproduces all 155 functions in {book}, every date conversion in them is read, and only the 5 listed argument defaults test a column inside OR() or AND()"
+        "OK: {src}/ reproduces all 155 functions in {book}, every date conversion in them is read, only the 3 listed LET bindings are unread, and only the 5 listed argument defaults test a column inside OR() or AND()"
     )
 }
 
@@ -164,6 +164,50 @@ fn the_known_collapsed_defaults_exactly_equal_all_published_source_occurrences()
             .map(|(f, p)| (f.to_owned(), p.to_owned()))
             .into()
     );
+}
+
+#[test]
+fn the_known_unread_bindings_exactly_equal_all_published_source_occurrences() {
+    let mut unread = BTreeSet::new();
+    for module in formula::MODULES {
+        let text = read_text(&root().join("src").join(format!("{module}.txt"))).unwrap();
+        for statement in formula::statements(&text) {
+            for matched in captures(formula::NAME, &statement) {
+                unread.extend(
+                    formula::unread_bindings(&matched[2])
+                        .into_iter()
+                        .map(|binding| (matched[1].clone(), binding)),
+                );
+            }
+        }
+    }
+    assert_eq!(
+        unread,
+        formula::KNOWN_UNREAD
+            .map(|(f, b)| (f.to_owned(), b.to_owned()))
+            .into()
+    );
+}
+
+#[test]
+fn a_let_binding_counts_as_read_only_after_it_outside_literals() {
+    let cases: [(&str, &[&str]); 8] = [
+        ("LET(a, 1, b, a + 1, b)", &[]),
+        ("LET(a, 1, b, 2, a)", &["b"]),
+        ("LET(a, 1, b, b + 1, a)", &["b"]),
+        ("LET(a, 1, \"a\")", &["a"]),
+        ("LET(Total, 1, total)", &[]),
+        ("LET(_spare, 1, 2)", &[]),
+        ("LET(f, LAMBDA(x, x), f(1))", &[]),
+        ("LET(a, LET(b, 1, 2), a)", &["b"]),
+    ];
+    for (body, unread) in cases {
+        let expected = unread
+            .iter()
+            .map(|s| (*s).to_owned())
+            .collect::<BTreeSet<_>>();
+        assert_eq!(formula::unread_bindings(body), expected, "{body}");
+    }
 }
 
 #[test]

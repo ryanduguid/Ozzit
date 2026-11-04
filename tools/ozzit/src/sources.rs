@@ -13,6 +13,7 @@ fn read_module(
     path: &Path,
     raw: &mut IndexMap<String, String>,
     collapsed: &mut Collapsed,
+    unread: &mut Collapsed,
     failures: &mut Vec<String>,
 ) -> Result<()> {
     let text = read_text(path)?;
@@ -31,9 +32,15 @@ fn read_module(
                 failures.push(format!("{} is declared in more than one module", m[1]));
             }
             raw.insert(m[1].clone(), py::strip(&m[2]).to_owned());
-            for dead in dead_conversions(&m[2]) {
-                failures.push(format!("{} binds {dead} and never reads it, so the argument it converts is used in its raw form", m[1]));
+            let dead = dead_conversions(&m[2]);
+            for conversion in &dead {
+                failures.push(format!("{} binds {conversion} and never reads it, so the argument it converts is used in its raw form", m[1]));
             }
+            unread.extend(
+                unread_bindings(&m[2])
+                    .difference(&dead)
+                    .map(|binding| (m[1].clone(), binding.clone())),
+            );
             collapsed.extend(
                 collapsed_defaults(&m[2])
                     .into_iter()
@@ -61,6 +68,22 @@ fn known_defaults(collapsed: &Collapsed, known: &[(&str, &str)], failures: &mut 
     }
     for (function, parameter) in known.difference(collapsed) {
         failures.push(format!("{function} no longer defaults {parameter} inside OR() or AND(); remove its entry from KNOWN_COLLAPSED_DEFAULTS"));
+    }
+}
+
+/// The unread LET bindings must be exactly the known ones.
+fn known_unread(unread: &Collapsed, known: &[(&str, &str)], failures: &mut Vec<String>) {
+    let known = known
+        .iter()
+        .map(|&(f, b)| (f.to_owned(), b.to_owned()))
+        .collect::<BTreeSet<_>>();
+    for (function, binding) in unread.difference(&known) {
+        failures.push(format!("{function} binds {binding} and never reads it: read it, remove it, or start its name with _ if it is unread on purpose"));
+    }
+    for (function, binding) in known.difference(unread) {
+        failures.push(format!(
+            "{function} no longer leaves {binding} unread; remove its entry from KNOWN_UNREAD"
+        ));
     }
 }
 
@@ -99,10 +122,19 @@ fn compare(
 }
 
 pub fn verify(args: &[String]) -> Output {
-    verify_with_known(args, &KNOWN)
+    verify_with_known(args, &KNOWN, &KNOWN_UNREAD)
 }
 
-fn verify_with_known(args: &[String], known: &[(&str, &str)]) -> Output {
+fn missing_modules(src: &Path, failures: &mut Vec<String>) {
+    for module in MODULES {
+        let path = src.join(format!("{module}.txt"));
+        if !path.exists() {
+            failures.push(format!("missing source module {}", display(&path)));
+        }
+    }
+}
+
+fn verify_with_known(args: &[String], known: &[(&str, &str)], binds: &[(&str, &str)]) -> Output {
     if args.len() > 2 {
         return Output::stderr("FAIL: usage: ozzit verify_sources [workbook] [src dir]");
     }
@@ -110,24 +142,21 @@ fn verify_with_known(args: &[String], known: &[(&str, &str)]) -> Output {
     let source = args.get(1).map_or("src", String::as_str);
     let src = Path::new(source);
     let mut failures = Vec::new();
-    for module in MODULES {
-        let path = src.join(format!("{module}.txt"));
-        if !path.exists() {
-            failures.push(format!("missing source module {}", display(&path)));
-        }
-    }
+    missing_modules(src, &mut failures);
     let paths = match txt_files(src) {
         Ok(paths) => paths,
         Err(e) => return Output::failure(format!("FAIL: cannot read {source}: {e}")),
     };
     let mut raw = IndexMap::new();
     let mut collapsed = BTreeSet::new();
+    let mut unread = BTreeSet::new();
     for path in paths {
-        if let Err(e) = read_module(&path, &mut raw, &mut collapsed, &mut failures) {
+        if let Err(e) = read_module(&path, &mut raw, &mut collapsed, &mut unread, &mut failures) {
             return Output::failure(format!("FAIL: cannot read {}: {e}", display(&path)));
         }
     }
     known_defaults(&collapsed, known, &mut failures);
+    known_unread(&unread, binds, &mut failures);
     let every = raw.keys().cloned().collect::<BTreeSet<_>>();
     let parsed = raw
         .into_iter()
@@ -149,7 +178,8 @@ fn verify_with_known(args: &[String], known: &[(&str, &str)]) -> Output {
         failures,
         bad,
         format!(
-            "OK: {source}/ reproduces all {matched} functions in {workbook}, every date conversion in them is read, and only the {} listed argument defaults test a column inside OR() or AND()",
+            "OK: {source}/ reproduces all {matched} functions in {workbook}, every date conversion in them is read, only the {} listed LET bindings are unread, and only the {} listed argument defaults test a column inside OR() or AND()",
+            binds.len(),
             known.len()
         ),
     )
@@ -217,7 +247,7 @@ mod source_contract_tests {
         )
         .unwrap();
         let before = snapshot(directory.path());
-        let output = verify_with_known(&[display(&workbook), display(&src)], &[]);
+        let output = verify_with_known(&[display(&workbook), display(&src)], &[], &[]);
         assert_eq!(snapshot(directory.path()), before);
         let mut expected = ["Essentials", "Financial", "Ratios", "Utilities", "Debt"]
             .map(|m| {
@@ -275,7 +305,7 @@ mod source_contract_tests {
         known.remove(removed);
         known.push(("Fixtureλ", "Rate"));
         let before = snapshot(directory.path());
-        let output = verify_with_known(&[display(&workbook), display(&src)], &known);
+        let output = verify_with_known(&[display(&workbook), display(&src)], &known, &KNOWN_UNREAD);
         assert_eq!(snapshot(directory.path()), before);
         assert_eq!(output.code, 1);
         assert!(output.err.is_empty());
@@ -294,6 +324,39 @@ mod source_contract_tests {
         assert_eq!(
             output.out[2],
             "  - Fixtureλ no longer defaults Rate inside OR() or AND(); remove its entry from KNOWN_COLLAPSED_DEFAULTS"
+        );
+    }
+
+    #[test]
+    fn an_unread_binding_fails_unless_listed_and_a_stale_entry_fails_too() {
+        let directory = tempfile::tempdir().unwrap();
+        let src = directory.path().join("src");
+        std::fs::create_dir(&src).unwrap();
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let workbook = directory.path().join("ozzit.xlsx");
+        std::fs::copy(root.join("ozzit.xlsx"), &workbook).unwrap();
+        for module in MODULES {
+            let name = format!("{module}.txt");
+            std::fs::copy(root.join("src").join(&name), src.join(name)).unwrap();
+        }
+        let output = verify_with_known(
+            &[display(&workbook), display(&src)],
+            &KNOWN,
+            &[
+                ("Depreciateλ", "Mpy"),
+                ("Fixtureλ", "Spare"),
+                ("Reversalλ", "BeginningValue"),
+            ],
+        );
+        assert_eq!(output.code, 1);
+        assert_eq!(output.out.len(), 3, "{:?}", output.out);
+        assert_eq!(
+            output.out[1],
+            "  - ScheduleRatesλ binds s and never reads it: read it, remove it, or start its name with _ if it is unread on purpose"
+        );
+        assert_eq!(
+            output.out[2],
+            "  - Fixtureλ no longer leaves Spare unread; remove its entry from KNOWN_UNREAD"
         );
     }
 }
