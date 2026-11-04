@@ -177,6 +177,15 @@ original installed-file success fixture, supplied-file preservation and physical
 default/refusal output. Copied executables exercise root resolution on owned
 trees. Production code and the native-execution disclaimer remain unchanged.
 
+The documentation, template and repository checks run in `tests/repository/`,
+one module per former Python file. Their 134 original test methods transfer to
+164 native tests and an ignored one that rewrites the cross-check cases. The
+modules restate the Python helpers; production code is unchanged. Some checks
+stay in Python: the pyxirr comparison needs the pyxirr library, the attestation
+and citation checks parse YAML with ruamel.yaml, the signature check walks the
+tools with the `ast` module and the 2 Excel filter tests run Windows PowerShell.
+The QuantLib generator also stays.
+
 ## Build and run
 
 Build with the repository's pinned Rust toolchain:

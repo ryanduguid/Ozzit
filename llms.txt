@@ -25,6 +25,10 @@ Help tables are text tables, not LAMBDAs: reference them without parentheses, as
 - [Modelling conventions](https://github.com/ryanduguid/Ozzit/blob/main/docs/modelling-conventions.md): where Ozzit follows or departs from the FAST Standard and the ICAEW Financial Modelling Code.
 - [Changelog](https://github.com/ryanduguid/Ozzit/blob/main/CHANGELOG.md): released versions and the v3.5.0 cut on `main`.
 
+## Reuse
+
+- [Reusing this code](https://github.com/ryanduguid/Ozzit/blob/main/AGENTS.md#reusing-this-code): Ryan Duguid's work under FSL-1.1-ALv2; keep its notices and licence; public credit is requested.
+
 ## Optional
 
 - [Website overview](https://duguid.com.au/tools/ozzit/): worked example and requirements.

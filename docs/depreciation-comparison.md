@@ -9,7 +9,7 @@ the two figures in the same column.
 
 Nothing here changes the workbook, adds a function or introduces an add-in,
 a macro or a remote formula. This is a worked comparison on fabricated figures,
-checked arithmetically by `tools/tests/test_depreciation_comparison.py`.
+checked arithmetically by `tools/ozzit/tests/repository/depreciation_comparison.rs`.
 
 ### The asset
 
@@ -104,9 +104,9 @@ to make a reconciliation pass is not evidence of anything.
 ### Native Excel evidence
 
 **NOT_RUN.** The table above was checked by independent arithmetic in
-`tools/tests/test_depreciation_comparison.py`, not by Excel. No cached value in
-`ozzit.xlsx` was read or written, and no recalculation is claimed: XML tooling
-has no formula engine.
+`tools/ozzit/tests/repository/depreciation_comparison.rs`, not by Excel. No
+cached value in `ozzit.xlsx` was read or written, and no recalculation is claimed:
+XML tooling has no formula engine.
 
 To check it in Excel yourself, with the workbook open and calculation enabled:
 
