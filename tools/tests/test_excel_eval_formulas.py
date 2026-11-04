@@ -81,17 +81,28 @@ class MessageFilterTests(unittest.TestCase):
         self.assertEqual(run.stdout.strip(), "True,3,False")
 
     @unittest.skipUnless(WINDOWS, "needs Windows PowerShell")
-    def test_a_null_position_is_read_again_and_fails_if_it_stays_null(self):  # pragma: no cover - Windows only; the coverage job runs on Ubuntu
+    def test_a_block_is_read_again_until_it_fits_and_fails_if_it_never_does(self):  # pragma: no cover - Windows only; the coverage job runs on Ubuntu
         text = DUMPER.read_text(encoding="utf-8")
         run = powershell(
-            function(text, "Invoke-Excel") + "\n" + function(text, "Read-Position") + "\n"
-            "$script:reads = 0;"
-            "$late = Read-Position { $script:reads++; if ($script:reads -le 2) { $null } else { 19 } };"
-            "$stuck = try { Read-Position { $null } } catch { $_.Exception.Message };"
-            "\"$late,$($script:reads),$stuck\""
+            function(text, "Invoke-Excel") + "\n" + function(text, "Read-Block") + "\n"
+            "function Fake($row, $rows, $columns, $values, $formula) {"
+            " [pscustomobject]@{ Row = $row; Column = 1; Rows = [pscustomobject]@{ Count = $rows };"
+            " Columns = [pscustomobject]@{ Count = $columns }; Value2 = $values; Formula = $formula } };"
+            "function Sheet($answers) {"
+            " $script:answers = $answers; $script:reads = 0;"
+            " $ws = [pscustomobject]@{};"
+            " $ws | Add-Member ScriptProperty UsedRange { $script:reads++; $script:answers[[Math]::Min($script:reads, $script:answers.Count) - 1] };"
+            " $ws };"
+            "$grid = New-Object 'object[,]' 2,2;"
+            "$bad = @($null, (Fake $null 2 2 $grid), (Fake 5 2 2 $null), (Fake 5 2 2 7), (Fake 5 2 3 $grid));"
+            "$block = Read-Block (Sheet ($bad + (Fake 5 2 2 $grid)));"
+            "$took = $script:reads;"
+            "$empty = Read-Block (Sheet @(Fake 1 1 1 $null ''));"
+            "$stuck = try { Read-Block (Sheet @(Fake 5 2 2 $null)) } catch { $_.Exception.Message };"
+            "\"$($block.Row),$($block.Values.GetLength(1)),$took,$($null -eq $empty.Values),$stuck\""
         )
         self.assertEqual(run.returncode, 0, run.stderr)
-        self.assertEqual(run.stdout.strip(), "19,3,Excel returned no position.")
+        self.assertEqual(run.stdout.strip(), "5,2,6,True,Excel returned values that do not fit the range.")
 
 
 if __name__ == "__main__":

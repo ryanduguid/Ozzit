@@ -70,10 +70,27 @@ function Invoke-Excel([scriptblock]$op, [int]$tries = 12) {
     }
 }
 
-# A rejected property read comes back $null rather than throwing, so a row or column
-# counts only once it reads as a number.
-function Read-Position([scriptblock]$read) {
-    Invoke-Excel { $position = & $read; if ($position -isnot [int]) { throw 'Excel returned no position.' }; $position }
+# A sheet's position, shape and values, all from one range, or a throw that retries. A
+# rejected property read comes back $null rather than throwing, so a position counts only
+# as a number and values only in the range's shape; only an empty one-cell range has none.
+# The range stays in a variable and the result in a hashtable: PowerShell enumerates a
+# range and flattens a 2-dimensional array returned through a function.
+function Read-Block($ws) {
+    Invoke-Excel {
+        $ur = $ws.UsedRange
+        if ($null -eq $ur) { throw 'Excel returned no range.' }
+        $r = $ur.Row; $c = $ur.Column; $rows = $ur.Rows.Count; $columns = $ur.Columns.Count
+        foreach ($n in @($r, $c, $rows, $columns)) {
+            if ($n -isnot [int]) { throw 'Excel returned no position.' }
+        }
+        $values = $ur.Value2
+        $one = $rows -eq 1 -and $columns -eq 1
+        $fits = if ($null -eq $values) { $one -and $ur.Formula -ceq '' }
+                elseif ($one) { $values -isnot [Array] }
+                else { $values -is [object[,]] -and $values.GetLength(0) -eq $rows -and $values.GetLength(1) -eq $columns }
+        if (-not $fits) { throw 'Excel returned values that do not fit the range.' }
+        @{ Row = $r; Column = $c; Values = $values }
+    }
 }
 
 for ($w = 0; $w -lt 10 -and @(Get-Process EXCEL -ErrorAction SilentlyContinue).Count -gt 0; $w++) {
@@ -110,12 +127,8 @@ try {
     $pos = 0
     foreach ($ws in $wb.Worksheets) {
         $pos++
-        $r0 = Read-Position { $ws.UsedRange.Row }
-        $c0 = Read-Position { $ws.UsedRange.Column }
-        $ur = $ws.UsedRange
-        # Not Invoke-Excel: PowerShell flattens a 2-dimensional array returned through a
-        # function, which turns the whole sheet into one row and hides every difference.
-        $vals = $ur.Value2
+        $block = Read-Block $ws
+        $r0 = $block.Row; $c0 = $block.Column; $vals = $block.Values
         if ($null -eq $vals) { continue }
         if ($vals -isnot [object[,]]) {
             $kind = if ($vals -is [int]) { 'error' } else { 'value' }

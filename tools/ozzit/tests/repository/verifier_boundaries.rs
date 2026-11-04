@@ -2,12 +2,13 @@
 // SPDX-License-Identifier: LicenseRef-Duguid-Public-Attribution-1.0
 
 //! The Excel value dump opens its output only inside its Excel cleanup, and every
-//! position it writes comes through the COM message filter.
+//! cell it writes comes through the COM message filter and one checked range.
 //!
 //! `ozzit verify_cache` failed 1 of 3 runs on an unchanged workbook on 1 November
 //! 2026 with an invalid cell position. A rejected property read comes back `$null`
-//! in PowerShell, so a null row or column would write a position of 0. The filter's
-//! own behaviour needs Windows PowerShell and is tested in
+//! in PowerShell, so a null row or column would write a position of 0, and a null
+//! `Value2` would drop a sheet. The behaviour of the filter and `Read-Block` needs
+//! Windows PowerShell and is tested in
 //! `tools/tests/test_excel_eval_formulas.py`.
 use super::{index, read};
 use ozzit::common::count;
@@ -28,7 +29,7 @@ fn filter(text: &str) -> &str {
 }
 
 #[test]
-fn value_dump_filters_excel_calls_and_retries_a_null_position() {
+fn value_dump_filters_excel_calls_and_reads_each_sheet_through_one_range() {
     let text = read("tools/dump_values.ps1");
     assert_eq!(
         filter(&text),
@@ -38,9 +39,7 @@ fn value_dump_filters_excel_calls_and_retries_a_null_position() {
     assert!(index(&text, "[OzzitMessageFilter]::Register()", 0) < excel);
     let last_finally = text.rfind("finally {").expect("a finally block");
     assert!(last_finally < index(&text, "[OzzitMessageFilter]::Revoke()", 0));
-    for read in ["$r0 = Read-Position {", "$c0 = Read-Position {"] {
+    for read in ["$block = Read-Block $ws", "$ws.UsedRange", ".Value2"] {
         assert_eq!(count(&text, read), 1, "{read}");
     }
-    assert_eq!(count(&text, "$r0 ="), 1);
-    assert_eq!(count(&text, "$c0 ="), 1);
 }
