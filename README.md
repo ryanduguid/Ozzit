@@ -15,15 +15,15 @@
 
 </div>
 
-One Excel workbook holding 143 native LAMBDA functions and 5 named help tables under
-the `oz.` prefix: amortisation, depreciation, ratios including the ATO's small business
-benchmarks, a checked dated rate lookup, AASB 16 lessee schedules, and Australian GST
-and financial-year helpers. The functions need no add-in, macro, VBA or
-external dependency, so a copied function travels inside your own file and a reviewer
-can read the arithmetic. The file carries a hidden reference to the Advanced Formula
-Environment task pane used to author the functions; the functions do not depend on
-it. It suits an accountant or analyst modelling in Excel; it is not a
-bookkeeping tool and never touches a ledger.
+Ozzit is one Excel workbook of native LAMBDA functions under the `oz.` prefix, for
+accountants and analysts modelling in Excel, with Australian GST and financial-year
+helpers: 143 functions and 5 named help tables in release v3.5.0.
+
+Ozzit is not a bookkeeping tool and never touches a ledger. The functions cover amortisation, depreciation, ratios including the ATO's small business
+benchmarks, a checked dated rate lookup and AASB 16 lessee schedules. They need no add-in,
+macro, VBA or external dependency, so a copied function travels inside your own file and a
+reviewer can read the arithmetic. The file carries a hidden reference to the Advanced Formula
+Environment task pane used to author the functions; the functions do not depend on it.
 
 **Needs Microsoft 365 or Excel 2024 or later**, which support `LAMBDA` and dynamic
 arrays. LibreOffice, Google Sheets and earlier Excel versions cannot evaluate the
@@ -44,7 +44,7 @@ reads no text date once another row holds a date or a blank. In v3.4.2, fill eve
 cell and enter last occurrences as dates, or move to v3.5.0. Further changes and the DB/DDB compatibility limitations are recorded
 under [v3.5.0 in the changelog](CHANGELOG.md).
 
-Synthetic example. The reviewer decides the GST treatment.
+The example below is synthetic, and the reviewer decides the GST treatment.
 
 **Input:** $1,100, assumed wholly taxable and GST-inclusive at 10%.
 
@@ -77,7 +77,7 @@ check above used a different workbook file.
 
 ## Start with a task
 
-You do not need all 143 functions. Start with the task you need to complete.
+An Ozzit user does not need all 143 functions. Start with the task you need to complete.
 The loan and depreciation guides show the spilled result for a synthetic input
 you can check by hand; the lease guide explains the 4 lessee functions.
 
@@ -96,6 +96,20 @@ selection and composition through the existing catalogue and approved workbook.
 Copy `skills/ozzit` into the host's skill directory and supply the approved bundle
 location and revision. Installing the skill does not install the Excel names.
 
+## Alternatives
+
+Ozzit is a finance-focused LAMBDA library with Australian helpers. As read on 5 November 2026,
+these libraries cover nearby ground without that focus:
+
+- [Vertex42 LAMBDA Library](https://www.vertex42.com/lambda/): more than 50 documented functions
+  imported from a gist.
+- [BigSpill](https://techcommunity.microsoft.com/discussions/excelgeneral/bigspill-a-90%E2%80%91function-excel-lambda-library-for-dynamic-arrays/4545352):
+  90 functions in 10 categories.
+- [AutoXL](https://github.com/MatrixFun/AutoXL): a general MIT-licensed library.
+
+[Similar tools and improvement decisions](docs/practice-improvements.md) compares the companion
+calculators with similar calculators.
+
 <details>
 <summary>Capture evidence, guides, verification and licence</summary>
 
@@ -112,6 +126,8 @@ The [capture record and PowerShell reproduction](docs/native-gst-capture.md) pre
 The screenshot uses a disposable copy with a synthetic label, an explicit argument in B19 and currency formatting. It certifies this example in v3.2.0. The v3.4.2 workbook is a different file; its full native gate results are recorded in its release notes and in [CHANGELOG.md](CHANGELOG.md). The shipped workbook was not edited.
 
 ## Guides
+
+The Ozzit guides are grouped as how-to, reference and background pages.
 
 How-to:
 

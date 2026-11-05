@@ -6,7 +6,7 @@ The latest release is listed at https://github.com/ryanduguid/Ozzit/releases/lat
 
 Help tables are text tables, not LAMBDAs: reference them without parentheses, as `=oz.AboutDatesλ`. A function called with no arguments, as `=oz.Amortiseλ()`, spills its own help.
 
-## Scope
+**Scope.**
 
 - Financial and lending: dynamic-array loan amortisation, compound interest, IRR, corkscrews, effective-rate converters, day count conventions (30/360, Actual/360, Actual/365, Actual/Actual), a DATEDIF replacement and debt sculpting (`oz.Amortiseλ`, `oz.IRRλ`, `oz.DebtSculptFixedλ` and related names in functions.csv).
 - Australian helpers: `oz.GSTAddλ`, `oz.GSTExtractλ`, `oz.FinancialYearλ` (1 July year label), `oz.DiminishingValueλ` and `oz.PrimeCostλ`. GST helpers do arithmetic only, at 10% unless a Rate is supplied; the reviewer decides whether a supply is taxable. The 10% default reflects the basic rule for a taxable supply in the [GST Act 1999](https://www.legislation.gov.au/C2004A00446/latest/text) ss 9-70 and 9-75 (source checked 20 August 2026); recheck the current Act at the time of use. The depreciation helpers are modelling schedules, not ATO Division 40 methods, and do not implement immediate write-off or low-value pools.
@@ -17,7 +17,7 @@ Help tables are text tables, not LAMBDAs: reference them without parentheses, as
 
 ## Docs
 
-- [README](https://github.com/ryanduguid/Ozzit/blob/main/README.md): download, checksum, known issues in the current release and three starter tasks.
+- [README](https://github.com/ryanduguid/Ozzit/blob/main/README.md): download, checksum, known issues in the current release and starter tasks.
 - [Function index](https://github.com/ryanduguid/Ozzit/blob/main/functions.csv): every named formula with its module, signature and description.
 - [Function guide](https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md): modules, worksheets and formula walkthroughs.
 - [Australian conventions and lease modelling](https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md)
