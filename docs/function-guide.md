@@ -101,5 +101,5 @@ Calculates diminishing balance at 200% straight-line rate with exact terminal re
 
 ### 3. GST arithmetic (`=oz.GSTExtractλ(Amounts)` & `=oz.GSTAddλ(Amounts)`)
 Extracts or appends GST across full dynamic arrays according to *ANTS(GST)A 1999* ss 9-70/75:
-- `=oz.GSTExtractλ(1100)` -> returns `$100.00`
+- `=oz.GSTExtractλ(1100)` -> displays `$100.00` under currency formatting. It returns the unrounded binary-float result, 99.999999999999986, so wrap it in `ROUND(...,2)` for cent-exact totals
 - `=oz.GSTAddλ(1000)` -> returns `$1,100.00`
