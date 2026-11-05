@@ -99,12 +99,12 @@ location and revision. Installing the skill does not install the Excel names.
 ## Alternatives
 
 Ozzit is a finance-focused LAMBDA library with Australian helpers. As read on 5 November 2026,
-these libraries cover nearby ground without that focus:
+these general-purpose libraries cover nearby ground:
 
-- [Vertex42 LAMBDA Library](https://www.vertex42.com/lambda/): more than 50 documented functions
-  imported from a gist.
+- [Vertex42 LAMBDA Library](https://www.vertex42.com/lambda/): more than 50 documented functions,
+  importable from a gist.
 - [BigSpill](https://techcommunity.microsoft.com/discussions/excelgeneral/bigspill-a-90%E2%80%91function-excel-lambda-library-for-dynamic-arrays/4545352):
-  90 functions in 10 categories.
+  97 functions in 10 categories.
 - [AutoXL](https://github.com/MatrixFun/AutoXL): a general MIT-licensed library.
 
 [Similar tools and improvement decisions](docs/practice-improvements.md) compares the companion
