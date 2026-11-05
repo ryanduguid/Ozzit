@@ -17,7 +17,7 @@ Help tables are text tables, not LAMBDAs: reference them without parentheses, as
 
 ## Docs
 
-- [README](https://github.com/ryanduguid/Ozzit/blob/main/README.md): download, checksum, known issues in the current release and three starter tasks.
+- [README](https://github.com/ryanduguid/Ozzit/blob/main/README.md): download, checksum, known issues in the current release and starter tasks.
 - [Function index](https://github.com/ryanduguid/Ozzit/blob/main/functions.csv): every named formula with its module, signature and description.
 - [Function guide](https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md): modules, worksheets and formula walkthroughs.
 - [Australian conventions and lease modelling](https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md)
