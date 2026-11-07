@@ -8,8 +8,9 @@ rate functions were added, on 20 October 2026 after the variance and
 financial-year period functions were added, on 24 October 2026 after the input-shape
 and help-field changes, on 1 November 2026 after the corkscrew flag check, after the
 level payment and rate corkscrew were added and after the rate corkscrew's input checks,
-and on 3 November 2026 after the help examples, links and VERSION dates changed,
-with identical results each time. The largest absolute difference was
+on 3 November 2026 after the help examples, links and VERSION dates changed, and
+in build 20625 on 8 November 2026 after the Corkscrew input check, with identical
+results each time. The largest absolute difference was
 `4.163336342344337e-17`, below the comparison tolerance of `1e-12`.
 
 The retained record is
@@ -86,7 +87,8 @@ this record can qualify the changed workbook.
 
 On 6 October 2026, Excel 16.0 build 20527 evaluated 113 additional formulas
 against the same workbook hash, and returned identical results for the later
-workbooks on 14, 19, 20 and 24 October and 1 and 3 November 2026. All 312 numeric values from 87 supported-input
+workbooks on 14, 19, 20 and 24 October and 1 and 3 November 2026, and in build 20625
+on 8 November 2026. All 312 numeric values from 87 supported-input
 cases on strictly increasing timelines agreed with declared rational calculations
 within `1e-12`. Three invalid
 numeric convention cases matched the native `#VALUE!` control. The remaining
