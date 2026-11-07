@@ -1623,14 +1623,14 @@ Corkscrewλ = LAMBDA(
                         "FUNCTION:      →Corkscrewλ( Opening, Flow1, [Flow2], [Flow3], [Flow4])¶" &
                         "DESCRIPTION:   →Create a corkscrew section that sums the opening balance and up to 4 independent flows¶" & 
                         "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
-                        "VERSION:       →20 Aug 2026¶" &
+                        "VERSION:       →8 Nov 2026¶" &
                         "PARAMETERS:→¶" & 
-                        "Opening        →(Required) First periods opening balance.¶" & 
+                        "Opening        →(Required) First periods opening balance: a single number or a blank cell.¶" &
                         "Flow1          →(Required) First row (or array of rows) of numbers to include in period totals.¶" & 
                         "Flow2          →(Optional) Second row (or array of rows) of numbers to include in period totals.¶" & 
                         "Flow3          →(Optional) Third row (or array of rows) of numbers to include in period totals.¶" & 
                         "Flow4          →(Optional) Fourth row (or array of rows) of numbers to include in period totals.¶" & 
-                        "NOTE!          →All flows are added. To subtract a flow make it negative.¶" & 
+                        "NOTE!          →All flows are added; make a flow negative to subtract it. Text, TRUE or FALSE returns a message.¶" &
                         "→¶" &
                         "EXAMPLES:      →NOTE! oz is assumed to be the module's name¶" & 
                         "Formula:       →=oz.Corkscrewλ(0, Sequence(1,5))¶" &
@@ -1657,11 +1657,19 @@ Corkscrewλ = LAMBDA(
                             4,  VSTACK(Flow1, Flow2, Flow3, Flow4)
                         ), 
         PeriodTotal,    BYCOL(PeriodArray, LAMBDA(Col, SUM(Col))), 
-        ClosingTotal,   SCAN(Opening, PeriodTotal, LAMBDA(Opn, PrdTot, Opn + PrdTot)), 
-        OpeningTotal,   MAP( SEQUENCE(, Cols), LAMBDA( Col, IF( Col = 1, Opening, INDEX( ClosingTotal, Col - 1)))),
+    //  SUM leaves text and TRUE out of a total, so a flow typed as text would show but not
+    //  count. A blank or "" is nil, and an error passes so it shows.
+        ValidFlows?,    NOT(OR(IFERROR(ISLOGICAL(PeriodArray) + ISTEXT(PeriodArray) * (PeriodArray <> ""), FALSE))),
+        ValidOpening?,  AND(ROWS(Opening) = 1, COLUMNS(Opening) = 1, IFERROR(ISNUMBER(Opening) + (Opening = ""), TRUE)),
+        OpeningMessage, "Corkscrewλ needs Opening to be a single number.",
+        FlowMessage,    "Corkscrewλ needs every flow to be a number or blank.",
+        Start,          IF(Opening = "", 0, Opening),
+        ClosingTotal,   SCAN(Start, PeriodTotal, LAMBDA(Opn, PrdTot, Opn + PrdTot)), 
+        OpeningTotal,   MAP( SEQUENCE(, Cols), LAMBDA( Col, IF( Col = 1, Start, INDEX( ClosingTotal, Col - 1)))),
         Result,         VSTACK(OpeningTotal, PeriodArray, ClosingTotal), 
-    //  Return Result
-        CHOOSE(Help? + 1, Result, Help)
+    //  Return Result, Help or the message
+        Return,         IF(Help?, 2, IF(NOT(ValidOpening?), 3, IF(NOT(ValidFlows?), 4, 1))),
+        CHOOSE( Return, Result, Help, OpeningMessage, FlowMessage)
     )  
 );
 

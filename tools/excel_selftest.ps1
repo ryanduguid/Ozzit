@@ -92,6 +92,22 @@ Near 'Movement, per-row opening'       "INDEX($mv({100;`"`";50},{110,120;5,6;60,
 Near 'Movement, blank opening row'     "INDEX($mv({100;`"`";50},{110,120;5,6;60,70}),2,1)" '5'
 Near 'Movement, default opening'       "INDEX($mv(,{100,110,130,100}),1,4)" '-30'
 
+# --- Corkscrew. SUM leaves text and TRUE out of a total, so a flow typed as text showed
+# in the flows row but never reached the closing balance, and nothing checked Opening.
+# On the scratch sheet AE1:AF1 holds 1 and 2, and AI1:AL1 holds 3 blanks then TBA.
+$ck = "oz.Corkscrew$L"
+$ckOpening = "Corkscrew$L needs Opening to be a single number."
+$ckFlow    = "Corkscrew$L needs every flow to be a number or blank."
+foreach ($r in @(@('100, {1,"2"}', $ckFlow), @('100, {1,2}, {TRUE,0}', $ckFlow), @('100, AI1:AL1', $ckFlow),
+                 @('AE1:AF1, {1,2}', $ckOpening), @('"100", {1,2}', $ckOpening), @('TRUE, {1,2}', $ckOpening))) {
+    Same "Corkscrew refuses ($($r[0]))" "LET(x, $ck($($r[0])), IF(AND(ROWS(x) = 1, COLUMNS(x) = 1), x, `"array`"))" $r[1]
+}
+Near 'Corkscrew: a blank Opening is nil'     "SUM(ABS($ck(Z1, {1,2}) - $ck(0, {1,2})))" '0'
+Near 'Corkscrew: an empty-text flow is nil'  "SUM(ABS(TAKE($ck(100, {1,`"`"}), -1) - {101,101}))" '0'
+Near 'Corkscrew: range flows match an array' "SUM(ABS($ck(100, AE1:AH1) - $ck(100, {1,2,3,4})))" '0'
+Near 'Corkscrew: an error in a flow shows'   "--ISNA(INDEX($ck(100, {1,#N/A}), 3, 2))" '1'
+Near 'Corkscrew: an error in Opening shows'  "--ISNA(INDEX($ck(NA(), {1,2}), 3, 2))" '1'
+
 # --- CorkScrewReversal. A flag of 1 reverses the period's opening balance, 0 or a blank
 # leaves it. The flag multiplied the balance, so a 2 reversed it twice over and the
 # period closed on minus its opening; TRUE and the text "1" passed as 1.
