@@ -318,7 +318,13 @@ fn production_type_check_is_pinned_and_rejects_untyped_definitions() {
     assert!(workflow.contains(
         "python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-mypy.txt"
     ));
-    assert!(read_raw("requirements-mypy.txt").contains(r"mypy==2.4.0 \"));
+    assert!(
+        common::matches(
+            r"(?m)^mypy==[0-9][0-9A-Za-z.+!_-]* \\\r?$",
+            &read_raw("requirements-mypy.txt")
+        ),
+        "requirements-mypy.txt must pin mypy to an exact version"
+    );
     assert!(workflow.contains("python -m mypy --config-file mypy.ini"));
     assert!(config.contains("files = tools"));
     assert!(config.contains(r"exclude = ^tools[/\\]tests[/\\]"));
