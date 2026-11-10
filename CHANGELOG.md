@@ -103,6 +103,14 @@ heading in the Financial About table. The cover label moves to 150 functions.
   of 2 reversed the opening balance twice over and the period closed on minus it, and
   TRUE or a 1 typed as text passed as 1. Any flag other than 1, 0 or blank now returns
   a message. Rows of ones and blanks or zeros give the same result as before.
+- `oz.Corkscrewλ` totalled each period with SUM, which leaves text and TRUE out, so a
+  flow typed as text, such as "100", showed in the flows row but never reached the
+  closing balance. Opening was not checked: TRUE or "100" passed as a number, and a
+  range of several cells returned an error. A flow that is text, TRUE or FALSE, and an
+  Opening that is not a single number or blank cell, now return a message, as
+  `oz.CorkscrewRateλ` does. Numbers, blank cells and empty text in a flow give the
+  same result as before; an Opening of empty text now counts as nil instead of
+  returning #VALUE!, and an error still shows.
 - `oz.Depreciateλ` help now says that its Revenue from Sale row is the salvage value,
   shown in the disposal period, not sale proceeds, and that DV and PC make it 0. The
   arithmetic is unchanged.
