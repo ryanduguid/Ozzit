@@ -132,6 +132,8 @@ fn the_midyear_addition_rounds_half_up_and_reconciles() {
     assert_eq!(charge_on_addition, Cents(20_001));
     assert_eq!(charge, Cents(2_420_001));
     assert_eq!(closing, Cents(9_780_004));
+    assert!(text.contains("The unrounded charge on the addition is 200.005."));
+    assert!(text.contains("up, to 200.01 and add it"));
     assert!(text.contains("120,000.00 + 2,000.05 - 24,200.01 = 97,800.04"));
 }
 

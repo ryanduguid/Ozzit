@@ -102,9 +102,9 @@ inside the window. Ask for it. Do not derive it from the gap: a number computed
 to make a reconciliation pass is not evidence of anything.
 
 For a fabricated midyear addition, assume a cost of 2,000.05, a separate
-five-year straight-line life, no residual value and six equal monthly
-instalments in the window. The unrounded charge on the addition is 200.005.
-Round it half up to 200.01 and add it to the original asset's 24,000.00 charge.
+five-year straight-line life, no residual value and six months of use in the
+window. The unrounded charge on the addition is 200.005. Round it once, half
+up, to 200.01 and add it to the original asset's 24,000.00 charge.
 The movement is 120,000.00 + 2,000.05 - 24,200.01 = 97,800.04. Record the
 addition and the rounding convention before comparing this balance with a
 dated engine result.
