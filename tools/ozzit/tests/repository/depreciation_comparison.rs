@@ -123,6 +123,21 @@ fn the_prime_cost_balances_run_down_to_nil() {
 }
 
 #[test]
+fn the_midyear_addition_rounds_half_up_and_reconciles() {
+    let addition = Cents(200_005);
+    let charge_on_addition = addition.times(6, LIFE * 12);
+    let charge = Cents(prime_cost(COST, LIFE)[0].0 + charge_on_addition.0);
+    let closing = Cents(COST.0 + addition.0 - charge.0);
+    let text = read(DOCUMENT);
+    assert_eq!(charge_on_addition, Cents(20_001));
+    assert_eq!(charge, Cents(2_420_001));
+    assert_eq!(closing, Cents(9_780_004));
+    assert!(text.contains("The unrounded charge on the addition is 200.005."));
+    assert!(text.contains("up, to 200.01 and add it"));
+    assert!(text.contains("120,000.00 + 2,000.05 - 24,200.01 = 97,800.04"));
+}
+
+#[test]
 fn the_diminishing_value_table_matches_independent_arithmetic() {
     let expected = diminishing_value(COST, LIFE);
     assert_eq!(
