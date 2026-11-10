@@ -7,7 +7,7 @@
 isolation. The library has 150 native Excel LAMBDA functions and 5 named help
 tables. Retain the ordinary `.xlsx` and no macros. Do not make tax classifications,
 individual-tax or Division 7A decisions. Agent-facing guidance for this estate follows
-DrDebits, https://github.com/ryanduguid/llm-tax-guardrails, guide version 0.3.3.
+DrDebits, https://github.com/ryanduguid/DrDebits, guide version 0.3.3.
 Functions and help may document rates with sources and check dates, and show
 worked arithmetic results. The reviewer decides the applicable tax treatment.
 
