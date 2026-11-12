@@ -104,7 +104,9 @@ tests preserve staging, temporary siblings and the explicit AFE sync order.
 modules into the workbook's Advanced Formula Environment store; this step is required
 after any pass that changes `src/`. `generate_selftest_examples` rewrites the native
 self-test's generated assertions from the help, and the tool tests fail when that
-fragment is stale. The FY27 and palette passes
+fragment is stale. After the last pass, `ozzit native_checks` rewrites
+`docs/native-checks.csv` from the workbook, `functions.csv` and both self-test
+scripts; the tool tests fail when that record is stale too. The FY27 and palette passes
 record the v3.0.0 → v3.1.0 swaps. The GST help pass records a later insert against the
 committed v3.1.0 workbook and `src/`. The revision-history pass removes the
 per-function REVISIONS blocks, the Advanced Formula Environment copies of them and

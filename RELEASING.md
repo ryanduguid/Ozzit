@@ -134,6 +134,16 @@ The cached-value gate must pass and report its actual comparison count. Record
 the Excel version and build. Hash the workbook immediately before and after
 both native gates and require the bytes to be byte-identical.
 
+[docs/native-checks.csv](docs/native-checks.csv) records which of these checks
+reach each name in `functions.csv`. `help_check` and `worked_examples` count the
+generated assertions that name it; `selftest_calls` counts the hand-written
+assertion calls that name it directly or through a variable, a call inside a loop
+counting once; and `workbook_formula_cells` counts the worksheet formula cells that
+call it, which the recalculation and cached-value gates cover. A name reached only
+from inside another function's definition is not counted. `ozzit native_checks`
+writes the record from those tracked files without Excel, and the tool tests fail
+when it is stale.
+
 If a reviewed workbook change deliberately changes a formula, assertion or
 cached-value count, update the documented expected count in the same candidate
 and review that change. Do not silently weaken a floor.
