@@ -1,0 +1,18 @@
+{
+  "name": "ozzit",
+  "description": "Find, compose and check Ozzit's native Excel LAMBDA functions for Australian GST and financial modelling. Tax treatment stays with the reviewer.",
+  "author": {
+    "name": "Ryan Duguid"
+  },
+  "homepage": "https://duguid.com.au/tools/ozzit/",
+  "repository": "https://github.com/ryanduguid/Ozzit",
+  "license": "LicenseRef-Duguid-Public-Attribution-1.0",
+  "keywords": [
+    "excel",
+    "lambda",
+    "australia",
+    "gst",
+    "financial modelling",
+    "agent skills"
+  ]
+}

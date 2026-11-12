@@ -27,7 +27,15 @@ Environment task pane used to author the functions; the functions do not depend 
 
 **Needs Microsoft 365 or Excel 2024 or later**, which support `LAMBDA` and dynamic
 arrays. LibreOffice, Google Sheets and earlier Excel versions cannot evaluate the
-functions. Licensed under the [Ryan Duguid Public Attribution Licence 1.0](LICENSE).
+functions. `main` is licensed under the [Ryan Duguid Public Attribution Licence 1.0](LICENSE);
+the v3.5.0 release keeps Apache-2.0, and v3.4.2 and earlier releases keep MIT.
+
+| Excel | Tested |
+| --- | --- |
+| Windows desktop | Yes: the native gates on the tracked workbook (Excel 16.0 build 20625, 8 November 2026) and a copy-cell install check on v3.4.2 (build 20430, 25 September 2026) |
+| Mac | Not tested |
+| Web | Not tested |
+| Advanced Formula Environment import of `oz.txt` | Not tested |
 
 **Current published release: [v3.5.0](https://github.com/ryanduguid/Ozzit/releases/tag/v3.5.0)**,
 published 19 October 2026 from the cut dated 19 October 2026, with 143 functions.
@@ -91,10 +99,32 @@ you can check by hand; the lease guide explains the 4 lessee functions.
 [Open, copy functions and use modern Excel](docs/workbook-use.md) shows how to
 copy a function into your own workbook.
 
+To bring in every function at once, the Advanced Formula Environment in the Excel
+Labs add-in imports a module from a URL. From its Names tab, import
+`https://raw.githubusercontent.com/ryanduguid/Ozzit/v3.5.0/oz.txt` under the module
+name `oz`: that file is the v3.5.0 library as one module, and its 148 names match
+that release's workbook. Then type `=oz.` in a cell and pick a function from
+autocomplete. This route has not been tested in Excel. Microsoft's
+[module import page](https://github.com/microsoft/Excel-Labs/blob/main/advanced-formula-environment/documentation/module-import.md),
+last changed 9 February 2023, says the add-in imports only from a GitHub gist URL
+and does not allow tab characters in a module; the v3.5.0 `oz.txt` ends 4 comment
+lines with a tab.
+
 For an AI assistant, [the Ozzit skill](skills/ozzit/SKILL.md) routes function
 selection and composition through the existing catalogue and approved workbook.
 Copy `skills/ozzit` into the host's skill directory and supply the approved bundle
 location and revision. Installing the skill does not install the Excel names.
+
+In Claude Code the repository is also a plugin marketplace that installs the skill:
+
+```text
+claude plugin marketplace add ryanduguid/Ozzit
+claude plugin install ozzit@ozzit
+```
+
+The marketplace follows `main`, which is ahead of v3.5.0, so still supply the
+approved bundle revision. Its manifests pass `claude plugin validate`; installing
+it from GitHub has not been tested.
 
 Claude for Excel (Pro, Max, Team and Enterprise) applies the Skills enabled in
 your Claude settings. To add this one, zip the `skills/ozzit` folder, then in
@@ -106,6 +136,14 @@ read. Steps as Anthropic's [Claude for Excel](https://claude.com/docs/office-age
 and [Skills](https://support.claude.com/en/articles/12512180-use-skills-in-claude)
 pages gave them on 12 November 2026; this route has not been tested end to end.
 
+Copilot in Excel's skill builder turns 'your preferred workflow, instructions,
+previous prompts, or examples of completed work' into a reusable skill. Give it
+the text of `skills/ozzit/SKILL.md` as the instructions, and supply `functions.csv`
+and `oz.txt` from the same release tag as above. Microsoft's
+[What's New in Excel (October 2026)](https://techcommunity.microsoft.com/t5/excel-blog/what-s-new-in-excel-october-2026/ba-p/4549758)
+post of 29 October 2026 says skill builder is rolling out on Windows, Mac and the
+web; this route has not been tested.
+
 ## Alternatives
 
 Ozzit is a finance-focused LAMBDA library with Australian helpers. As read on 5 November 2026,
@@ -113,9 +151,18 @@ these general-purpose libraries cover nearby ground:
 
 - [Vertex42 LAMBDA Library](https://www.vertex42.com/lambda/): more than 50 documented functions,
   importable from a gist.
-- [BigSpill](https://techcommunity.microsoft.com/discussions/excelgeneral/bigspill-a-90%E2%80%91function-excel-lambda-library-for-dynamic-arrays/4545352):
+- [BigSpill](https://techcommunity.microsoft.com/discussions/excelgeneral/bigspill-a-97%E2%80%91function-excel-lambda-library-for-dynamic-arrays/4545352):
   97 functions in 10 categories.
 - [AutoXL](https://github.com/MatrixFun/AutoXL): a general MIT-licensed library.
+
+As read on 13 November 2026, these assistants work on your workbook on request
+rather than supplying a fixed function library:
+
+- [Claude for Excel](https://claude.com/docs/office-agents/excel): an add-in for
+  Pro, Max, Team and Enterprise plans that builds models and applies enabled Skills.
+- [Copilot in Excel](https://techcommunity.microsoft.com/t5/excel-blog/what-s-new-in-excel-october-2026/ba-p/4549758):
+  Microsoft's assistant, whose skill builder (October 2026) turns a described
+  workflow into a reusable skill.
 
 [Similar tools and improvement decisions](docs/practice-improvements.md) compares the companion
 calculators with similar calculators.
