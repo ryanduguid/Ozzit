@@ -220,9 +220,9 @@ jobs:
           disable_search: true
           fail_ci_if_error: true
 
-  # Audits the native tools' Cargo.lock against the RustSec advisory database.
-  # It sits with the CI-only jobs because its result follows the advisory
-  # database as well as the change.
+  # Audits the native tools' and the fuzz crate's Cargo.lock against the RustSec
+  # advisory database. It sits with the CI-only jobs because its result follows
+  # the advisory database as well as the change.
   dependency-audit:
     timeout-minutes: 20
     runs-on: ubuntu-latest
@@ -240,7 +240,9 @@ jobs:
           fallback: none
       - name: Audit the native tools' locked dependencies
         working-directory: tools/ozzit
-        run: cargo audit --deny warnings
+        run: |
+          cargo audit --deny warnings
+          cargo audit --deny warnings --file fuzz/Cargo.lock
 
   # Holds the native tools' tests to their measured line coverage. It sits with
   # the CI-only jobs because it needs cargo-llvm-cov, which the contributor
