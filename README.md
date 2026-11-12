@@ -96,6 +96,16 @@ selection and composition through the existing catalogue and approved workbook.
 Copy `skills/ozzit` into the host's skill directory and supply the approved bundle
 location and revision. Installing the skill does not install the Excel names.
 
+Claude for Excel (Pro, Max, Team and Enterprise) applies the Skills enabled in
+your Claude settings. To add this one, zip the `skills/ozzit` folder, then in
+Claude choose Customize, Skills, +, Create skill, Upload a skill, and turn it on;
+code execution must be enabled. On Team and Enterprise an owner can provision it
+for everyone instead. The zip holds only `SKILL.md`, so attach `functions.csv`
+and `oz.txt` from the same release tag, or open its `ozzit.xlsx`, for the skill to
+read. Steps as Anthropic's [Claude for Excel](https://claude.com/docs/office-agents/excel)
+and [Skills](https://support.claude.com/en/articles/12512180-use-skills-in-claude)
+pages gave them on 12 November 2026; this route has not been tested end to end.
+
 ## Alternatives
 
 Ozzit is a finance-focused LAMBDA library with Australian helpers. As read on 5 November 2026,
