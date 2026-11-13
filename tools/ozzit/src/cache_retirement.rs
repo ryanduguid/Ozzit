@@ -187,6 +187,30 @@ fn test_cached_values_reads_each_supported_cell_representation() {
 }
 
 #[test]
+fn test_cached_values_refuses_a_shared_string_index_outside_the_table() {
+    // The fixture holds 2 shared strings; Excel writes each index as plain digits.
+    // Python's int() read the Arabic-Indic digit one as 1.
+    for raw in ["-1", "-2", "2", "+0", " 0", "1_0", "\u{661}", "x", ""] {
+        let mut parts = Fixture::original();
+        parts.insert(
+            "xl/worksheets/sheet1.xml".into(),
+            format!("<worksheet><sheetData><row r=\"1\"><c r=\"A1\" t=\"s\"><v>{raw}</v></c></row></sheetData></worksheet>").into_bytes(),
+        );
+        let fixture = Fixture::parts(parts);
+        let CachedError::Error(message) = cached_values(&fixture.book).unwrap_err() else {
+            panic!("expected an error for {raw:?}")
+        };
+        assert_eq!(
+            message,
+            format!(
+                "shared string index {} is not a position in the workbook's 2 shared strings",
+                py::repr_str(raw)
+            )
+        );
+    }
+}
+
+#[test]
 fn test_cached_values_rejects_chart_sheets_before_positions_drift() {
     let mut parts = Fixture::original();
     let rels = String::from_utf8(parts["xl/_rels/workbook.xml.rels"].clone()).unwrap();

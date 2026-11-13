@@ -5,6 +5,11 @@
 Relicensed from Apache-2.0 to FSL-1.1-ALv2 (Functional Source License, with
 Apache-2.0 as the future licence). Released versions keep their licence.
 
+`verify_cache` now refuses a shared-string index that is not plain digits naming
+an entry. It read `-1` as the last string, as Python's list indexing does, and
+accepted `+0`, ` 0` and `1_0`; an index past the table now names the index and
+the table's size instead of 'list index out of range'.
+
 `verify_sources` now fails a LET binding nothing reads, not only an unread date
 conversion. A `_` prefix marks one left unread on purpose. The 3 that main
 already holds are listed in `KNOWN_UNREAD`, because removing them changes the
