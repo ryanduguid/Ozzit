@@ -2,8 +2,10 @@
 
 ## 4.0.0 (in progress, unpublished)
 
-Relicensed from Apache-2.0 to FSL-1.1-ALv2 (Functional Source License, with
-Apache-2.0 as the future licence). Released versions keep their licence.
+Relicensed from Apache-2.0 to the Ryan Duguid Public Attribution Licence,
+Version 1.0: FSL-1.1-ALv2 (Functional Source License, with Apache-2.0 as the
+future licence) plus a public attribution condition. Released versions keep
+their licence.
 
 `verify_cache` now refuses a shared-string index that is not plain digits naming
 an entry. It read `-1` as the last string, as Python's list indexing does, and
