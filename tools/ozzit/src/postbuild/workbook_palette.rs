@@ -264,15 +264,10 @@ const PASSED_OLD: &str = r#"rgb="FF008000""#;
 
 /// An xf's `fontId="…"` attribute text and its font and fill indices.
 fn xf_ids(element: &str) -> Option<(String, usize, usize)> {
-    let font = captures(r#"fontId="(\d+)""#, element).into_iter().next();
-    let fill = captures(r#"fillId="(\d+)""#, element).into_iter().next();
+    let font = captures(r#"fontId="([0-9]+)""#, element).into_iter().next();
+    let fill = captures(r#"fillId="([0-9]+)""#, element).into_iter().next();
     let (font, fill) = (font?, fill?);
-    let index = |s: &str| {
-        py::parse_int(s, 10)
-            .ok()
-            .and_then(|n| usize::try_from(n).ok())
-    };
-    let (fill_id, font_id) = (index(&fill[1])?, index(&font[1])?);
+    let (fill_id, font_id) = (fill[1].parse().ok()?, font[1].parse().ok()?);
     Some((font[0].clone(), font_id, fill_id))
 }
 
@@ -301,7 +296,12 @@ fn passed_xfs(
                 return element.to_string();
             }
             let Some(font_text) = fonts.get(font_id) else {
-                failure.get_or_insert_with(|| "list index out of range".to_string());
+                failure.get_or_insert_with(|| {
+                    format!(
+                        "a cell format points at font {font_id}, beyond the {} stored",
+                        fonts.len()
+                    )
+                });
                 return element.to_string();
             };
             if !font_text.contains(PASSED_OLD) {
