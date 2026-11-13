@@ -8,7 +8,7 @@
 //! formula or writes the workbook.
 use crate::{archive::*, common::*, py};
 use num_bigint::BigInt;
-use num_traits::{Signed, ToPrimitive, Zero};
+use num_traits::{ToPrimitive, Zero};
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -187,20 +187,20 @@ fn sheet_values(
     Ok(())
 }
 
-/// `shared[int(raw)]`, including Python's negative indices.
+/// The shared string at `raw`, which must be plain decimal digits naming an entry.
 fn shared_string(shared: &[String], raw: &str) -> Result<String> {
-    let index = py::parse_int(raw, 10)?;
-    let length = BigInt::from(shared.len());
-    let position = if index.is_negative() {
-        &length + &index
-    } else {
-        index
-    };
-    position
-        .to_usize()
-        .filter(|_| position < length)
-        .and_then(|p| shared.get(p).cloned())
-        .ok_or_else(|| "list index out of range".into())
+    raw.bytes()
+        .all(|b| b.is_ascii_digit())
+        .then(|| raw.parse::<usize>().ok())
+        .flatten()
+        .and_then(|index| shared.get(index).cloned())
+        .ok_or_else(|| {
+            format!(
+                "shared string index {} is not a position in the workbook's {} shared strings",
+                py::repr_str(raw),
+                shared.len()
+            )
+        })
 }
 
 /// One cell must be one line, the way the dumper writes it.
