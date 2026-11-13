@@ -68,9 +68,9 @@ fn arguments(line: &str) -> Vec<&str> {
             quote @ (b'\'' | b'"') => {
                 i += 1;
                 while i < bytes.len() {
-                    if quote == b'"' && bytes[i] == b'`' {
-                        i += 2;
-                    } else if bytes[i] == quote && bytes.get(i + 1) == Some(&quote) {
+                    let escaped = quote == b'"' && bytes[i] == b'`';
+                    let doubled = bytes[i] == quote && bytes.get(i + 1) == Some(&quote);
+                    if escaped || doubled {
                         i += 2;
                     } else if bytes[i] == quote {
                         i += 1;
@@ -140,6 +140,46 @@ fn names_in(text: &str, variables: &BTreeMap<String, BTreeSet<String>>) -> BTree
     names
 }
 
+/// The library names each script variable holds, keyed by its lower-cased name.
+type Variables = BTreeMap<String, BTreeSet<String>>;
+
+/// Ends the blocks `line` closes, restoring the names each narrowing `if` changed.
+fn close_scopes(line: &str, scopes: &mut Vec<Scope>, variables: &mut Variables) {
+    while let Some(scope) = scopes.last() {
+        let opened = match scope {
+            Scope::Function(at) | Scope::Narrow(at, ..) => *at,
+        };
+        if !(line.trim_start().starts_with('}') && indent(line) <= opened) {
+            break;
+        }
+        if let Some(Scope::Narrow(_, name, saved)) = scopes.pop() {
+            match saved {
+                Some(names) => variables.insert(name, names),
+                None => variables.remove(&name),
+            };
+        }
+    }
+}
+
+/// Narrows the variable a `NARROW` header (`m`) tests and returns the scope that
+/// restores it.
+fn narrow(line: &str, m: &[String], variables: &mut Variables) -> Scope {
+    let name = m[1].to_lowercase();
+    let saved = variables.get(&name).cloned();
+    let held = saved.clone().unwrap_or_default();
+    let other = variables
+        .get(&m[3].to_lowercase())
+        .cloned()
+        .unwrap_or_default();
+    let narrowed = if &m[2] == "eq" {
+        held.intersection(&other).cloned().collect()
+    } else {
+        held.difference(&other).cloned().collect()
+    };
+    variables.insert(name.clone(), narrowed);
+    Scope::Narrow(indent(line), name, saved)
+}
+
 /// The assertion calls in a script and the library names each reaches.
 ///
 /// Variables take the names their latest assignment or `foreach` header holds, in
@@ -147,46 +187,20 @@ fn names_in(text: &str, variables: &BTreeMap<String, BTreeSet<String>>) -> BTree
 /// functions. PowerShell variable names are case-insensitive. A block ends at the
 /// first later line that starts with `}` at or left of its opening indent.
 fn script_calls(text: &str, known: &BTreeSet<String>, file: &str) -> Result<Calls> {
-    let mut variables: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    let mut variables = Variables::new();
     let mut scopes: Vec<Scope> = Vec::new();
     let mut calls = Calls::new();
     for line in logical_lines(text) {
         if line.trim_start().starts_with('#') {
             continue;
         }
-        while let Some(scope) = scopes.last() {
-            let opened = match scope {
-                Scope::Function(at) | Scope::Narrow(at, ..) => *at,
-            };
-            if !(line.trim_start().starts_with('}') && indent(&line) <= opened) {
-                break;
-            }
-            if let Some(Scope::Narrow(_, name, saved)) = scopes.pop() {
-                match saved {
-                    Some(names) => variables.insert(name, names),
-                    None => variables.remove(&name),
-                };
-            }
-        }
+        close_scopes(&line, &mut scopes, &mut variables);
         if matches(FUNCTION, &line) {
             scopes.push(Scope::Function(indent(&line)));
             continue;
         }
         if let Some(m) = captures(NARROW, &line).first() {
-            let name = m[1].to_lowercase();
-            let saved = variables.get(&name).cloned();
-            let held = saved.clone().unwrap_or_default();
-            let other = variables
-                .get(&m[3].to_lowercase())
-                .cloned()
-                .unwrap_or_default();
-            let narrowed = if &m[2] == "eq" {
-                held.intersection(&other).cloned().collect()
-            } else {
-                held.difference(&other).cloned().collect()
-            };
-            variables.insert(name.clone(), narrowed);
-            scopes.push(Scope::Narrow(indent(&line), name, saved));
+            scopes.push(narrow(&line, m, &mut variables));
             continue;
         }
         for pattern in [FOREACH, ASSIGNMENT] {
