@@ -27,7 +27,7 @@ oz.CashRatioλ,1,1,0,1
 oz.CorkScrewReversalλ,1,2,5,0
 oz.CorkscrewRateλ,1,2,13,0
 oz.Corkscrewλ,1,2,7,3
-oz.CorkscrewλDV,1,0,0,0
+oz.CorkscrewλDV,1,0,4,0
 oz.CountAColsUλ,1,1,0,0
 oz.CountAColsλ,1,1,0,3
 oz.CountARowsUλ,1,1,0,0
@@ -120,8 +120,8 @@ oz.ROICλ,1,1,0,1
 oz.ROIλ,1,1,0,1
 oz.ROUScheduleλ,1,2,9,0
 oz.RangeToDAEλ,1,0,0,3
-oz.RangeToDAUλ,1,0,0,0
-oz.RangeToDAλ,1,0,0,0
+oz.RangeToDAUλ,1,0,2,0
+oz.RangeToDAλ,1,0,2,0
 oz.RateAtDateλ,1,1,10,0
 oz.ReceivableDaysλ,1,2,11,0
 oz.ReceivablesTurnoverRatioλ,1,1,1,1

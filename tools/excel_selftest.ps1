@@ -672,6 +672,13 @@ Near 'Amortise DV: a three-date timeline that advances is accepted' `
      "--($amDV(10000, 0.05, 12, DATE(2026,1,1), $okTL))" '1'
 Near 'Depreciate DV: a three-date timeline that advances is accepted' `
      "--($dpDV(10000, DATE(2026,1,1), 5, $okTL))" '1'
+# Corkscrew's companion accepts number flows, arrays and ranges alike, and names the first
+# argument holding text or an error. AL1 holds TBA.
+$ckDV = "oz.Corkscrew${L}DV"
+Near 'Corkscrew DV: number flows and a range are accepted' "--($ckDV(100, {1,2}, AE1:AH1))" '1'
+Same 'Corkscrew DV: a text Opening is refused'   "LEFT(INDEX($ckDV(AL1, {1,2}),1,1),11)" 'Set Opening'
+Same 'Corkscrew DV: a text flow is refused'      "LEFT(INDEX($ckDV(100, {1,2}, AL1),1,1),9)" 'Set Flow2'
+Same 'Corkscrew DV: an error in a flow is named' "LEFT(INDEX($ckDV(100, {1,#N/A}),1,1),5)" 'Flow1'
 
 # --- Character counts. Both count by splitting the text on the characters asked for, so
 # empty text had nothing to split and a comma could not be one of the characters: each
@@ -1284,6 +1291,11 @@ SameAsArray 'ScheduleValues: ranges of dates'    "oz.ScheduleValues$L(AE4:AF4, A
                                                  "oz.ScheduleValues$L($e4A, $e5A, {100,200}, $e4A)"
 SameAsArray 'YearToDate: ranges of dates'        "$ytd(AE1:AH1, AE3:AH3, DATE(2026,8,31))" "$ytd({1,2,3,4}, $e3A, DATE(2026,8,31))"
 Near 'YearToDate: a range of dates totals the year to date' "$ytd(AE1:AH1, AE3:AH3, DATE(2026,8,31))" '5'
+# RangeToDA and RangeToDAU spill the block that starts at a cell, 1 row and 1 column by default.
+SameAsArray 'RangeToDA: a cell spans the columns asked for'  "oz.RangeToDA$L(AE1, , 4)"  '{1,2,3,4}'
+SameAsArray 'RangeToDA: rows and columns'                    "oz.RangeToDA$L(AE1, 2, 4)"  '{1,2,3,4;10,20,30,40}'
+SameAsArray 'RangeToDAU: a cell spans the columns asked for' "oz.RangeToDAU$L(AE1, , 4)" '{1,2,3,4}'
+SameAsArray 'RangeToDAU: rows and columns'                   "oz.RangeToDAU$L(AE1, 2, 4)" '{1,2,3,4;10,20,30,40}'
 
 # --- Randomised checks. Each trial draws fresh inputs, compares the function with an
 # independent Excel formula and, on a miss, reports the inputs that produced it so the
