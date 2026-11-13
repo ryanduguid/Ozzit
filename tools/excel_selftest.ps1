@@ -104,6 +104,8 @@ foreach ($r in @(@('100, {1,"2"}', $ckFlow), @('100, {1,2}, {TRUE,0}', $ckFlow),
 }
 Near 'Corkscrew: a blank Opening is nil'     "SUM(ABS($ck(Z1, {1,2}) - $ck(0, {1,2})))" '0'
 Near 'Corkscrew: an empty-text flow is nil'  "SUM(ABS(TAKE($ck(100, {1,`"`"}), -1) - {101,101}))" '0'
+Near 'Corkscrew: an empty-text Opening is nil' "SUM(ABS($ck(`"`", {1,2}) - $ck(0, {1,2})))" '0'
+Near 'Corkscrew: blank flow cells are nil'     "SUM(ABS(TAKE($ck(100, AI1:AK1), -1) - {100,100,100}))" '0'
 Near 'Corkscrew: range flows match an array' "SUM(ABS($ck(100, AE1:AH1) - $ck(100, {1,2,3,4})))" '0'
 Near 'Corkscrew: an error in a flow shows'   "--ISNA(INDEX($ck(100, {1,#N/A}), 3, 2))" '1'
 Near 'Corkscrew: an error in Opening shows'  "--ISNA(INDEX($ck(NA(), {1,2}), 3, 2))" '1'
@@ -122,6 +124,18 @@ foreach ($flag in '2', '-1', '0.5', 'TRUE', '"1"') {
          "LET(x, $cr(100,{0,$flag,0},{10,20,30}), IF(AND(ROWS(x) = 1, COLUMNS(x) = 1), x, `"array`"))" $crRefused
 }
 Same 'CorkScrewReversal refuses a text flag cell' "LET(x, $cr(100,AI1:AL1,{10,20,30,40}), IF(AND(ROWS(x) = 1, COLUMNS(x) = 1), x, `"array`"))" $crRefused
+# It totalled its flows with SUM and checked neither Opening nor flows, so a flow typed as
+# text showed but never reached the closing balance. It now takes Corkscrew's checks.
+$crvOpening = "CorkScrewReversal$L needs Opening to be a single number."
+$crvFlow    = "CorkScrewReversal$L needs every flow to be a number or blank."
+foreach ($r in @(@('100, {0,1}, {1,"2"}', $crvFlow), @('100, {0,1}, {1,2}, {TRUE,0}', $crvFlow),
+                 @('100, {0,0,0,1}, AI1:AL1', $crvFlow), @('AE1:AF1, {0,1}, {1,2}', $crvOpening),
+                 @('"100", {0,1}, {1,2}', $crvOpening), @('TRUE, {0,1}, {1,2}', $crvOpening))) {
+    Same "CorkScrewReversal refuses ($($r[0]))" "LET(x, $cr($($r[0])), IF(AND(ROWS(x) = 1, COLUMNS(x) = 1), x, `"array`"))" $r[1]
+}
+Near 'CorkScrewReversal: an empty-text Opening is nil' "SUM(ABS($cr(`"`", {0,1}, {1,2}) - $cr(0, {0,1}, {1,2})))" '0'
+# AD1 is blank and AE1:AF1 holds 1 and 2: numbers and blank cells give the same result as before.
+Near 'CorkScrewReversal: numbers and blank cells' "SUM(ABS($cr(100, AD1:AE1, {10,20}, AE1:AF1) - {100,111;0,-111;10,20;1,2;111,22}))" '0'
 
 # --- Financial year. The headline use is labelling a COLUMN of dates, so the array
 # path matters more than the scalar one.
@@ -679,6 +693,13 @@ Near 'Corkscrew DV: number flows and a range are accepted' "--($ckDV(100, {1,2},
 Same 'Corkscrew DV: a text Opening is refused'   "LEFT(INDEX($ckDV(AL1, {1,2}),1,1),11)" 'Set Opening'
 Same 'Corkscrew DV: a text flow is refused'      "LEFT(INDEX($ckDV(100, {1,2}, AL1),1,1),9)" 'Set Flow2'
 Same 'Corkscrew DV: an error in a flow is named' "LEFT(INDEX($ckDV(100, {1,#N/A}),1,1),5)" 'Flow1'
+# It refused what Corkscrew accepts as nil: a blank or empty-text Opening and blank or
+# empty-text flow cells (the Corkscrew checks above), and gave an error for a two-cell Opening,
+# which Corkscrew refuses. Z1 and AI1:AK1 are blank.
+foreach ($r in @('Z1, {1,2}', '"", {1,2}', '100, AI1:AK1', '100, {1,""}')) {
+    Near "Corkscrew DV: accepted as Corkscrew accepts it ($r)" "--($ckDV($r))" '1'
+}
+Same 'Corkscrew DV: a two-cell Opening is refused' "LEFT(INDEX($ckDV(AE1:AF1, {1,2}),1,1),11)" 'Set Opening'
 
 # --- Character counts. Both count by splitting the text on the characters asked for, so
 # empty text had nothing to split and a comma could not be one of the characters: each

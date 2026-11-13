@@ -1690,16 +1690,16 @@ CorkScrewReversalλ=LAMBDA(
                         "FUNCTION:      →CorkScrewReversalλ( Opening, ReversalFlags, Flow1, [Flow2], [Flow3], [Flow4])¶" & 
                         "DESCRIPTION:   →Create a corkscrew where the opening balance is reversed in the next period based on a timing parameter¶" & 
                         "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
-                        "VERSION:       →1 Nov 2026¶" &
+                        "VERSION:       →14 Nov 2026¶" &
                         "PARAMETERS:→¶" &
-                        "Opening        →(Required) First periods opening balance.¶" &
+                        "Opening        →(Required) First periods opening balance: a single number or a blank cell.¶" &
                         "ReversalFlags  →(Required) A row of ones and blanks (or zeros) indicating when to reverse period totals.¶" &
                         "               →Any other value, including TRUE or a 1 typed as text, returns a message.¶" &
                         "Flow1          →(Required) First row (or array of rows) of numbers to include in period totals.¶" & 
                         "Flow2          →(Optional) Second row (or array of rows) of numbers to include in period totals.¶" & 
                         "Flow3          →(Optional) Third row (or array of rows) of numbers to include in period totals.¶" & 
                         "Flow4          →(Optional) Fourth row (or array of rows) of numbers to include in period totals.¶" &
-                        "NOTE!          →All flows are added. To subtract a flow make it negative.¶" &
+                        "NOTE!          →All flows are added; make a flow negative to subtract it. Text, TRUE or FALSE returns a message.¶" &
                         "→¶" &
                         "EXAMPLES:      →NOTE! oz is assumed to be the module's name¶" &
                         "Formula:       →=oz.CorkScrewReversalλ(100, {0,1,0,1}, {10,20,30,40})¶" &
@@ -1735,17 +1735,24 @@ CorkScrewReversalλ=LAMBDA(
     //  a 2 reversed it twice over. TRUE and the text "1" equal neither and are refused.
         BadFlags?,      SUM( --NOT( ( Flags = 0) + ( Flags = 1))) > 0,
         FlagMessage,    "ReversalFlags must be 1, 0 or blank in every period.",
-        Closings,      SCAN( Opening, SEQUENCE( , Cols),
+    //  SUM leaves text and TRUE out of a total, so a flow typed as text would show but not
+    //  count. A blank or "" is nil, and an error passes so it shows. As in Corkscrewλ.
+        ValidFlows?,    NOT(OR(IFERROR(ISLOGICAL(PeriodArray) + ISTEXT(PeriodArray) * (PeriodArray <> ""), FALSE))),
+        ValidOpening?,  AND(ROWS(Opening) = 1, COLUMNS(Opening) = 1, IFERROR(ISNUMBER(Opening) + (Opening = ""), TRUE)),
+        OpeningMessage, "CorkScrewReversalλ needs Opening to be a single number.",
+        FlowMessage,    "CorkScrewReversalλ needs every flow to be a number or blank.",
+        Start,          IF(Opening = "", 0, Opening),
+        Closings,      SCAN( Start, SEQUENCE( , Cols),
                             LAMBDA( Acc, Col,
                                 Acc * ( 1 - INDEX( Flags, 1, Col)) + INDEX( PeriodTotal, 1, Col)
                             )
                         ),
-        Openings,       IF( Cols = 1, Opening, HSTACK( Opening, DROP( Closings, , -1))),
+        Openings,       IF( Cols = 1, Start, HSTACK( Start, DROP( Closings, , -1))),
         Reversals,      -Flags * Openings,
         Result,         VSTACK( Openings, Reversals, PeriodArray, Closings),
     //  Return Result, Help, or the message
-        Return,         IF( Help?, 2, IF( BadFlags?, 3, 1)),
-        CHOOSE( Return, Result, Help, FlagMessage)
+        Return,         IF( Help?, 2, IF( NOT( ValidOpening?), 4, IF( BadFlags?, 3, IF( NOT( ValidFlows?), 5, 1)))),
+        CHOOSE( Return, Result, Help, FlagMessage, OpeningMessage, FlowMessage)
     )  
 );
 
@@ -3281,22 +3288,23 @@ CorkscrewλDV = LAMBDA(
                             OR( ISERROR( Flow4))
                         ),
 
-    //  Check inputs - Data validation errors
-        DVArg1,         IF( OR( ISOMITTED( Opening), ISERROR( Opening)), 
-                            FALSE, 
-                            NOT( ISNUMBER( Opening ))),
-        DVArg2,         IF( OR( ISOMITTED( Flow1), ISERROR( Flow1)), 
-                            FALSE, 
-                            NOT( AND(ISNUMBER( Flow1 )))),
-        DVArg3,         IF( OR( ISOMITTED( Flow2), ISERROR( Flow2)), 
-                            FALSE, 
-                            NOT( AND(ISNUMBER( Flow2 )))),
-        DVArg4,         IF( OR( ISOMITTED( Flow3), ISERROR( Flow3)), 
-                            FALSE, 
-                            NOT( AND(ISNUMBER( Flow3 )))),
-        DVArg5,         IF( OR( ISOMITTED( Flow4), ISERROR( Flow4)), 
-                            FALSE, 
-                            NOT( AND(ISNUMBER( Flow4 )))),
+    //  Check inputs - Data validation errors, the ones Corkscrewλ refuses: an Opening that
+    //  is not one number or blank cell, and text, TRUE or FALSE in a flow. A blank or "" is nil.
+        DVArg1,         IF( OR( ISOMITTED( Opening), ISERROR( Opening)),
+                            FALSE,
+                            NOT( AND( ROWS( Opening) = 1, COLUMNS( Opening) = 1, ISNUMBER( Opening) + ( Opening = "")))),
+        DVArg2,         IF( OR( ISOMITTED( Flow1), ISERROR( Flow1)),
+                            FALSE,
+                            OR( ISLOGICAL( Flow1) + ISTEXT( Flow1) * ( Flow1 <> ""))),
+        DVArg3,         IF( OR( ISOMITTED( Flow2), ISERROR( Flow2)),
+                            FALSE,
+                            OR( ISLOGICAL( Flow2) + ISTEXT( Flow2) * ( Flow2 <> ""))),
+        DVArg4,         IF( OR( ISOMITTED( Flow3), ISERROR( Flow3)),
+                            FALSE,
+                            OR( ISLOGICAL( Flow3) + ISTEXT( Flow3) * ( Flow3 <> ""))),
+        DVArg5,         IF( OR( ISOMITTED( Flow4), ISERROR( Flow4)),
+                            FALSE,
+                            OR( ISLOGICAL( Flow4) + ISTEXT( Flow4) * ( Flow4 <> ""))),
         DVErrors,       VSTACK( DVArg1, DVArg2, DVArg3, DVArg4, DVArg5),
         
     //  Any input errors detected?
@@ -3310,11 +3318,11 @@ CorkscrewλDV = LAMBDA(
                          "Flow3 contains errors in cells. Resolve errors first.";
                          "Flow4 contains errors in cells. Resolve errors first.";
                          
-                         "Set Opening must to contain only numeric values.";
-                         "Set Flow1 to contain only numeric values.";
-                         "Set Flow2 to contain only numeric values.";
-                         "Set Flow3 to contain only numeric values.";
-                         "Set Flow4 to contain only numeric values."},
+                         "Set Opening to a single number or a blank cell.";
+                         "Set Flow1 to contain only numbers or blank cells.";
+                         "Set Flow2 to contain only numbers or blank cells.";
+                         "Set Flow3 to contain only numbers or blank cells.";
+                         "Set Flow4 to contain only numbers or blank cells."},
         Messages,       FILTER(ErrMsgs, Errors2Show, ""),        
 
     //  Handle Error
