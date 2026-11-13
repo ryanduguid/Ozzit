@@ -265,7 +265,9 @@ fn corkscrew_dv_reports_its_findings_without_a_sixth_argument() {
     let stores = Stores::new();
     let stored = stores.shipped("oz.CorkscrewλDV");
     assert!(!stored.contains("Diagnostics"));
-    assert!(stored.contains("_xlpm.Errors2Show, _xlfn.VSTACK( _xlpm.ErrorsInArgs, _xlpm.DVErrors)"));
+    assert!(
+        stored.contains("_xlpm.Errors2Show, _xlfn.VSTACK( _xlpm.ErrorsInArgs, _xlpm.DVErrors)")
+    );
     let declaration = stores.declaration("Financial", "CorkscrewλDV");
     assert!(!declaration.contains("Diagnostics"));
     assert!(declaration.contains("Errors2Show,    VSTACK( ErrorsInArgs, DVErrors)"));
