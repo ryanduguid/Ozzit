@@ -189,7 +189,8 @@ fn test_cached_values_reads_each_supported_cell_representation() {
 #[test]
 fn test_cached_values_refuses_a_shared_string_index_outside_the_table() {
     // The fixture holds 2 shared strings; Excel writes each index as plain digits.
-    for raw in ["-1", "-2", "2", "+0", " 0", "1_0", "x", ""] {
+    // Python's int() read the Arabic-Indic digit one as 1.
+    for raw in ["-1", "-2", "2", "+0", " 0", "1_0", "\u{661}", "x", ""] {
         let mut parts = Fixture::original();
         parts.insert(
             "xl/worksheets/sheet1.xml".into(),
