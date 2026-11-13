@@ -266,8 +266,12 @@ pub fn read_dump(path: &Path) -> Result<BTreeMap<Key, CellValue>> {
             py::parse_int(bits[1], 10)?,
             py::parse_int(bits[2], 10)?,
         );
+        // The dumper writes plain digits; Python's int() also read `+1`, ` 1`, `1_0` and `١`.
+        let plain = bits[..3]
+            .iter()
+            .all(|b| b.bytes().all(|c| c.is_ascii_digit()));
         let one = BigInt::from(1);
-        if key.0 < one || key.1 < one || key.2 < one || live.contains_key(&key) {
+        if !plain || key.0 < one || key.1 < one || key.2 < one || live.contains_key(&key) {
             return Err(format!(
                 "row {row} has an invalid or repeated cell position"
             ));

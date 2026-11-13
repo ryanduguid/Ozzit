@@ -487,6 +487,21 @@ fn test_malformed_dump_lines_fail_with_a_diagnostic() {
 }
 
 #[test]
+fn test_dump_positions_must_be_plain_digits() {
+    // Python's int() read each of these as a position.
+    for position in ["+1", " 1", "1 ", "1_0", "\u{661}", "\u{ff11}"] {
+        let fixture = Fixture::sheet("<c r=\"A1\"><v>7</v></c>");
+        let dump = format!("1\t1\t{position}\tvalue\t7\n");
+        let output = gate(&fixture.book, FLOOR, Some(dump.as_bytes()), success());
+        assert_eq!(
+            output.out,
+            ["FAIL: cannot read Excel dump: row 1 has an invalid or repeated cell position"],
+            "{position:?}"
+        );
+    }
+}
+
+#[test]
 fn test_a_complete_but_thin_dump_still_fails_the_floor() {
     let fixture = Fixture::numbers(1, "1");
     let output = gate(

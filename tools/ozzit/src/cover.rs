@@ -39,7 +39,7 @@ pub fn cover_label(workbook: &Path) -> Result<(String, BigInt)> {
         .first()
         .filter(|c| c[1].contains("t=\"s\""))
         .ok_or_else(|| format!("{part}: Cover!A3 is not a shared-string cell"))?;
-    let index = captures(r"<v>(\d+)</v>", &cell[2]);
+    let index = captures(r"<v>([0-9]+)</v>", &cell[2]);
     let index = index
         .first()
         .ok_or_else(|| format!("{part}: Cover!A3 carries no shared-string index"))?;

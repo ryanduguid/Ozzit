@@ -366,6 +366,17 @@ fn all_seven_unresolvable_cover_cells_have_the_original_exact_diagnostics() {
 }
 
 #[test]
+fn a_cover_index_in_non_ascii_digits_is_no_index() {
+    // Python's \d and int() read the Arabic-Indic digit zero as index 0.
+    let f = Fixture::small();
+    write_deterministic(&f.book, &small_parts()).unwrap();
+    f.rewrite("xl/worksheets/sheet1.xml", "<v>0</v>", "<v>\u{660}</v>");
+    let expected = "xl/worksheets/sheet1.xml: Cover!A3 carries no shared-string index";
+    assert_eq!(cover::cover_label(&f.book).unwrap_err(), expected);
+    failure(f.run(), &[&format!("FAIL: {expected}")]);
+}
+
+#[test]
 fn empty_index_and_headingless_changelog_are_refused_exactly() {
     let f = Fixture::small();
     std::fs::write(&f.index, "function,signature\n").unwrap();

@@ -112,6 +112,22 @@ fn passed_checks_sharing_a_font_share_one_copy() {
 }
 
 #[test]
+fn passed_green_reads_only_plain_font_indices_inside_the_fonts() {
+    let styles = |xf: &str| {
+        format!(
+            r#"<styleSheet><fonts count="1"><font><color rgb="FF008000"/></font></fonts><fills count="1"><fill><patternFill patternType="solid"><fgColor rgb="FFDBE4E0"/></patternFill></fill></fills><cellXfs count="1">{xf}</cellXfs></styleSheet>"#
+        )
+    };
+    // Python's \d and int() read the Arabic-Indic digit zero as font 0.
+    let unicode = styles("<xf fontId=\"\u{660}\" fillId=\"0\"/>");
+    assert_eq!(passed_green(&unicode).unwrap(), (unicode.clone(), 0));
+    assert_eq!(
+        passed_green(&styles(r#"<xf fontId="1" fillId="0"/>"#)).unwrap_err(),
+        "a cell format points at font 1, beyond the 1 stored"
+    );
+}
+
+#[test]
 fn passed_green_leaves_styles_without_cell_formats() {
     let styles = "<styleSheet><fonts/></styleSheet>";
     assert_eq!(passed_green(styles).unwrap(), (styles.into(), 0));
