@@ -203,14 +203,14 @@ fn script_calls(text: &str, known: &BTreeSet<String>, file: &str) -> Result<Call
             scopes.push(narrow(&line, m, &mut variables));
             continue;
         }
+        if scopes.iter().any(|s| matches!(s, Scope::Function(_))) {
+            continue;
+        }
         for pattern in [FOREACH, ASSIGNMENT] {
             if let Some(m) = captures(pattern, &line).first() {
                 let names = names_in(&sub(IF_CONDITION, &m[2], ""), &variables);
                 variables.insert(m[1].to_lowercase(), names);
             }
-        }
-        if scopes.iter().any(|s| matches!(s, Scope::Function(_))) {
-            continue;
         }
         if let Some(m) = captures(CALL, &line).first() {
             for name in names_in(&evaluated(line.trim_start()), &variables) {
@@ -442,6 +442,19 @@ Check 'neither' "=1"
         assert_eq!(total("oz.AmortiseλDV"), 1);
         assert_eq!(total("oz.GSTAddλ"), 2);
         assert_eq!(calls.len(), 3);
+    }
+
+    #[test]
+    fn an_assignment_inside_a_function_leaves_top_level_aliases() {
+        let script = r#"
+$fn = "oz.A$L"
+function Probe {
+    $fn = "oz.B$L"
+}
+Same 'top' "$fn(1)" '1'
+"#;
+        let calls = script_calls(script, &known(&["Aλ", "Bλ"]), "t.ps1").unwrap();
+        assert_eq!(totals(&calls), BTreeMap::from([("oz.Aλ".into(), 1)]));
     }
 
     #[test]

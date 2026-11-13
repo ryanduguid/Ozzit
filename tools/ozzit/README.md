@@ -219,7 +219,7 @@ repository root to use their usual path defaults.
 | `sanitise_workbook` | Remove what an Excel save adds and rewrite the archive deterministically |
 | `polish_workbook` | Apply the presentation rules to straplines, cover wording and styles |
 | `generate_selftest_examples` | Turn the help's worked examples into native self-test assertions |
-| `native_checks` | Write `docs/native-checks.csv`, the native checks that reach each function, from the repository root; `--check` only compares. It has no Python twin |
+| `native_checks` | Write `docs/native-checks.csv`, the native checks that reach each function, from the repository root; `--check` only compares. It has no Python twin. The record can understate a function's checks |
 | `prepare_release_bundle` | Create or verify the copy-only release bundle and its provenance |
 | `cover_label`, `sheet_names`, `help_links`, `fy27_help_text`, `gst_help_text`, `strip_revision_history`, `remove_residue`, `workbook_palette`, `help_corrections`, `aasb16_leases`, `rate_date_helpers`, `working_capital_days`, `ato_benchmarks_rate_lookup`, `variance_fy_periods` | The postbuild passes in `tools/postbuild/README.md`, with the same arguments and run order |
 
