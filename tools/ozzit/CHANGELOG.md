@@ -21,6 +21,13 @@ callees in `docs/workbook-use.md` to the calls in `src/`.
 never checked the examples of `Corkscrewλ`, `CorkScrewReversalλ` and
 `Depreciateλ`. It now reads all 147 example blocks, up from 144.
 
+`native_checks` writes `docs/native-checks.csv`: for each name in
+`functions.csv`, the generated help and worked-example assertions, the
+hand-written self-test calls and the worksheet formula cells that reach it, read
+from tracked files without Excel. A native test fails when the record is stale.
+Names the self-test builds at run time, such as the 4 rolling functions, are not
+counted, so the record can understate a function's checks.
+
 Port the documentation, template and repository tests to `tests/repository/`,
 one module per former Python file: 134 original test methods become 164 native
 tests and an ignored one that rewrites the cross-check cases. The cargo test and

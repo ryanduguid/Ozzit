@@ -12,6 +12,7 @@ pub mod formula;
 pub mod help;
 pub mod index;
 pub mod module;
+pub mod native_checks;
 pub mod native_evidence;
 mod output;
 pub mod polish;
@@ -50,6 +51,7 @@ const COMMANDS: &[(&str, Handler)] = &[
     ("refresh_cache", refresh::command),
     ("polish_workbook", polish::command),
     ("generate_selftest_examples", selftest::command),
+    ("native_checks", native_checks::command),
     ("prepare_release_bundle", release::command),
     ("cover_label", postbuild::cover_label::command),
     ("sheet_names", postbuild::sheet_names::command),
