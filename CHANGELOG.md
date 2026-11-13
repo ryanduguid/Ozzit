@@ -66,8 +66,10 @@ heading in the Financial About table. The cover label moves to 150 functions.
 
 ### Changed
 
-- Relicensed from Apache-2.0 to FSL-1.1-ALv2 (Functional Source License, with
-  Apache-2.0 as the future licence). Released versions keep their licence.
+- Relicensed from Apache-2.0 to the Ryan Duguid Public Attribution Licence,
+  Version 1.0: FSL-1.1-ALv2 (Functional Source License, with Apache-2.0 as the
+  future licence) plus a public attribution condition. Released versions keep
+  their licence.
 - `oz.DSIλ(AverageInventory, CostOfGoodsSold, [Days])` takes the days the cost of goods
   sold covers, 365 when omitted or blank, as `oz.ReceivableDaysλ` and `oz.PayableDaysλ`
   already did. It used to fix 365, so a leap year or a quarter needed the cost of goods
