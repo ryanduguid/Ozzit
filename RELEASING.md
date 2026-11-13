@@ -139,8 +139,13 @@ reach each name in `functions.csv`. `help_check` and `worked_examples` count the
 generated assertions that name it; `selftest_calls` counts the hand-written
 assertion calls that name it directly or through a variable, a call inside a loop
 counting once; and `workbook_formula_cells` counts the worksheet formula cells that
-call it, which the recalculation and cached-value gates cover. A name reached only
-from inside another function's definition is not counted. `ozzit native_checks`
+call it, which the recalculation and cached-value gates cover. Only the arguments
+Excel evaluates count: not an assertion's id, and not `Same`'s expected text. Not
+counted: a name reached only from inside another function's definition, and a name
+the script builds at run time, such as `"oz.Rolling$($r[0])$L"`, so the 4 rolling
+functions miss the 6 calls each that test them and `RollingAvgλ`, `RollingMaxλ` and
+`RollingMinλ` read 0. The
+record can understate a function's checks; it should not overstate them. `ozzit native_checks`
 writes the record from those tracked files without Excel, and the tool tests fail
 when it is stale.
 

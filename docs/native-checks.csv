@@ -49,9 +49,9 @@ oz.DSIλ,1,1,12,1
 oz.DateDifλ,1,1,22,0
 oz.DayCountRateλ,1,2,40,0
 oz.DebtRatioλ,1,1,0,1
-oz.DebtSculptFixedλ,1,2,17,0
-oz.DebtSculptVariableLRVλ,1,2,32,0
-oz.DebtSculptVariableλ,1,2,24,0
+oz.DebtSculptFixedλ,1,2,11,0
+oz.DebtSculptVariableLRVλ,1,2,30,0
+oz.DebtSculptVariableλ,1,2,22,0
 oz.DebtToAssetRatioλ,1,1,0,1
 oz.DebtToCapitalRatioλ,1,1,0,1
 oz.DebtToEquityRatioλ,1,1,0,1
@@ -125,7 +125,7 @@ oz.RangeToDAλ,1,0,0,0
 oz.RateAtDateλ,1,1,10,0
 oz.ReceivableDaysλ,1,2,11,0
 oz.ReceivablesTurnoverRatioλ,1,1,1,1
-oz.RetentionRatioλ,1,1,1,1
+oz.RetentionRatioλ,1,1,0,1
 oz.Reversalλ,1,2,0,2
 oz.RollingAvgλ,1,2,0,0
 oz.RollingMaxλ,1,2,0,0

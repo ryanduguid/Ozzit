@@ -20,6 +20,8 @@ never checked the examples of `Corkscrewλ`, `CorkScrewReversalλ` and
 `functions.csv`, the generated help and worked-example assertions, the
 hand-written self-test calls and the worksheet formula cells that reach it, read
 from tracked files without Excel. A native test fails when the record is stale.
+Names the self-test builds at run time, such as the 4 rolling functions, are not
+counted, so the record can understate a function's checks.
 
 Port the documentation, template and repository tests to `tests/repository/`,
 one module per former Python file: 134 original test methods become 164 native

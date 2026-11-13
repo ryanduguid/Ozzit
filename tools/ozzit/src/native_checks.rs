@@ -8,9 +8,11 @@
 //! hand-written assertion calls in `tools/excel_selftest.ps1` that name it
 //! directly or through a variable, and the worksheet formula cells in
 //! `ozzit.xlsx` that call it, which the recalculation and cached-value gates
-//! cover. The scripts are read by pattern, not run: an assertion call inside a
-//! loop counts once, and a name reached only from inside another function's
-//! definition is not counted. Nothing here runs PowerShell or Excel.
+//! cover. The scripts are read by pattern, not run: only the arguments Excel
+//! evaluates count, an assertion call inside a loop counts once, and neither a
+//! name reached only from inside another function's definition nor one the
+//! script builds at run time is counted, so the record can understate a
+//! function's checks. Nothing here runs PowerShell or Excel.
 use crate::{archive::*, common::*, formula};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
@@ -33,7 +35,73 @@ const SCRIPT_NAME: &str = r"oz\.([A-Za-z0-9_]+)(?:\$\{L\}([A-Za-z0-9_]*)|\$L(?![
 const VARIABLE: &str = r"\$\{?([A-Za-z_][A-Za-z0-9_]*)\}?";
 const ASSIGNMENT: &str = r"(?s)^\s*\$([A-Za-z_][A-Za-z0-9_]*)\s*=(.*)$";
 const FOREACH: &str = r"(?s)^\s*foreach\s*\(\s*\$([A-Za-z_][A-Za-z0-9_]*)\s+in\s+(.*?)\)";
-const CALL: &str = r"(?s)^\s*(?:Check|Near|Same|SameAsArray|Fuzz)\s+(?:'([a-z]+):)?";
+const CALL: &str = r"(?s)^\s*(Check|Near|Same|SameAsArray|Fuzz)\s+(?:'([a-z]+):)?";
+/// `if ($a -eq $b) {` or `-ne`, alone on its line: the block narrows `$a`.
+const NARROW: &str = r"^\s*if\s*\(\s*\$([A-Za-z_][A-Za-z0-9_]*)\s+-(eq|ne)\s+\$([A-Za-z_][A-Za-z0-9_]*)\s*\)\s*\{\s*$";
+const FUNCTION: &str = r"^\s*function\s.*\{\s*$";
+/// The condition of `$x = if (...) { ... } else { ... }`, which names no value of `$x`.
+const IF_CONDITION: &str = r"^\s*if\s*\([^()]*\)";
+
+/// A block opened at `indent`: a function body, whose calls are not assertions, or
+/// an `if` that narrows a variable, whose names are restored when the block ends.
+enum Scope {
+    Function(usize),
+    Narrow(usize, String, Option<BTreeSet<String>>),
+}
+
+fn indent(line: &str) -> usize {
+    line.len() - line.trim_start().len()
+}
+
+/// A command line's arguments: quoted strings with their quotes, or bare words.
+fn arguments(line: &str) -> Vec<&str> {
+    let mut out = Vec::new();
+    let bytes = line.as_bytes();
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i].is_ascii_whitespace() {
+            i += 1;
+            continue;
+        }
+        let start = i;
+        match bytes[i] {
+            quote @ (b'\'' | b'"') => {
+                i += 1;
+                while i < bytes.len() {
+                    if quote == b'"' && bytes[i] == b'`' {
+                        i += 2;
+                    } else if bytes[i] == quote && bytes.get(i + 1) == Some(&quote) {
+                        i += 2;
+                    } else if bytes[i] == quote {
+                        i += 1;
+                        break;
+                    } else {
+                        i += 1;
+                    }
+                }
+            }
+            _ => {
+                while i < bytes.len() && !bytes[i].is_ascii_whitespace() {
+                    i += 1;
+                }
+            }
+        }
+        out.push(&line[start..i.min(line.len())]);
+    }
+    out
+}
+
+/// The arguments Excel evaluates: all but the id, and for `Same` not the expected
+/// text, which is compared as a string rather than run.
+fn evaluated(line: &str) -> String {
+    let words = arguments(line);
+    let take = if words.first() == Some(&"Same") {
+        3
+    } else {
+        words.len()
+    };
+    words.get(2..take).unwrap_or_default().join(" ")
+}
 const WORKBOOK_NAME: &str = r"(?<![A-Za-z0-9_.λ])oz\.[A-Za-z0-9_.λ]+";
 const FORMULA: &str = r"(?s)<f\b([^>]*?)(?:/>|>(.*?)</f>)";
 const SHARED_INDEX: &str = r#"\bsi="(\d+)""#;
@@ -76,29 +144,69 @@ fn names_in(text: &str, variables: &BTreeMap<String, BTreeSet<String>>) -> BTree
 ///
 /// Variables take the names their latest assignment or `foreach` header holds, in
 /// line order, so a variable reused in a later section names only that section's
-/// functions. PowerShell variable names are case-insensitive.
+/// functions. PowerShell variable names are case-insensitive. A block ends at the
+/// first later line that starts with `}` at or left of its opening indent.
 fn script_calls(text: &str, known: &BTreeSet<String>, file: &str) -> Result<Calls> {
-    let mut variables = BTreeMap::new();
+    let mut variables: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    let mut scopes: Vec<Scope> = Vec::new();
     let mut calls = Calls::new();
     for line in logical_lines(text) {
         if line.trim_start().starts_with('#') {
             continue;
         }
+        while let Some(scope) = scopes.last() {
+            let opened = match scope {
+                Scope::Function(at) | Scope::Narrow(at, ..) => *at,
+            };
+            if !(line.trim_start().starts_with('}') && indent(&line) <= opened) {
+                break;
+            }
+            if let Some(Scope::Narrow(_, name, saved)) = scopes.pop() {
+                match saved {
+                    Some(names) => variables.insert(name, names),
+                    None => variables.remove(&name),
+                };
+            }
+        }
+        if matches(FUNCTION, &line) {
+            scopes.push(Scope::Function(indent(&line)));
+            continue;
+        }
+        if let Some(m) = captures(NARROW, &line).first() {
+            let name = m[1].to_lowercase();
+            let saved = variables.get(&name).cloned();
+            let held = saved.clone().unwrap_or_default();
+            let other = variables
+                .get(&m[3].to_lowercase())
+                .cloned()
+                .unwrap_or_default();
+            let narrowed = if &m[2] == "eq" {
+                held.intersection(&other).cloned().collect()
+            } else {
+                held.difference(&other).cloned().collect()
+            };
+            variables.insert(name.clone(), narrowed);
+            scopes.push(Scope::Narrow(indent(&line), name, saved));
+            continue;
+        }
         for pattern in [FOREACH, ASSIGNMENT] {
             if let Some(m) = captures(pattern, &line).first() {
-                let names = names_in(&m[2], &variables);
+                let names = names_in(&sub(IF_CONDITION, &m[2], ""), &variables);
                 variables.insert(m[1].to_lowercase(), names);
             }
         }
+        if scopes.iter().any(|s| matches!(s, Scope::Function(_))) {
+            continue;
+        }
         if let Some(m) = captures(CALL, &line).first() {
-            for name in names_in(&line, &variables) {
+            for name in names_in(&evaluated(line.trim_start()), &variables) {
                 if !known.contains(&name) {
                     return Err(format!("{file} calls {name}, which {INDEX} does not list"));
                 }
                 *calls
                     .entry(name)
                     .or_default()
-                    .entry(m[1].clone())
+                    .entry(m[2].clone())
                     .or_default() += 1;
             }
         }
@@ -244,6 +352,53 @@ mod tests {
 
     fn known(names: &[&str]) -> BTreeSet<String> {
         names.iter().map(|n| format!("oz.{n}")).collect()
+    }
+
+    fn totals(calls: &Calls) -> BTreeMap<String, usize> {
+        calls
+            .iter()
+            .map(|(name, by)| (name.clone(), by.values().sum()))
+            .collect()
+    }
+
+    #[test]
+    fn an_if_on_the_loop_variable_narrows_it() {
+        let script = r#"
+$a = "oz.A$L"
+$b = "oz.B$L"
+foreach ($fn in $a, $b) {
+    Same "both $fn" "$fn(1)" '1'
+    $width = if ($fn -eq $a) { '1' } else { '{1,1}' }
+    Same "width alone $fn" "SUM($width)" '1'
+    if ($fn -eq $a) {
+        Same 'only a' "$fn(2)" '2'
+    }
+    if ($fn -ne $a) {
+        Same 'only b' "$fn(3)" '3'
+        Same 'only b again' "$fn(4)" '4'
+    }
+    Same "both again $fn" "$fn(5)" '5'
+}
+"#;
+        let calls = script_calls(script, &known(&["Aλ", "Bλ"]), "t.ps1").unwrap();
+        assert_eq!(
+            totals(&calls),
+            BTreeMap::from([("oz.Aλ".into(), 3), ("oz.Bλ".into(), 4)])
+        );
+    }
+
+    #[test]
+    fn only_arguments_excel_evaluates_count() {
+        let script = r#"
+function Probe($id) {
+    Same $id "oz.W$L(1)" '1'
+}
+Same 'display' "'Sheet'!B1" "=oz.X$L(1)"
+Same "an id naming oz.Y$L" "1" '1'
+Near 'want runs' "1" "oz.Z$L(1)"
+"#;
+        let calls = script_calls(script, &known(&["Wλ", "Xλ", "Yλ", "Zλ"]), "t.ps1").unwrap();
+        assert_eq!(totals(&calls), BTreeMap::from([("oz.Zλ".into(), 1)]));
     }
 
     #[test]
