@@ -145,7 +145,10 @@ counted: a name reached only from inside another function's definition, and a na
 the script builds at run time, such as `"oz.Rolling$($r[0])$L"`, so the 4 rolling
 functions miss the 6 calls each that test them and `RollingAvgλ`, `RollingMaxλ` and
 `RollingMinλ` read 0. The
-record can understate a function's checks; it should not overstate them. `ozzit native_checks`
+record can understate a function's checks; it should not overstate them, so a variable
+a loop changed names nothing after the loop, and `ozzit native_checks` refuses an
+assertion inside an `if`, `elseif`, `else` or `switch` block other than an `if ($a -eq $b) {`
+or `-ne` that narrows a loop variable. `ozzit native_checks`
 writes the record from those tracked files without Excel, and the tool tests fail
 when it is stale.
 

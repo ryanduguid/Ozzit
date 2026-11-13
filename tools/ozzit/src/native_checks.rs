@@ -39,14 +39,21 @@ const CALL: &str = r"(?s)^\s*(Check|Near|Same|SameAsArray|Fuzz)\s+(?:'([a-z]+):)
 /// `if ($a -eq $b) {` or `-ne`, alone on its line: the block narrows `$a`.
 const NARROW: &str = r"^\s*if\s*\(\s*\$([A-Za-z_][A-Za-z0-9_]*)\s+-(eq|ne)\s+\$([A-Za-z_][A-Za-z0-9_]*)\s*\)\s*\{\s*$";
 const FUNCTION: &str = r"^\s*function\s.*\{\s*$";
+/// An `if`, `elseif`, `else` or `switch` block left open on its line, which `NARROW` does not
+/// match: the record cannot tell which names reach its calls.
+const BRANCH: &str = r"^\s*(?:\}\s*)?(?:if|elseif|else|switch)\b(?:.*[^}\s])?\s*$";
 /// The condition of `$x = if (...) { ... } else { ... }`, which names no value of `$x`.
 const IF_CONDITION: &str = r"^\s*if\s*\([^()]*\)";
 
-/// A block opened at `indent`: a function body, whose calls are not assertions, or
-/// an `if` that narrows a variable, whose names are restored when the block ends.
+/// A block opened at `indent`: a function body, whose calls are not assertions; an
+/// `if` that narrows a variable, whose names are restored when the block ends; a
+/// `BRANCH`, whose calls are refused; or a `foreach` body, which forgets the
+/// variables it changed when it ends, as they then hold only the last item's names.
 enum Scope {
     Function(usize),
     Narrow(usize, String, Option<BTreeSet<String>>),
+    Branch(usize),
+    Loop(usize, Variables),
 }
 
 fn indent(line: &str) -> usize {
@@ -147,16 +154,23 @@ type Variables = BTreeMap<String, BTreeSet<String>>;
 fn close_scopes(line: &str, scopes: &mut Vec<Scope>, variables: &mut Variables) {
     while let Some(scope) = scopes.last() {
         let opened = match scope {
-            Scope::Function(at) | Scope::Narrow(at, ..) => *at,
+            Scope::Function(at)
+            | Scope::Narrow(at, ..)
+            | Scope::Branch(at)
+            | Scope::Loop(at, _) => *at,
         };
         if !(line.trim_start().starts_with('}') && indent(line) <= opened) {
             break;
         }
-        if let Some(Scope::Narrow(_, name, saved)) = scopes.pop() {
-            match saved {
-                Some(names) => variables.insert(name, names),
-                None => variables.remove(&name),
-            };
+        match scopes.pop() {
+            Some(Scope::Narrow(_, name, saved)) => {
+                match saved {
+                    Some(names) => variables.insert(name, names),
+                    None => variables.remove(&name),
+                };
+            }
+            Some(Scope::Loop(_, before)) => variables.retain(|k, v| before.get(k) == Some(v)),
+            _ => {}
         }
     }
 }
@@ -180,12 +194,24 @@ fn narrow(line: &str, m: &[String], variables: &mut Variables) -> Scope {
     Scope::Narrow(indent(line), name, saved)
 }
 
+/// The function, `NARROW` or `BRANCH` block `line` opens, if any.
+fn open_block(line: &str, variables: &mut Variables) -> Option<Scope> {
+    if matches(FUNCTION, line) {
+        return Some(Scope::Function(indent(line)));
+    }
+    if let Some(m) = captures(NARROW, line).first() {
+        return Some(narrow(line, m, variables));
+    }
+    matches(BRANCH, line).then(|| Scope::Branch(indent(line)))
+}
+
 /// The assertion calls in a script and the library names each reaches.
 ///
 /// Variables take the names their latest assignment or `foreach` header holds, in
 /// line order, so a variable reused in a later section names only that section's
 /// functions. PowerShell variable names are case-insensitive. A block ends at the
-/// first later line that starts with `}` at or left of its opening indent.
+/// first later line that starts with `}` at or left of its opening indent. An
+/// assertion inside a `BRANCH` is refused rather than counted for every name.
 fn script_calls(text: &str, known: &BTreeSet<String>, file: &str) -> Result<Calls> {
     let mut variables = Variables::new();
     let mut scopes: Vec<Scope> = Vec::new();
@@ -195,16 +221,20 @@ fn script_calls(text: &str, known: &BTreeSet<String>, file: &str) -> Result<Call
             continue;
         }
         close_scopes(&line, &mut scopes, &mut variables);
-        if matches(FUNCTION, &line) {
-            scopes.push(Scope::Function(indent(&line)));
-            continue;
-        }
-        if let Some(m) = captures(NARROW, &line).first() {
-            scopes.push(narrow(&line, m, &mut variables));
+        if let Some(scope) = open_block(&line, &mut variables) {
+            scopes.push(scope);
             continue;
         }
         if scopes.iter().any(|s| matches!(s, Scope::Function(_))) {
             continue;
+        }
+        if let Some(m) = captures(FOREACH, &line).first() {
+            // A loop closed on its own line leaves its variable holding the last item.
+            if line.trim_end().ends_with('}') {
+                variables.remove(&m[1].to_lowercase());
+                continue;
+            }
+            scopes.push(Scope::Loop(indent(&line), variables.clone()));
         }
         for pattern in [FOREACH, ASSIGNMENT] {
             if let Some(m) = captures(pattern, &line).first() {
@@ -213,6 +243,12 @@ fn script_calls(text: &str, known: &BTreeSet<String>, file: &str) -> Result<Call
             }
         }
         if let Some(m) = captures(CALL, &line).first() {
+            if scopes.iter().any(|s| matches!(s, Scope::Branch(_))) {
+                return Err(format!(
+                    "{file}: {} is inside an if, elseif, else or switch block that does not narrow a variable",
+                    line.trim()
+                ));
+            }
             for name in names_in(&evaluated(line.trim_start()), &variables) {
                 if !known.contains(&name) {
                     return Err(format!("{file} calls {name}, which {INDEX} does not list"));
@@ -472,6 +508,57 @@ Same 'top' "$fn(2)" '2'
 "#;
         let calls = script_calls(script, &known(&["Aλ", "Bλ"]), "t.ps1").unwrap();
         assert_eq!(totals(&calls), BTreeMap::from([("oz.Aλ".into(), 1)]));
+    }
+
+    #[test]
+    fn a_call_in_a_block_that_does_not_narrow_is_refused() {
+        let blocks = [
+            "if ($fn -eq $a) {\n        Same 'a' '1' '1'\n    } else {",
+            "if ($fn -eq $a) {\n        Same 'a' '1' '1'\n    } elseif ($fn -eq $b) {",
+            "switch ($fn) {\n        $b {",
+            "if ($fn -eq \"oz.A$L\") {",
+        ];
+        for block in blocks {
+            let script = format!(
+                "$a = \"oz.A$L\"\n$b = \"oz.B$L\"\nforeach ($fn in $a, $b) {{\n    {block}\n        Same 'inner' \"$fn(1)\" '1'\n    }}\n}}\n"
+            );
+            let error = script_calls(&script, &known(&["Aλ", "Bλ"]), "t.ps1").unwrap_err();
+            assert_eq!(
+                error,
+                "t.ps1: Same 'inner' \"$fn(1)\" '1' is inside an if, elseif, else or switch block that does not narrow a variable",
+                "{block}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_loop_forgets_the_variables_it_changed_when_it_ends() {
+        let script = r#"
+$a = "oz.A$L"
+$b = "oz.B$L"
+$call = "oz.C$L(0)"
+$kept = "oz.D$L(0)"
+foreach ($fn in $a, $b) {
+    $call = "$fn(1)"
+    Same "in $fn" $call '1'
+}
+foreach ($one in $a, $b) { $one }
+Same 'after' "$fn(2)" '2'
+Same 'after alias' "$call" '2'
+Same 'after one-line loop' "$one(2)" '2'
+Same 'unchanged' "$kept" '0'
+$fn = $a
+Same 'reassigned' "$fn(3)" '3'
+"#;
+        let calls = script_calls(script, &known(&["Aλ", "Bλ", "Cλ", "Dλ"]), "t.ps1").unwrap();
+        assert_eq!(
+            totals(&calls),
+            BTreeMap::from([
+                ("oz.Aλ".into(), 2),
+                ("oz.Bλ".into(), 1),
+                ("oz.Dλ".into(), 1)
+            ])
+        );
     }
 
     #[test]
