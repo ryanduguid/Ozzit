@@ -458,6 +458,23 @@ Same 'top' "$fn(1)" '1'
     }
 
     #[test]
+    fn a_narrowing_if_inside_a_function_leaves_top_level_aliases() {
+        let script = r#"
+$a = "oz.A$L"
+$b = "oz.B$L"
+$fn = $a
+function Probe {
+    if ($fn -eq $b) {
+        Same 'inner' "$fn(1)" '1'
+    }
+}
+Same 'top' "$fn(2)" '2'
+"#;
+        let calls = script_calls(script, &known(&["Aλ", "Bλ"]), "t.ps1").unwrap();
+        assert_eq!(totals(&calls), BTreeMap::from([("oz.Aλ".into(), 1)]));
+    }
+
+    #[test]
     fn calls_split_by_id_prefix() {
         let script = "Same 'help: X${L}' \"INDEX(oz.X${L}(),1,1)\" 'FUNCTION:'\n\
                       Near 'example: X${L} #1' \"oz.X${L}(1)\" '2'\n\
