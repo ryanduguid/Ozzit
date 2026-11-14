@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "This metadata describes Ozzit 3.5.0, published on 19 October 2026 from the signed tag v3.5.0. v3.4.2 and earlier remain MIT licensed."
+message: "This metadata describes Ozzit 3.6.0, cut on 14 November 2026. Cite its exact commit until the v3.6.0 tag is published. v3.5.0 remains Apache-2.0 licensed, and v3.4.2 and earlier MIT licensed."
 title: Ozzit
 abstract: >-
   A library of native Microsoft Excel LAMBDA functions for building
@@ -9,10 +9,10 @@ authors:
     given-names: Ryan
     website: "https://duguid.com.au/"
 type: software
-version: 3.5.0
-date-released: 2026-10-19
+version: 3.6.0
+date-released: 2026-11-14
 repository-code: "https://github.com/ryanduguid/Ozzit"
-license: Apache-2.0
+license-url: "https://github.com/ryanduguid/Ozzit/blob/main/LICENSE"
 keywords:
   - Microsoft Excel
   - LAMBDA

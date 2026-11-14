@@ -42,6 +42,10 @@ published 19 October 2026 from the cut dated 19 October 2026, with 143 functions
 [Download ozzit.xlsx](https://github.com/ryanduguid/Ozzit/releases/download/v3.5.0/ozzit.xlsx)
 (462,490 bytes, SHA-256 `76d3722c785abd3813ffffffc5fbb2d6ab80628da10fb7f36cea7c67fd171330`).
 
+**Next release: v3.6.0**, cut dated 14 November 2026 from `main` with 150 functions, is
+not yet tagged or published. Once it is, it will be at
+[releases/tag/v3.6.0](https://github.com/ryanduguid/Ozzit/releases/tag/v3.6.0).
+
 **Fixed in v3.5.0, still present in v3.4.2.** One blank cell in a column of GST rates gives every row
 10%, zero-rated rows included; one blank opening in `oz.Movementλ` sets every row's
 opening to 0; and negative CFADS raises the balance in `oz.DebtSculptFixedλ` and
@@ -209,7 +213,13 @@ Background:
 
 The current release is v3.5.0, dated 19 October 2026, under Apache-2.0. It was published on 19 October 2026 from the signed tag `v3.5.0` on commit `40b0408c3f1bd9a9cea7cf1580bd039bcba03fde`, after the native gates [RELEASING.md](RELEASING.md) requires ran on the exact file it ships. The [release page](https://github.com/ryanduguid/Ozzit/releases/tag/v3.5.0) carries `ozzit.xlsx`, `provenance.json` and `SHA256SUMS`, and GitHub reports the release immutable. [The v3.5.0 changes](CHANGELOG.md) describe what it adds. v3.4.2 (dated 16 September 2026, published 20 September 2026 from commit `621af0e265306f00a83e17c4d27dca09031c5ccd`) and earlier releases remain under MIT.
 
-v3.5.0 `ozzit.xlsx` SHA-256: `76d3722c785abd3813ffffffc5fbb2d6ab80628da10fb7f36cea7c67fd171330` (462,490 bytes), the same bytes as the release asset. `main` is ahead of that tag, so the file you clone is not the file the release ships: the tracked `ozzit.xlsx` is SHA-256 `55b1a61a034c92e0230416f2f92224f69d36f37a65e9a9696ad34121c5627ec6` (485,256 bytes), pinned in [release/workbook-base.json](release/workbook-base.json) and checked by the tool tests, and adds the 7 functions and the changes listed under Unreleased in the [changelog](CHANGELOG.md). On 14 November 2026, Excel 16.0 build 20625 recalculated 1,129 formulas in the tracked workbook with 0 in error, ran 1,294 self-test assertions with 0 failures and found 19,483 cached values equal to what their formulas produce. The workbook was byte-identical before and after both native gates.
+**v3.6.0**, cut dated 14 November 2026 under the Ryan Duguid Public Attribution Licence 1.0,
+is not yet tagged or published. Its [citation metadata](CITATION.cff) names the cut; until
+the tag exists, record the exact commit when citing it. [The v3.6.0 changes](CHANGELOG.md)
+describe the workbook and source views included in this cut, and its known issues.
+Publication requires the 17 gates and exact-candidate approval in [RELEASING.md](RELEASING.md).
+
+v3.5.0 `ozzit.xlsx` SHA-256: `76d3722c785abd3813ffffffc5fbb2d6ab80628da10fb7f36cea7c67fd171330` (462,490 bytes), the same bytes as the release asset. `main` is ahead of that tag, so the file you clone is not the file the release ships: the tracked `ozzit.xlsx` is SHA-256 `55b1a61a034c92e0230416f2f92224f69d36f37a65e9a9696ad34121c5627ec6` (485,256 bytes), pinned in [release/workbook-base.json](release/workbook-base.json) and checked by the tool tests, and adds the 7 functions and the changes listed under v3.6.0 in the [changelog](CHANGELOG.md). On 14 November 2026, Excel 16.0 build 20625 recalculated 1,129 formulas in the tracked workbook with 0 in error, ran 1,294 self-test assertions with 0 failures and found 19,483 cached values equal to what their formulas produce. The workbook was byte-identical before and after both native gates.
 
 - [Repository checks](AGENTS.md) and [release and native verification](RELEASING.md)
 - [Changes](CHANGELOG.md) and [citation](CITATION.cff)

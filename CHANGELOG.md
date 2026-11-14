@@ -1,9 +1,14 @@
 # Changelog
 
-## Unreleased
+## v3.6.0, 14 November 2026, variance, financial-year periods, level payments and an attribution licence
 
-Changes on `main` since v3.5.0. They reach the published workbook in the next
-release; until then v3.5.0 behaves as it did.
+Cut on 14 November 2026 from the changes on `main` since v3.5.0. It is not yet tagged
+or published; until it is, v3.5.0 behaves as it did, including the defects fixed here.
+The defects that remain are listed under [Known issues](#known-issues).
+
+**Licence:** v3.6.0 is the first release under the
+[Ryan Duguid Public Attribution Licence 1.0](LICENSE); v3.5.0 stays under Apache-2.0,
+and v3.4.2 and earlier releases under MIT. See Changed below.
 
 ### Added
 
@@ -168,6 +173,21 @@ shape and values from one range, again until they agree, and fails if they never
 `ozzit verify_cache` had failed
 1 of 3 runs on an unchanged workbook with an invalid cell position, on the line that
 holds the first cell of a sheet, where a blank read would write a position of 0.
+
+### Known issues
+
+- `oz.CorkScrewReversalλ` still totals each period's flows with SUM, as `oz.Corkscrewλ`
+  did before the fix above, so a flow typed as text, such as "100", or TRUE shows in the
+  flows row but is left out of the closing balance. Opening is not checked either.
+  Enter every flow as a number or leave the cell blank.
+- `oz.CorkscrewλDV`, which checks `oz.Corkscrewλ`'s arguments, refuses a blank Opening,
+  blank flow cells and empty text in a flow, all of which `oz.Corkscrewλ` accepts as
+  nil. Its message that Opening or a flow must contain only numeric values can therefore
+  flag a corkscrew that calculates correctly.
+- `oz.txt` ends 4 comment lines with a tab, in `oz.IntOnIntλ` and `oz.IRRλ`. Microsoft's
+  module import page says the Advanced Formula Environment allows no tab characters in a
+  module and imports only from a GitHub gist URL. Importing `oz.txt` has not been tested;
+  the workbook is unaffected.
 
 ## v3.5.0, 19 October 2026, ATO benchmark ratios, a dated rate lookup and Apache-2.0
 
