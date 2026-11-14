@@ -2,9 +2,9 @@
 
 ## v3.6.0, 14 November 2026, variance, financial-year periods, level payments and an attribution licence
 
-Cut on 14 November 2026 from the changes on `main` since v3.5.0. It is not yet tagged
-or published; until it is, v3.5.0 behaves as it did, including the defects fixed here.
-The defects that remain are listed under [Known issues](#known-issues).
+Cut on 14 November 2026 from the changes on `main` since v3.5.0. v3.5.0 still behaves as
+it did, including the defects fixed here. The defects that remain are listed under
+[Known issues](#known-issues).
 
 **Licence:** v3.6.0 is the first release under the
 [Ryan Duguid Public Attribution Licence 1.0](LICENSE); v3.5.0 stays under Apache-2.0,
@@ -68,6 +68,26 @@ are written out with the checks behind them.
 
 They reach the workbook through `ozzit level_payment_corkscrew_rate`, under a new LOANS
 heading in the Financial About table. The cover label moves to 150 functions.
+
+#### Install routes and a function reference
+
+- The repository is a Claude Code plugin marketplace whose `ozzit` plugin installs
+  [the Ozzit skill](skills/ozzit/SKILL.md):
+  `claude plugin marketplace add ryanduguid/Ozzit`, then
+  `claude plugin install ozzit@ozzit`. The marketplace follows `main`, so supply the
+  approved bundle revision. Its manifests pass `claude plugin validate`; installing it
+  from GitHub has not been tested.
+- The README gives 3 more routes, none tested end to end: upload the zipped
+  `skills/ozzit` folder as a Skill for Claude for Excel, give `SKILL.md` to Copilot in
+  Excel's skill builder, or import `oz.txt` as one module from its URL at the `v3.5.0`
+  tag in the Advanced Formula Environment (see [Known issues](#known-issues)). A table
+  on its first screen states that only Windows desktop Excel has been tested.
+- `ozzit function_reference <src dir> <functions.csv> <output.json>` writes each
+  function's own help, its signature, description, parameters, notes and worked
+  examples, as one JSON file joined to `functions.csv`, so a website or an agent can
+  document every function from the source. It fails when a name is missing from either
+  side, listed twice or filed under another module, or when a help signature differs
+  from the index other than in spacing.
 
 ### Changed
 
