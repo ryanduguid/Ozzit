@@ -2,8 +2,35 @@
 
 ## Unreleased
 
-Changes on `main` since v3.5.0. They reach the published workbook in the next
-release; until then v3.5.0 behaves as it did.
+Changes on `main` since the v3.6.0 cut. They reach the published workbook in the next
+release; until then v3.6.0 behaves as it did, including its first 2 known issues,
+which these changes fix.
+
+### Fixed
+
+- `oz.CorkScrewReversalλ` totalled its flows with SUM, as `oz.Corkscrewλ` did before
+  v3.6.0, and checked neither Opening nor flows, so a flow typed as text was left out
+  of the closing balance. It now takes
+  `oz.Corkscrewλ`'s checks and messages: a flow that is text, TRUE or FALSE, and an
+  Opening that is not a single number or blank cell, return a message, and an Opening
+  of empty text counts as nil. Numbers and blank cells give the same result as before.
+  Empty text in a flow is nil, and an error still shows.
+- `oz.CorkscrewλDV` refused a blank or empty-text Opening and blank or empty-text flow
+  cells, which `oz.Corkscrewλ` accepts as nil, and returned an error for an Opening of
+  several cells, which `oz.Corkscrewλ` refuses. It now refuses the same values and
+  shapes as `oz.Corkscrewλ`, and its messages say a blank cell is allowed. It still
+  names an argument that holds an error, which `oz.Corkscrewλ` lets through when nothing
+  else is wrong, so the error shows.
+
+## v3.6.0, 14 November 2026, variance, financial-year periods, level payments and an attribution licence
+
+Cut on 14 November 2026 from the changes on `main` since v3.5.0. v3.5.0 still behaves as
+it did, including the defects fixed here. The defects that remain are listed under
+[Known issues](#known-issues).
+
+**Licence:** v3.6.0 is the first release under the
+[Ryan Duguid Public Attribution Licence 1.0](LICENSE); v3.5.0 stays under Apache-2.0,
+and v3.4.2 and earlier releases under MIT. See Changed below.
 
 ### Added
 
@@ -64,6 +91,26 @@ are written out with the checks behind them.
 They reach the workbook through `ozzit level_payment_corkscrew_rate`, under a new LOANS
 heading in the Financial About table. The cover label moves to 150 functions.
 
+#### Install routes and a function reference
+
+- The repository is a Claude Code plugin marketplace whose `ozzit` plugin installs
+  [the Ozzit skill](skills/ozzit/SKILL.md):
+  `claude plugin marketplace add ryanduguid/Ozzit`, then
+  `claude plugin install ozzit@ozzit`. The marketplace follows `main`, so supply the
+  approved bundle revision. Its manifests pass `claude plugin validate`; installing it
+  from GitHub has not been tested.
+- The README gives 3 more routes, none tested end to end: upload the zipped
+  `skills/ozzit` folder as a Skill for Claude for Excel, give `SKILL.md` to Copilot in
+  Excel's skill builder, or import `oz.txt` as one module from its URL at the `v3.5.0`
+  tag in the Advanced Formula Environment (see [Known issues](#known-issues)). A table
+  on its first screen states that only Windows desktop Excel has been tested.
+- `ozzit function_reference <src dir> <functions.csv> <output.json>` writes each
+  function's own help, its signature, description, parameters, notes and worked
+  examples, as one JSON file joined to `functions.csv`, so a website or an agent can
+  document every function from the source. It fails when a name is missing from either
+  side, listed twice or filed under another module, or when a help signature differs
+  from the index other than in spacing.
+
 ### Changed
 
 - Relicensed from Apache-2.0 to the Ryan Duguid Public Attribution Licence,
@@ -113,18 +160,6 @@ heading in the Financial About table. The cover label moves to 150 functions.
   `oz.CorkscrewRateλ` does. Numbers, blank cells and empty text in a flow give the
   same result as before; an Opening of empty text now counts as nil instead of
   returning #VALUE!, and an error still shows.
-- `oz.CorkScrewReversalλ` also totalled its flows with SUM and checked neither Opening
-  nor flows, so a flow typed as text was left out of the closing balance. It now takes
-  `oz.Corkscrewλ`'s checks and messages: a flow that is text, TRUE or FALSE, and an
-  Opening that is not a single number or blank cell, return a message, and an Opening
-  of empty text counts as nil. Numbers and blank cells give the same result as before.
-  Empty text in a flow is nil, and an error still shows.
-- `oz.CorkscrewλDV` refused a blank or empty-text Opening and blank or empty-text flow
-  cells, which `oz.Corkscrewλ` accepts as nil, and returned an error for an Opening of
-  several cells, which `oz.Corkscrewλ` refuses. It now refuses the same values and
-  shapes as `oz.Corkscrewλ`, and its messages say a blank cell is allowed. It still
-  names an argument that holds an error, which `oz.Corkscrewλ` lets through when nothing
-  else is wrong, so the error shows.
 - `oz.Depreciateλ` help now says that its Revenue from Sale row is the salvage value,
   shown in the disposal period, not sale proceeds, and that DV and PC make it 0. The
   arithmetic is unchanged.
@@ -180,6 +215,21 @@ shape and values from one range, again until they agree, and fails if they never
 `ozzit verify_cache` had failed
 1 of 3 runs on an unchanged workbook with an invalid cell position, on the line that
 holds the first cell of a sheet, where a blank read would write a position of 0.
+
+### Known issues
+
+- `oz.CorkScrewReversalλ` still totals each period's flows with SUM, as `oz.Corkscrewλ`
+  did before the fix above, so a flow typed as text, such as "100", or TRUE shows in the
+  flows row but is left out of the closing balance. Opening is not checked either.
+  Enter every flow as a number or leave the cell blank.
+- `oz.CorkscrewλDV`, which checks `oz.Corkscrewλ`'s arguments, refuses a blank Opening,
+  blank flow cells and empty text in a flow, all of which `oz.Corkscrewλ` accepts as
+  nil. Its message that Opening or a flow must contain only numeric values can therefore
+  flag a corkscrew that calculates correctly.
+- `oz.txt` ends 4 comment lines with a tab, in `oz.IntOnIntλ` and `oz.IRRλ`. Microsoft's
+  module import page says the Advanced Formula Environment allows no tab characters in a
+  module and imports only from a GitHub gist URL. Importing `oz.txt` has not been tested;
+  the workbook is unaffected.
 
 ## v3.5.0, 19 October 2026, ATO benchmark ratios, a dated rate lookup and Apache-2.0
 
