@@ -118,12 +118,13 @@ heading in the Financial About table. The cover label moves to 150 functions.
   `oz.Corkscrewλ`'s checks and messages: a flow that is text, TRUE or FALSE, and an
   Opening that is not a single number or blank cell, return a message, and an Opening
   of empty text counts as nil. Numbers and blank cells give the same result as before.
+  Empty text in a flow is nil, and an error still shows.
 - `oz.CorkscrewλDV` refused a blank or empty-text Opening and blank or empty-text flow
   cells, which `oz.Corkscrewλ` accepts as nil, and returned an error for an Opening of
   several cells, which `oz.Corkscrewλ` refuses. It now refuses the same values and
   shapes as `oz.Corkscrewλ`, and its messages say a blank cell is allowed. It still
-  names an argument that holds an error, which `oz.Corkscrewλ` lets through so the
-  error shows.
+  names an argument that holds an error, which `oz.Corkscrewλ` lets through when nothing
+  else is wrong, so the error shows.
 - `oz.Depreciateλ` help now says that its Revenue from Sale row is the salvage value,
   shown in the disposal period, not sale proceeds, and that DV and PC make it 0. The
   arithmetic is unchanged.

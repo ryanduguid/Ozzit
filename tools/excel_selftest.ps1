@@ -136,6 +136,8 @@ foreach ($r in @(@('100, {0,1}, {1,"2"}', $crvFlow), @('100, {0,1}, {1,2}, {TRUE
 Near 'CorkScrewReversal: an empty-text Opening is nil' "SUM(ABS($cr(`"`", {0,1}, {1,2}) - $cr(0, {0,1}, {1,2})))" '0'
 # AD1 is blank and AE1:AF1 holds 1 and 2: numbers and blank cells give the same result as before.
 Near 'CorkScrewReversal: numbers and blank cells' "SUM(ABS($cr(100, AD1:AE1, {10,20}, AE1:AF1) - {100,111;0,-111;10,20;1,2;111,22}))" '0'
+# Z1 and AI1:AJ1 are blank: a blank Opening and blank flow cells are nil, as in Corkscrew.
+Near 'CorkScrewReversal: blank Opening and flow cells are nil' "SUM(ABS($cr(Z1, {0,1}, AI1:AJ1) - $cr(0, {0,1}, {0,0})))" '0'
 
 # --- Financial year. The headline use is labelling a COLUMN of dates, so the array
 # path matters more than the scalar one.
