@@ -88,7 +88,7 @@
    "CorkscrewλDV drops the undocumented Diagnostics parameter",
    [
     "_xlop.Flow4,_xlop.Diagnostics, _xlfn.LET(_xlpm.ErrorsInArgs,",
-    "_xlop.Flow4, _xlfn.LET(_xlpm.ErrorsInArgs,"
+    "_xlop.Flow4, _xlfn.LET( _xlpm.ErrorsInArgs,"
    ],
    [
     "    [Flow4],\n    [Diagnostics],\n\n    LET(\n    //  Check inputs - Errors in argument values\n        ErrorsInArgs,   VSTACK( \n                            OR( ISERROR( Opening)),",
@@ -100,7 +100,7 @@
    "CorkscrewλDV shows its messages the way AmortiseλDV and DepreciateλDV do",
    [
     "_xlpm.Errors2Show, _xlfn.VSTACK(_xlpm.Diagnostics * _xlpm.ErrorsInArgs, _xlpm.Diagnostics * _xlpm.DVErrors), _xlpm.ErrMsgs, {\"Opening contains errors",
-    "_xlpm.Errors2Show, _xlfn.VSTACK(_xlpm.ErrorsInArgs, _xlpm.DVErrors), _xlpm.ErrMsgs, {\"Opening contains errors"
+    "_xlpm.Errors2Show, _xlfn.VSTACK( _xlpm.ErrorsInArgs, _xlpm.DVErrors), _xlpm.ErrMsgs, {\"Opening contains errors"
    ],
    [
     "        Errors2Show,    VSTACK( Diagnostics * ErrorsInArgs, Diagnostics * DVErrors), \n        ErrMsgs,        {\"Opening contains errors",

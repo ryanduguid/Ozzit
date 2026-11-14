@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased
+
+Changes on `main` since the v3.6.0 cut. They reach the published workbook in the next
+release; until then v3.6.0 behaves as it did, including its first 2 known issues,
+which these changes fix.
+
+### Fixed
+
+- `oz.CorkScrewReversalλ` totalled its flows with SUM, as `oz.Corkscrewλ` did before
+  v3.6.0, and checked neither Opening nor flows, so a flow typed as text was left out
+  of the closing balance. It now takes
+  `oz.Corkscrewλ`'s checks and messages: a flow that is text, TRUE or FALSE, and an
+  Opening that is not a single number or blank cell, return a message, and an Opening
+  of empty text counts as nil. Numbers and blank cells give the same result as before.
+  Empty text in a flow is nil, and an error still shows.
+- `oz.CorkscrewλDV` refused a blank or empty-text Opening and blank or empty-text flow
+  cells, which `oz.Corkscrewλ` accepts as nil, and returned an error for an Opening of
+  several cells, which `oz.Corkscrewλ` refuses. It now refuses the same values and
+  shapes as `oz.Corkscrewλ`, and its messages say a blank cell is allowed. It still
+  names an argument that holds an error, which `oz.Corkscrewλ` lets through when nothing
+  else is wrong, so the error shows.
+
 ## v3.6.0, 14 November 2026, variance, financial-year periods, level payments and an attribution licence
 
 Cut on 14 November 2026 from the changes on `main` since v3.5.0. v3.5.0 still behaves as
