@@ -110,9 +110,14 @@ pub fn inventory_of(csv: &Csv, name: &str) -> Result<(usize, usize)> {
     }
     let help = names
         .iter()
-        .filter(|s| s.expect("checked name").starts_with("oz.About"))
+        .filter(|s| is_help(s.expect("checked name")))
         .count();
     Ok((names.len() - help, help))
+}
+
+/// Whether an index name is a help table rather than a function.
+pub fn is_help(name: &str) -> bool {
+    name.starts_with("oz.About")
 }
 
 pub fn current_cut_date(changelog: &Path) -> Result<String> {

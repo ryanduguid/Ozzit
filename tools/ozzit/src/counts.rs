@@ -15,11 +15,15 @@
 //! so reflowing a paragraph keeps its statement; a pattern that needs one literal
 //! space, as inside a class, writes `\x20`.
 //!
+//! The function guide also counts the names without a worksheet of their own in
+//! `ozzit.xlsx`, which `main`'s index and workbook give.
+//!
 //! A new place that states the size fails too: tracked prose, text and images are
 //! swept for a function or name count the library has had, or any help-table
 //! count, outside the register and its exemptions. `sync_counts` rewrites the
 //! statements about `main` and the newest release after a release is tagged.
 use crate::{
+    archive::{BOOK, member_text, open_zip},
     cache::{Dump, run_process},
     common::*,
     cover, py,
@@ -72,7 +76,10 @@ pub enum Basis {
 
 /// File, what the statement is, its basis and its pattern. The named groups
 /// `functions`, `help` and `names` capture the counts; `version` the release.
-pub const STATEMENTS: [(&str, &str, Basis, &str); 18] = [
+/// `sheetless`, `sheetless_functions` and `sheetless_help` capture the names,
+/// functions and help tables without a worksheet named for them in `ozzit.xlsx`;
+/// only `main`'s workbook gives them, so they are registered with [`Basis::Main`].
+pub const STATEMENTS: [(&str, &str, Basis, &str); 19] = [
     (
         "README.md",
         "banner alt text",
@@ -144,6 +151,12 @@ pub const STATEMENTS: [(&str, &str, Basis, &str); 18] = [
         "index size",
         Basis::Main,
         r"indexes all (?P<names>\d+) names",
+    ),
+    (
+        "docs/function-guide.md",
+        "names without a worksheet",
+        Basis::Main,
+        r"The other (?P<sheetless>\d+) named formulas have no dedicated worksheet: (?P<sheetless_functions>\d+) LAMBDA functions and (?P<sheetless_help>\d+) About tables",
     ),
     (
         "docs/workbook-use.md",
@@ -323,9 +336,34 @@ struct Edit {
     text: String,
 }
 
+/// The functions and help tables in `index` without a worksheet named for them in
+/// `workbook`.
+fn sheetless(index: &Path, workbook: &Path) -> Result<Inventory> {
+    let book = member_text(&open_zip(workbook)?, BOOK)?;
+    // An index name has no character XML escapes, so names compare unescaped.
+    let sheets = captures(r#"<sheet\b[^>]*?\sname="([^"]*)""#, &book)
+        .into_iter()
+        .map(|m| m[1].clone())
+        .collect::<BTreeSet<_>>();
+    let csv = Csv::read(index)?;
+    let names = csv
+        .rows
+        .iter()
+        .filter_map(|row| csv.get(row, "function"))
+        .filter(|name| !sheets.contains(*name))
+        .collect::<Vec<_>>();
+    let help = names.iter().filter(|name| cover::is_help(name)).count();
+    Ok(Inventory {
+        functions: names.len() - help,
+        help,
+    })
+}
+
 struct Checker<'a> {
     releases: &'a dyn Releases,
     main: Inventory,
+    /// `main`'s names without a worksheet of their own.
+    sheetless: Inventory,
     /// The changelog's newest cut, which `main` describes until it is tagged.
     cut: String,
     tags: Vec<String>,
@@ -453,10 +491,26 @@ impl Checker<'_> {
             }
         };
         self.checked += 1;
+        let sheetless = self.sheetless;
         for (group, noun, count) in [
             ("functions", "functions", index.functions),
             ("help", "help tables", index.help),
             ("names", "names", index.functions + index.help),
+            (
+                "sheetless",
+                "names without a worksheet",
+                sheetless.functions + sheetless.help,
+            ),
+            (
+                "sheetless_functions",
+                "functions without a worksheet",
+                sheetless.functions,
+            ),
+            (
+                "sheetless_help",
+                "help tables without a worksheet",
+                sheetless.help,
+            ),
         ] {
             let Some(found) = matched.name(group) else {
                 continue;
@@ -719,6 +773,7 @@ fn run_checks<'a>(
     strict: bool,
 ) -> Result<(Checker<'a>, Vec<String>)> {
     let (functions, help) = cover::inventory(&root.join("functions.csv"))?;
+    let sheetless = sheetless(&root.join("functions.csv"), &root.join("ozzit.xlsx"))?;
     let (cut, _) = cover::current_cut(&root.join("CHANGELOG.md"))?;
     let mut out = Vec::new();
     let mut failures = Vec::new();
@@ -726,6 +781,7 @@ fn run_checks<'a>(
     let mut checker = Checker {
         releases,
         main: Inventory { functions, help },
+        sheetless,
         cut,
         tags,
         latest,

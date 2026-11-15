@@ -49,6 +49,9 @@ listed in `EXEMPT`. `ozzit sync_counts` rewrites the statements about `main` and
 the newest release after a release is tagged; statements naming a release, the
 About description and the drawn banners and social card stay with the
 maintainer. The social card is registered, now that it states the current count.
+The function guide's count of the names without a worksheet of their own, and its
+split into LAMBDA functions and About tables, is registered too: it compares
+with the names in `functions.csv` that no sheet in `ozzit.xlsx` is named for.
 
 `native_checks` writes `docs/native-checks.csv`: for each name in
 `functions.csv`, the generated help and worked-example assertions, the
