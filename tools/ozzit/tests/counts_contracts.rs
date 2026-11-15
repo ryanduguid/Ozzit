@@ -68,7 +68,9 @@ impl Releases for Overlay {
         }
     }
     fn tracked(&self) -> Result<Vec<String>> {
-        self.tracked.clone().unwrap_or_else(|| Git(&root()).tracked())
+        self.tracked
+            .clone()
+            .unwrap_or_else(|| Git(&root()).tracked())
     }
 }
 
@@ -262,23 +264,23 @@ fn statements_about_older_releases_are_checked_against_their_tags() {
         )
     };
     let releases = Overlay {
-        extra: vec![("0.9.0", index(7, 2))],
+        extra: vec![("0.9.0", index(61, 2))],
         ..Overlay::default()
     };
     let f = Fixture::new();
-    f.append("README.md", &bullet("0.9.0", 7));
+    f.append("README.md", &bullet("0.9.0", 61));
     passes(&f.check_with(&unchecked(), &releases, false));
     let f = Fixture::new();
     // The count is on the bullet's second line, which a failure names.
-    let line = f.append("README.md", &bullet("0.9.0", 8)) + 1;
+    let line = f.append("README.md", &bullet("0.9.0", 62)) + 1;
     fails_with(
         &f.check_with(&unchecked(), &releases, false),
         &[&format!(
-            "README.md:{line}: the release bullet says 8 functions; v0.9.0 has 7 functions"
+            "README.md:{line}: the release bullet says 62 functions; v0.9.0 has 61 functions"
         )],
     );
     let f = Fixture::new();
-    let line = f.append("README.md", &bullet("0.8.0", 7));
+    let line = f.append("README.md", &bullet("0.8.0", 61));
     fails_with(
         &f.check_with(&unchecked(), &releases, false),
         &[&format!(
@@ -609,9 +611,15 @@ fn a_statement_of_the_size_outside_the_register_fails() {
     fails_with(
         &f.check(),
         &[
-            &format!("FAIL: AGENTS.md:{help}: 'FIVE help tables' states the library's size outside the register; add it to STATEMENTS or EXEMPT in tools/ozzit/src/counts.rs"),
+            &format!(
+                "FAIL: AGENTS.md:{help}: 'FIVE help tables' states the library's size outside the register; add it to STATEMENTS or EXEMPT in tools/ozzit/src/counts.rs"
+            ),
             &format!("FAIL: docs/function-guide.md:{size}: '{n} functions' states"),
-            &format!("FAIL: docs/function-guide.md:{}: '{} names' states", size + 1, n + h),
+            &format!(
+                "FAIL: docs/function-guide.md:{}: '{} names' states",
+                size + 1,
+                n + h
+            ),
         ],
     );
 }
@@ -637,7 +645,10 @@ fn unlisted_tracked_files_skip_the_sweep_offline_and_fail_in_ci() {
         ..Overlay::default()
     };
     let f = Fixture::new();
-    f.append("docs/function-guide.md", &format!("Ozzit has {n} functions."));
+    f.append(
+        "docs/function-guide.md",
+        &format!("Ozzit has {n} functions."),
+    );
     let output = f.check_with(&unchecked(), &releases, false);
     passes(&output);
     assert!(
@@ -678,9 +689,19 @@ fn sync_counts_moves_the_statements_to_a_new_release() {
         .map(|(file, _, _, _)| format!("FAIL: {file}:"))
         .collect::<Vec<_>>();
     assert_eq!(drawn.len(), 5);
-    fails_with(&output, &drawn.iter().map(String::as_str).collect::<Vec<_>>());
-    let stale = format!("the title says {n} functions; v99.0.0 has {} functions", n + 3);
-    assert!(output.out.iter().filter(|l| l.contains(&stale)).count() == 5, "{:?}", output.out);
+    fails_with(
+        &output,
+        &drawn.iter().map(String::as_str).collect::<Vec<_>>(),
+    );
+    let stale = format!(
+        "the title says {n} functions; v99.0.0 has {} functions",
+        n + 3
+    );
+    assert!(
+        output.out.iter().filter(|l| l.contains(&stale)).count() == 5,
+        "{:?}",
+        output.out
+    );
     let changed = |prefix: &str, change: &str| {
         assert!(
             output
@@ -702,7 +723,12 @@ fn sync_counts_moves_the_statements_to_a_new_release() {
         &format!("{} to {}", WORDS[h], WORDS[h + 1]),
     );
     assert_eq!(read("llms.txt"), llms, "a statement naming a release stays");
-    assert!(!output.out.iter().any(|l| l.contains(".svg") && l.starts_with("CHANGED")));
+    assert!(
+        !output
+            .out
+            .iter()
+            .any(|l| l.contains(".svg") && l.starts_with("CHANGED"))
+    );
 }
 
 #[test]
@@ -721,7 +747,11 @@ fn sync_counts_leaves_a_wrong_statement_naming_a_release_failing() {
         .name("functions")
         .unwrap();
     let wrong = stated.as_str().parse::<usize>().unwrap() + 1;
-    let changed = format!("{}{wrong}{}", &text[..stated.start()], &text[stated.end()..]);
+    let changed = format!(
+        "{}{wrong}{}",
+        &text[..stated.start()],
+        &text[stated.end()..]
+    );
     std::fs::write(&path, &changed).unwrap();
     let output = counts::sync_with(f.path(), &Overlay::default());
     fails_with(&output, &[&format!("the {what} says {wrong} functions")]);

@@ -169,7 +169,12 @@ pub const STATEMENTS: [(&str, &str, Basis, &str); 18] = [
         Basis::Release,
         BANNER,
     ),
-    (".github/social-preview.svg", "title", Basis::Release, BANNER),
+    (
+        ".github/social-preview.svg",
+        "title",
+        Basis::Release,
+        BANNER,
+    ),
 ];
 
 /// The release tags, their indexes and the tracked files.
@@ -510,9 +515,7 @@ impl Checker<'_> {
                 Err(error) if strict => self.failures.push(format!(
                     "FAIL: v{version}: its sizes could not be read: {error}"
                 )),
-                Err(error) => out.push(format!(
-                    "SKIP: v{version}'s sizes not looked for: {error}"
-                )),
+                Err(error) => out.push(format!("SKIP: v{version}'s sizes not looked for: {error}")),
             }
         }
         sizes
@@ -529,7 +532,9 @@ impl Checker<'_> {
                 if strict {
                     self.failures.push(format!("FAIL: {line}"));
                 } else {
-                    out.push(format!("SKIP: unregistered statements not looked for: {line}"));
+                    out.push(format!(
+                        "SKIP: unregistered statements not looked for: {line}"
+                    ));
                 }
                 return;
             }
@@ -631,7 +636,9 @@ fn render(stated: &str, value: usize) -> String {
 /// (records of earlier releases) or the generated module sources.
 fn swept(path: &str) -> bool {
     let name = path.rsplit('/').next().unwrap_or(path);
-    [".md", ".txt", ".svg"].iter().any(|ext| path.ends_with(ext))
+    [".md", ".txt", ".svg"]
+        .iter()
+        .any(|ext| path.ends_with(ext))
         && !name.starts_with("CHANGELOG")
         && !path.starts_with("src/")
         && path != "oz.txt"
