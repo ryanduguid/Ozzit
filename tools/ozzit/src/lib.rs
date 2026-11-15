@@ -45,6 +45,7 @@ const COMMANDS: &[(&str, Handler)] = &[
     ("build_module", module::command),
     ("verify_cover", cover::verify),
     ("verify_counts", counts::verify),
+    ("sync_counts", counts::sync),
     ("verify_help_spills", spills::verify),
     ("verify_workbook", workbook::verify),
     ("verify_native_evidence", native_evidence::command),

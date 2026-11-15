@@ -42,7 +42,12 @@ newest cut fails. Where `GITHUB_REPOSITORY` is `ryanduguid/Ozzit`, as in its own
 also reads the About description through `gh api`. Locally and in a fork it
 reports what it skipped; in GitHub Actions, missing release tags, a missing token
 or an unreadable About description fail it.
-CI runs it after `verify_cover`.
+CI runs it after `verify_cover`. It also sweeps tracked prose, text and images
+for a function or name count the library has had, or any help-table count,
+outside the register, so a new place that states the size must be registered or
+listed in `EXEMPT`. `ozzit sync_counts` rewrites the statements about `main` and
+the newest release after a release is tagged; statements naming a release and
+the About description stay with the maintainer.
 
 `native_checks` writes `docs/native-checks.csv`: for each name in
 `functions.csv`, the generated help and worked-example assertions, the

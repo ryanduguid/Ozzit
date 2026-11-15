@@ -14,12 +14,21 @@
 //! it from the gate unnoticed. A space in a pattern matches any run of whitespace,
 //! so reflowing a paragraph keeps its statement; a pattern that needs one literal
 //! space, as inside a class, writes `\x20`.
+//!
+//! A new place that states the size fails too: tracked prose, text and images are
+//! swept for a function or name count the library has had, or any help-table
+//! count, outside the register and its exemptions. `sync_counts` rewrites the
+//! statements about `main` and the newest release after a release is tagged.
 use crate::{
     cache::{Dump, run_process},
     common::*,
     cover, py,
 };
-use std::{collections::BTreeMap, path::Path, time::Duration};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    path::Path,
+    time::Duration,
+};
 
 pub const REPOSITORY: &str = "ryanduguid/Ozzit";
 const TIMEOUT: Duration = Duration::from_secs(30);
@@ -29,6 +38,24 @@ const ABOUT: &str = r"^(?P<functions>\d+) Excel LAMBDA functions and (?P<help>\w
 /// Help-table counts written as words, as 'five help tables'.
 const WORDS: [&str; 10] = [
     "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+];
+
+/// A statement of the library's size, as '150 functions' or '155 names', for the
+/// sweep for statements outside the register.
+const SIZE_PHRASE: &str = r"\b(?P<n>\d+)(?:[ -](?:native|Excel|LAMBDA|named|function))*[ -](?:functions?|LAMBDAs?|names)\b";
+/// A statement of the help-table count, in figures or words.
+const HELP_PHRASE: &str = r"(?i)\b(?P<n>\d+|zero|one|two|three|four|five|six|seven|eight|nine)(?: named)? help tables?\b";
+/// Statements of a size the sweep finds that are deliberately outside the register:
+/// file and a phrase containing the count. An entry whose phrase is no longer in
+/// its file fails.
+pub const EXEMPT: [(&str, &str); 3] = [
+    // History: the size at the cut that fixed the cover label.
+    ("tools/postbuild/README.md", "130 functions after 3 cuts"),
+    // History: the names v1.2.6 shipped.
+    ("tools/released-names-v1.2.6.txt", "The 130 function names"),
+    // Stale (R3343): the social card's PNG must be re-rendered and uploaded with
+    // it, so it moves in its own change; register it then.
+    (".github/social-preview.svg", "133 Excel functions"),
 ];
 
 /// What a statement describes, and so which index it is compared with.
@@ -47,7 +74,7 @@ pub enum Basis {
 
 /// File, what the statement is, its basis and its pattern. The named groups
 /// `functions`, `help` and `names` capture the counts; `version` the release.
-pub const STATEMENTS: [(&str, &str, Basis, &str); 15] = [
+pub const STATEMENTS: [(&str, &str, Basis, &str); 17] = [
     (
         "README.md",
         "banner alt text",
@@ -109,10 +136,22 @@ pub const STATEMENTS: [(&str, &str, Basis, &str); 15] = [
         r"Ozzit is a library of (?P<functions>\d+) LAMBDA functions and (?P<help>\w+) help tables",
     ),
     (
+        "docs/modelling-conventions.md",
+        "functions called from cells",
+        Basis::Main,
+        r"Ozzit's (?P<functions>\d+) functions exist to be called",
+    ),
+    (
         "docs/function-guide.md",
         "index size",
         Basis::Main,
         r"indexes all (?P<names>\d+) names",
+    ),
+    (
+        "docs/workbook-use.md",
+        "help tables oz.txt holds",
+        Basis::Main,
+        r"ships \(the (?P<help>\w+) help tables included\)",
     ),
     (".github/assets/banner.svg", "title", Basis::Release, BANNER),
     (
@@ -135,12 +174,14 @@ pub const STATEMENTS: [(&str, &str, Basis, &str); 15] = [
     ),
 ];
 
-/// The release tags and their indexes.
+/// The release tags, their indexes and the tracked files.
 pub trait Releases {
     /// The `vX.Y.Z` tags, or why they could not be listed.
     fn tags(&self) -> Result<Vec<String>>;
     /// `functions.csv` at tag `v{version}`.
     fn index(&self, version: &str) -> Result<String>;
+    /// The tracked files, as repository-relative paths with `/`.
+    fn tracked(&self) -> Result<Vec<String>>;
 }
 
 /// The release tags of the Git checkout at a path.
@@ -172,6 +213,14 @@ impl Releases for Git<'_> {
     }
     fn index(&self, version: &str) -> Result<String> {
         self.run(&["show", &format!("v{version}:functions.csv")])
+    }
+    fn tracked(&self) -> Result<Vec<String>> {
+        Ok(self
+            .run(&["ls-files", "-z"])?
+            .split('\0')
+            .filter(|path| !path.is_empty())
+            .map(str::to_owned)
+            .collect())
     }
 }
 
@@ -259,6 +308,17 @@ struct Inventory {
     help: usize,
 }
 
+/// A count or version `sync_counts` rewrites: where it is, its byte range in the
+/// file's newline-normalised text, what it said and what it should say.
+struct Edit {
+    at: String,
+    file: String,
+    start: usize,
+    end: usize,
+    was: String,
+    text: String,
+}
+
 struct Checker<'a> {
     releases: &'a dyn Releases,
     main: Inventory,
@@ -270,6 +330,7 @@ struct Checker<'a> {
     indexes: BTreeMap<String, Result<Inventory>>,
     checked: usize,
     failures: Vec<String>,
+    edits: Vec<Edit>,
 }
 
 impl Checker<'_> {
@@ -323,6 +384,21 @@ impl Checker<'_> {
         }
     }
 
+    /// Record a correction for `sync_counts`, which rewrites only files and only
+    /// statements about `main` or the newest release.
+    fn edit(&mut self, statement: &Statement, found: &fancy_regex::Match<'_>, text: String) {
+        if statement.numbered && statement.basis != Basis::Named {
+            self.edits.push(Edit {
+                at: statement.at(found.start()),
+                file: statement.place.to_owned(),
+                start: found.start(),
+                end: found.end(),
+                was: found.as_str().to_owned(),
+                text,
+            });
+        }
+    }
+
     /// The index a match describes and its name in messages, or None when
     /// release statements cannot be checked.
     fn source(
@@ -348,6 +424,7 @@ impl Checker<'_> {
                 statement.at(named.start()),
                 statement.what
             ));
+            self.edit(statement, &named, latest);
         }
         Some((format!("v{version}"), self.release(version)))
     }
@@ -375,20 +452,23 @@ impl Checker<'_> {
             ("help", "help tables", index.help),
             ("names", "names", index.functions + index.help),
         ] {
-            let Some(stated) = matched.name(group) else {
+            let Some(found) = matched.name(group) else {
                 continue;
             };
-            let at = statement.at(stated.start());
-            let stated = stated.as_str();
+            let at = statement.at(found.start());
+            let stated = found.as_str();
             let value = stated
                 .parse::<usize>()
                 .ok()
                 .or_else(|| WORDS.iter().position(|w| w.eq_ignore_ascii_case(stated)));
             match value {
                 Some(value) if value == count => {}
-                Some(value) => self.failures.push(format!(
-                    "FAIL: {at}: the {what} says {value} {noun}; {source} has {count} {noun}"
-                )),
+                Some(value) => {
+                    self.failures.push(format!(
+                        "FAIL: {at}: the {what} says {value} {noun}; {source} has {count} {noun}"
+                    ));
+                    self.edit(statement, &found, render(stated, count));
+                }
                 None => self.failures.push(format!(
                     "FAIL: {at}: the {what} gives {} {noun}, not a count",
                     py::repr_str(stated)
@@ -419,6 +499,92 @@ impl Checker<'_> {
         }
     }
 
+    /// Every function and name count the library has had: on `main` and at each
+    /// release tag whose index can be read.
+    fn sizes(&mut self) -> BTreeSet<usize> {
+        let mut sizes = BTreeSet::from([self.main.functions, self.main.functions + self.main.help]);
+        for version in self.tags.clone() {
+            if let Ok(index) = self.release(&version) {
+                sizes.extend([index.functions, index.functions + index.help]);
+            }
+        }
+        sizes
+    }
+
+    /// Flag statements of the library's size in tracked text that the register
+    /// does not hold: a function or name count the library has had, or any
+    /// help-table count, outside every registered statement and exemption.
+    fn sweep(&mut self, root: &Path, strict: bool, out: &mut Vec<String>) {
+        let files = match self.releases.tracked() {
+            Ok(files) => files,
+            Err(error) => {
+                let line = format!("the tracked files could not be listed: {error}");
+                if strict {
+                    self.failures.push(format!("FAIL: {line}"));
+                } else {
+                    out.push(format!("SKIP: unregistered statements not looked for: {line}"));
+                }
+                return;
+            }
+        };
+        let sizes = self.sizes();
+        let mut used = [false; EXEMPT.len()];
+        for file in files.iter().filter(|file| swept(file)) {
+            let path = root.join(file);
+            // A tracked file deleted in the working tree has nothing to state.
+            if !path.exists() {
+                continue;
+            }
+            match read_text(&path) {
+                Ok(text) => self.sweep_file(file, &text, &sizes, &mut used),
+                Err(error) => self.failures.push(format!("FAIL: {error}")),
+            }
+        }
+        for ((file, phrase), used) in EXEMPT.iter().zip(used) {
+            if !used {
+                self.failures.push(format!(
+                    "FAIL: {file}: the exemption '{phrase}' is no longer there; remove it from EXEMPT in {REGISTER}"
+                ));
+            }
+        }
+    }
+
+    fn sweep_file(&mut self, file: &str, text: &str, sizes: &BTreeSet<usize>, used: &mut [bool]) {
+        let mut covered = registered(file, text);
+        for (i, (_, phrase)) in EXEMPT.iter().enumerate().filter(|(_, (f, _))| *f == file) {
+            for (at, _) in text.match_indices(phrase) {
+                used[i] = true;
+                covered.push(at..at + phrase.len());
+            }
+        }
+        for (pattern, sized) in [(SIZE_PHRASE, true), (HELP_PHRASE, false)] {
+            for found in re(pattern).captures_iter(text) {
+                let found = match found {
+                    Ok(found) => found,
+                    Err(error) => {
+                        self.failures
+                            .push(format!("FAIL: {file}: could not look for counts: {error}"));
+                        return;
+                    }
+                };
+                let count = found.name("n").expect("the phrase captures its count");
+                let start = count.start();
+                let size = count.as_str().parse::<usize>().ok();
+                if (sized && !size.is_some_and(|n| sizes.contains(&n)))
+                    || covered.iter().any(|range| range.contains(&start))
+                {
+                    continue;
+                }
+                let phrase = found.get(0).map_or("", |m| m.as_str());
+                self.failures.push(format!(
+                    "FAIL: {file}:{}: '{}' states the library's size outside the register; add it to STATEMENTS or EXEMPT in {REGISTER}",
+                    text[..start].matches('\n').count() + 1,
+                    phrase.split_whitespace().collect::<Vec<_>>().join(" ")
+                ));
+            }
+        }
+    }
+
     /// The closing line once every statement agrees.
     fn agreed(&mut self) -> String {
         let release = match self.latest.clone() {
@@ -438,6 +604,45 @@ impl Checker<'_> {
             self.checked, self.main.functions, self.main.help
         )
     }
+}
+
+/// `value` in the form `stated` used: a word for a count written as one.
+fn render(stated: &str, value: usize) -> String {
+    match WORDS.get(value) {
+        Some(word) if stated.chars().all(char::is_alphabetic) => {
+            if stated.starts_with(char::is_uppercase) {
+                word[..1].to_uppercase() + &word[1..]
+            } else {
+                (*word).to_owned()
+            }
+        }
+        _ => value.to_string(),
+    }
+}
+
+/// Whether the sweep reads a tracked file: prose and images, not the changelogs
+/// (records of earlier releases) or the generated module sources.
+fn swept(path: &str) -> bool {
+    let name = path.rsplit('/').next().unwrap_or(path);
+    [".md", ".txt", ".svg"].iter().any(|ext| path.ends_with(ext))
+        && !name.starts_with("CHANGELOG")
+        && !path.starts_with("src/")
+        && path != "oz.txt"
+}
+
+/// The byte ranges registered statements cover in `file`. A pattern that fails to
+/// run is reported by the statement check, so it covers nothing here.
+fn registered(file: &str, text: &str) -> Vec<std::ops::Range<usize>> {
+    STATEMENTS
+        .iter()
+        .filter(|(place, _, _, _)| *place == file)
+        .flat_map(|(_, _, _, pattern)| {
+            re(&regex(pattern))
+                .captures_iter(text)
+                .filter_map(|found| found.ok()?.get(0).map(|m| m.range()))
+                .collect::<Vec<_>>()
+        })
+        .collect()
 }
 
 /// One statement's text and how to name a place in it.
@@ -490,37 +695,52 @@ fn release_tags(
     (Vec::new(), None)
 }
 
-/// Check every registered statement under `root`, and the About description if
-/// read. `strict` (GitHub Actions) fails where release tags are missing.
+/// Run every check, returning the checker with its failures and corrections, and
+/// the lines reported before them.
+fn run_checks<'a>(
+    root: &Path,
+    about: &About,
+    releases: &'a dyn Releases,
+    strict: bool,
+) -> Result<(Checker<'a>, Vec<String>)> {
+    let (functions, help) = cover::inventory(&root.join("functions.csv"))?;
+    let (cut, _) = cover::current_cut(&root.join("CHANGELOG.md"))?;
+    let mut out = Vec::new();
+    let mut failures = Vec::new();
+    let (tags, latest) = release_tags(releases, strict, &mut out, &mut failures);
+    let mut checker = Checker {
+        releases,
+        main: Inventory { functions, help },
+        cut,
+        tags,
+        latest,
+        indexes: BTreeMap::new(),
+        checked: 0,
+        failures,
+        edits: Vec::new(),
+    };
+    for (place, what, basis, pattern) in STATEMENTS {
+        let text = read_text(&root.join(place))?;
+        let statement = Statement {
+            place,
+            numbered: true,
+            what,
+            basis,
+            text: &text,
+        };
+        checker.statement(&statement, pattern);
+    }
+    checker.about(about, &mut out);
+    checker.sweep(root, strict, &mut out);
+    Ok((checker, out))
+}
+
+/// Check every registered statement under `root`, look for unregistered ones and
+/// check the About description if read. `strict` (GitHub Actions) fails where
+/// release tags or the tracked files cannot be read.
 pub fn check(root: &Path, about: &About, releases: &dyn Releases, strict: bool) -> Output {
     let run = || -> Result<Output> {
-        let (functions, help) = cover::inventory(&root.join("functions.csv"))?;
-        let (cut, _) = cover::current_cut(&root.join("CHANGELOG.md"))?;
-        let mut out = Vec::new();
-        let mut failures = Vec::new();
-        let (tags, latest) = release_tags(releases, strict, &mut out, &mut failures);
-        let mut checker = Checker {
-            releases,
-            main: Inventory { functions, help },
-            cut,
-            tags,
-            latest,
-            indexes: BTreeMap::new(),
-            checked: 0,
-            failures,
-        };
-        for (place, what, basis, pattern) in STATEMENTS {
-            let text = read_text(&root.join(place))?;
-            let statement = Statement {
-                place,
-                numbered: true,
-                what,
-                basis,
-                text: &text,
-            };
-            checker.statement(&statement, pattern);
-        }
-        checker.about(about, &mut out);
+        let (mut checker, mut out) = run_checks(root, about, releases, strict)?;
         let code = u8::from(!checker.failures.is_empty());
         if checker.failures.is_empty() {
             out.push(checker.agreed());
@@ -528,6 +748,60 @@ pub fn check(root: &Path, about: &About, releases: &dyn Releases, strict: bool) 
         out.extend(checker.failures);
         Ok(Output {
             code,
+            out,
+            err: vec![],
+        })
+    };
+    run().unwrap_or_else(|e| Output::failure(format!("FAIL: {e}")))
+}
+
+/// Rewrite each file's corrections from the end, so earlier offsets hold.
+fn apply(root: &Path, edits: Vec<Edit>) -> Result<Vec<String>> {
+    let mut files: BTreeMap<String, Vec<Edit>> = BTreeMap::new();
+    for edit in edits {
+        files.entry(edit.file.clone()).or_default().push(edit);
+    }
+    let mut changed = Vec::new();
+    for (file, mut edits) in files {
+        let path = root.join(&file);
+        let mut text = read_text(&path)?;
+        edits.sort_by_key(|edit| std::cmp::Reverse(edit.start));
+        for edit in &edits {
+            text.replace_range(edit.start..edit.end, &edit.text);
+        }
+        replace_atomically(&path, text.as_bytes())?;
+        changed.extend(
+            edits
+                .iter()
+                .rev()
+                .map(|edit| format!("CHANGED: {}: {} to {}", edit.at, edit.was, edit.text)),
+        );
+    }
+    Ok(changed)
+}
+
+/// Move every statement about `main` or the newest release under `root` to the
+/// counts and version it should state, then check the result. Statements naming
+/// a release, such as release bullets, and the About description stay as they are.
+pub fn sync_with(root: &Path, releases: &dyn Releases) -> Output {
+    let about = About::Unchecked(
+        "sync_counts does not change it; set it by hand, then run verify_counts in CI".into(),
+    );
+    let run = || -> Result<Output> {
+        let mut out = Vec::new();
+        // A statement moved to a newer release is compared with that release's
+        // counts on the next pass.
+        for _ in 0..3 {
+            let (checker, _) = run_checks(root, &about, releases, false)?;
+            if checker.edits.is_empty() {
+                break;
+            }
+            out.extend(apply(root, checker.edits)?);
+        }
+        let after = check(root, &about, releases, false);
+        out.extend(after.out);
+        Ok(Output {
+            code: after.code,
             out,
             err: vec![],
         })
@@ -552,4 +826,12 @@ pub fn verify(args: &[String]) -> Output {
         run_process("gh", &args, None, TIMEOUT)
     });
     check(&root, &about, &Git(&root), strict(&var))
+}
+
+pub fn sync(args: &[String]) -> Output {
+    if args.len() > 1 {
+        return Output::stderr("FAIL: usage: ozzit sync_counts [repository-root]");
+    }
+    let root = py::PyPath::new(args.first().map_or(".", String::as_str)).fs();
+    sync_with(&root, &Git(&root))
 }
