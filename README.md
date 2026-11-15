@@ -220,7 +220,7 @@ Its [citation metadata](CITATION.cff) names the cut. Cite the signed tag `v3.6.0
 `50eeb90aaed628e73b54cdac74d28eddc44643bb`; GitHub reports its
 [release page](https://github.com/ryanduguid/Ozzit/releases/tag/v3.6.0) immutable. [The v3.6.0 changes](CHANGELOG.md) describe the workbook and
 source views included in this cut, and its known issues. [RELEASING.md](RELEASING.md)
-requires the 17 gates and exact-candidate approval before a release is published.
+requires the 18 gates and exact-candidate approval before a release is published.
 
 v3.6.0 `ozzit.xlsx` SHA-256: `95006168d685496f27b04ab95099a7c103d3013cf031178046ffcbfcfd88d65b` (485,256 bytes), the same bytes as the release asset. `main` is ahead of that tag, so the file you clone is not the file the release ships: the tracked `ozzit.xlsx` is SHA-256 `ef983f1d59943fb6aa8a8f98b8ba10a0b9e5ccf5a2885e9d6e334eb4f1dcd1c5` (486,359 bytes), pinned in [release/workbook-base.json](release/workbook-base.json) and checked by the tool tests, and adds the changes listed under Unreleased in the [changelog](CHANGELOG.md). On 14 November 2026, Excel 16.0 build 20625 recalculated 1,129 formulas in the tracked workbook with 0 in error, ran 1,310 self-test assertions with 0 failures and found 19,483 cached values equal to what their formulas produce. The workbook was byte-identical before and after both native gates.
 

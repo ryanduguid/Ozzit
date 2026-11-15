@@ -1,7 +1,7 @@
 # Ozzit Rust tooling port
 
 This crate is an unpublished migration checkpoint. CI, `RELEASING.md` and the
-postbuild run order call this binary. CI runs all 9 native verification gates.
+postbuild run order call this binary. CI runs all 10 native verification gates.
 Their Python references, the Python release tool and the `compare_gates`
 comparator that ran each reference beside its native gate have retired; every
 gate's test contracts already run as native tests. The live Python-versus-native
@@ -211,6 +211,7 @@ repository root to use their usual path defaults.
 | `sync_afe_store` | Synchronise AFE modules and the grouped name index |
 | `build_module` | Join the 6 source modules into the published AFE text |
 | `verify_cover` | Resolve the displayed version label and compare its date and function count |
+| `verify_counts` | Compare each registered statement of the function, help-table and name counts, and the About description when a token is set, with `functions.csv` on `main` or at the release tag it describes |
 | `verify_help_spills` | Report help caches that differ from the definitions |
 | `verify_workbook` | Check workbook structure, content, add-ins and references |
 | `verify_native_evidence` | Check retained comparison and installation records against their inputs |

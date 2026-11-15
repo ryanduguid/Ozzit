@@ -13,7 +13,7 @@ use ozzit::{common, py};
 
 const VERIFY_WORKFLOW: &str = ".github/workflows/verify.yml";
 
-const EXPECTED_VERIFY_COMMANDS: [&str; 24] = [
+const EXPECTED_VERIFY_COMMANDS: [&str; 25] = [
     "python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-ruff.txt",
     "python -m ruff check .",
     "python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-mypy.txt",
@@ -35,6 +35,7 @@ const EXPECTED_VERIFY_COMMANDS: [&str; 24] = [
     "tools/ozzit/target/release/ozzit verify_previous_names functions.csv",
     "tools/ozzit/target/release/ozzit verify_index ozzit.xlsx src functions.csv",
     "tools/ozzit/target/release/ozzit verify_cover ozzit.xlsx functions.csv CHANGELOG.md",
+    "tools/ozzit/target/release/ozzit verify_counts",
     "tools/ozzit/target/release/ozzit verify_afe ozzit.xlsx src",
     "tools/ozzit/target/release/ozzit verify_help_spills ozzit.xlsx",
     "tools/ozzit/target/release/ozzit verify_native_evidence",
