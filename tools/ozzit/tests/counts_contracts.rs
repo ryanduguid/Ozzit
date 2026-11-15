@@ -4,6 +4,7 @@
 //! The function count gate: every registered statement of the library's size
 //! agrees with the index it describes, and true history about older releases passes.
 use ozzit::{
+    archive::{read_parts, write_deterministic},
     cache::Dump,
     common::{Csv, Output, Result, re},
     counts::{self, About, Git, Releases},
@@ -85,7 +86,7 @@ impl Fixture {
             .iter()
             .map(|(file, _, _, _)| *file)
             .chain(counts::EXEMPT.iter().map(|(file, _)| *file))
-            .chain(["functions.csv", "CHANGELOG.md"]);
+            .chain(["functions.csv", "CHANGELOG.md", "ozzit.xlsx"]);
         for file in files {
             let target = dir.path().join(file);
             std::fs::create_dir_all(target.parent().unwrap()).unwrap();
@@ -111,6 +112,20 @@ impl Fixture {
         let old = std::fs::read_to_string(&path).unwrap();
         std::fs::write(&path, format!("{old}\n{text}\n")).unwrap();
         old.matches('\n').count() + 2
+    }
+    /// Rename sheets of the workbook, from their old names to new ones.
+    fn rename_sheets(&self, renames: &[(&str, &str)]) {
+        let path = self.path().join("ozzit.xlsx");
+        let mut parts = read_parts(&path).unwrap();
+        let book = parts.get_mut("xl/workbook.xml").unwrap();
+        let mut text = String::from_utf8(book.clone()).unwrap();
+        for (old, new) in renames {
+            let old = format!(r#" name="{old}""#);
+            assert_eq!(text.matches(&old).count(), 1, "{old}");
+            text = text.replacen(&old, &format!(r#" name="{new}""#), 1);
+        }
+        *book = text.into_bytes();
+        write_deterministic(&path, &parts).unwrap();
     }
     fn check_with(&self, about: &About, releases: &dyn Releases, strict: bool) -> Output {
         counts::check(self.path(), about, releases, strict)
@@ -183,6 +198,9 @@ fn every_registered_count_is_checked() {
             ("functions", "functions"),
             ("help", "help tables"),
             ("names", "names"),
+            ("sheetless", SHEETLESS),
+            ("sheetless_functions", SHEETLESS_FUNCTIONS),
+            ("sheetless_help", SHEETLESS_HELP),
         ] {
             let f = Fixture::new();
             let path = f.path().join(file);
@@ -224,7 +242,7 @@ fn every_registered_count_is_checked() {
             checked += 1;
         }
     }
-    assert_eq!(checked, 23);
+    assert_eq!(checked, 26);
 }
 
 #[test]
@@ -237,6 +255,96 @@ fn every_release_pattern_captures_its_version() {
             "{file}: the {what}"
         );
     }
+}
+
+/// The guide's count of names without a worksheet of their own in `ozzit.xlsx`,
+/// and the nouns the gate gives them.
+const SHEETLESS: &str = "names without a worksheet";
+const SHEETLESS_FUNCTIONS: &str = "functions without a worksheet";
+const SHEETLESS_HELP: &str = "help tables without a worksheet";
+
+/// The function guide's worksheet statement: what it is, and the count of names,
+/// functions and help tables it states, each with its line.
+fn sheetless_statement(f: &Fixture) -> (&'static str, [(usize, usize); 3]) {
+    let (file, what, _, pattern) = counts::STATEMENTS
+        .into_iter()
+        .find(|(_, _, _, pattern)| pattern.contains("(?P<sheetless>"))
+        .expect("the worksheet statement is registered");
+    assert_eq!(file, "docs/function-guide.md");
+    let text = std::fs::read_to_string(f.path().join(file)).unwrap();
+    let found = re(&counts::regex(pattern)).captures(&text).unwrap().unwrap();
+    let count = |group: &str| {
+        let stated = found.name(group).unwrap();
+        let line = text[..stated.start()].matches('\n').count() + 1;
+        (stated.as_str().parse().unwrap(), line)
+    };
+    (
+        what,
+        [
+            count("sheetless"),
+            count("sheetless_functions"),
+            count("sheetless_help"),
+        ],
+    )
+}
+
+#[test]
+fn worksheet_counts_are_registered_only_about_main() {
+    for (file, what, basis, pattern) in counts::STATEMENTS {
+        if pattern.contains("(?P<sheetless") {
+            assert_eq!(basis, counts::Basis::Main, "{file}: the {what}");
+        }
+    }
+}
+
+#[test]
+fn a_name_losing_its_worksheet_makes_the_guide_stale() {
+    let f = Fixture::new();
+    let (what, stated) = sheetless_statement(&f);
+    // A function and an About table each lose the worksheet named for them.
+    f.rename_sheets(&[
+        ("oz.CountDOWλ", "Day counts"),
+        ("oz.AboutEssentialsλ", "About essentials"),
+    ]);
+    let expected = stated
+        .iter()
+        .zip([
+            (SHEETLESS, 2),
+            (SHEETLESS_FUNCTIONS, 1),
+            (SHEETLESS_HELP, 1),
+        ])
+        .map(|((count, line), (noun, more))| {
+            format!(
+                "docs/function-guide.md:{line}: the {what} says {count} {noun}; functions.csv has {} {noun}",
+                count + more
+            )
+        })
+        .collect::<Vec<_>>();
+    fails_with(
+        &f.check(),
+        &expected.iter().map(String::as_str).collect::<Vec<_>>(),
+    );
+}
+
+#[test]
+fn sync_counts_moves_the_worksheet_counts() {
+    let f = Fixture::new();
+    let (_, [(names, _), (functions, _), (help, _)]) = sheetless_statement(&f);
+    f.rename_sheets(&[("oz.CountDOWλ", "Day counts")]);
+    let output = counts::sync_with(f.path(), &Overlay::default());
+    passes(&output);
+    changed(
+        &output,
+        "docs/function-guide.md:",
+        &format!("{names} to {}", names + 1),
+    );
+    changed(
+        &output,
+        "docs/function-guide.md:",
+        &format!("{functions} to {}", functions + 1),
+    );
+    let after = sheetless_statement(&f).1.map(|(count, _)| count);
+    assert_eq!(after, [names + 1, functions + 1, help]);
 }
 
 #[test]
