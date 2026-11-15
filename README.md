@@ -104,8 +104,9 @@ you can check by hand; the lease guide explains the 4 lessee functions.
 | PAYG withholding, on `main` only | `=oz.PAYGWithholdingλ(Earnings, Coefficients, [Period])` with the payee's coefficients from the ATO's Schedule 1 | [What it applies and leaves out](docs/australian-modelling.md#payg-withholding) |
 
 `oz.PAYGWithholdingλ` is not yet in a release. It works out the amount before tax
-offsets and the Medicare levy adjustment and does not apply either. It does not choose
-the scale and does not do scale 4, for a payee who has not given a TFN.
+offsets and the Medicare levy adjustment and does not apply either, or the extra
+withholding for 53 or 27 pays. It does not choose the scale and does not do scale 4,
+for a payee who has not given a TFN.
 
 [Open, copy functions and use modern Excel](docs/workbook-use.md) shows how to
 copy a function into your own workbook.

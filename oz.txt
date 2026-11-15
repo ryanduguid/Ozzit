@@ -4274,9 +4274,9 @@ PAYGWithholdingλ = LAMBDA(
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
                             "VERSION:       →16 Nov 2026¶" &
                             "PARAMETERS:    →¶" &
-                            "Earnings       →(Required) One or more payments, with allowances subject to withholding. A blank stays blank.¶" &
+                            "Earnings       →(Required) One or more payments in whole cents, with allowances subject to withholding. A blank stays blank.¶" &
                             "Coefficients   →(Required) The scale's table: 3 columns of weekly earnings 'less than', a and b, in¶" &
-                            "               →ascending order. The last row is the '& over' row and is used above every bound.¶" &
+                            "               →ascending order. The last row is the '& over' row, used above every bound; only it may repeat the bound above it.¶" &
                             "               →Enter a row the ATO gives no a or b for as 0 and 0.¶" &
                             "Period         →(Optional: Default = ""W"") ""W"" weekly, ""F"" fortnightly, ""M"" monthly or ""Q"" quarterly.¶" &
                             "EXAMPLES:      →¶" &
@@ -4292,14 +4292,19 @@ PAYGWithholdingλ = LAMBDA(
         Pay,            IF( ISOMITTED( Period), "W", IF( TRIM( Period & "") = "", "W", UPPER( TRIM( Period)))),
         ValidPeriod?,   AND( ROWS( Pay) = 1, COLUMNS( Pay) = 1, ISNUMBER( XMATCH( Pay, {"W", "F", "M", "Q"}, 0))),
         PeriodMessage,  "Period must be W, F, M or Q.",
-    //  The row is the first whose bound is above x, so the bounds must ascend.
+    //  The row is the first whose bound is above x, so the bounds must rise. Only the last
+    //  row, the '& over' row, may repeat the bound above it, as the ATO's tables do; a
+    //  repeated bound higher up would skip a row.
         Bounds,         TAKE( Coefficients, , 1),
-        Ascending?,     IF( ROWS( Bounds) = 1, TRUE, AND( DROP( Bounds, 1) >= DROP( Bounds, -1))),
+        Steps,          IF( ROWS( Bounds) = 1, 0, DROP( Bounds, 1) - DROP( Bounds, -1)),
+        Ascending?,     AND( Steps >= 0, IF( ROWS( Steps) = 1, TRUE, AND( DROP( Steps, -1) > 0))),
         ValidTable?,    AND( COLUMNS( Coefficients) = 3, AND( ISNUMBER( Coefficients)), IFERROR( Ascending?, FALSE)),
-        TableMessage,   "Coefficients must be 3 columns of numbers: weekly earnings less than, a and b, with the earnings ascending.",
-    //  A blank is nil and stays blank; an error passes so it shows.
-        ValidEarnings?, AND( IFERROR( ISNUMBER( Earnings) * ( Earnings >= 0) + ( TRIM( Earnings & "") = ""), TRUE)),
-        EarningsMessage, "PAYGWithholdingλ needs each payment to be a number of 0 or more, or blank.",
+        TableMessage,   "Coefficients must be 3 columns of numbers: weekly earnings less than, a and b, with the earnings rising and only the last row repeating the bound above it.",
+    //  A blank is nil and stays blank; an error passes so it shows. Schedule 1 works in
+    //  cents, so a fraction of a cent, which could tip the monthly 33-cent rule or a
+    //  weekly dollar, is refused rather than rounded.
+        ValidEarnings?, AND( IFERROR( IF( ISNUMBER( Earnings), ( Earnings >= 0) * ( ABS( Earnings * 100 - ROUND( Earnings * 100, 0)) < 0.000001), 0) + ( TRIM( Earnings & "") = ""), TRUE)),
+        EarningsMessage, "PAYGWithholdingλ needs each payment to be a number of 0 or more in whole cents, or blank.",
     //  Procedure
         Result,         MAP( Earnings, LAMBDA( Paid,
                             IF( TRIM( Paid & "") = "", "",

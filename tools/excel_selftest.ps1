@@ -266,15 +266,27 @@ Near 'PAYGWithholding: quarterly'                "$pw(13000, $($pwScale[2]), `"Q
 Same 'PAYGWithholding: a column of payments'     "TEXTJOIN(`",`",FALSE,$pw({116;1333.45;3653}, $($pwScale[2])))" '0,245,1062'
 Same 'PAYGWithholding: a blank payment is blank' "$pw(Z1, $($pwScale[2]))" ''
 $pwOne = "IF(AND(ROWS(x) = 1, COLUMNS(x) = 1), x, `"array`")"
+$pwTable = 'Coefficients must be 3 columns of numbers: weekly earnings less than, a and b, with the earnings rising and only the last row repeating the bound above it.'
+$pwPaid = "PAYGWithholding$L needs each payment to be a number of 0 or more in whole cents, or blank."
+# A bound repeated above the last row would skip the row below it, and a fraction of a cent
+# could tip the monthly 33-cent rule (17.329 a month reads as 17.34) or a weekly dollar.
 foreach ($r in @(@("1000, $($pwScale[2]), `"X`"", 'Period must be W, F, M or Q.'),
-                 @("1000, {362,0;538,0.15}", 'Coefficients must be 3 columns of numbers: weekly earnings less than, a and b, with the earnings ascending.'),
-                 @("1000, {538,0.15,54.3462;362,0,0}", 'Coefficients must be 3 columns of numbers: weekly earnings less than, a and b, with the earnings ascending.'),
-                 @("1000, {362,0,`"0`"}", 'Coefficients must be 3 columns of numbers: weekly earnings less than, a and b, with the earnings ascending.'),
-                 @("-1, $($pwScale[2])", "PAYGWithholding$L needs each payment to be a number of 0 or more, or blank."),
-                 @("`"1000`", $($pwScale[2])", "PAYGWithholding$L needs each payment to be a number of 0 or more, or blank."),
-                 @("TRUE, $($pwScale[2])", "PAYGWithholding$L needs each payment to be a number of 0 or more, or blank."))) {
+                 @("1000, {362,0;538,0.15}", $pwTable),
+                 @("1000, {538,0.15,54.3462;362,0,0}", $pwTable),
+                 @("1000, {362,0,`"0`"}", $pwTable),
+                 @("538, {362,0,0;538,0.15,54.3462;538,0.25,108.2135;673,0.17,54.3473}", $pwTable),
+                 @("-1, $($pwScale[2])", $pwPaid),
+                 @("`"1000`", $($pwScale[2])", $pwPaid),
+                 @("TRUE, $($pwScale[2])", $pwPaid),
+                 @("17.329, $($pwScale[1]), `"M`"", $pwPaid),
+                 @("{1000;1000.005}, $($pwScale[2])", $pwPaid))) {
     Same "PAYGWithholding refuses ($($r[0]))" "LET(x, $pw($($r[0])), $pwOne)" $r[1]
 }
+# Only the last row may repeat the bound above it: a 2-row table whose rows share a bound is
+# accepted, and a whole-cent amount computed by arithmetic, with 3 * 0.1 not exactly 0.3 in
+# binary, is not taken for a fraction of a cent.
+Near 'PAYGWithholding: a 2-row table may repeat its bound' "$pw(100, {200,0,0;200,0.1,0})" '0'
+Near 'PAYGWithholding: arithmetic in whole cents is accepted' "$pw(1333.15 + 3 * 0.1, $($pwScale[2]))" '245'
 Near 'PAYGWithholding: an error in a payment shows' "--ISNA($pw(NA(), $($pwScale[2])))" '1'
 
 # --- Movement. Each row's opening is its own: a blank one defaults only that row.

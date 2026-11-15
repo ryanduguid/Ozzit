@@ -15,8 +15,10 @@ these changes fix.
   dollar, and the schedule's conversions to and from the weekly amount. The native
   self-test checks it against every row of the ATO's withholding amounts sample data for
   scales 1, 2, 3, 5 and 6 and the ATO's worked examples. It does not choose the scale,
-  apply tax offsets or the Medicare levy adjustment, or do scale 4. `ozzit
-  payg_withholding` adds it to `src/`, the workbook and `functions.csv`.
+  apply tax offsets or the Medicare levy adjustment, or do scale 4. A payment with a
+  fraction of a cent, or a table whose bounds do not rise (only the last row may repeat
+  the bound above it), returns a message. `ozzit payg_withholding` adds it to `src/`,
+  the workbook and `functions.csv`.
 
 ### Fixed
 
