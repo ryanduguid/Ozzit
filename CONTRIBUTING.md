@@ -38,10 +38,14 @@ tools/ozzit/target/release/ozzit verify_signatures src
 tools/ozzit/target/release/ozzit verify_previous_names functions.csv
 tools/ozzit/target/release/ozzit verify_index ozzit.xlsx src functions.csv
 tools/ozzit/target/release/ozzit verify_cover ozzit.xlsx functions.csv CHANGELOG.md
+tools/ozzit/target/release/ozzit verify_counts
 tools/ozzit/target/release/ozzit verify_afe ozzit.xlsx src
 tools/ozzit/target/release/ozzit verify_help_spills ozzit.xlsx
 tools/ozzit/target/release/ozzit verify_native_evidence
 ```
+
+`cargo test` and `ozzit verify_counts` read the release tags; in a clone without
+them, run `git fetch --tags` first.
 
 After mypy, the `lint` job checks the workflows on Linux with pinned ShellCheck
 and actionlint:

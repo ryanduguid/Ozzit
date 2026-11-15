@@ -120,6 +120,11 @@ jobs:
         run: tools/ozzit/target/release/ozzit verify_index ozzit.xlsx src functions.csv
       - name: Check the cover label states the current cut and function count
         run: tools/ozzit/target/release/ozzit verify_cover ozzit.xlsx functions.csv CHANGELOG.md
+      - name: Check every statement of the function count agrees with the index
+        env:
+          # Read-only: lets the gate read the repository's About description.
+          GH_TOKEN: ${{ github.token }}
+        run: tools/ozzit/target/release/ozzit verify_counts
       - name: Check the Advanced Formula Environment store matches src/
         run: tools/ozzit/target/release/ozzit verify_afe ozzit.xlsx src
       - name: Check each cached help spill matches its definition
