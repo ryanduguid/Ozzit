@@ -606,8 +606,12 @@ fn a_statement_of_the_size_outside_the_register_fails() {
         "docs/function-guide.md",
         &format!("Ozzit has {n}\nfunctions, and {}\nnames in all.", n + h),
     );
-    // A count the library has never had is not its size.
-    f.append("docs/function-guide.md", "A model may call 7 functions.");
+    // A count the library has never had is not its size, nor is a version or date.
+    f.append(
+        "docs/function-guide.md",
+        "A model may call 7 functions; see the v3.5.0 help tables and the 2026-11-15 help tables.",
+    );
+    let emphasised = f.append("docs/function-guide.md", &format!("All **{n}** FUNCTIONS."));
     fails_with(
         &f.check(),
         &[
@@ -620,6 +624,7 @@ fn a_statement_of_the_size_outside_the_register_fails() {
                 size + 1,
                 n + h
             ),
+            &format!("FAIL: docs/function-guide.md:{emphasised}: '**{n}** FUNCTIONS' states"),
         ],
     );
 }

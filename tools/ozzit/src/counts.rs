@@ -41,10 +41,11 @@ const WORDS: [&str; 10] = [
 ];
 
 /// A statement of the library's size, as '150 functions' or '155 names', for the
-/// sweep for statements outside the register.
-const SIZE_PHRASE: &str = r"\b(?P<n>\d+)(?:(?:\s|-)(?:native|Excel|LAMBDA|named|function))*(?:\s|-)(?:functions?|LAMBDAs?|names)\b";
+/// sweep for statements outside the register, in any case and with Markdown
+/// emphasis. A number ending a version or date, as in 'v3.5.0', is no count.
+const SIZE_PHRASE: &str = r"(?i)(?<!\w)(?<![.-])\*{0,2}(?P<n>\d+)\*{0,2}(?:(?:\s|-)(?:native|Excel|LAMBDA|named|function))*(?:\s|-)(?:functions?|LAMBDAs?|names)\b";
 /// A statement of the help-table count, in figures or words.
-const HELP_PHRASE: &str = r"(?i)\b(?P<n>\d+|zero|one|two|three|four|five|six|seven|eight|nine)(?:\s+named)?\s+help\s+tables?\b";
+const HELP_PHRASE: &str = r"(?i)(?<!\w)(?<![.-])\*{0,2}(?P<n>\d+|zero|one|two|three|four|five|six|seven|eight|nine)\*{0,2}(?:\s+named)?\s+help\s+tables?\b";
 /// Statements of a size the sweep finds that are deliberately outside the register:
 /// file and a phrase containing the count, matched literally, so reflowing one
 /// fails. An entry whose phrase is no longer in its file fails.
