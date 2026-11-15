@@ -1,0 +1,604 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: LicenseRef-Duguid-Public-Attribution-1.0
+
+//! The function count gate: every registered statement of the library's size
+//! agrees with the index it describes, and true history about older releases passes.
+use ozzit::{
+    cache::Dump,
+    common::{Csv, Output, Result},
+    counts::{self, About, Git, Releases},
+    cover,
+};
+use std::{
+    path::{Path, PathBuf},
+    process::Command,
+};
+
+fn root() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
+}
+
+/// The functions and help tables `main` publishes.
+fn main_index() -> (usize, usize) {
+    cover::inventory(&root().join("functions.csv")).unwrap()
+}
+
+/// The newest release tag's version and its functions and help tables.
+fn latest() -> (String, usize, usize) {
+    let git = Git(&root());
+    let version = git
+        .tags()
+        .unwrap()
+        .iter()
+        .filter_map(|tag| {
+            let parts = tag
+                .strip_prefix('v')?
+                .split('.')
+                .map(|p| p.parse::<u64>().ok())
+                .collect::<Option<Vec<_>>>()?;
+            Some((parts, tag[1..].to_owned()))
+        })
+        .max()
+        .expect("the checkout has release tags")
+        .1;
+    let csv = Csv::parse(&git.index(&version).unwrap()).unwrap();
+    let (functions, help) = cover::inventory_of(&csv, "functions.csv").unwrap();
+    (version, functions, help)
+}
+
+/// An index of `functions` functions and `help` help tables.
+fn index(functions: usize, help: usize) -> String {
+    let mut text = "function\n".to_owned();
+    for i in 0..functions {
+        text += &format!("oz.F{i}λ\n");
+    }
+    for i in 0..help {
+        text += &format!("oz.About{i}λ\n");
+    }
+    text
+}
+
+/// The repository's release tags, with extra releases or a replaced tag list.
+#[derive(Default)]
+struct Overlay {
+    tags: Option<Result<Vec<String>>>,
+    extra: Vec<(&'static str, String)>,
+}
+impl Releases for Overlay {
+    fn tags(&self) -> Result<Vec<String>> {
+        if let Some(tags) = &self.tags {
+            return tags.clone();
+        }
+        let mut tags = Git(&root()).tags()?;
+        tags.extend(self.extra.iter().map(|(version, _)| format!("v{version}")));
+        Ok(tags)
+    }
+    fn index(&self, version: &str) -> Result<String> {
+        match self.extra.iter().find(|(v, _)| *v == version) {
+            Some((_, text)) => Ok(text.clone()),
+            None => Git(&root()).index(version),
+        }
+    }
+}
+
+/// A copy of every file the gate reads, taken from the repository.
+struct Fixture {
+    dir: tempfile::TempDir,
+}
+impl Fixture {
+    fn new() -> Self {
+        let dir = tempfile::tempdir().unwrap();
+        let files = counts::STATEMENTS
+            .iter()
+            .map(|(file, _, _, _)| *file)
+            .chain(["functions.csv", "CHANGELOG.md"]);
+        for file in files {
+            let target = dir.path().join(file);
+            std::fs::create_dir_all(target.parent().unwrap()).unwrap();
+            std::fs::copy(root().join(file), target).unwrap();
+        }
+        Self { dir }
+    }
+    fn path(&self) -> &Path {
+        self.dir.path()
+    }
+    /// Replace the one occurrence of `old`, returning the line it was on.
+    fn rewrite(&self, file: &str, old: &str, new: &str) -> usize {
+        let path = self.path().join(file);
+        let text = std::fs::read_to_string(&path).unwrap();
+        assert_eq!(text.matches(old).count(), 1, "{file}: {old}");
+        let line = text[..text.find(old).unwrap()].matches('\n').count() + 1;
+        std::fs::write(&path, text.replacen(old, new, 1)).unwrap();
+        line
+    }
+    /// Append `text` to `file`, returning the line it starts on.
+    fn append(&self, file: &str, text: &str) -> usize {
+        let path = self.path().join(file);
+        let old = std::fs::read_to_string(&path).unwrap();
+        std::fs::write(&path, format!("{old}\n{text}\n")).unwrap();
+        old.matches('\n').count() + 2
+    }
+    fn check_with(&self, about: &About, releases: &dyn Releases, strict: bool) -> Output {
+        counts::check(self.path(), about, releases, strict)
+    }
+    fn check(&self) -> Output {
+        self.check_with(&unchecked(), &Overlay::default(), false)
+    }
+}
+
+fn unchecked() -> About {
+    About::Unchecked("offline".into())
+}
+
+fn passes(output: &Output) {
+    assert_eq!(output.code, 0, "{:?} {:?}", output.out, output.err);
+    assert!(output.err.is_empty(), "{:?}", output.err);
+    assert!(
+        output.out.last().unwrap().starts_with("OK: "),
+        "{:?}",
+        output.out
+    );
+}
+
+fn fails_with(output: &Output, expected: &[&str]) {
+    assert_eq!(output.code, 1, "{:?}", output.out);
+    let failures = output
+        .out
+        .iter()
+        .filter(|line| line.starts_with("FAIL: "))
+        .collect::<Vec<_>>();
+    assert_eq!(failures.len(), expected.len(), "{failures:?}");
+    for (failure, expected) in failures.iter().zip(expected) {
+        assert!(failure.contains(expected), "{failure:?} lacks {expected:?}");
+    }
+}
+
+#[test]
+fn the_repository_states_one_count() {
+    passes(&counts::check(&root(), &unchecked(), &Git(&root()), false));
+}
+
+#[test]
+fn a_stale_count_fails_naming_file_and_line() {
+    let f = Fixture::new();
+    let (version, functions, _) = latest();
+    let line = f.rewrite(
+        "docs/practice-improvements.md",
+        &format!("the {functions}-function library"),
+        "the 143-function library",
+    );
+    fails_with(
+        &f.check(),
+        &[&format!(
+            "docs/practice-improvements.md:{line}: the existing library says 143 functions; v{version} has {functions} functions"
+        )],
+    );
+}
+
+#[test]
+fn each_surface_is_checked() {
+    let (n, _) = main_index();
+    let (version, r, _) = latest();
+    let main = ("functions.csv".to_owned(), n);
+    let release = (format!("v{version}"), r);
+    let cases = [
+        ("README.md", format!("alt=\"Ozzit. {r} native"), &release),
+        ("README.md", format!("helpers: {r} functions"), &release),
+        ("README.md", format!("with {r} functions."), &release),
+        (
+            "README.md",
+            format!("does not need all {r} functions"),
+            &release,
+        ),
+        ("AGENTS.md", format!("The library has {n} native"), &main),
+        ("llms.txt", format!("has {r} functions:"), &release),
+        (
+            "docs/between-spreadsheets.md",
+            format!("its {r} LAMBDAs"),
+            &release,
+        ),
+        (
+            "docs/modelling-conventions.md",
+            format!("library of {n} LAMBDA"),
+            &main,
+        ),
+        (
+            ".github/assets/banner.svg",
+            format!("Ozzit: {r} native"),
+            &release,
+        ),
+        (
+            ".github/assets/banner-light.svg",
+            format!("Ozzit: {r} native"),
+            &release,
+        ),
+        (
+            ".github/assets/banner-phone.svg",
+            format!("Ozzit: {r} native"),
+            &release,
+        ),
+        (
+            ".github/assets/banner-phone-light.svg",
+            format!("Ozzit: {r} native"),
+            &release,
+        ),
+    ];
+    for (file, old, (source, count)) in cases {
+        let f = Fixture::new();
+        let new = old.replacen(&count.to_string(), "143", 1);
+        let line = f.rewrite(file, &old, &new);
+        let output = f.check();
+        fails_with(&output, &[&format!("{file}:{line}: ")]);
+        assert!(
+            output.out[1].ends_with(&format!(
+                "says 143 functions; {source} has {count} functions"
+            )),
+            "{:?}",
+            output.out
+        );
+    }
+}
+
+#[test]
+fn help_tables_and_names_are_checked() {
+    let (n, h) = main_index();
+    let (version, r, rh) = latest();
+    let f = Fixture::new();
+    let readme = f.rewrite(
+        "README.md",
+        &format!("its {} names", r + rh),
+        &format!("its {} names", r + rh + 1),
+    );
+    let intro = f.rewrite(
+        "README.md",
+        &format!("functions and {rh} named help tables in release"),
+        &format!("functions and {} named help tables in release", rh + 1),
+    );
+    let agents = f.rewrite(
+        "AGENTS.md",
+        &format!("functions and {h} named help"),
+        "functions and several named help",
+    );
+    let docs = f.rewrite(
+        "docs/between-spreadsheets.md",
+        "LAMBDAs and five help tables",
+        "LAMBDAs and six help tables",
+    );
+    let guide = f.rewrite(
+        "docs/function-guide.md",
+        &format!("indexes all {} names", n + h),
+        "indexes all 9 names",
+    );
+    fails_with(
+        &f.check(),
+        &[
+            &format!(
+                "README.md:{intro}: the introduction says {} help tables; v{version} has {rh} help tables",
+                rh + 1
+            ),
+            &format!(
+                "README.md:{readme}: the oz.txt name count says {} names; v{version} has {} names",
+                r + rh + 1,
+                r + rh
+            ),
+            &format!(
+                "AGENTS.md:{agents}: the library size gives 'several' help tables, not a count"
+            ),
+            &format!(
+                "docs/between-spreadsheets.md:{docs}: the library size says 6 help tables; v{version} has {rh} help tables"
+            ),
+            &format!(
+                "docs/function-guide.md:{guide}: the index size says 9 names; functions.csv has {} names",
+                n + h
+            ),
+        ],
+    );
+}
+
+#[test]
+fn statements_about_older_releases_are_checked_against_their_tags() {
+    let bullet = |version: &str, functions: usize| {
+        format!(
+            "- **[v{version}](https://github.com/ryanduguid/Ozzit/releases/tag/v{version})**, published\n  1 May 2020 from the cut dated 1 May 2020, with {functions} functions."
+        )
+    };
+    let releases = Overlay {
+        extra: vec![("0.9.0", index(7, 2))],
+        ..Overlay::default()
+    };
+    let f = Fixture::new();
+    f.append("README.md", &bullet("0.9.0", 7));
+    passes(&f.check_with(&unchecked(), &releases, false));
+    let f = Fixture::new();
+    let line = f.append("README.md", &bullet("0.9.0", 8));
+    fails_with(
+        &f.check_with(&unchecked(), &releases, false),
+        &[&format!(
+            "README.md:{line}: the release bullet says 8 functions; v0.9.0 has 7 functions"
+        )],
+    );
+    let f = Fixture::new();
+    let line = f.append("README.md", &bullet("0.8.0", 7));
+    fails_with(
+        &f.check_with(&unchecked(), &releases, false),
+        &[&format!(
+            "README.md:{line}: the release bullet: v0.8.0 has no release tag and is not the changelog's newest cut"
+        )],
+    );
+}
+
+#[test]
+fn an_untagged_cut_is_checked_against_main() {
+    let (n, _) = main_index();
+    for (stated, failure) in [(n, None), (n + 1, Some(n))] {
+        let f = Fixture::new();
+        let changelog = f.path().join("CHANGELOG.md");
+        let text = std::fs::read_to_string(&changelog).unwrap();
+        let heading = text.find("\n## v").unwrap() + 5;
+        let end = heading + text[heading..].find(',').unwrap();
+        std::fs::write(
+            &changelog,
+            format!("{}9.9.9{}", &text[..heading], &text[end..]),
+        )
+        .unwrap();
+        let line = f.append(
+            "README.md",
+            &format!("- **v9.9.9**, cut dated 1 May 2027 from `main`, with {stated} functions:"),
+        );
+        let output = f.check();
+        match failure {
+            None => passes(&output),
+            Some(count) => fails_with(
+                &output,
+                &[&format!(
+                    "README.md:{line}: the release bullet says {stated} functions; v9.9.9 has {count} functions"
+                )],
+            ),
+        }
+    }
+}
+
+#[test]
+fn a_newer_tag_makes_the_latest_statements_stale() {
+    let (version, _, _) = latest();
+    let text = Git(&root()).index(&version).unwrap();
+    let releases = Overlay {
+        extra: vec![("99.0.0", text)],
+        ..Overlay::default()
+    };
+    let f = Fixture::new();
+    fails_with(
+        &f.check_with(&unchecked(), &releases, false),
+        &[
+            &format!("the introduction names v{version}; the newest release tag is v99.0.0"),
+            &format!("the oz.txt name count names v{version}; the newest release tag is v99.0.0"),
+        ],
+    );
+}
+
+#[test]
+fn missing_release_tags_skip_offline_and_fail_in_ci() {
+    let none = Overlay {
+        tags: Some(Ok(vec!["v1".into(), "release".into()])),
+        ..Overlay::default()
+    };
+    let unreadable = Overlay {
+        tags: Some(Err("not a git repository".into())),
+        ..Overlay::default()
+    };
+    let f = Fixture::new();
+    let output = f.check_with(&unchecked(), &none, false);
+    passes(&output);
+    assert_eq!(
+        output.out[0],
+        "SKIP: release statements not checked: this checkout has no vX.Y.Z release tags"
+    );
+    let output = f.check_with(&unchecked(), &unreadable, false);
+    passes(&output);
+    assert_eq!(
+        output.out[0],
+        "SKIP: release statements not checked: the release tags could not be read: not a git repository"
+    );
+    fails_with(
+        &f.check_with(&unchecked(), &none, true),
+        &["FAIL: this checkout has no vX.Y.Z release tags; fetch them"],
+    );
+    fails_with(
+        &f.check_with(&unchecked(), &unreadable, true),
+        &["FAIL: the release tags could not be read: not a git repository"],
+    );
+}
+
+#[test]
+fn a_reworded_statement_fails_as_missing() {
+    let (_, r, _) = latest();
+    let f = Fixture::new();
+    f.rewrite(
+        "README.md",
+        &format!("does not need all {r} functions"),
+        "does not need every function",
+    );
+    fails_with(
+        &f.check(),
+        &["README.md: the 'does not need all N functions' line is missing or reworded"],
+    );
+}
+
+#[test]
+fn the_about_description_is_checked_when_read() {
+    let f = Fixture::new();
+    let (version, r, rh) = latest();
+    let check = |about: About| f.check_with(&about, &Overlay::default(), false);
+    let output = check(About::Text(format!(
+        "{r} Excel LAMBDA functions and {rh} help tables for Australian GST."
+    )));
+    passes(&output);
+    assert!(output.out.iter().all(|line| !line.contains("About")));
+    fails_with(
+        &check(About::Text(format!(
+            "143 Excel LAMBDA functions and {rh} help tables for Australian GST."
+        ))),
+        &[&format!(
+            "FAIL: About description: the repository description says 143 functions; v{version} has {r} functions"
+        )],
+    );
+    fails_with(
+        &check(About::Text("Excel LAMBDA functions.".into())),
+        &["FAIL: About description: the repository description is missing or reworded"],
+    );
+    fails_with(
+        &check(About::Unreadable("gh is not installed".into())),
+        &["FAIL: About description could not be read: gh is not installed"],
+    );
+    let output = check(About::Unchecked("no token".into()));
+    passes(&output);
+    assert_eq!(output.out[0], "SKIP: About description not read: no token");
+}
+
+fn env<'a>(pairs: &'a [(&'a str, &'a str)]) -> impl Fn(&str) -> Option<String> + 'a {
+    move |name| {
+        pairs
+            .iter()
+            .find(|(key, _)| *key == name)
+            .map(|(_, value)| (*value).to_owned())
+    }
+}
+
+fn never() -> Result<Dump> {
+    panic!("the description must not be fetched")
+}
+
+fn exited(code: i64, stdout: &str, stderr: &str) -> Result<Dump> {
+    Ok(Dump::Exited {
+        code,
+        stdout: stdout.into(),
+        stderr: stderr.into(),
+    })
+}
+
+fn reason(about: About) -> String {
+    match about {
+        About::Unchecked(reason) => reason,
+        other => panic!("{other:?}"),
+    }
+}
+
+#[test]
+fn the_description_is_read_only_with_a_token_in_the_upstream_repository() {
+    let offline = "no GH_TOKEN or GITHUB_TOKEN, as in an offline run";
+    assert_eq!(reason(counts::read_about(env(&[]), never)), offline);
+    assert_eq!(
+        reason(counts::read_about(
+            env(&[("GH_TOKEN", ""), ("GITHUB_ACTIONS", "true")]),
+            never
+        )),
+        offline
+    );
+    assert_eq!(
+        reason(counts::read_about(
+            env(&[
+                ("GITHUB_TOKEN", "t"),
+                ("GITHUB_REPOSITORY", "someone/Ozzit"),
+                ("GITHUB_ACTIONS", "true")
+            ]),
+            never
+        )),
+        "this run is in someone/Ozzit, not ryanduguid/Ozzit"
+    );
+    for pairs in [
+        &[("GH_TOKEN", "t")][..],
+        &[
+            ("GITHUB_TOKEN", "t"),
+            ("GITHUB_REPOSITORY", "ryanduguid/Ozzit"),
+        ],
+    ] {
+        match counts::read_about(env(pairs), || {
+            exited(0, " 150 Excel LAMBDA functions\n", "")
+        }) {
+            About::Text(text) => assert_eq!(text, "150 Excel LAMBDA functions"),
+            other => panic!("{other:?}"),
+        }
+    }
+}
+
+#[test]
+fn a_failed_read_is_reported_offline_and_fails_in_ci() {
+    let cases: [(fn() -> Result<Dump>, &str); 4] = [
+        (|| Ok(Dump::NotFound), "gh is not installed"),
+        (|| Ok(Dump::TimedOut), "gh api took longer than 30 seconds"),
+        (
+            || {
+                exited(
+                    1,
+                    "",
+                    "error connecting to api.github.com\ncheck your internet connection\n",
+                )
+            },
+            "gh api exited 1: error connecting to api.github.com",
+        ),
+        (|| Err("denied".into()), "gh could not run: denied"),
+    ];
+    for (fetch, expected) in cases {
+        assert_eq!(
+            reason(counts::read_about(env(&[("GH_TOKEN", "t")]), fetch)),
+            expected
+        );
+        match counts::read_about(env(&[("GH_TOKEN", "t"), ("GITHUB_ACTIONS", "true")]), fetch) {
+            About::Unreadable(reason) => assert_eq!(reason, expected),
+            other => panic!("{other:?}"),
+        }
+    }
+}
+
+fn cli(dir: &Path, args: &[&str]) -> std::process::Output {
+    Command::new(env!("CARGO_BIN_EXE_ozzit"))
+        .current_dir(dir)
+        .env_remove("GH_TOKEN")
+        .env_remove("GITHUB_TOKEN")
+        .env_remove("GITHUB_ACTIONS")
+        // The fixture is no checkout; stop Git finding one above the temporary folder.
+        .env("GIT_CEILING_DIRECTORIES", std::env::temp_dir())
+        .arg("verify_counts")
+        .args(args)
+        .output()
+        .unwrap()
+}
+
+#[test]
+fn the_command_reads_the_working_directory_or_a_named_root() {
+    let f = Fixture::new();
+    let newline = if cfg!(windows) { "\r\n" } else { "\n" };
+    for output in [
+        cli(f.path(), &[]),
+        cli(&root(), &[f.path().to_str().unwrap()]),
+    ] {
+        assert_eq!(output.status.code(), Some(0));
+        let stdout = String::from_utf8(output.stdout).unwrap();
+        let lines = stdout.split(newline).collect::<Vec<_>>();
+        assert_eq!(lines.len(), 4, "{stdout}");
+        assert!(
+            lines[0].starts_with(
+                "SKIP: release statements not checked: the release tags could not be read: git tag --list v* exited "
+            ),
+            "{stdout}"
+        );
+        assert_eq!(
+            lines[1],
+            "SKIP: About description not read: no GH_TOKEN or GITHUB_TOKEN, as in an offline run"
+        );
+        assert!(lines[2].starts_with("OK: "), "{stdout}");
+    }
+    let output = cli(f.path(), &["a", "b"]);
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(
+        String::from_utf8(output.stderr).unwrap(),
+        format!("FAIL: usage: ozzit verify_counts [repository-root]{newline}")
+    );
+    let output = cli(&f.path().join("docs"), &[]);
+    assert_eq!(output.status.code(), Some(1));
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    assert!(
+        stdout.starts_with("FAIL: ") && stdout.contains("functions.csv"),
+        "{stdout}"
+    );
+}

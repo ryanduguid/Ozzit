@@ -29,6 +29,20 @@ callees in `docs/workbook-use.md` to the calls in `src/`.
 never checked the examples of `Corkscrewλ`, `CorkScrewReversalλ` and
 `Depreciateλ`. It now reads all 147 example blocks, up from 144.
 
+New gate `verify_counts`: the README, `AGENTS.md`, `llms.txt`, 4 guides and the
+4 banner titles stated the function count by hand, and some still said 143 after
+v3.6.0 shipped 150. The gate keeps a register of each statement of the function,
+help-table and module-name counts, anchored on its wording, and of what it
+describes: `main`, the newest release tag, or the release it names. It compares
+each with `functions.csv` in the working tree or at that tag, and fails, naming
+file and line, when one disagrees or can no longer be found. True statements
+about older releases pass; a release candidate may still present the release
+before it; a statement naming an untagged release other than the changelog's
+newest cut fails. With a token in the upstream repository it also reads the About
+description through `gh api`. Offline and in a fork it reports what it skipped; in
+GitHub Actions, missing release tags or an unreadable About description fail it.
+CI runs it after `verify_cover`.
+
 `native_checks` writes `docs/native-checks.csv`: for each name in
 `functions.csv`, the generated help and worked-example assertions, the
 hand-written self-test calls and the worksheet formula cells that reach it, read
