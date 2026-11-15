@@ -76,7 +76,7 @@ The function returns the unrounded binary-float result,
 **Human decision:** Does the evidence establish that the whole supply is taxable?
 
 [Browse 10 worked formulas](https://duguid.com.au/tools/ozzit/#functions),
-including arguments, expected results and limits for v3.5.0.
+including arguments, expected results and limits for v3.6.0.
 
 <details>
 <summary>Historical v3.2.0 screenshot</summary>
