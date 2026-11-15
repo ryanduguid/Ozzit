@@ -50,6 +50,7 @@ fn index(functions: usize, help: usize) -> String {
 struct Overlay {
     tags: Option<Result<Vec<String>>>,
     extra: Vec<(&'static str, String)>,
+    tracked: Option<Result<Vec<String>>>,
 }
 impl Releases for Overlay {
     fn tags(&self) -> Result<Vec<String>> {
@@ -66,6 +67,11 @@ impl Releases for Overlay {
             None => Git(&root()).index(version),
         }
     }
+    fn tracked(&self) -> Result<Vec<String>> {
+        self.tracked
+            .clone()
+            .unwrap_or_else(|| Git(&root()).tracked())
+    }
 }
 
 /// A copy of every file the gate reads, taken from the repository.
@@ -78,6 +84,7 @@ impl Fixture {
         let files = counts::STATEMENTS
             .iter()
             .map(|(file, _, _, _)| *file)
+            .chain(counts::EXEMPT.iter().map(|(file, _)| *file))
             .chain(["functions.csv", "CHANGELOG.md"]);
         for file in files {
             let target = dir.path().join(file);
@@ -217,7 +224,7 @@ fn every_registered_count_is_checked() {
             checked += 1;
         }
     }
-    assert_eq!(checked, 20);
+    assert_eq!(checked, 23);
 }
 
 #[test]
@@ -257,23 +264,23 @@ fn statements_about_older_releases_are_checked_against_their_tags() {
         )
     };
     let releases = Overlay {
-        extra: vec![("0.9.0", index(7, 2))],
+        extra: vec![("0.9.0", index(61, 2))],
         ..Overlay::default()
     };
     let f = Fixture::new();
-    f.append("README.md", &bullet("0.9.0", 7));
+    f.append("README.md", &bullet("0.9.0", 61));
     passes(&f.check_with(&unchecked(), &releases, false));
     let f = Fixture::new();
     // The count is on the bullet's second line, which a failure names.
-    let line = f.append("README.md", &bullet("0.9.0", 8)) + 1;
+    let line = f.append("README.md", &bullet("0.9.0", 62)) + 1;
     fails_with(
         &f.check_with(&unchecked(), &releases, false),
         &[&format!(
-            "README.md:{line}: the release bullet says 8 functions; v0.9.0 has 7 functions"
+            "README.md:{line}: the release bullet says 62 functions; v0.9.0 has 61 functions"
         )],
     );
     let f = Fixture::new();
-    let line = f.append("README.md", &bullet("0.8.0", 7));
+    let line = f.append("README.md", &bullet("0.8.0", 61));
     fails_with(
         &f.check_with(&unchecked(), &releases, false),
         &[&format!(
@@ -528,7 +535,7 @@ fn a_failed_read_upstream_is_reported_locally_and_fails_in_ci() {
     }
 }
 
-fn cli(dir: &Path, args: &[&str]) -> std::process::Output {
+fn cli(dir: &Path, command: &str, args: &[&str]) -> std::process::Output {
     Command::new(env!("CARGO_BIN_EXE_ozzit"))
         .current_dir(dir)
         .env_remove("GH_TOKEN")
@@ -537,7 +544,7 @@ fn cli(dir: &Path, args: &[&str]) -> std::process::Output {
         .env_remove("GITHUB_REPOSITORY")
         // The fixture is no checkout; stop Git finding one above the temporary folder.
         .env("GIT_CEILING_DIRECTORIES", std::env::temp_dir())
-        .arg("verify_counts")
+        .arg(command)
         .args(args)
         .output()
         .unwrap()
@@ -548,13 +555,13 @@ fn the_command_reads_the_working_directory_or_a_named_root() {
     let f = Fixture::new();
     let newline = if cfg!(windows) { "\r\n" } else { "\n" };
     for output in [
-        cli(f.path(), &[]),
-        cli(&root(), &[f.path().to_str().unwrap()]),
+        cli(f.path(), "verify_counts", &[]),
+        cli(&root(), "verify_counts", &[f.path().to_str().unwrap()]),
     ] {
         assert_eq!(output.status.code(), Some(0));
         let stdout = String::from_utf8(output.stdout).unwrap();
         let lines = stdout.split(newline).collect::<Vec<_>>();
-        assert_eq!(lines.len(), 4, "{stdout}");
+        assert_eq!(lines.len(), 5, "{stdout}");
         assert!(
             lines[0].starts_with(
                 "SKIP: release statements not checked: the release tags could not be read: git tag --list v* exited "
@@ -565,19 +572,190 @@ fn the_command_reads_the_working_directory_or_a_named_root() {
             lines[1],
             "SKIP: About description not read: GITHUB_REPOSITORY is unset, not ryanduguid/Ozzit"
         );
-        assert!(lines[2].starts_with("OK: "), "{stdout}");
+        assert!(
+            lines[2].starts_with(
+                "SKIP: unregistered statements not looked for: the tracked files could not be listed: git ls-files -z exited "
+            ),
+            "{stdout}"
+        );
+        assert!(lines[3].starts_with("OK: "), "{stdout}");
     }
-    let output = cli(f.path(), &["a", "b"]);
-    assert_eq!(output.status.code(), Some(1));
-    assert_eq!(
-        String::from_utf8(output.stderr).unwrap(),
-        format!("FAIL: usage: ozzit verify_counts [repository-root]{newline}")
-    );
-    let output = cli(&f.path().join("docs"), &[]);
+    for command in ["verify_counts", "sync_counts"] {
+        let output = cli(f.path(), command, &["a", "b"]);
+        assert_eq!(output.status.code(), Some(1));
+        assert_eq!(
+            String::from_utf8(output.stderr).unwrap(),
+            format!("FAIL: usage: ozzit {command} [repository-root]{newline}")
+        );
+    }
+    let output = cli(&f.path().join("docs"), "verify_counts", &[]);
     assert_eq!(output.status.code(), Some(1));
     let stdout = String::from_utf8(output.stdout).unwrap();
     assert!(
         stdout.starts_with("FAIL: ") && stdout.contains("functions.csv"),
         "{stdout}"
     );
+}
+
+#[test]
+fn a_statement_of_the_size_outside_the_register_fails() {
+    let (n, h) = main_index();
+    let f = Fixture::new();
+    let help = f.append("AGENTS.md", "The FIVE help\ntables come last.");
+    let size = f.append(
+        "docs/function-guide.md",
+        &format!("Ozzit has {n}\nfunctions, and {}\nnames in all.", n + h),
+    );
+    // A count the library has never had is not its size, nor is a version or date.
+    f.append(
+        "docs/function-guide.md",
+        "A model may call 7 functions; see the v3.5.0 help tables and the 2026-11-15 help tables.",
+    );
+    let emphasised = f.append("docs/function-guide.md", &format!("All **{n}** FUNCTIONS."));
+    fails_with(
+        &f.check(),
+        &[
+            &format!(
+                "FAIL: AGENTS.md:{help}: 'FIVE help tables' states the library's size outside the register; add it to STATEMENTS or EXEMPT in tools/ozzit/src/counts.rs"
+            ),
+            &format!("FAIL: docs/function-guide.md:{size}: '{n} functions' states"),
+            &format!(
+                "FAIL: docs/function-guide.md:{}: '{} names' states",
+                size + 1,
+                n + h
+            ),
+            &format!("FAIL: docs/function-guide.md:{emphasised}: '**{n}** FUNCTIONS' states"),
+        ],
+    );
+}
+
+#[test]
+fn an_exemption_whose_phrase_is_gone_fails() {
+    let (file, phrase) = counts::EXEMPT[0];
+    let f = Fixture::new();
+    f.rewrite(file, phrase, "an earlier count");
+    fails_with(
+        &f.check(),
+        &[&format!(
+            "FAIL: {file}: the exemption '{phrase}' is no longer there; remove it from EXEMPT"
+        )],
+    );
+}
+
+#[test]
+fn unlisted_tracked_files_skip_the_sweep_offline_and_fail_in_ci() {
+    let (n, _) = main_index();
+    let releases = Overlay {
+        tracked: Some(Err("not a git repository".into())),
+        ..Overlay::default()
+    };
+    let f = Fixture::new();
+    f.append(
+        "docs/function-guide.md",
+        &format!("Ozzit has {n} functions."),
+    );
+    let output = f.check_with(&unchecked(), &releases, false);
+    passes(&output);
+    assert!(
+        output.out.contains(
+            &"SKIP: unregistered statements not looked for: the tracked files could not be listed: not a git repository"
+                .to_owned()
+        ),
+        "{:?}",
+        output.out
+    );
+    fails_with(
+        &f.check_with(&unchecked(), &releases, true),
+        &["FAIL: the tracked files could not be listed: not a git repository"],
+    );
+}
+
+/// Assert `sync_counts` reported changing a statement in `prefix` as `change`.
+fn changed(output: &Output, prefix: &str, change: &str) {
+    assert!(
+        output
+            .out
+            .iter()
+            .any(|line| line.starts_with(&format!("CHANGED: {prefix}"))
+                && line.ends_with(&format!(": {change}"))),
+        "{prefix} {change}: {:?}",
+        output.out
+    );
+}
+
+#[test]
+fn sync_counts_moves_the_statements_to_a_new_release() {
+    let (n, h) = main_index();
+    let (version, _, _) = latest();
+    let releases = Overlay {
+        extra: vec![("99.0.0", index(n + 3, h + 1))],
+        ..Overlay::default()
+    };
+    let f = Fixture::new();
+    let agents = f.rewrite(
+        "AGENTS.md",
+        &format!("has {n} native"),
+        &format!("has {} native", n - 1),
+    );
+    let read = |file: &str| std::fs::read_to_string(f.path().join(file)).unwrap();
+    let llms = read("llms.txt");
+    let output = counts::sync_with(f.path(), &releases);
+    // The banners and the social card are drawn, so they are regenerated instead.
+    let drawn = counts::STATEMENTS
+        .iter()
+        .filter(|(file, _, _, _)| file.ends_with(".svg"))
+        .map(|(file, _, _, _)| format!("FAIL: {file}:"))
+        .collect::<Vec<_>>();
+    assert_eq!(drawn.len(), 5);
+    fails_with(
+        &output,
+        &drawn.iter().map(String::as_str).collect::<Vec<_>>(),
+    );
+    let stale = format!(
+        "the title says {n} functions; v99.0.0 has {} functions",
+        n + 3
+    );
+    assert!(
+        output.out.iter().filter(|l| l.contains(&stale)).count() == 5,
+        "{:?}",
+        output.out
+    );
+    let changed = |prefix: &str, change: &str| changed(&output, prefix, change);
+    changed(&format!("AGENTS.md:{agents}"), &format!("{} to {n}", n - 1));
+    changed("README.md:", &format!("{version} to 99.0.0"));
+    changed("README.md:", &format!("{n} to {}", n + 3));
+    changed("README.md:", &format!("{} to {}", n + h, n + 3 + h + 1));
+    changed("README.md:", &format!("{h} to {}", h + 1));
+    changed(
+        "docs/between-spreadsheets.md:",
+        &format!("{} to {}", WORDS[h], WORDS[h + 1]),
+    );
+    assert_eq!(read("llms.txt"), llms, "a statement naming a release stays");
+}
+
+#[test]
+fn sync_counts_leaves_a_wrong_statement_naming_a_release_failing() {
+    let (file, what, _, pattern) = counts::STATEMENTS
+        .into_iter()
+        .find(|(file, _, _, _)| *file == "llms.txt")
+        .unwrap();
+    let f = Fixture::new();
+    let path = f.path().join(file);
+    let text = std::fs::read_to_string(&path).unwrap();
+    let stated = re(&counts::regex(pattern))
+        .captures(&text)
+        .unwrap()
+        .unwrap()
+        .name("functions")
+        .unwrap();
+    let wrong = stated.as_str().parse::<usize>().unwrap() + 1;
+    let changed = format!(
+        "{}{wrong}{}",
+        &text[..stated.start()],
+        &text[stated.end()..]
+    );
+    std::fs::write(&path, &changed).unwrap();
+    let output = counts::sync_with(f.path(), &Overlay::default());
+    fails_with(&output, &[&format!("the {what} says {wrong} functions")]);
+    assert_eq!(std::fs::read_to_string(&path).unwrap(), changed);
 }
