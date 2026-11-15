@@ -442,8 +442,12 @@ fn text_only_failures_retain_exact_diagnostics() {
         ["module text does not end with a newline"]
     );
     assert_eq!(
-        findings(&(text + "// oz.oz.Thing\n")),
+        findings(&(text.clone() + "// oz.oz.Thing\n")),
         ["module text contains a doubled oz. prefix"]
+    );
+    assert_eq!(
+        findings(&(text + "// Help\t\n")),
+        ["module text contains a tab"]
     );
 }
 
