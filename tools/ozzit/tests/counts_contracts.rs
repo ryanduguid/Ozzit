@@ -476,9 +476,16 @@ fn the_description_is_read_only_in_the_upstream_repository() {
     }
 }
 
+/// The environment, the read and the reason it was not used.
+type FailedRead = (
+    &'static [(&'static str, &'static str)],
+    fn() -> Result<Dump>,
+    &'static str,
+);
+
 #[test]
 fn a_failed_read_upstream_is_reported_locally_and_fails_in_ci() {
-    let cases: [(&[(&str, &str)], fn() -> Result<Dump>, &str); 5] = [
+    let cases: [FailedRead; 5] = [
         (
             &[UPSTREAM, ("GH_TOKEN", "")],
             never,
