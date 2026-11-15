@@ -498,17 +498,17 @@ impl Checker<'_> {
             ("names", "names", index.functions + index.help),
             (
                 "sheetless",
-                "names without a worksheet",
+                "names without a worksheet in ozzit.xlsx",
                 sheetless.functions + sheetless.help,
             ),
             (
                 "sheetless_functions",
-                "functions without a worksheet",
+                "functions without a worksheet in ozzit.xlsx",
                 sheetless.functions,
             ),
             (
                 "sheetless_help",
-                "help tables without a worksheet",
+                "help tables without a worksheet in ozzit.xlsx",
                 sheetless.help,
             ),
         ] {

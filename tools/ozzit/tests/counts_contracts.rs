@@ -120,9 +120,10 @@ impl Fixture {
         let book = parts.get_mut("xl/workbook.xml").unwrap();
         let mut text = String::from_utf8(book.clone()).unwrap();
         for (old, new) in renames {
-            let old = format!(r#" name="{old}""#);
+            // A function's sheet also has a defined name of the same name.
+            let old = format!(r#"<sheet name="{old}""#);
             assert_eq!(text.matches(&old).count(), 1, "{old}");
-            text = text.replacen(&old, &format!(r#" name="{new}""#), 1);
+            text = text.replacen(&old, &format!(r#"<sheet name="{new}""#), 1);
         }
         *book = text.into_bytes();
         write_deterministic(&path, &parts).unwrap();
@@ -259,9 +260,9 @@ fn every_release_pattern_captures_its_version() {
 
 /// The guide's count of names without a worksheet of their own in `ozzit.xlsx`,
 /// and the nouns the gate gives them.
-const SHEETLESS: &str = "names without a worksheet";
-const SHEETLESS_FUNCTIONS: &str = "functions without a worksheet";
-const SHEETLESS_HELP: &str = "help tables without a worksheet";
+const SHEETLESS: &str = "names without a worksheet in ozzit.xlsx";
+const SHEETLESS_FUNCTIONS: &str = "functions without a worksheet in ozzit.xlsx";
+const SHEETLESS_HELP: &str = "help tables without a worksheet in ozzit.xlsx";
 
 /// The function guide's worksheet statement: what it is, and the count of names,
 /// functions and help tables it states, each with its line.
@@ -290,11 +291,14 @@ fn sheetless_statement(f: &Fixture) -> (&'static str, [(usize, usize); 3]) {
 
 #[test]
 fn worksheet_counts_are_registered_only_about_main() {
+    let mut registered = 0;
     for (file, what, basis, pattern) in counts::STATEMENTS {
         if pattern.contains("(?P<sheetless") {
             assert_eq!(basis, counts::Basis::Main, "{file}: the {what}");
+            registered += 1;
         }
     }
+    assert_eq!(registered, 1);
 }
 
 #[test]
