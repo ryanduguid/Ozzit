@@ -9,12 +9,12 @@ these changes fix.
 ### Fixed
 
 - `oz.CorkScrewReversalλ` returned #REF! instead of a message when ReversalFlags was
-  narrower than Flow1, and left out the extra flags of a wider row. It now returns
-  'ReversalFlags needs one flag for each column of Flow1.' for either.
+  narrower than Flow1, left out the extra flags of a wider row and used only the first
+  row of flags several rows deep. It now returns 'ReversalFlags needs one row with one
+  flag for each column of Flow1.' for each.
 - `oz.txt` no longer ends 4 comment lines in `oz.IntOnIntλ` and `oz.IRRλ` with a tab,
   which the Advanced Formula Environment does not allow in a module, and
   `ozzit build_module` now refuses a module that contains one.
-
 - `oz.CorkScrewReversalλ` totalled its flows with SUM, as `oz.Corkscrewλ` did before
   v3.6.0, and checked neither Opening nor flows, so a flow typed as text was left out
   of the closing balance. It now takes

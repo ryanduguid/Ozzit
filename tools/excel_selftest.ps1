@@ -124,11 +124,13 @@ foreach ($flag in '2', '-1', '0.5', 'TRUE', '"1"') {
          "LET(x, $cr(100,{0,$flag,0},{10,20,30}), IF(AND(ROWS(x) = 1, COLUMNS(x) = 1), x, `"array`"))" $crRefused
 }
 Same 'CorkScrewReversal refuses a text flag cell' "LET(x, $cr(100,AI1:AL1,{10,20,30,40}), IF(AND(ROWS(x) = 1, COLUMNS(x) = 1), x, `"array`"))" $crRefused
-# INDEX read past a narrower flags row, so it returned #REF! instead of a message, and
-# dropped the extra columns of a wider one. Both are refused; AD1:AE1 is 2 cells wide.
-$crWidth = 'ReversalFlags needs one flag for each column of Flow1.'
-foreach ($r in '100, {0,1}, {10,20,30}', '100, 0, {10,20,30}', '100, {0,1,0,1}, {10,20,30}', '100, AD1:AE1, {10,20,30}') {
-    Same "CorkScrewReversal refuses a flags row of another width ($r)" "LET(x, $cr($r), IF(AND(ROWS(x) = 1, COLUMNS(x) = 1), x, `"array`"))" $crWidth
+# INDEX read past a narrower flags row, so it returned #REF! instead of a message,
+# dropped the extra columns of a wider one and read only the first row of a deeper one.
+# All are refused; AD1:AE1 is 2 cells wide and AD1:AE2 is 2 rows deep.
+$crWidth = 'ReversalFlags needs one row with one flag for each column of Flow1.'
+foreach ($r in '100, {0,1}, {10,20,30}', '100, 0, {10,20,30}', '100, {0,1,0,1}, {10,20,30}', '100, AD1:AE1, {10,20,30}',
+               '100, {0,1;1,0}, {10,20}', '100, AD1:AE2, {10,20}') {
+    Same "CorkScrewReversal refuses flags of another shape ($r)" "LET(x, $cr($r), IF(AND(ROWS(x) = 1, COLUMNS(x) = 1), x, `"array`"))" $crWidth
 }
 # It totalled its flows with SUM and checked neither Opening nor flows, so a flow typed as
 # text showed but never reached the closing balance. It now takes Corkscrew's checks.
