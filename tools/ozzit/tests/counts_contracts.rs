@@ -346,7 +346,7 @@ fn missing_release_tags_skip_offline_and_fail_in_ci() {
     passes(&output);
     assert_eq!(
         output.out[0],
-        "SKIP: release statements not checked: this checkout has no vX.Y.Z release tags"
+        "SKIP: release statements not checked: this checkout has no vX.Y.Z release tags; fetch them, as actions/checkout does with fetch-depth: 0"
     );
     let output = f.check_with(&unchecked(), &unreadable, false);
     passes(&output);

@@ -397,6 +397,28 @@ impl Checker<'_> {
         }
     }
 
+    /// Check the About description if it was read, or report why not.
+    fn about(&mut self, about: &About, out: &mut Vec<String>) {
+        match about {
+            About::Unchecked(reason) => {
+                out.push(format!("SKIP: About description not read: {reason}"));
+            }
+            About::Unreadable(reason) => self.failures.push(format!(
+                "FAIL: About description could not be read: {reason}"
+            )),
+            About::Text(text) => {
+                let statement = Statement {
+                    place: "About description",
+                    numbered: false,
+                    what: "repository description",
+                    basis: Basis::Release,
+                    text,
+                };
+                self.statement(&statement, ABOUT);
+            }
+        }
+    }
+
     /// The closing line once every statement agrees.
     fn agreed(&mut self) -> String {
         let release = match self.latest.clone() {
@@ -498,24 +520,7 @@ pub fn check(root: &Path, about: &About, releases: &dyn Releases, strict: bool) 
             };
             checker.statement(&statement, pattern);
         }
-        match about {
-            About::Unchecked(reason) => {
-                out.push(format!("SKIP: About description not read: {reason}"));
-            }
-            About::Unreadable(reason) => checker.failures.push(format!(
-                "FAIL: About description could not be read: {reason}"
-            )),
-            About::Text(text) => {
-                let statement = Statement {
-                    place: "About description",
-                    numbered: false,
-                    what: "repository description",
-                    basis: Basis::Release,
-                    text,
-                };
-                checker.statement(&statement, ABOUT);
-            }
-        }
+        checker.about(about, &mut out);
         let code = u8::from(!checker.failures.is_empty());
         if checker.failures.is_empty() {
             out.push(checker.agreed());
