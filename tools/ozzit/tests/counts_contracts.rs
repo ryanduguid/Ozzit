@@ -264,7 +264,8 @@ fn statements_about_older_releases_are_checked_against_their_tags() {
     f.append("README.md", &bullet("0.9.0", 7));
     passes(&f.check_with(&unchecked(), &releases, false));
     let f = Fixture::new();
-    let line = f.append("README.md", &bullet("0.9.0", 8));
+    // The count is on the bullet's second line, which a failure names.
+    let line = f.append("README.md", &bullet("0.9.0", 8)) + 1;
     fails_with(
         &f.check_with(&unchecked(), &releases, false),
         &[&format!(

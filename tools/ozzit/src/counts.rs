@@ -24,7 +24,6 @@ use std::{collections::BTreeMap, path::Path, time::Duration};
 pub const REPOSITORY: &str = "ryanduguid/Ozzit";
 const TIMEOUT: Duration = Duration::from_secs(30);
 const REGISTER: &str = "tools/ozzit/src/counts.rs";
-const VERSION: &str = r"v(?P<version>\d+\.\d+\.\d+)";
 const BANNER: &str = r#"<title id="t">Ozzit: (?P<functions>\d+) native Excel LAMBDAs\."#;
 const ABOUT: &str = r"^(?P<functions>\d+) Excel LAMBDA functions and (?P<help>\w+) help tables";
 /// Help-table counts written as words, as 'five help tables'.
@@ -298,89 +297,175 @@ impl Checker<'_> {
         found
     }
 
-    /// Compare every match of `pattern` in `text`. `numbered` places a match by
-    /// its line in `place`.
-    fn statement(
-        &mut self,
-        place: &str,
-        numbered: bool,
-        what: &str,
-        basis: Basis,
-        text: &str,
-        pattern: &str,
-    ) {
+    /// Compare every match of `pattern` in a statement's text.
+    fn statement(&mut self, statement: &Statement, pattern: &str) {
         let mut found = 0;
-        for matched in re(&regex(pattern)).captures_iter(text) {
-            let matched = match matched {
-                Ok(matched) => matched,
+        for matched in re(&regex(pattern)).captures_iter(statement.text) {
+            match matched {
+                Ok(matched) => {
+                    found += 1;
+                    self.compare(statement, &matched);
+                }
                 Err(error) => {
                     self.failures.push(format!(
-                        "FAIL: {place}: the {what} could not be matched: {error}"
+                        "FAIL: {}: the {} could not be matched: {error}",
+                        statement.place, statement.what
                     ));
                     return;
-                }
-            };
-            found += 1;
-            let start = matched.get(0).map_or(0, |m| m.start());
-            let at = if numbered {
-                format!("{place}:{}", text[..start].matches('\n').count() + 1)
-            } else {
-                place.to_owned()
-            };
-            let named = matched.name("version").map(|m| m.as_str().to_owned());
-            let (source, index) = match (basis, named, self.latest.clone()) {
-                (Basis::Main, _, _) => ("functions.csv".to_owned(), Ok(self.main)),
-                (_, _, None) => continue,
-                (Basis::Release, _, Some(latest)) => (format!("v{latest}"), self.release(&latest)),
-                (_, None, _) => unreachable!("a {basis:?} pattern captures its version"),
-                (_, Some(version), Some(latest)) => {
-                    if basis == Basis::Latest && version != latest {
-                        self.failures.push(format!(
-                            "FAIL: {at}: the {what} names v{version}; the newest release tag is v{latest}"
-                        ));
-                    }
-                    (format!("v{version}"), self.release(&version))
-                }
-            };
-            let index = match index {
-                Ok(index) => index,
-                Err(error) => {
-                    self.failures
-                        .push(format!("FAIL: {at}: the {what}: {error}"));
-                    continue;
-                }
-            };
-            self.checked += 1;
-            for (group, noun, count) in [
-                ("functions", "functions", index.functions),
-                ("help", "help tables", index.help),
-                ("names", "names", index.functions + index.help),
-            ] {
-                let Some(stated) = matched.name(group).map(|m| m.as_str()) else {
-                    continue;
-                };
-                let value = stated
-                    .parse::<usize>()
-                    .ok()
-                    .or_else(|| WORDS.iter().position(|w| w.eq_ignore_ascii_case(stated)));
-                match value {
-                    Some(value) if value == count => {}
-                    Some(value) => self.failures.push(format!(
-                        "FAIL: {at}: the {what} says {value} {noun}; {source} has {count} {noun}"
-                    )),
-                    None => self.failures.push(format!(
-                        "FAIL: {at}: the {what} gives {} {noun}, not a count",
-                        py::repr_str(stated)
-                    )),
                 }
             }
         }
         if found == 0 {
             self.failures.push(format!(
-                "FAIL: {place}: the {what} is missing or reworded; restore it or update the register in {REGISTER}"
+                "FAIL: {}: the {} is missing or reworded; restore it or update the register in {REGISTER}",
+                statement.place, statement.what
             ));
         }
     }
+
+    /// The index a match describes and its name in messages, or None when
+    /// release statements cannot be checked.
+    fn source(
+        &mut self,
+        statement: &Statement,
+        matched: &fancy_regex::Captures,
+    ) -> Option<(String, Result<Inventory>)> {
+        let latest = match (statement.basis, self.latest.clone()) {
+            (Basis::Main, _) => return Some(("functions.csv".into(), Ok(self.main))),
+            (_, None) => return None,
+            (Basis::Release, Some(latest)) => {
+                return Some((format!("v{latest}"), self.release(&latest)));
+            }
+            (_, Some(latest)) => latest,
+        };
+        let named = matched
+            .name("version")
+            .expect("a Named or Latest pattern captures its version");
+        let version = named.as_str();
+        if statement.basis == Basis::Latest && version != latest {
+            self.failures.push(format!(
+                "FAIL: {}: the {} names v{version}; the newest release tag is v{latest}",
+                statement.at(named.start()),
+                statement.what
+            ));
+        }
+        Some((format!("v{version}"), self.release(version)))
+    }
+
+    /// Compare each count one match states with the index it describes.
+    fn compare(&mut self, statement: &Statement, matched: &fancy_regex::Captures) {
+        let Some((source, index)) = self.source(statement, matched) else {
+            return;
+        };
+        let what = statement.what;
+        let index = match index {
+            Ok(index) => index,
+            Err(error) => {
+                let start = matched.get(0).map_or(0, |m| m.start());
+                self.failures.push(format!(
+                    "FAIL: {}: the {what}: {error}",
+                    statement.at(start)
+                ));
+                return;
+            }
+        };
+        self.checked += 1;
+        for (group, noun, count) in [
+            ("functions", "functions", index.functions),
+            ("help", "help tables", index.help),
+            ("names", "names", index.functions + index.help),
+        ] {
+            let Some(stated) = matched.name(group) else {
+                continue;
+            };
+            let at = statement.at(stated.start());
+            let stated = stated.as_str();
+            let value = stated
+                .parse::<usize>()
+                .ok()
+                .or_else(|| WORDS.iter().position(|w| w.eq_ignore_ascii_case(stated)));
+            match value {
+                Some(value) if value == count => {}
+                Some(value) => self.failures.push(format!(
+                    "FAIL: {at}: the {what} says {value} {noun}; {source} has {count} {noun}"
+                )),
+                None => self.failures.push(format!(
+                    "FAIL: {at}: the {what} gives {} {noun}, not a count",
+                    py::repr_str(stated)
+                )),
+            }
+        }
+    }
+
+    /// The closing line once every statement agrees.
+    fn agreed(&mut self) -> String {
+        let release = match self.latest.clone() {
+            Some(latest) => self
+                .release(&latest)
+                .map(|index| {
+                    format!(
+                        "; v{latest} has {} functions and {} help tables",
+                        index.functions, index.help
+                    )
+                })
+                .unwrap_or_default(),
+            None => String::new(),
+        };
+        format!(
+            "OK: {} statements agree: main has {} functions and {} help tables{release}",
+            self.checked, self.main.functions, self.main.help
+        )
+    }
+}
+
+/// One statement's text and how to name a place in it.
+struct Statement<'a> {
+    place: &'a str,
+    /// Whether a place is named by its line in `place`.
+    numbered: bool,
+    what: &'a str,
+    basis: Basis,
+    text: &'a str,
+}
+impl Statement<'_> {
+    fn at(&self, offset: usize) -> String {
+        if self.numbered {
+            let line = self.text[..offset].matches('\n').count() + 1;
+            format!("{}:{line}", self.place)
+        } else {
+            self.place.to_owned()
+        }
+    }
+}
+
+/// The release versions tagged, and the newest of them. Tags that cannot be read
+/// or a checkout without any are reported, and fail when `strict`.
+fn release_tags(
+    releases: &dyn Releases,
+    strict: bool,
+    out: &mut Vec<String>,
+    failures: &mut Vec<String>,
+) -> (Vec<String>, Option<String>) {
+    let missing = match releases.tags() {
+        Ok(tags) => match newest_release(&tags) {
+            Some(latest) => {
+                let versions = tags
+                    .iter()
+                    .filter_map(|tag| release_version(tag))
+                    .map(|(_, version)| version)
+                    .collect();
+                return (versions, Some(latest));
+            }
+            None => "this checkout has no vX.Y.Z release tags; fetch them, as actions/checkout does with fetch-depth: 0".to_owned(),
+        },
+        Err(error) => format!("the release tags could not be read: {error}"),
+    };
+    if strict {
+        failures.push(format!("FAIL: {missing}"));
+    } else {
+        out.push(format!("SKIP: release statements not checked: {missing}"));
+    }
+    (Vec::new(), None)
 }
 
 /// Check every registered statement under `root`, and the About description if
@@ -391,34 +476,7 @@ pub fn check(root: &Path, about: &About, releases: &dyn Releases, strict: bool) 
         let (cut, _) = cover::current_cut(&root.join("CHANGELOG.md"))?;
         let mut out = Vec::new();
         let mut failures = Vec::new();
-        let tags = match releases.tags() {
-            Ok(tags) => tags,
-            Err(error) => {
-                let line = format!("the release tags could not be read: {error}");
-                if strict {
-                    failures.push(format!("FAIL: {line}"));
-                } else {
-                    out.push(format!("SKIP: release statements not checked: {line}"));
-                }
-                Vec::new()
-            }
-        };
-        let latest = newest_release(&tags);
-        let tags = tags
-            .iter()
-            .filter_map(|tag| release_version(tag))
-            .map(|(_, version)| version)
-            .collect();
-        if latest.is_none() && out.is_empty() && failures.is_empty() {
-            let line = "this checkout has no vX.Y.Z release tags";
-            if strict {
-                failures.push(format!(
-                    "FAIL: {line}; fetch them, as actions/checkout does with fetch-depth: 0"
-                ));
-            } else {
-                out.push(format!("SKIP: release statements not checked: {line}"));
-            }
-        }
+        let (tags, latest) = release_tags(releases, strict, &mut out, &mut failures);
         let mut checker = Checker {
             releases,
             main: Inventory { functions, help },
@@ -429,9 +487,16 @@ pub fn check(root: &Path, about: &About, releases: &dyn Releases, strict: bool) 
             checked: 0,
             failures,
         };
-        for (file, what, basis, pattern) in STATEMENTS {
-            let text = read_text(&root.join(file))?;
-            checker.statement(file, true, what, basis, &text, pattern);
+        for (place, what, basis, pattern) in STATEMENTS {
+            let text = read_text(&root.join(place))?;
+            let statement = Statement {
+                place,
+                numbered: true,
+                what,
+                basis,
+                text: &text,
+            };
+            checker.statement(&statement, pattern);
         }
         match about {
             About::Unchecked(reason) => {
@@ -440,34 +505,20 @@ pub fn check(root: &Path, about: &About, releases: &dyn Releases, strict: bool) 
             About::Unreadable(reason) => checker.failures.push(format!(
                 "FAIL: About description could not be read: {reason}"
             )),
-            About::Text(text) => checker.statement(
-                "About description",
-                false,
-                "repository description",
-                Basis::Release,
-                text,
-                ABOUT,
-            ),
+            About::Text(text) => {
+                let statement = Statement {
+                    place: "About description",
+                    numbered: false,
+                    what: "repository description",
+                    basis: Basis::Release,
+                    text,
+                };
+                checker.statement(&statement, ABOUT);
+            }
         }
         let code = u8::from(!checker.failures.is_empty());
         if checker.failures.is_empty() {
-            // With no failures, the newest release's index was read.
-            let release = match checker.latest.clone() {
-                Some(latest) => checker
-                    .release(&latest)
-                    .map(|index| {
-                        format!(
-                            "; v{latest} has {} functions and {} help tables",
-                            index.functions, index.help
-                        )
-                    })
-                    .unwrap_or_default(),
-                None => String::new(),
-            };
-            out.push(format!(
-                "OK: {} statements agree: main has {functions} functions and {help} help tables{release}",
-                checker.checked
-            ));
+            out.push(checker.agreed());
         }
         out.extend(checker.failures);
         Ok(Output {
