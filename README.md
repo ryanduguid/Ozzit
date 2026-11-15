@@ -3,7 +3,7 @@
     <source media="(max-width: 600px) and (prefers-color-scheme: light)" srcset=".github/assets/banner-phone-light.svg">
     <source media="(max-width: 600px)" srcset=".github/assets/banner-phone.svg">
     <source media="(prefers-color-scheme: light)" srcset=".github/assets/banner-light.svg">
-    <img src=".github/assets/banner.svg" width="100%" alt="Ozzit. 143 native Excel LAMBDAs. No add-ins, no macros. Pixel art of a lambda in a circle beside the Ozzit wordmark in slab-serif block letters.">
+    <img src=".github/assets/banner.svg" width="100%" alt="Ozzit. 150 native Excel LAMBDAs. No add-ins, no macros. Pixel art of a lambda in a circle beside the Ozzit wordmark in slab-serif block letters.">
   </picture>
 </p>
 
@@ -17,7 +17,7 @@
 
 Ozzit is one Excel workbook of native LAMBDA functions under the `oz.` prefix, for
 accountants and analysts modelling in Excel, with Australian GST and financial-year
-helpers: 143 functions and 5 named help tables in release v3.5.0.
+helpers: 150 functions and 5 named help tables in release v3.6.0.
 
 Ozzit is not a bookkeeping tool and never touches a ledger. The functions cover amortisation, depreciation, ratios including the ATO's small business
 benchmarks, a checked dated rate lookup and AASB 16 lessee schedules. They need no add-in,
@@ -39,8 +39,10 @@ the v3.5.0 release keeps Apache-2.0, and v3.4.2 and earlier releases keep MIT.
 
 **[Latest release](https://github.com/ryanduguid/Ozzit/releases/latest)** on GitHub.
 
-- **v3.6.0**, cut dated 14 November 2026 from `main`, with 150 functions:
-  [releases/tag/v3.6.0](https://github.com/ryanduguid/Ozzit/releases/tag/v3.6.0).
+- **[v3.6.0](https://github.com/ryanduguid/Ozzit/releases/tag/v3.6.0)**, published
+  14 November 2026 from the cut dated 14 November 2026, with 150 functions.
+  [Download ozzit.xlsx](https://github.com/ryanduguid/Ozzit/releases/download/v3.6.0/ozzit.xlsx)
+  (485,256 bytes, SHA-256 `95006168d685496f27b04ab95099a7c103d3013cf031178046ffcbfcfd88d65b`).
 - **[v3.5.0](https://github.com/ryanduguid/Ozzit/releases/tag/v3.5.0)**, published
   19 October 2026 from the cut dated 19 October 2026, with 143 functions.
   [Download ozzit.xlsx](https://github.com/ryanduguid/Ozzit/releases/download/v3.5.0/ozzit.xlsx)
@@ -74,7 +76,7 @@ The function returns the unrounded binary-float result,
 **Human decision:** Does the evidence establish that the whole supply is taxable?
 
 [Browse 10 worked formulas](https://duguid.com.au/tools/ozzit/#functions),
-including arguments, expected results and limits for v3.5.0.
+including arguments, expected results and limits for v3.6.0.
 
 <details>
 <summary>Historical v3.2.0 screenshot</summary>
@@ -89,7 +91,7 @@ check above used a different workbook file.
 
 ## Start with a task
 
-An Ozzit user does not need all 143 functions. Start with the task you need to complete.
+An Ozzit user does not need all 150 functions. Start with the task you need to complete.
 The loan and depreciation guides show the spilled result for a synthetic input
 you can check by hand; the lease guide explains the 4 lessee functions.
 
@@ -105,13 +107,13 @@ copy a function into your own workbook.
 
 To bring in every function at once, the Advanced Formula Environment in the Excel
 Labs add-in imports a module from a URL. From its Names tab, import
-`https://raw.githubusercontent.com/ryanduguid/Ozzit/v3.5.0/oz.txt` under the module
-name `oz`: that file is the v3.5.0 library as one module, and its 148 names match
+`https://raw.githubusercontent.com/ryanduguid/Ozzit/v3.6.0/oz.txt` under the module
+name `oz`: that file is the v3.6.0 library as one module, and its 155 names match
 that release's workbook. Then type `=oz.` in a cell and pick a function from
 autocomplete. This route has not been tested in Excel. Microsoft's
 [module import page](https://github.com/microsoft/Excel-Labs/blob/main/advanced-formula-environment/documentation/module-import.md),
 last changed 9 February 2023, says the add-in imports only from a GitHub gist URL
-and does not allow tab characters in a module; the v3.5.0 `oz.txt` ends 4 comment
+and does not allow tab characters in a module; the v3.6.0 `oz.txt` ends 4 comment
 lines with a tab.
 
 For an AI assistant, [the Ozzit skill](skills/ozzit/SKILL.md) routes function
@@ -214,9 +216,9 @@ Background:
 v3.5.0, dated 19 October 2026, is under Apache-2.0. It was published on 19 October 2026 from the signed tag `v3.5.0` on commit `40b0408c3f1bd9a9cea7cf1580bd039bcba03fde`, after the native gates [RELEASING.md](RELEASING.md) requires ran on the exact file it ships. The [release page](https://github.com/ryanduguid/Ozzit/releases/tag/v3.5.0) carries `ozzit.xlsx`, `provenance.json` and `SHA256SUMS`, and GitHub reports the release immutable. [The v3.5.0 changes](CHANGELOG.md) describe what it adds. v3.4.2 (dated 16 September 2026, published 20 September 2026 from commit `621af0e265306f00a83e17c4d27dca09031c5ccd`) and earlier releases remain under MIT.
 
 **v3.6.0**, cut dated 14 November 2026, is under the Ryan Duguid Public Attribution Licence 1.0.
-Its [citation metadata](CITATION.cff) names the cut. Cite the signed tag `v3.6.0` once its
-[release page](https://github.com/ryanduguid/Ozzit/releases/tag/v3.6.0) exists, and the
-exact commit before then. [The v3.6.0 changes](CHANGELOG.md) describe the workbook and
+Its [citation metadata](CITATION.cff) names the cut. Cite the signed tag `v3.6.0` on commit
+`50eeb90aaed628e73b54cdac74d28eddc44643bb`; GitHub reports its
+[release page](https://github.com/ryanduguid/Ozzit/releases/tag/v3.6.0) immutable. [The v3.6.0 changes](CHANGELOG.md) describe the workbook and
 source views included in this cut, and its known issues. [RELEASING.md](RELEASING.md)
 requires the 17 gates and exact-candidate approval before a release is published.
 
