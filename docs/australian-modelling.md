@@ -5,7 +5,7 @@ The library is Australian-only: the foreign tax regimes and references the earli
 - Australian English throughout (amortise, modelling, and so on), including function names.
 - Dates are day-first, in text examples and in cell formats. Worksheets print on A4.
 - Sample data uses AUD.
-- Depreciation, GST and financial-year helpers:
+- Depreciation, GST, PAYG withholding and financial-year helpers:
 
 | Function | Purpose |
 |---|---|
@@ -13,6 +13,7 @@ The library is Australian-only: the foreign tax regimes and references the earli
 | `oz.PrimeCostλ(Cost, Life)` | Straight line over `ROUNDUP(Life, 0)` periods, with any part-year remainder in the final period |
 | `oz.GSTAddλ(Amounts, [Rate])` | Adds GST to GST-exclusive amounts, 10% by default |
 | `oz.GSTExtractλ(Amounts, [Rate])` | Returns the GST inside GST-inclusive amounts |
+| `oz.PAYGWithholdingλ(Earnings, Coefficients, [Period])` | Amount to withhold from a payment under the ATO's Schedule 1 formulas (see [PAYG withholding](#payg-withholding)) |
 | `oz.FinancialYearλ(Dates, [StartMonth])` | Labels dates with their financial year, starting 1 July |
 
 The 10% default and one-eleventh extraction reflect the basic rule for a taxable supply in [*A New Tax System (Goods and Services Tax) Act 1999*](https://www.legislation.gov.au/C2004A00446/latest/text) ss 9-70 and 9-75 (source checked 20 August 2026). Recheck the current Act and any applicable special rule at the time of use. These helpers apply arithmetic only: they do not decide whether a supply is taxable, GST-free, input taxed, outside the GST system or subject to a special rule.
@@ -22,6 +23,16 @@ The same scope note is embedded as NOTES! rows in the `oz.GSTAddλ` and `oz.GSTE
 `oz.Depreciateλ` accepts the method codes `SLN`, `SYD`, `DB`, `DDB`, `VDB`, `DV` (diminishing value) and `PC` (prime cost).
 
 **Modelling parameters, not tax calculations.** The depreciation helpers compute multi-period asset amortisation from cost and effective life inputs and nothing else. `oz.DiminishingValueλ` amortises the remaining balance in the final period so the multi-year schedule reconciles exactly to initial cost (for example, a cost of 1,000 over 5 years produces 400, 240, 144, 86.40 and 129.60). `oz.Depreciateλ` allocates those annual values across a monthly timeline from each in-service date and writes the remaining book value off at disposal. None of that is a tax balancing adjustment or a deduction the ATO would accept, so apportion and adjust for tax in your own model.
+
+## PAYG withholding
+
+`oz.PAYGWithholdingλ(Earnings, Coefficients, [Period])` applies the formulas in the ATO's [Schedule 1 – Statement of formulas for calculating amounts to be withheld](https://www.ato.gov.au/tax-rates-and-codes/payg-withholding-schedule-1-statement-of-formulas-for-calculating-amounts-to-be-withheld) (NAT 1004), the version for payments made from 1 July 2026, published 17 June 2026 and read on 16 November 2026. Period is `"W"` (the default), `"F"`, `"M"` or `"Q"`.
+
+- Weekly earnings are converted as the schedule sets out: fortnightly earnings are halved; monthly earnings gain a cent when they end in 33 cents and are multiplied by 3 and divided by 13; quarterly earnings are divided by 13. Cents are dropped and 99 cents added, giving x.
+- The weekly amount is `a * x - b` from the first row of Coefficients whose 'less than' bound is above x, or the last row, rounded to the nearest dollar with 50 cents rounded up and no rounding to the cent first.
+- That weekly amount is doubled for a fortnight, multiplied by 13 and divided by 3 and rounded to the nearest dollar for a month, and multiplied by 13 for a quarter.
+
+Coefficients is the table for the payee's scale, copied from the schedule's coefficients page: 3 columns of weekly earnings 'less than', a and b, in ascending order, with a row the schedule gives no coefficients for entered as 0 and 0. The function does not choose the scale, apply tax offsets, the Medicare levy adjustment or the extra withholding for 53 or 27 pays, and does not do scale 4 (no TFN) or payments to working holiday makers (Schedule 15). The native self-test checks it against every row of the schedule's withholding amounts sample data for scales 1, 2, 3, 5 and 6, and against the schedule's 3 worked examples before their offsets and levy adjustments. Recheck the schedule each year: the ATO reissues it when rates change.
 
 ## AASB 16 leases
 

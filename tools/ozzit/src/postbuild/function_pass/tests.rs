@@ -185,3 +185,34 @@ fn level_payment_pass_reproduces_the_published_financial_module() {
         current
     );
 }
+#[test]
+fn payg_withholding_pass_reproduces_the_published_financial_module() {
+    let t = tables(&SPECS[5]);
+    let current = std::fs::read_to_string(root().join("src/Financial.txt")).unwrap();
+    let about = lookup_about(&t.about, "Financial");
+    let at = current.find(&about.anchor).unwrap();
+    let indent = &current[current[..at].rfind('\n').unwrap() + 1..at];
+    let heading = about.heading.as_deref().unwrap();
+    let inserted = [
+        "\"→¶\"".to_string(),
+        format!("\"{heading}¶\""),
+        t.about_row("Financial", &t.functions[0]),
+    ]
+    .map(|line| format!("\n{indent}{line} &"))
+    .concat();
+    let mut absent = current.replacen(
+        &format!("{} &{inserted}", about.anchor),
+        &format!("{} &", about.anchor),
+        1,
+    );
+    let block = &t.functions[0].block;
+    let start = absent.find(block.as_str()).unwrap();
+    let follower = absent.find(about.follower.as_deref().unwrap()).unwrap();
+    assert!(absent[start + block.len()..follower].trim().is_empty());
+    absent.replace_range(start..follower, "");
+    assert!(!absent.contains("PAYGWithholdingλ"));
+    assert_eq!(
+        add_to_src(&SPECS[5], &t, "Financial", &absent).unwrap(),
+        current
+    );
+}

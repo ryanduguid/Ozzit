@@ -101,6 +101,7 @@ oz.OperatingCashFlowRatioλ,Ratios,nabla.r.OperatingCashFlowRatioλ,"OperatingCa
 oz.OperatingMarginλ,Ratios,nabla.r.OperatingMarginλ,"OperatingMarginλ( OperatingEarnings, Revenue)","Measures how much profit a company makes on a dollar of sales after paying for variable costs of production, such as wages and raw materials, but before paying interest or tax (Operating Earnings/Revenue)."
 oz.OperatingRatioλ,Ratios,nabla.r.OperatingRatioλ,"OperatingRatioλ( OperatingExpenses, CostOfGoodsSold, NetSales)",Shows how efficient management is at keeping costs low while generating revenue (Operating Expenses + Cost Of Goods Sold)/Net Sales)
 oz.OverLapDaysλ,Dates,nabla.d.OverLapDaysλ,"OverLapDaysλ(Period1Start, Period1End, Period2Start, Period2End)",Return how many days overlap two period ranges.
+oz.PAYGWithholdingλ,Financial,,"PAYGWithholdingλ(Earnings, Coefficients, [Period])","Amount to withhold from a weekly, fortnightly, monthly or quarterly payment under the ATO's Schedule 1 formulas, from a coefficient table the caller supplies"
 oz.PayableDaysλ,Ratios,,"PayableDaysλ(Payables, Purchases, [Days])","Payable days, or days payable outstanding (DPO): Payables / Purchases x Days"
 oz.PeriodDiffλ,Financial,nabla.f.PeriodDiffλ,"PeriodDiffλ(StartDate, EndDate, Interval)",Determine the number of periods between two dates.
 oz.PeriodLabelλ,Dates,nabla.d.PeriodLabelλ,"PeriodLabelλ(Date, [Interval])",Creates a label for a date based on period interval

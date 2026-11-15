@@ -3,7 +3,8 @@
 
 //! The function-adding passes that compile through `compile_sources`:
 //! working-capital days, rate and date helpers, ATO benchmark and rate lookup,
-//! variance and financial-year periods, and the level payment and rate corkscrew.
+//! variance and financial-year periods, the level payment and rate corkscrew, and
+//! PAYG withholding.
 //!
 //! Each adds functions and About rows to `src/`, the defined names and the About
 //! tables to the workbook, and rows to functions.csv, in one recoverable step.
@@ -40,7 +41,7 @@ struct Spec {
     always_index: bool,
 }
 
-const SPECS: [Spec; 5] = [
+const SPECS: [Spec; 6] = [
     Spec {
         stem: "working_capital_days",
         data: include_str!("../data/postbuild/working_capital_days.json"),
@@ -82,6 +83,15 @@ const SPECS: [Spec; 5] = [
         data: include_str!("../data/postbuild/level_payment_corkscrew_rate.json"),
         what: "level payment and rate corkscrew functions",
         rows: "level payment and corkscrew",
+        layout: Layout::BeforeFollower,
+        index: IndexRule::Required,
+        always_index: true,
+    },
+    Spec {
+        stem: "payg_withholding",
+        data: include_str!("../data/postbuild/payg_withholding.json"),
+        what: "PAYG withholding function",
+        rows: "PAYG withholding",
         layout: Layout::BeforeFollower,
         index: IndexRule::Required,
         always_index: true,
@@ -487,6 +497,9 @@ pub fn variance_fy_periods(args: &[String]) -> Output {
 }
 pub fn level_payment_corkscrew_rate(args: &[String]) -> Output {
     command(&SPECS[4], args)
+}
+pub fn payg_withholding(args: &[String]) -> Output {
+    command(&SPECS[5], args)
 }
 
 #[cfg(test)]

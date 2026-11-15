@@ -6,6 +6,18 @@ Changes on `main` since the v3.6.0 cut. They reach the published workbook in the
 release; until then v3.6.0 behaves as it did, including its first 2 known issues,
 which these changes fix.
 
+### Added
+
+- `oz.PAYGWithholdingλ(Earnings, Coefficients, [Period])` returns the amount to withhold
+  from a weekly, fortnightly, monthly or quarterly payment under the ATO's Schedule 1
+  formulas (NAT 1004, for payments from 1 July 2026): weekly earnings in whole dollars
+  plus 99 cents, `a * x - b` from the caller's coefficient table, rounded to the nearest
+  dollar, and the schedule's conversions to and from the weekly amount. The native
+  self-test checks it against every row of the ATO's withholding amounts sample data for
+  scales 1, 2, 3, 5 and 6 and the ATO's worked examples. It does not choose the scale,
+  apply tax offsets or the Medicare levy adjustment, or do scale 4. `ozzit
+  payg_withholding` adds it to `src/`, the workbook and `functions.csv`.
+
 ### Fixed
 
 - `oz.CorkScrewReversalλ` totalled its flows with SUM, as `oz.Corkscrewλ` did before
