@@ -42,12 +42,12 @@ const WORDS: [&str; 10] = [
 
 /// A statement of the library's size, as '150 functions' or '155 names', for the
 /// sweep for statements outside the register.
-const SIZE_PHRASE: &str = r"\b(?P<n>\d+)(?:[ -](?:native|Excel|LAMBDA|named|function))*[ -](?:functions?|LAMBDAs?|names)\b";
+const SIZE_PHRASE: &str = r"\b(?P<n>\d+)(?:(?:\s|-)(?:native|Excel|LAMBDA|named|function))*(?:\s|-)(?:functions?|LAMBDAs?|names)\b";
 /// A statement of the help-table count, in figures or words.
-const HELP_PHRASE: &str = r"(?i)\b(?P<n>\d+|zero|one|two|three|four|five|six|seven|eight|nine)(?: named)? help tables?\b";
+const HELP_PHRASE: &str = r"(?i)\b(?P<n>\d+|zero|one|two|three|four|five|six|seven|eight|nine)(?:\s+named)?\s+help\s+tables?\b";
 /// Statements of a size the sweep finds that are deliberately outside the register:
-/// file and a phrase containing the count. An entry whose phrase is no longer in
-/// its file fails.
+/// file and a phrase containing the count, matched literally, so reflowing one
+/// fails. An entry whose phrase is no longer in its file fails.
 pub const EXEMPT: [(&str, &str); 2] = [
     // History: the size at the cut that fixed the cover label.
     ("tools/postbuild/README.md", "130 functions after 3 cuts"),
@@ -386,7 +386,8 @@ impl Checker<'_> {
     /// statements about `main` or the newest release. The banners and the social
     /// card draw their text as paths, so they are regenerated, not rewritten.
     fn edit(&mut self, statement: &Statement, found: &fancy_regex::Match<'_>, text: String) {
-        if statement.numbered && statement.basis != Basis::Named && !statement.place.ends_with(".svg") {
+        let drawn = statement.place.ends_with(".svg");
+        if statement.numbered && statement.basis != Basis::Named && !drawn {
             self.edits.push(Edit {
                 at: statement.at(found.start()),
                 file: statement.place.to_owned(),
@@ -499,12 +500,19 @@ impl Checker<'_> {
     }
 
     /// Every function and name count the library has had: on `main` and at each
-    /// release tag whose index can be read.
-    fn sizes(&mut self) -> BTreeSet<usize> {
+    /// release tag. A tag whose index cannot be read is reported, and fails when
+    /// `strict`.
+    fn sizes(&mut self, strict: bool, out: &mut Vec<String>) -> BTreeSet<usize> {
         let mut sizes = BTreeSet::from([self.main.functions, self.main.functions + self.main.help]);
         for version in self.tags.clone() {
-            if let Ok(index) = self.release(&version) {
-                sizes.extend([index.functions, index.functions + index.help]);
+            match self.release(&version) {
+                Ok(index) => sizes.extend([index.functions, index.functions + index.help]),
+                Err(error) if strict => self.failures.push(format!(
+                    "FAIL: v{version}: its sizes could not be read: {error}"
+                )),
+                Err(error) => out.push(format!(
+                    "SKIP: v{version}'s sizes not looked for: {error}"
+                )),
             }
         }
         sizes
@@ -526,7 +534,7 @@ impl Checker<'_> {
                 return;
             }
         };
-        let sizes = self.sizes();
+        let sizes = self.sizes(strict, out);
         let mut used = [false; EXEMPT.len()];
         for file in files.iter().filter(|file| swept(file)) {
             let path = root.join(file);
@@ -765,6 +773,12 @@ fn apply(root: &Path, edits: Vec<Edit>) -> Result<Vec<String>> {
         let path = root.join(&file);
         let mut text = read_text(&path)?;
         edits.sort_by_key(|edit| std::cmp::Reverse(edit.start));
+        if let Some(pair) = edits.windows(2).find(|pair| pair[1].end > pair[0].start) {
+            return Err(format!(
+                "{} and {} overlap; fix the register in {REGISTER}",
+                pair[1].at, pair[0].at
+            ));
+        }
         for edit in &edits {
             text.replace_range(edit.start..edit.end, &edit.text);
         }
@@ -780,7 +794,8 @@ fn apply(root: &Path, edits: Vec<Edit>) -> Result<Vec<String>> {
 }
 
 /// Move every statement about `main` or the newest release under `root` to the
-/// counts and version it should state, then check the result. Statements naming
+/// counts and version it should state, then check the result, failing where the
+/// release tags or the tracked files cannot be read. Statements naming
 /// a release, such as release bullets, the About description and the drawn
 /// banners and social card stay as they are.
 pub fn sync_with(root: &Path, releases: &dyn Releases) -> Output {
@@ -792,13 +807,13 @@ pub fn sync_with(root: &Path, releases: &dyn Releases) -> Output {
         // A statement moved to a newer release is compared with that release's
         // counts on the next pass.
         for _ in 0..3 {
-            let (checker, _) = run_checks(root, &about, releases, false)?;
+            let (checker, _) = run_checks(root, &about, releases, true)?;
             if checker.edits.is_empty() {
                 break;
             }
             out.extend(apply(root, checker.edits)?);
         }
-        let after = check(root, &about, releases, false);
+        let after = check(root, &about, releases, true);
         out.extend(after.out);
         Ok(Output {
             code: after.code,

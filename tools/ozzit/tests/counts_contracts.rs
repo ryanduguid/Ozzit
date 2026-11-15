@@ -599,10 +599,10 @@ fn the_command_reads_the_working_directory_or_a_named_root() {
 fn a_statement_of_the_size_outside_the_register_fails() {
     let (n, h) = main_index();
     let f = Fixture::new();
-    let help = f.append("AGENTS.md", "The FIVE help tables come last.");
+    let help = f.append("AGENTS.md", "The FIVE help\ntables come last.");
     let size = f.append(
         "docs/function-guide.md",
-        &format!("Ozzit has {n} functions,\nand {} names in all.", n + h),
+        &format!("Ozzit has {n}\nfunctions, and {}\nnames in all.", n + h),
     );
     // A count the library has never had is not its size.
     f.append("docs/function-guide.md", "A model may call 7 functions.");

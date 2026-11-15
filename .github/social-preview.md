@@ -1,6 +1,6 @@
 # Social preview
 
-The 1280 × 640 PNG is rendered from [social-preview.svg](social-preview.svg) in the style of the README banners: a black card inside a dark gold double frame, with a `github.com/ryanduguid/Ozzit` tab at the top and a `duguid.com.au` tab at the bottom. The lambda emblem is drawn as a pixel grid with a dithered Tyrian purple glow, beside the gold block wordmark, a rule and the tagline '150 native Excel LAMBDAs. No add-ins, no macros.' All lettering is converted to vector paths from Cascadia Mono and Besley (SIL Open Font Licence 1.1), so the SVG needs no fonts; its `<title>` carries the tagline as text.
+The 1280 × 640 PNG is rendered from [social-preview.svg](social-preview.svg) in the style of the README banners: a black card inside a dark gold double frame, with a `github.com/ryanduguid/Ozzit` tab at the top and a `duguid.com.au` tab at the bottom. The lambda emblem is drawn as a pixel grid with a dithered Tyrian purple glow, beside the gold block wordmark, a rule and the tagline the README banners carry. All lettering is converted to vector paths from Cascadia Mono and Besley (SIL Open Font Licence 1.1), so the SVG needs no fonts; its `<title>` carries the tagline as text.
 
 Rendered on 15 November 2026 with resvg 0.48.1. The uploaded social preview is byte-identical to this PNG.
 
