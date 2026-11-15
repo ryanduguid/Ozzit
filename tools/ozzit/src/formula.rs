@@ -19,8 +19,7 @@ pub const PLAIN: &str = "ABS AND AVERAGE AVERAGEIF CEILING CELL CHOOSE COLUMN CO
 pub const ERRORS: [&str; 9] = [
     "#DIV/0!", "#N/A", "#NAME?", "#NULL!", "#NUM!", "#REF!", "#VALUE!", "#CALC!", "#SPILL!",
 ];
-pub const KNOWN: [(&str, &str); 5] = [
-    ("CorkscrewλDV", "Opening"),
+pub const KNOWN: [(&str, &str); 4] = [
     ("DayCountRateλ", "Convention"),
     ("LeaseLiabilityλ", "InAdvance"),
     ("LeaseRemeasureλ", "InAdvance"),

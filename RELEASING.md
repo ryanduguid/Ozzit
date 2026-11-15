@@ -45,7 +45,7 @@ Every source archive must still include `LICENSE` and `NOTICE`.
 
 ## Approval and tag
 
-A human maintainer explicitly approves the exact candidate commit and release version after all 17 gates pass.
+A human maintainer explicitly approves the exact candidate commit and release version after all 18 gates pass.
 Create an annotated, cryptographically signed tag for that exact commit. Run
 `git verify-tag` and record the tag object SHA, peeled commit SHA and
 verification result.
@@ -65,7 +65,7 @@ The release also carries one asset that is not part of the bundle: `ozzit-X.Y.Z.
 
 The signed tag and GitHub's generated source archive remain the source distribution. Inspect that archive as the equivalent of `git archive` for the exact tag; do not upload a redundant custom source archive. The standalone workbook and tagged workbook must have the same SHA-256.
 
-After all 17 gates pass in a clean candidate, stage and independently verify the bundle in 2 fresh directories outside the repository:
+After all 18 gates pass in a clean candidate, stage and independently verify the bundle in 2 fresh directories outside the repository:
 
 ```powershell
 tools/ozzit/target/release/ozzit prepare_release_bundle create --version X.Y.Z --source-commit <full-commit-sha> --output <first-new-directory>
@@ -91,7 +91,7 @@ rustup toolchain install
 cargo build --locked --release --manifest-path tools/ozzit/Cargo.toml
 ```
 
-Then run the following 15 static and repository gates, the same commands CI runs:
+Then run the following 16 static and repository gates, the same commands CI runs:
 
 ```powershell
 python -m ruff check .
@@ -106,12 +106,13 @@ tools/ozzit/target/release/ozzit verify_signatures src
 tools/ozzit/target/release/ozzit verify_previous_names functions.csv
 tools/ozzit/target/release/ozzit verify_index ozzit.xlsx src functions.csv
 tools/ozzit/target/release/ozzit verify_cover ozzit.xlsx functions.csv CHANGELOG.md
+tools/ozzit/target/release/ozzit verify_counts
 tools/ozzit/target/release/ozzit verify_afe ozzit.xlsx src
 tools/ozzit/target/release/ozzit verify_help_spills ozzit.xlsx
 tools/ozzit/target/release/ozzit verify_native_evidence
 ```
 
-All 15 gate commands must exit zero. Record the lint result and substantive type-check, function,
+All 16 gate commands must exit zero. Record the lint result and substantive type-check, function,
 signature, table, example, index, module and test counts rather than only their
 exit status.
 
@@ -129,7 +130,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\excel_selftest.p
 tools/ozzit/target/release/ozzit verify_cache ozzit.xlsx
 ```
 
-The current acceptance baseline is 1,129 formulas recalculated with zero error cells and 1,294 assertions run with zero failures: the 951 hand-written assertions, 23 of them randomised checks that draw fresh inputs on every run and name the inputs behind any miss, and the 343 that `ozzit generate_selftest_examples` derives from the help. The generated count is a static count of the fragment; record the number the script prints.
+The current acceptance baseline is 1,129 formulas recalculated with zero error cells and 1,310 assertions run with zero failures: the 967 hand-written assertions, 23 of them randomised checks that draw fresh inputs on every run and name the inputs behind any miss, and the 343 that `ozzit generate_selftest_examples` derives from the help. The generated count is a static count of the fragment; record the number the script prints.
 The cached-value gate must pass and report its actual comparison count. Record
 the Excel version and build. Hash the workbook immediately before and after
 both native gates and require the bytes to be byte-identical.
@@ -173,3 +174,4 @@ and review that change. Do not silently weaken a floor.
 7. Record the independent result in the release evidence. Only after it passes may an authorised maintainer publish the release.
 8. Re-query the published release. Claim immutability only when GitHub reports `immutable=true`. If the feature is unavailable, record that limit, retain the no-overwrite and new-version rule, and do not run the attestation workflow. An immutable release accepts no new asset after publication, so a release published without the attestation bundle never gains one; v3.5.0 and earlier releases have none.
 9. After verification, do not delete or replace assets, move the tag or edit evidence to make a failed candidate appear successful. Correct an error under a new version and tag.
+10. Once the release is published, describe it in one pull request. With the new tag fetched, run `tools/ozzit/target/release/ozzit sync_counts`: it moves the README's introduction, banner alt text, 'does not need all N functions' line and `oz.txt` line, `docs/between-spreadsheets.md` and `docs/practice-improvements.md` to the new release, and lists each change. Then update the README's release bullet and `llms.txt` by hand, and the repository's About description. The 4 banners in `.github/assets/` and the social card draw their tagline as paths, so redraw them with the new count and upload the card as `.github/social-preview.md` describes. `ozzit verify_counts` fails on `main` from the moment the new tag exists until they name it and its count.

@@ -7,6 +7,7 @@ pub mod cache;
 mod check_gates;
 pub mod common;
 pub mod compiler;
+pub mod counts;
 pub mod cover;
 pub mod formula;
 pub mod help;
@@ -43,6 +44,8 @@ const COMMANDS: &[(&str, Handler)] = &[
     ("sync_afe_store", afe::sync_command),
     ("build_module", module::command),
     ("verify_cover", cover::verify),
+    ("verify_counts", counts::verify),
+    ("sync_counts", counts::sync),
     ("verify_help_spills", spills::verify),
     ("verify_workbook", workbook::verify),
     ("verify_native_evidence", native_evidence::command),

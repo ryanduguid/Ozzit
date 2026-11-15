@@ -72,7 +72,16 @@ pub fn cover_label(workbook: &Path) -> Result<(String, BigInt)> {
 }
 
 pub fn published_functions(index: &Path) -> Result<usize> {
-    let csv = Csv::read(index)?;
+    inventory(index).map(|(functions, _)| functions)
+}
+
+/// The functions and the `oz.About` help tables `functions.csv` publishes.
+pub fn inventory(index: &Path) -> Result<(usize, usize)> {
+    inventory_of(&Csv::read(index)?, &basename(index))
+}
+
+/// [`inventory`] of an index already read, named `name` in errors.
+pub fn inventory_of(csv: &Csv, name: &str) -> Result<(usize, usize)> {
     if csv
         .headers
         .iter()
@@ -80,13 +89,10 @@ pub fn published_functions(index: &Path) -> Result<usize> {
         .count()
         > 1
     {
-        return Err(format!(
-            "{}: duplicate CSV column(s): function",
-            basename(index)
-        ));
+        return Err(format!("{name}: duplicate CSV column(s): function"));
     }
     if csv.rows.is_empty() {
-        return Err("functions.csv lists no functions".into());
+        return Err(format!("{name} lists no functions"));
     }
     if !csv.headers.iter().any(|h| h == "function") {
         return Err("'function'".into());
@@ -100,22 +106,28 @@ pub fn published_functions(index: &Path) -> Result<usize> {
         .iter()
         .any(|s| s.is_none_or(|s| py::strip(s).is_empty()))
     {
-        return Err("functions.csv contains an empty function name".into());
+        return Err(format!("{name} contains an empty function name"));
     }
-    Ok(names
+    let help = names
         .iter()
-        .filter(|s| !s.expect("checked name").starts_with("oz.About"))
-        .count())
+        .filter(|s| s.expect("checked name").starts_with("oz.About"))
+        .count();
+    Ok((names.len() - help, help))
 }
 
 pub fn current_cut_date(changelog: &Path) -> Result<String> {
+    current_cut(changelog).map(|(_, date)| date)
+}
+
+/// The version and date of the changelog's newest cut.
+pub fn current_cut(changelog: &Path) -> Result<(String, String)> {
     let text = py::universal_newlines(&read_sig(changelog)?);
     captures(
-        r"(?m)^## v\d+\.\d+\.\d+, (\d{1,2} [A-Z][a-z]+ \d{4}),",
+        r"(?m)^## v(\d+\.\d+\.\d+), (\d{1,2} [A-Z][a-z]+ \d{4}),",
         &text,
     )
     .first()
-    .map(|m| m[1].clone())
+    .map(|m| (m[1].clone(), m[2].clone()))
     .ok_or_else(|| "CHANGELOG.md has no '## vX.Y.Z, <date>,' heading".into())
 }
 

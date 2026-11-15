@@ -29,6 +29,27 @@ callees in `docs/workbook-use.md` to the calls in `src/`.
 never checked the examples of `Corkscrewλ`, `CorkScrewReversalλ` and
 `Depreciateλ`. It now reads all 147 example blocks, up from 144.
 
+New gate `verify_counts`: the README, `AGENTS.md`, `llms.txt`, 4 guides and the
+4 banner titles stated the function count by hand, and some still said 143 after
+v3.6.0 shipped 150. The gate keeps a register of each statement of the function,
+help-table and module-name counts, anchored on its wording, and of what it
+describes: `main`, the newest release tag, or the release it names. It compares
+each with `functions.csv` in the working tree or at that tag, and fails, naming
+file and line, when one disagrees or can no longer be found. True statements
+about older releases pass; a release candidate may still present the release
+before it; a statement naming an untagged release other than the changelog's
+newest cut fails. Where `GITHUB_REPOSITORY` is `ryanduguid/Ozzit`, as in its own CI, it
+also reads the About description through `gh api`. Locally and in a fork it
+reports what it skipped; in GitHub Actions, missing release tags, a missing token
+or an unreadable About description fail it.
+CI runs it after `verify_cover`. It also sweeps tracked prose, text and images
+for a function or name count the library has had, or any help-table count,
+outside the register, so a new place that states the size must be registered or
+listed in `EXEMPT`. `ozzit sync_counts` rewrites the statements about `main` and
+the newest release after a release is tagged; statements naming a release, the
+About description and the drawn banners and social card stay with the
+maintainer. The social card is registered, now that it states the current count.
+
 `native_checks` writes `docs/native-checks.csv`: for each name in
 `functions.csv`, the generated help and worked-example assertions, the
 hand-written self-test calls and the worksheet formula cells that reach it, read

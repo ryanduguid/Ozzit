@@ -80,7 +80,7 @@ impl Fixture {
 
 fn success(book: &str, src: &str) -> String {
     format!(
-        "OK: {src}/ reproduces all 155 functions in {book}, every date conversion in them is read, only the 3 listed LET bindings are unread, and only the 5 listed argument defaults test a column inside OR() or AND()"
+        "OK: {src}/ reproduces all 155 functions in {book}, every date conversion in them is read, only the 3 listed LET bindings are unread, and only the 4 listed argument defaults test a column inside OR() or AND()"
     )
 }
 
