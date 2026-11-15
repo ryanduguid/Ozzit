@@ -273,7 +273,10 @@ fn sheetless_statement(f: &Fixture) -> (&'static str, [(usize, usize); 3]) {
         .expect("the worksheet statement is registered");
     assert_eq!(file, "docs/function-guide.md");
     let text = std::fs::read_to_string(f.path().join(file)).unwrap();
-    let found = re(&counts::regex(pattern)).captures(&text).unwrap().unwrap();
+    let found = re(&counts::regex(pattern))
+        .captures(&text)
+        .unwrap()
+        .unwrap();
     let count = |group: &str| {
         let stated = found.name(group).unwrap();
         let line = text[..stated.start()].matches('\n').count() + 1;

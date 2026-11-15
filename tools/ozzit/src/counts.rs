@@ -491,27 +491,7 @@ impl Checker<'_> {
             }
         };
         self.checked += 1;
-        let sheetless = self.sheetless;
-        for (group, noun, count) in [
-            ("functions", "functions", index.functions),
-            ("help", "help tables", index.help),
-            ("names", "names", index.functions + index.help),
-            (
-                "sheetless",
-                "names without a worksheet in ozzit.xlsx",
-                sheetless.functions + sheetless.help,
-            ),
-            (
-                "sheetless_functions",
-                "functions without a worksheet in ozzit.xlsx",
-                sheetless.functions,
-            ),
-            (
-                "sheetless_help",
-                "help tables without a worksheet in ozzit.xlsx",
-                sheetless.help,
-            ),
-        ] {
+        for (group, noun, count) in groups(index, self.sheetless) {
             let Some(found) = matched.name(group) else {
                 continue;
             };
@@ -671,6 +651,31 @@ impl Checker<'_> {
             self.checked, self.main.functions, self.main.help
         )
     }
+}
+
+/// Each count group a pattern may capture, its noun in messages and the count it
+/// should state: from `index`, or from `main`'s names without a worksheet.
+fn groups(index: Inventory, sheetless: Inventory) -> [(&'static str, &'static str, usize); 6] {
+    [
+        ("functions", "functions", index.functions),
+        ("help", "help tables", index.help),
+        ("names", "names", index.functions + index.help),
+        (
+            "sheetless",
+            "names without a worksheet in ozzit.xlsx",
+            sheetless.functions + sheetless.help,
+        ),
+        (
+            "sheetless_functions",
+            "functions without a worksheet in ozzit.xlsx",
+            sheetless.functions,
+        ),
+        (
+            "sheetless_help",
+            "help tables without a worksheet in ozzit.xlsx",
+            sheetless.help,
+        ),
+    ]
 }
 
 /// `value` in the form `stated` used: a word for a count written as one.
