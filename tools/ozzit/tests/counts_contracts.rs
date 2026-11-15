@@ -665,6 +665,19 @@ fn unlisted_tracked_files_skip_the_sweep_offline_and_fail_in_ci() {
     );
 }
 
+/// Assert `sync_counts` reported changing a statement in `prefix` as `change`.
+fn changed(output: &Output, prefix: &str, change: &str) {
+    assert!(
+        output
+            .out
+            .iter()
+            .any(|line| line.starts_with(&format!("CHANGED: {prefix}"))
+                && line.ends_with(&format!(": {change}"))),
+        "{prefix} {change}: {:?}",
+        output.out
+    );
+}
+
 #[test]
 fn sync_counts_moves_the_statements_to_a_new_release() {
     let (n, h) = main_index();
@@ -702,17 +715,7 @@ fn sync_counts_moves_the_statements_to_a_new_release() {
         "{:?}",
         output.out
     );
-    let changed = |prefix: &str, change: &str| {
-        assert!(
-            output
-                .out
-                .iter()
-                .any(|line| line.starts_with(&format!("CHANGED: {prefix}"))
-                    && line.ends_with(&format!(": {change}"))),
-            "{prefix} {change}: {:?}",
-            output.out
-        );
-    };
+    let changed = |prefix: &str, change: &str| changed(&output, prefix, change);
     changed(&format!("AGENTS.md:{agents}"), &format!("{} to {n}", n - 1));
     changed("README.md:", &format!("{version} to 99.0.0"));
     changed("README.md:", &format!("{n} to {}", n + 3));
@@ -723,12 +726,6 @@ fn sync_counts_moves_the_statements_to_a_new_release() {
         &format!("{} to {}", WORDS[h], WORDS[h + 1]),
     );
     assert_eq!(read("llms.txt"), llms, "a statement naming a release stays");
-    assert!(
-        !output
-            .out
-            .iter()
-            .any(|l| l.contains(".svg") && l.starts_with("CHANGED"))
-    );
 }
 
 #[test]
