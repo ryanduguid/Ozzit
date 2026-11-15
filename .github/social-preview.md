@@ -1,11 +1,11 @@
 # Social preview
 
-The 1280 × 640 PNG is rendered from [social-preview.svg](social-preview.svg), which uses the profile palette: black canvas, ivory heading, platinum rules and labels, and a crimson address bar. Its layout follows the duguid.com.au social cards. The SVG embeds subsets of Besley SemiBold, Public Sans Regular and Spline Sans Mono Regular (SIL Open Font Licence 1.1) and contains text and geometry only.
+The 1280 × 640 PNG is rendered from [social-preview.svg](social-preview.svg) in the style of the README banners: a black card inside a dark gold double frame, with a `github.com/ryanduguid/Ozzit` tab at the top and a `duguid.com.au` tab at the bottom. The lambda emblem is drawn as a pixel grid with a dithered Tyrian purple glow, beside the gold block wordmark, a rule and the tagline '150 native Excel LAMBDAs. No add-ins, no macros.' All lettering is converted to vector paths from Cascadia Mono and Besley (SIL Open Font Licence 1.1), so the SVG needs no fonts; its `<title>` carries the tagline as text.
 
-Rendered on 13 October 2026 with Playwright 1.63.0 (Chromium, device scale 1, 1280 × 640 viewport) after waiting for the embedded fonts to load. A second render produced byte-identical output.
+Rendered on 15 November 2026 with resvg 0.48.1. The uploaded social preview is byte-identical to this PNG.
 
 | Asset | SHA-256 |
 | --- | --- |
-| `social-preview.png` | `63ebe806f29bf5873ac88b8c513ab5207418092e1409a9ae9416f56590851e31` |
+| `social-preview.png` | `d48fbc4de8a9b3aeee89627c40d061e27ab8c13ce7ad602eb755985362a86171` |
 
-The image is uploaded through the repository's Settings page; GitHub has no API for social previews. Re-render and update the hash when the card text or palette changes.
+The image is uploaded through the repository's Settings page; GitHub has no API for social previews. `ozzit verify_counts` holds the SVG's `<title>` to the newest release's function count, so re-render, upload and update the hash when that count, the card text or the palette changes.

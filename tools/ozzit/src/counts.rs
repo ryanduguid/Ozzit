@@ -48,14 +48,11 @@ const HELP_PHRASE: &str = r"(?i)\b(?P<n>\d+|zero|one|two|three|four|five|six|sev
 /// Statements of a size the sweep finds that are deliberately outside the register:
 /// file and a phrase containing the count. An entry whose phrase is no longer in
 /// its file fails.
-pub const EXEMPT: [(&str, &str); 3] = [
+pub const EXEMPT: [(&str, &str); 2] = [
     // History: the size at the cut that fixed the cover label.
     ("tools/postbuild/README.md", "130 functions after 3 cuts"),
     // History: the names v1.2.6 shipped.
     ("tools/released-names-v1.2.6.txt", "The 130 function names"),
-    // Stale (R3343): the social card's PNG must be re-rendered and uploaded with
-    // it, so it moves in its own change; register it then.
-    (".github/social-preview.svg", "133 Excel functions"),
 ];
 
 /// What a statement describes, and so which index it is compared with.
@@ -74,7 +71,7 @@ pub enum Basis {
 
 /// File, what the statement is, its basis and its pattern. The named groups
 /// `functions`, `help` and `names` capture the counts; `version` the release.
-pub const STATEMENTS: [(&str, &str, Basis, &str); 17] = [
+pub const STATEMENTS: [(&str, &str, Basis, &str); 18] = [
     (
         "README.md",
         "banner alt text",
@@ -172,6 +169,7 @@ pub const STATEMENTS: [(&str, &str, Basis, &str); 17] = [
         Basis::Release,
         BANNER,
     ),
+    (".github/social-preview.svg", "title", Basis::Release, BANNER),
 ];
 
 /// The release tags, their indexes and the tracked files.
@@ -385,9 +383,10 @@ impl Checker<'_> {
     }
 
     /// Record a correction for `sync_counts`, which rewrites only files and only
-    /// statements about `main` or the newest release.
+    /// statements about `main` or the newest release. The banners and the social
+    /// card draw their text as paths, so they are regenerated, not rewritten.
     fn edit(&mut self, statement: &Statement, found: &fancy_regex::Match<'_>, text: String) {
-        if statement.numbered && statement.basis != Basis::Named {
+        if statement.numbered && statement.basis != Basis::Named && !statement.place.ends_with(".svg") {
             self.edits.push(Edit {
                 at: statement.at(found.start()),
                 file: statement.place.to_owned(),
@@ -782,7 +781,8 @@ fn apply(root: &Path, edits: Vec<Edit>) -> Result<Vec<String>> {
 
 /// Move every statement about `main` or the newest release under `root` to the
 /// counts and version it should state, then check the result. Statements naming
-/// a release, such as release bullets, and the About description stay as they are.
+/// a release, such as release bullets, the About description and the drawn
+/// banners and social card stay as they are.
 pub fn sync_with(root: &Path, releases: &dyn Releases) -> Output {
     let about = About::Unchecked(
         "sync_counts does not change it; set it by hand, then run verify_counts in CI".into(),

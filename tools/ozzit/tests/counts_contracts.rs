@@ -222,7 +222,7 @@ fn every_registered_count_is_checked() {
             checked += 1;
         }
     }
-    assert_eq!(checked, 22);
+    assert_eq!(checked, 23);
 }
 
 #[test]
@@ -671,7 +671,16 @@ fn sync_counts_moves_the_statements_to_a_new_release() {
     let read = |file: &str| std::fs::read_to_string(f.path().join(file)).unwrap();
     let llms = read("llms.txt");
     let output = counts::sync_with(f.path(), &releases);
-    passes(&output);
+    // The banners and the social card are drawn, so they are regenerated instead.
+    let drawn = counts::STATEMENTS
+        .iter()
+        .filter(|(file, _, _, _)| file.ends_with(".svg"))
+        .map(|(file, _, _, _)| format!("FAIL: {file}:"))
+        .collect::<Vec<_>>();
+    assert_eq!(drawn.len(), 5);
+    fails_with(&output, &drawn.iter().map(String::as_str).collect::<Vec<_>>());
+    let stale = format!("the title says {n} functions; v99.0.0 has {} functions", n + 3);
+    assert!(output.out.iter().filter(|l| l.contains(&stale)).count() == 5, "{:?}", output.out);
     let changed = |prefix: &str, change: &str| {
         assert!(
             output
@@ -692,9 +701,8 @@ fn sync_counts_moves_the_statements_to_a_new_release() {
         "docs/between-spreadsheets.md:",
         &format!("{} to {}", WORDS[h], WORDS[h + 1]),
     );
-    changed(".github/assets/banner.svg:", &format!("{n} to {}", n + 3));
     assert_eq!(read("llms.txt"), llms, "a statement naming a release stays");
-    passes(&counts::check(f.path(), &unchecked(), &releases, false));
+    assert!(!output.out.iter().any(|l| l.contains(".svg") && l.starts_with("CHANGED")));
 }
 
 #[test]
