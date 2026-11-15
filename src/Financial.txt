@@ -172,11 +172,12 @@ CorkScrewReversalλ=LAMBDA(
                         "FUNCTION:      →CorkScrewReversalλ( Opening, ReversalFlags, Flow1, [Flow2], [Flow3], [Flow4])¶" & 
                         "DESCRIPTION:   →Create a corkscrew where the opening balance is reversed in the next period based on a timing parameter¶" & 
                         "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
-                        "VERSION:       →14 Nov 2026¶" &
+                        "VERSION:       →16 Nov 2026¶" &
                         "PARAMETERS:→¶" &
                         "Opening        →(Required) First periods opening balance: a single number or a blank cell.¶" &
                         "ReversalFlags  →(Required) A row of ones and blanks (or zeros) indicating when to reverse period totals.¶" &
                         "               →Any other value, including TRUE or a 1 typed as text, returns a message.¶" &
+                        "               →It needs one row with one flag for each column of Flow1; any other shape returns a message.¶" &
                         "Flow1          →(Required) First row (or array of rows) of numbers to include in period totals.¶" & 
                         "Flow2          →(Optional) Second row (or array of rows) of numbers to include in period totals.¶" & 
                         "Flow3          →(Optional) Third row (or array of rows) of numbers to include in period totals.¶" & 
@@ -212,6 +213,11 @@ CorkScrewReversalλ=LAMBDA(
     //  The closing balance is the only state carried from one period to the next: a period
     //  closes on its opening balance, less that balance where the flag reverses it, plus
     //  its flows. Solve the closings in one pass and read every other row off them.
+    //  INDEX reads past a narrower row as #REF!, drops the columns of a wider one and reads
+    //  only the first row of a deeper range, so flags that are not one row of one flag a
+    //  period are refused before the flags are read.
+        FlagsFit?,      AND( ROWS( ReversalFlags) = 1, COLUMNS( ReversalFlags) = Cols),
+        WidthMessage,   "ReversalFlags needs one row with one flag for each column of Flow1.",
         Flags,          INDEX( ReversalFlags, 1, SEQUENCE( , Cols)),
     //  The flag multiplies the balance, so only 1 and 0 (a blank reads as 0) are safe:
     //  a 2 reversed it twice over. TRUE and the text "1" equal neither and are refused.
@@ -233,21 +239,21 @@ CorkScrewReversalλ=LAMBDA(
         Reversals,      -Flags * Openings,
         Result,         VSTACK( Openings, Reversals, PeriodArray, Closings),
     //  Return Result, Help, or the message
-        Return,         IF( Help?, 2, IF( NOT( ValidOpening?), 4, IF( BadFlags?, 3, IF( NOT( ValidFlows?), 5, 1)))),
-        CHOOSE( Return, Result, Help, FlagMessage, OpeningMessage, FlowMessage)
+        Return,         IF( Help?, 2, IF( NOT( ValidOpening?), 4, IF( NOT( FlagsFit?), 6, IF( BadFlags?, 3, IF( NOT( ValidFlows?), 5, 1))))),
+        CHOOSE( Return, Result, Help, FlagMessage, OpeningMessage, FlowMessage, WidthMessage)
     )  
 );
 
 
 
-/*  FUNCTION NAME:  IntOnIntλ	
+/*  FUNCTION NAME:  IntOnIntλ
     DESCRIPTION:*/ /**Calculate Interest on Interest. Use to determine amount needed to cover debt plus interest on debt*/
 /*  NOTE:           Math source from Diarmuid Early's post: https://www.youtube.com/watch?v=k5rG_MvIWWs&t=787s
 */
 IntOnIntλ = LAMBDA(
     [Principal],
     [Rate], 
-//  Help	
+//  Help
     LET(Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →IntOnIntλ( Principal, Rate)¶" & 
                             "DESCRIPTION:   →Calculate Interest on Interest (Interest only). Use to determine amount ¶" &
@@ -276,12 +282,12 @@ IntOnIntλ = LAMBDA(
 
 
 
-/*  FUNCTION NAME:  IRRλ	
+/*  FUNCTION NAME:  IRRλ
     DESCRIPTION:*/ /**Calculates IRR, correcting for when the first investment is not in the first period */
 IRRλ = LAMBDA(
     [Values],
     [Dates], 
-//  Help	
+//  Help
     LET(Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →IRRλ( Values, Dates)¶" & 
                             "DESCRIPTION:   →Calculates IRR, correcting for when the first investment is not in the first period¶" & 

@@ -30,8 +30,13 @@ pub fn declared_names(text: &str) -> Vec<String> {
 
 /// Problems visible in the module text alone.
 fn text_failures(text: &str, declared: &[String], failures: &mut BTreeSet<String>) {
+    // The Advanced Formula Environment refuses both in a module file:
+    // https://github.com/microsoft/advanced-formula-environment/blob/main/documentation/module-import.md
     if text.contains('\r') {
         failures.insert("module text contains a carriage return".into());
+    }
+    if text.contains('\t') {
+        failures.insert("module text contains a tab".into());
     }
     if !text.ends_with('\n') {
         failures.insert("module text does not end with a newline".into());
