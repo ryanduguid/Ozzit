@@ -191,18 +191,21 @@ const WORDS: [&str; 10] = [
     "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
 ];
 
+/// Each count group a register pattern may capture, and its noun in messages.
+const GROUPS: [(&str, &str); 6] = [
+    ("functions", "functions"),
+    ("help", "help tables"),
+    ("names", "names"),
+    ("sheetless", SHEETLESS),
+    ("sheetless_functions", SHEETLESS_FUNCTIONS),
+    ("sheetless_help", SHEETLESS_HELP),
+];
+
 #[test]
 fn every_registered_count_is_checked() {
     let mut checked = 0;
     for (file, what, _, pattern) in counts::STATEMENTS {
-        for (group, noun) in [
-            ("functions", "functions"),
-            ("help", "help tables"),
-            ("names", "names"),
-            ("sheetless", SHEETLESS),
-            ("sheetless_functions", SHEETLESS_FUNCTIONS),
-            ("sheetless_help", SHEETLESS_HELP),
-        ] {
+        for (group, noun) in GROUPS {
             let f = Fixture::new();
             let path = f.path().join(file);
             let text = std::fs::read_to_string(&path).unwrap();
