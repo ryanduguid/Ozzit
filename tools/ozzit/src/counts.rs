@@ -328,7 +328,7 @@ impl Checker<'_> {
     fn source(
         &mut self,
         statement: &Statement,
-        matched: &fancy_regex::Captures,
+        matched: &fancy_regex::Captures<'_>,
     ) -> Option<(String, Result<Inventory>)> {
         let latest = match (statement.basis, self.latest.clone()) {
             (Basis::Main, _) => return Some(("functions.csv".into(), Ok(self.main))),
@@ -353,7 +353,7 @@ impl Checker<'_> {
     }
 
     /// Compare each count one match states with the index it describes.
-    fn compare(&mut self, statement: &Statement, matched: &fancy_regex::Captures) {
+    fn compare(&mut self, statement: &Statement, matched: &fancy_regex::Captures<'_>) {
         let Some((source, index)) = self.source(statement, matched) else {
             return;
         };
