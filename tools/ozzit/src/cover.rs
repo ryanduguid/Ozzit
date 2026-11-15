@@ -92,7 +92,7 @@ pub fn inventory_of(csv: &Csv, name: &str) -> Result<(usize, usize)> {
         return Err(format!("{name}: duplicate CSV column(s): function"));
     }
     if csv.rows.is_empty() {
-        return Err("functions.csv lists no functions".into());
+        return Err(format!("{name} lists no functions"));
     }
     if !csv.headers.iter().any(|h| h == "function") {
         return Err("'function'".into());
@@ -106,7 +106,7 @@ pub fn inventory_of(csv: &Csv, name: &str) -> Result<(usize, usize)> {
         .iter()
         .any(|s| s.is_none_or(|s| py::strip(s).is_empty()))
     {
-        return Err("functions.csv contains an empty function name".into());
+        return Err(format!("{name} contains an empty function name"));
     }
     let help = names
         .iter()

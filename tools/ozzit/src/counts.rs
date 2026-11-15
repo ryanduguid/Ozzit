@@ -186,36 +186,66 @@ pub enum About {
     Text(String),
 }
 
+/// The regular expression a register pattern stands for: each space matches
+/// any run of whitespace.
+pub fn regex(pattern: &str) -> String {
+    pattern.replace(' ', r"\s+")
+}
+
+/// The version of a `vX.Y.Z` release tag, with its numeric order.
+fn release_version(tag: &str) -> Option<(Vec<u64>, String)> {
+    let parts = captures(r"^v([0-9]+)\.([0-9]+)\.([0-9]+)$", tag).pop()?;
+    let order = parts[1..]
+        .iter()
+        .map(|part| part.parse::<u64>().ok())
+        .collect::<Option<Vec<_>>>()?;
+    Some((order, tag[1..].to_owned()))
+}
+
+/// The newest version among release tags, such as `3.6.0` for `v3.6.0`.
+pub fn newest_release(tags: &[String]) -> Option<String> {
+    tags.iter()
+        .filter_map(|tag| release_version(tag))
+        .max()
+        .map(|(_, version)| version)
+}
+
 /// Whether a run is in GitHub Actions, where missing evidence fails the gate.
 fn strict(var: &impl Fn(&str) -> Option<String>) -> bool {
     var("GITHUB_ACTIONS").as_deref() == Some("true")
 }
 
-/// Read the About description by REST through `gh`, only with a token and only
-/// in the upstream repository, so an offline run or a fork never fails on it.
+/// Read the About description by REST through `gh`, only where
+/// `GITHUB_REPOSITORY` names the upstream repository, so a local run or a fork
+/// never fails on it. There a missing token or a failed read fails in GitHub
+/// Actions, so dropping the workflow's token cannot turn the check off unseen.
 pub fn read_about(
     var: impl Fn(&str) -> Option<String>,
     fetch: impl FnOnce() -> Result<Dump>,
 ) -> About {
     let set = |name: &str| var(name).filter(|value| !value.is_empty());
-    if set("GH_TOKEN").or_else(|| set("GITHUB_TOKEN")).is_none() {
-        return About::Unchecked("no GH_TOKEN or GITHUB_TOKEN, as in an offline run".into());
+    let repository = set("GITHUB_REPOSITORY");
+    if repository.as_deref() != Some(REPOSITORY) {
+        return About::Unchecked(format!(
+            "GITHUB_REPOSITORY is {}, not {REPOSITORY}",
+            repository.map_or_else(|| "unset".to_owned(), |r| format!("{r:?}"))
+        ));
     }
-    let repository = set("GITHUB_REPOSITORY").unwrap_or_else(|| REPOSITORY.into());
-    if repository != REPOSITORY {
-        return About::Unchecked(format!("this run is in {repository}, not {REPOSITORY}"));
-    }
-    let failed = match fetch() {
-        Ok(Dump::Exited {
-            code: 0, stdout, ..
-        }) => return About::Text(py::strip(&stdout).into()),
-        Ok(Dump::Exited { code, stderr, .. }) => format!(
-            "gh api exited {code}: {}",
-            stderr.lines().next().unwrap_or_default()
-        ),
-        Ok(Dump::NotFound) => "gh is not installed".into(),
-        Ok(Dump::TimedOut) => "gh api took longer than 30 seconds".into(),
-        Err(error) => format!("gh could not run: {error}"),
+    let failed = if set("GH_TOKEN").or_else(|| set("GITHUB_TOKEN")).is_none() {
+        "no GH_TOKEN or GITHUB_TOKEN".to_owned()
+    } else {
+        match fetch() {
+            Ok(Dump::Exited {
+                code: 0, stdout, ..
+            }) => return About::Text(py::strip(&stdout).into()),
+            Ok(Dump::Exited { code, stderr, .. }) => format!(
+                "gh api exited {code}: {}",
+                stderr.lines().next().unwrap_or_default()
+            ),
+            Ok(Dump::NotFound) => "gh is not installed".into(),
+            Ok(Dump::TimedOut) => "gh api took longer than 30 seconds".into(),
+            Err(error) => format!("gh could not run: {error}"),
+        }
     };
     if strict(&var) {
         About::Unreadable(failed)
@@ -279,9 +309,8 @@ impl Checker<'_> {
         text: &str,
         pattern: &str,
     ) {
-        let pattern = pattern.replace(' ', r"\s+");
         let mut found = 0;
-        for matched in re(&pattern).captures_iter(text) {
+        for matched in re(&regex(pattern)).captures_iter(text) {
             let matched = match matched {
                 Ok(matched) => matched,
                 Err(error) => {
@@ -363,17 +392,7 @@ pub fn check(root: &Path, about: &About, releases: &dyn Releases, strict: bool) 
         let mut out = Vec::new();
         let mut failures = Vec::new();
         let tags = match releases.tags() {
-            Ok(tags) => tags
-                .iter()
-                .filter_map(|tag| {
-                    let parts = captures(r"^v([0-9]+)\.([0-9]+)\.([0-9]+)$", tag).pop()?;
-                    let order = parts[1..]
-                        .iter()
-                        .map(|part| part.parse::<u64>().ok())
-                        .collect::<Option<Vec<_>>>()?;
-                    Some((order, tag[1..].to_owned()))
-                })
-                .collect::<Vec<_>>(),
+            Ok(tags) => tags,
             Err(error) => {
                 let line = format!("the release tags could not be read: {error}");
                 if strict {
@@ -384,7 +403,12 @@ pub fn check(root: &Path, about: &About, releases: &dyn Releases, strict: bool) 
                 Vec::new()
             }
         };
-        let latest = tags.iter().max().map(|(_, version)| version.clone());
+        let latest = newest_release(&tags);
+        let tags = tags
+            .iter()
+            .filter_map(|tag| release_version(tag))
+            .map(|(_, version)| version)
+            .collect();
         if latest.is_none() && out.is_empty() && failures.is_empty() {
             let line = "this checkout has no vX.Y.Z release tags";
             if strict {
@@ -399,7 +423,7 @@ pub fn check(root: &Path, about: &About, releases: &dyn Releases, strict: bool) 
             releases,
             main: Inventory { functions, help },
             cut,
-            tags: tags.into_iter().map(|(_, version)| version).collect(),
+            tags,
             latest,
             indexes: BTreeMap::new(),
             checked: 0,
@@ -427,16 +451,17 @@ pub fn check(root: &Path, about: &About, releases: &dyn Releases, strict: bool) 
         }
         let code = u8::from(!checker.failures.is_empty());
         if checker.failures.is_empty() {
+            // With no failures, the newest release's index was read.
             let release = match checker.latest.clone() {
-                Some(latest) => checker.release(&latest).map_or_else(
-                    |_| String::new(),
-                    |index| {
+                Some(latest) => checker
+                    .release(&latest)
+                    .map(|index| {
                         format!(
                             "; v{latest} has {} functions and {} help tables",
                             index.functions, index.help
                         )
-                    },
-                ),
+                    })
+                    .unwrap_or_default(),
                 None => String::new(),
             };
             out.push(format!(

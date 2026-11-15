@@ -38,9 +38,10 @@ each with `functions.csv` in the working tree or at that tag, and fails, naming
 file and line, when one disagrees or can no longer be found. True statements
 about older releases pass; a release candidate may still present the release
 before it; a statement naming an untagged release other than the changelog's
-newest cut fails. With a token in the upstream repository it also reads the About
-description through `gh api`. Offline and in a fork it reports what it skipped; in
-GitHub Actions, missing release tags or an unreadable About description fail it.
+newest cut fails. Where `GITHUB_REPOSITORY` is `ryanduguid/Ozzit`, as in its own CI, it
+also reads the About description through `gh api`. Locally and in a fork it
+reports what it skipped; in GitHub Actions, missing release tags, a missing token
+or an unreadable About description fail it.
 CI runs it after `verify_cover`.
 
 `native_checks` writes `docs/native-checks.csv`: for each name in
