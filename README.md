@@ -101,6 +101,11 @@ you can check by hand; the lease guide explains the 4 lessee functions.
 | Depreciation | `=oz.DiminishingValueλ(Cost, Life)` | [1,000 over 5 years](docs/function-guide.md#dynamic-array-formula-walkthrough) |
 | AASB 16 lease | `=oz.LeaseScheduleλ(Payments, Rate, [InAdvance])` for the liability, `=oz.ROUScheduleλ(Cost, Periods)` for the right-of-use asset | [Lessee functions and rate conversion](docs/australian-modelling.md#aasb-16-leases) |
 | Practice or business calculator | Open the [standalone companion](templates/practice-calculators.xlsx); select one of its 21 calculators | [Inputs, assumptions and coverage](docs/between-spreadsheets.md) |
+| PAYG withholding, on `main` only | `=oz.PAYGWithholdingλ(Earnings, Coefficients, [Period])` with the payee's coefficients from the ATO's Schedule 1 | [What it applies and leaves out](docs/australian-modelling.md#payg-withholding) |
+
+`oz.PAYGWithholdingλ` is not yet in a release. It works out the amount before tax
+offsets and the Medicare levy adjustment and does not apply either. It does not choose
+the scale and does not do scale 4, for a payee who has not given a TFN.
 
 [Open, copy functions and use modern Excel](docs/workbook-use.md) shows how to
 copy a function into your own workbook.
@@ -222,7 +227,7 @@ Its [citation metadata](CITATION.cff) names the cut. Cite the signed tag `v3.6.0
 source views included in this cut, and its known issues. [RELEASING.md](RELEASING.md)
 requires the 18 gates and exact-candidate approval before a release is published.
 
-v3.6.0 `ozzit.xlsx` SHA-256: `95006168d685496f27b04ab95099a7c103d3013cf031178046ffcbfcfd88d65b` (485,256 bytes), the same bytes as the release asset. `main` is ahead of that tag, so the file you clone is not the file the release ships: the tracked `ozzit.xlsx` is SHA-256 `3dc9d8fb39aceaf59b3cb1d0b6f33438fec04c33a6e9753dd76127c3ddf9f2ee` (486,667 bytes), pinned in [release/workbook-base.json](release/workbook-base.json) and checked by the tool tests, and adds the changes listed under Unreleased in the [changelog](CHANGELOG.md). The native Excel gates have not yet run on it. On 14 November 2026, Excel 16.0 build 20625 recalculated 1,129 formulas in the previous tracked workbook, SHA-256 `ef983f1d59943fb6aa8a8f98b8ba10a0b9e5ccf5a2885e9d6e334eb4f1dcd1c5`, with 0 in error, ran 1,310 self-test assertions with 0 failures and found 19,483 cached values equal to what their formulas produce. The workbook was byte-identical before and after both native gates.
+v3.6.0 `ozzit.xlsx` SHA-256: `95006168d685496f27b04ab95099a7c103d3013cf031178046ffcbfcfd88d65b` (485,256 bytes), the same bytes as the release asset. `main` is ahead of that tag, so the file you clone is not the file the release ships: the tracked `ozzit.xlsx` is SHA-256 `905648545a5f5d12d20205084862b55042940840cc32061a6127d202bb73dbba` (491,508 bytes), pinned in [release/workbook-base.json](release/workbook-base.json) and checked by the tool tests, and adds the changes listed under Unreleased in the [changelog](CHANGELOG.md). The native Excel gates have not yet run on it. On 14 November 2026, Excel 16.0 build 20625 recalculated 1,129 formulas in the previous tracked workbook, SHA-256 `ef983f1d59943fb6aa8a8f98b8ba10a0b9e5ccf5a2885e9d6e334eb4f1dcd1c5`, with 0 in error, ran 1,310 self-test assertions with 0 failures and found 19,483 cached values equal to what their formulas produce. The workbook was byte-identical before and after both native gates.
 
 - [Repository checks](AGENTS.md) and [release and native verification](RELEASING.md)
 - [Changes](CHANGELOG.md) and [citation](CITATION.cff)
