@@ -804,7 +804,9 @@ fn changed(output: &Output, prefix: &str, change: &str) {
 #[test]
 fn sync_counts_moves_the_statements_to_a_new_release() {
     let (n, h) = main_index();
-    let (version, _, _) = latest();
+    // The banners, README and between-spreadsheets page state the newest release's
+    // counts, which main can be ahead of; AGENTS.md states main's.
+    let (version, rn, rh) = latest();
     let releases = Overlay {
         extra: vec![("99.0.0", index(n + 3, h + 1))],
         ..Overlay::default()
@@ -830,7 +832,7 @@ fn sync_counts_moves_the_statements_to_a_new_release() {
         &drawn.iter().map(String::as_str).collect::<Vec<_>>(),
     );
     let stale = format!(
-        "the title says {n} functions; v99.0.0 has {} functions",
+        "the title says {rn} functions; v99.0.0 has {} functions",
         n + 3
     );
     assert!(
@@ -841,12 +843,12 @@ fn sync_counts_moves_the_statements_to_a_new_release() {
     let changed = |prefix: &str, change: &str| changed(&output, prefix, change);
     changed(&format!("AGENTS.md:{agents}"), &format!("{} to {n}", n - 1));
     changed("README.md:", &format!("{version} to 99.0.0"));
-    changed("README.md:", &format!("{n} to {}", n + 3));
-    changed("README.md:", &format!("{} to {}", n + h, n + 3 + h + 1));
-    changed("README.md:", &format!("{h} to {}", h + 1));
+    changed("README.md:", &format!("{rn} to {}", n + 3));
+    changed("README.md:", &format!("{} to {}", rn + rh, n + 3 + h + 1));
+    changed("README.md:", &format!("{rh} to {}", h + 1));
     changed(
         "docs/between-spreadsheets.md:",
-        &format!("{} to {}", WORDS[h], WORDS[h + 1]),
+        &format!("{} to {}", WORDS[rh], WORDS[h + 1]),
     );
     assert_eq!(read("llms.txt"), llms, "a statement naming a release stays");
 }

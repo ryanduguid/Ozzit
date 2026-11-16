@@ -1583,7 +1583,10 @@ AboutFinancialλ = TRIM(TEXTSPLIT(
                                            "→¶" &
                                            "LOANS              →¶" &
                                            "LevelPaymentλ      →Level payment that repays a loan over a row of period rates¶" &
-                                           "CorkscrewRateλ     →Corkscrew with interest on the average balance, added to the balance¶" & 
+                                           "CorkscrewRateλ     →Corkscrew with interest on the average balance, added to the balance¶" &
+                                           "→¶" &
+                                           "PAYG WITHHOLDING   →¶" &
+                                           "PAYGWithholdingλ   →Amount to withhold from a payment under the ATO's Schedule 1 formulas¶" & 
                                            "→¶" &
                                            "DEBT MODULE        →¶" &
                                            "AmortiseBλ         →Creates an amortisation schedule for a debt/loan across a model's periods¶" &
@@ -4241,6 +4244,95 @@ YearToDateλ = LAMBDA(
     //  Return Result, Help or the message
         Return,         IF(Help?, 2, IF(NOT(ValidStart?), 3, IF(NOT(Shaped?), 4, IF(NOT(OneDate?), 5, IF(NOT(Numbers?), 6, 1))))),
         CHOOSE( Return, Result, Help, StartMessage, ShapeMessage, AsAtMessage, ValuesMessage)
+    )
+);
+
+
+
+/*  FUNCTION NAME:  PAYGWithholdingλ
+    DESCRIPTION:*//**Amount to withhold from a weekly, fortnightly, monthly or quarterly payment under the ATO's Schedule 1 formulas, from a coefficient table the caller supplies*/
+/*  SOURCE:         ATO, Schedule 1 - Statement of formulas for calculating amounts to be withheld (NAT 1004),
+                    for payments made from 1 July 2026, published 17 June 2026, read 16 November 2026 05:48 AEDT:
+                    https://www.ato.gov.au/tax-rates-and-codes/payg-withholding-schedule-1-statement-of-formulas-for-calculating-amounts-to-be-withheld
+                    'Using a formula': y = a * x - b, where x is the whole dollars of weekly earnings plus 99 cents,
+                    rounded to the nearest dollar, 50 cents up, with no preliminary rounding to the cent.
+                    'Working out the weekly earnings': fortnightly earnings / 2; monthly earnings, plus 1 cent when
+                    they end in 33 cents, * 3 / 13; quarterly earnings / 13; ignore cents, then add 99 cents. The
+                    rounded weekly amount is * 2 fortnightly, * 13 / 3 rounded to the nearest dollar monthly, and
+                    * 13 quarterly.
+*/
+PAYGWithholdingλ = LAMBDA(
+//  Parameter Declaration
+    [Earnings],
+    [Coefficients],
+    [Period],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →PAYGWithholdingλ(Earnings, Coefficients, [Period])¶" &
+                            "DESCRIPTION:   →Amount to withhold from a payment under the ATO's Schedule 1 formulas.¶NOTES!         →Follows Schedule 1 - Statement of formulas for calculating amounts to be¶               →withheld (NAT 1004) for payments from 1 July 2026 (read 16 November 2026):¶               →y = a * x - b on weekly earnings x, whole dollars plus 99 cents, rounded¶               →to the nearest dollar. Copy the coefficient table for the payee's scale¶               →from the ATO's current schedule; recheck it each year. Arithmetic only:¶               →it does not choose the scale, apply tax offsets, the Medicare levy¶               →adjustment or extra withholding for 53 or 27 pays, and does not do scale 4¶               →(no TFN) or working holiday makers (Schedule 15).¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
+                            "VERSION:       →16 Nov 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "Earnings       →(Required) One or more payments in whole cents, with allowances subject to withholding. A blank stays blank.¶" &
+                            "Coefficients   →(Required) The scale's table: 3 columns of weekly earnings 'less than', a and b, in¶" &
+                            "               →ascending order. The last row is the '& over' row, used above every bound; only it may repeat the bound above it.¶" &
+                            "               →Enter a row the ATO gives no a or b for as 0 and 0.¶" &
+                            "Period         →(Optional: Default = ""W"") ""W"" weekly, ""F"" fortnightly, ""M"" monthly or ""Q"" quarterly.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name; scale 2, tax-free threshold claimed)¶" &
+                            "→=oz.PAYGWithholdingλ(1333.45, {362,0,0;538,0.15,54.3462;673,0.25,108.2135;721,0.17,54.3473;865,0.179,60.8377;1282,0.3227,185.1935;2596,0.32,181.7319;3653,0.39,363.4627;3653,0.47,655.7704})¶" &
+                            "→Result¶" &
+                            "→245",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR( ISOMITTED( Earnings), ISOMITTED( Coefficients)),
+    //  A blank Period cell is not an omitted argument, so test for both.
+        Pay,            IF( ISOMITTED( Period), "W", IF( TRIM( Period & "") = "", "W", UPPER( TRIM( Period)))),
+        ValidPeriod?,   AND( ROWS( Pay) = 1, COLUMNS( Pay) = 1, ISNUMBER( XMATCH( Pay, {"W", "F", "M", "Q"}, 0))),
+        PeriodMessage,  "Period must be W, F, M or Q.",
+    //  The row is the first whose bound is above x, so the bounds must rise. Only the last
+    //  row, the '& over' row, may repeat the bound above it, as the ATO's tables do; a
+    //  repeated bound higher up would skip a row.
+        Bounds,         TAKE( Coefficients, , 1),
+        Steps,          IF( ROWS( Bounds) = 1, 0, DROP( Bounds, 1) - DROP( Bounds, -1)),
+        Ascending?,     AND( Steps >= 0, IF( ROWS( Steps) = 1, TRUE, AND( DROP( Steps, -1) > 0))),
+        ValidTable?,    AND( COLUMNS( Coefficients) = 3, AND( ISNUMBER( Coefficients)), IFERROR( Ascending?, FALSE)),
+        TableMessage,   "Coefficients must be 3 columns of numbers: weekly earnings less than, a and b, with the earnings rising and only the last row repeating the bound above it.",
+    //  A blank is nil and stays blank; an error passes so it shows. Schedule 1 works in
+    //  cents, so a fraction of a cent, which could tip the monthly 33-cent rule or a
+    //  weekly dollar, is refused rather than rounded. A payment within a thousandth of a
+    //  cent of a whole cent is that cent: binary arithmetic leaves such noise on sums of
+    //  cents, and the cents are rounded off it before x is taken, so 538 less that noise
+    //  is still 538. Payments, and the whole cents they round to, must be under 1E10:
+    //  there a double resolves a payment to about a ten-thousandth of a cent, so the
+    //  test holds; at 46,000,000,000,000 the nearest double to a whole cent can be a
+    //  fifth of a cent off and still pass it.
+    //  shortcut: noise above the allowance is refused, never mispriced. A small difference
+    //  of very large sums can carry it (5,000,000,000 plus 50 cents, less 5,000,000,000,
+    //  is 0.50001144); the caller rounds such a payment to the cent first. Only a
+    //  payment that is itself an error passes, so it shows. The cents are tested only
+    //  under the bound, where Earnings * 100 cannot overflow, so 9E307 is refused.
+        ValidEarnings?, AND( IF( ISERROR( Earnings), TRUE, IF( ISNUMBER( Earnings), IF( ( Earnings >= 0) * ( Earnings < 1E10), ( ABS( Earnings * 100 - ROUND( Earnings * 100, 0)) < 0.001) * ( ROUND( Earnings, 2) < 1E10), FALSE), FALSE) + ( TRIM( Earnings & "") = ""))),
+        EarningsMessage, "PAYGWithholdingλ needs each payment to be a number from 0 to under 10,000,000,000 in whole cents, or blank.",
+    //  Procedure
+        Result,         MAP( Earnings, LAMBDA( Paid,
+                            IF( TRIM( Paid & "") = "", "",
+                                LET(
+                                    Cents,  ROUND( Paid, 2),
+                                    Gross,  IF( AND( Pay = "M", ROUND( MOD( Cents, 1), 2) = 0.33), Cents + 0.01, Cents),
+                                    Weekly, SWITCH( Pay, "W", Gross, "F", Gross / 2, "M", Gross * 3 / 13, "Q", Gross / 13),
+                                    X,      INT( Weekly) + 0.99,
+                                    Row,    IFERROR( XMATCH( TRUE, X < Bounds), ROWS( Bounds)),
+                                    Y,      ROUND( INDEX( Coefficients, Row, 2) * X - INDEX( Coefficients, Row, 3), 0),
+                                    SWITCH( Pay, "W", Y, "F", Y * 2, "M", ROUND( Y * 13 / 3, 0), "Q", Y * 13)
+                                )
+                            )
+                        )),
+    //  Return Result, Help, or the message
+        Return,         IF( Help?, 2, IF( NOT( ValidPeriod?), 3, IF( NOT( ValidTable?), 4, IF( NOT( ValidEarnings?), 5, 1)))),
+        CHOOSE( Return, Result, Help, PeriodMessage, TableMessage, EarningsMessage)
     )
 );
 

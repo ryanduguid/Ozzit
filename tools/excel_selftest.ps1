@@ -87,6 +87,235 @@ Near 'GST extract, per-row zero rate'  "INDEX($ge({110;110;110},{0.1;0;`"`"}),2,
 Near 'GST extract, per-row blank rate' "INDEX($ge({110;110;110},{0.1;0;`"`"}),3,1)" '10'
 Near 'GST add, per-row zero rate'      "INDEX($ga({100;100},{0;`"`"}),1,1)" '100'
 
+# --- PAYG withholding, Schedule 1 for payments from 1 July 2026 (ATO, published 17 June 2026,
+# read 16 November 2026): every row of the ATO's withholding amounts sample data, weekly,
+# fortnightly and monthly, for scales 1, 2, 3, 5 and 6, and the ATO's 3 worked examples
+# before their offsets and levy adjustments. The tables are the ATO's coefficients.
+$pw = "oz.PAYGWithholding$L"
+$pwScale = @{
+    1 = '{188,0.15,0.15;371,0.2084,11.0185;515,0.179,0.1066;932,0.3227,74.1674;2246,0.32,71.6508;3303,0.39,228.8816;3303,0.47,493.1893}'
+    2 = '{362,0,0;538,0.15,54.3462;673,0.25,108.2135;721,0.17,54.3473;865,0.179,60.8377;1282,0.3227,185.1935;2596,0.32,181.7319;3653,0.39,363.4627;3653,0.47,655.7704}'
+    3 = '{2596,0.3,0.3;3653,0.37,181.7308;3653,0.45,474.0385}'
+    5 = '{362,0,0;721,0.15,54.3462;865,0.159,60.8365;1282,0.3027,185.1923;2596,0.3,181.7308;3653,0.37,363.4615;3653,0.45,655.7692}'
+    6 = '{362,0,0;721,0.15,54.3462;865,0.159,60.8365;908,0.3027,185.1923;1135,0.3527,230.6135;1282,0.3127,185.1923;2596,0.31,181.7308;3653,0.38,363.4615;3653,0.46,655.7692}'
+}
+# Period, earnings, then the amount for scales 1, 2, 3, 5 and 6.
+$pwSample = @(
+    'W 116 17 0 35 0 0',
+    'W 117 18 0 35 0 0',
+    'W 187 28 0 56 0 0',
+    'W 188 28 0 56 0 0',
+    'W 249 41 0 75 0 0',
+    'W 250 41 0 75 0 0',
+    'W 361 64 0 108 0 0',
+    'W 362 65 0 109 0 0',
+    'W 370 66 1 111 1 1',
+    'W 371 66 1 111 1 1',
+    'W 514 92 23 154 23 23',
+    'W 515 92 23 154 23 23',
+    'W 537 99 26 161 26 26',
+    'W 538 100 27 161 27 27',
+    'W 672 143 60 202 47 47',
+    'W 673 143 60 202 47 47',
+    'W 720 158 68 216 54 54',
+    'W 721 159 68 216 54 54',
+    'W 864 205 94 259 77 77',
+    'W 865 205 94 259 77 77',
+    'W 907 219 108 272 90 90',
+    'W 908 219 108 272 90 90',
+    'W 931 227 116 279 97 98',
+    'W 932 227 116 280 97 98',
+    'W 1134 292 181 340 158 170',
+    'W 1135 292 181 340 159 170',
+    'W 1281 339 229 384 203 216',
+    'W 1282 339 229 385 203 216',
+    'W 1844 519 409 553 372 390',
+    'W 1845 519 409 553 372 391',
+    'W 2119 607 497 636 454 475',
+    'W 2120 607 497 636 455 476',
+    'W 2245 647 537 673 492 515',
+    'W 2246 647 537 674 492 515',
+    'W 2490 743 615 747 566 590',
+    'W 2491 743 616 747 566 591',
+    'W 2595 784 649 778 597 623',
+    'W 2596 784 649 779 597 623',
+    'W 2652 806 671 800 618 645',
+    'W 2653 806 672 800 619 645',
+    'W 2736 839 704 831 649 677',
+    'W 2737 839 704 831 650 677',
+    'W 2898 902 767 891 709 738',
+    'W 2899 902 768 891 710 739',
+    'W 3302 1059 925 1040 859 892',
+    'W 3303 1060 925 1041 859 892',
+    'W 3652 1224 1061 1170 988 1025',
+    'W 3653 1224 1062 1170 989 1025',
+    'F 232 34 0 70 0 0',
+    'F 234 36 0 70 0 0',
+    'F 374 56 0 112 0 0',
+    'F 376 56 0 112 0 0',
+    'F 498 82 0 150 0 0',
+    'F 500 82 0 150 0 0',
+    'F 722 128 0 216 0 0',
+    'F 724 130 0 218 0 0',
+    'F 740 132 2 222 2 2',
+    'F 742 132 2 222 2 2',
+    'F 1028 184 46 308 46 46',
+    'F 1030 184 46 308 46 46',
+    'F 1074 198 52 322 52 52',
+    'F 1076 200 54 322 54 54',
+    'F 1344 286 120 404 94 94',
+    'F 1346 286 120 404 94 94',
+    'F 1440 316 136 432 108 108',
+    'F 1442 318 136 432 108 108',
+    'F 1728 410 188 518 154 154',
+    'F 1730 410 188 518 154 154',
+    'F 1814 438 216 544 180 180',
+    'F 1816 438 216 544 180 180',
+    'F 1862 454 232 558 194 196',
+    'F 1864 454 232 560 194 196',
+    'F 2268 584 362 680 316 340',
+    'F 2270 584 362 680 318 340',
+    'F 2562 678 458 768 406 432',
+    'F 2564 678 458 770 406 432',
+    'F 3688 1038 818 1106 744 780',
+    'F 3690 1038 818 1106 744 782',
+    'F 4238 1214 994 1272 908 950',
+    'F 4240 1214 994 1272 910 952',
+    'F 4490 1294 1074 1346 984 1030',
+    'F 4492 1294 1074 1348 984 1030',
+    'F 4980 1486 1230 1494 1132 1180',
+    'F 4982 1486 1232 1494 1132 1182',
+    'F 5190 1568 1298 1556 1194 1246',
+    'F 5192 1568 1298 1558 1194 1246',
+    'F 5304 1612 1342 1600 1236 1290',
+    'F 5306 1612 1344 1600 1238 1290',
+    'F 5472 1678 1408 1662 1298 1354',
+    'F 5474 1678 1408 1662 1300 1354',
+    'F 5796 1804 1534 1782 1418 1476',
+    'F 5798 1804 1536 1782 1420 1478',
+    'F 6604 2118 1850 2080 1718 1784',
+    'F 6606 2120 1850 2082 1718 1784',
+    'F 7304 2448 2122 2340 1976 2050',
+    'F 7306 2448 2124 2340 1978 2050',
+    'M 502.67 74 0 152 0 0',
+    'M 507.00 78 0 152 0 0',
+    'M 810.33 121 0 243 0 0',
+    'M 814.67 121 0 243 0 0',
+    'M 1079.00 178 0 325 0 0',
+    'M 1083.33 178 0 325 0 0',
+    'M 1564.33 277 0 468 0 0',
+    'M 1568.67 282 0 472 0 0',
+    'M 1603.33 286 4 481 4 4',
+    'M 1607.67 286 4 481 4 4',
+    'M 2227.33 399 100 667 100 100',
+    'M 2231.67 399 100 667 100 100',
+    'M 2327.00 429 113 698 113 113',
+    'M 2331.33 433 117 698 117 117',
+    'M 2912.00 620 260 875 204 204',
+    'M 2916.33 620 260 875 204 204',
+    'M 3120.00 685 295 936 234 234',
+    'M 3124.33 689 295 936 234 234',
+    'M 3744.00 888 407 1122 334 334',
+    'M 3748.33 888 407 1122 334 334',
+    'M 3930.33 949 468 1179 390 390',
+    'M 3934.67 949 468 1179 390 390',
+    'M 4034.33 984 503 1209 420 425',
+    'M 4038.67 984 503 1213 420 425',
+    'M 4914.00 1265 784 1473 685 737',
+    'M 4918.33 1265 784 1473 689 737',
+    'M 5551.00 1469 992 1664 880 936',
+    'M 5555.33 1469 992 1668 880 936',
+    'M 7990.67 2249 1772 2396 1612 1690',
+    'M 7995.00 2249 1772 2396 1612 1694',
+    'M 9182.33 2630 2154 2756 1967 2058',
+    'M 9186.67 2630 2154 2756 1972 2063',
+    'M 9728.33 2804 2327 2916 2132 2232',
+    'M 9732.67 2804 2327 2921 2132 2232',
+    'M 10790.00 3220 2665 3237 2453 2557',
+    'M 10794.33 3220 2669 3237 2453 2561',
+    'M 11245.00 3397 2812 3371 2587 2700',
+    'M 11249.33 3397 2812 3376 2587 2700',
+    'M 11492.00 3493 2908 3467 2678 2795',
+    'M 11496.33 3493 2912 3467 2682 2795',
+    'M 11856.00 3636 3051 3601 2812 2934',
+    'M 11860.33 3636 3051 3601 2817 2934',
+    'M 12558.00 3909 3324 3861 3072 3198',
+    'M 12562.33 3909 3328 3861 3077 3202',
+    'M 14308.67 4589 4008 4507 3722 3865',
+    'M 14313.00 4593 4008 4511 3722 3865',
+    'M 15825.33 5304 4598 5070 4281 4442',
+    'M 15829.67 5304 4602 5070 4286 4442'
+)
+foreach ($row in $pwSample) {
+    $f = -split $row
+    $i = 2
+    foreach ($scale in 1, 2, 3, 5, 6) {
+        Near "PAYGWithholding: ATO sample $($f[0]) $($f[1]), scale $scale" "$pw($($f[1]), $($pwScale[$scale]), `"$($f[0])`")" $f[$i]
+        $i++
+    }
+}
+# The worked examples: Jabe, weekly 1,333.45 on scale 2; Prue, fortnightly 1,299.30 on
+# scale 5; Tan, monthly 5,400.33 on scale 2, whose 33 cents gain a cent.
+Near 'PAYGWithholding: ATO example, weekly'      "$pw(1333.45, $($pwScale[2]))"           '245'
+Near 'PAYGWithholding: ATO example, fortnightly' "$pw(1299.30, $($pwScale[5]), `"F`")"   '86'
+Near 'PAYGWithholding: ATO example, monthly'     "$pw(5400.33, $($pwScale[2]), `"m`")"   '940'
+Near 'PAYGWithholding: a blank Period is weekly' "$pw(1333.45, $($pwScale[2]), Z1)"       '245'
+# Quarterly: 13,000 / 13 is 1,000, so x is 1,000.99 and the week is 0.3227 * 1,000.99 - 185.1935 = 137.83, rounded to 138; 138 * 13.
+Near 'PAYGWithholding: quarterly'                "$pw(13000, $($pwScale[2]), `"Q`")"     '1794'
+# A column of payments gives a column, and a blank payment stays blank.
+Same 'PAYGWithholding: a column of payments'     "TEXTJOIN(`",`",FALSE,$pw({116;1333.45;3653}, $($pwScale[2])))" '0,245,1062'
+Same 'PAYGWithholding: a blank payment is blank' "$pw(Z1, $($pwScale[2]))" ''
+$pwOne = "IF(AND(ROWS(x) = 1, COLUMNS(x) = 1), x, `"array`")"
+$pwTable = 'Coefficients must be 3 columns of numbers: weekly earnings less than, a and b, with the earnings rising and only the last row repeating the bound above it.'
+$pwPaid = "PAYGWithholding$L needs each payment to be a number from 0 to under 10,000,000,000 in whole cents, or blank."
+# A bound repeated above the last row would skip the row below it, and a fraction of a cent
+# could tip the monthly 33-cent rule (17.329 a month reads as 17.34) or a weekly dollar. From
+# 10,000,000,000 a double cannot show a fraction of a cent reliably: the nearest double to
+# 46,000,000,000,000 and 1/128 is 0.21875 cents off a whole cent and passed the cents test. A
+# small difference of very large sums carries noise above the allowance and is refused. 9E307
+# * 100 overflows; that error must not pass as an error payment does. 9,999,999,999.99999 is
+# under the bound and within the allowance, but its whole cents, 10,000,000,000.00, are not.
+foreach ($r in @(@("1000, $($pwScale[2]), `"X`"", 'Period must be W, F, M or Q.'),
+                 @("1000, {362,0;538,0.15}", $pwTable),
+                 @("1000, {538,0.15,54.3462;362,0,0}", $pwTable),
+                 @("1000, {362,0,`"0`"}", $pwTable),
+                 @("538, {362,0,0;538,0.15,54.3462;538,0.25,108.2135;673,0.17,54.3473}", $pwTable),
+                 @("-1, $($pwScale[2])", $pwPaid),
+                 @("`"1000`", $($pwScale[2])", $pwPaid),
+                 @("TRUE, $($pwScale[2])", $pwPaid),
+                 @("17.329, $($pwScale[1]), `"M`"", $pwPaid),
+                 @("{1000;1000.005}, $($pwScale[2])", $pwPaid),
+                 @("537.9999, $($pwScale[1])", $pwPaid),
+                 @("5000000000.005, $($pwScale[2])", $pwPaid),
+                 @("46000000000000 + 1/128, $($pwScale[2])", $pwPaid),
+                 @("10000000000, $($pwScale[2])", $pwPaid),
+                 @("9999999999.99999, $($pwScale[2])", $pwPaid),
+                 @("9E307, $($pwScale[2])", $pwPaid),
+                 @("{1000;9E307}, $($pwScale[2])", $pwPaid),
+                 @("REDUCE(5000000000, SEQUENCE(50, 1, 0.01, 0), LAMBDA(a, v, a + v)) - 5000000000, $($pwScale[2])", $pwPaid),
+                 @("1000, {362,0,0;#N/A,0.15,54.3462}", $pwTable))) {
+    Same "PAYGWithholding refuses ($($r[0]))" "LET(x, $pw($($r[0])), $pwOne)" $r[1]
+}
+# Only the last row may repeat the bound above it: a 2-row table whose rows share a bound is
+# accepted, as is a 1-row table. A payment within a thousandth of a cent of a whole cent is that
+# cent, so arithmetic noise is not taken for a fraction of a cent: 3 * 0.1 is not exactly 0.3 in
+# binary, and 538 less a little is 538, so x is 538.99 and scale 1 gives
+# 0.3227 * 538.99 - 74.1674 = 99.76, so 100. 10,000 additions of 12.34 one at a time leave
+# 123,399.99999997; as 123,400.00, x is 123,400.99 and scale 2 gives
+# 0.47 * 123,400.99 - 655.7704 = 57,342.69, so 57,343.
+Near 'PAYGWithholding: a 2-row table may repeat its bound' "$pw(100, {200,0,0;200,0.1,0})" '0'
+Near 'PAYGWithholding: a 1-row table'                     "$pw(100, {1000,0.1,0})"         '10'
+Near 'PAYGWithholding: arithmetic in whole cents is accepted' "$pw(1333.15 + 3 * 0.1, $($pwScale[2]))" '245'
+Near 'PAYGWithholding: 538 less arithmetic noise is 538'  "$pw(538 - 1E-13, $($pwScale[1]))"   '100'
+Near 'PAYGWithholding: 538 less a billionth is 538'      "$pw(537.999999999, $($pwScale[1]))" '100'
+Near 'PAYGWithholding: a long running sum of cents'      "$pw(REDUCE(0, SEQUENCE(10000, 1, 12.34, 0), LAMBDA(a, v, a + v)), $($pwScale[2]))" '57343'
+Near 'PAYGWithholding: a large whole-cent amount'         "--ISNUMBER($pw(5000000000.02, $($pwScale[2])))" '1'
+Near 'PAYGWithholding: the largest whole-cent amount'      "--ISNUMBER($pw(9999999999.99, $($pwScale[2])))" '1'
+# A column keeps its shape: a number gives its amount, empty text stays empty and an error shows.
+# The error is in an array constant: VSTACK returns #N/A whole when an argument is NA().
+Same 'PAYGWithholding: a column of a number, empty text and an error' "LET(x, $pw({1333.45;`"`";#N/A}, $($pwScale[2])), INDEX(x,1,1) & `"|`" & INDEX(x,2,1) & `"|`" & ISNA(INDEX(x,3,1)))" '245||TRUE'
+Near 'PAYGWithholding: an error in a payment shows' "--ISNA($pw(NA(), $($pwScale[2])))" '1'
+
 # --- Movement. Each row's opening is its own: a blank one defaults only that row.
 Near 'Movement, per-row opening'       "INDEX($mv({100;`"`";50},{110,120;5,6;60,70}),1,1)" '10'
 Near 'Movement, blank opening row'     "INDEX($mv({100;`"`";50},{110,120;5,6;60,70}),2,1)" '5'
