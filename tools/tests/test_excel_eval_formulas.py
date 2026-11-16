@@ -24,6 +24,7 @@ from pathlib import Path
 
 HELPER = Path(__file__).resolve().parents[1] / "excel_eval_formulas.ps1"
 DUMPER = Path(__file__).resolve().parents[1] / "dump_values.ps1"
+EXCEL_PROCESS = Path(__file__).resolve().parents[1] / "excel_process.ps1"
 WINDOWS = sys.platform == "win32" and shutil.which("powershell.exe")
 
 
@@ -107,6 +108,26 @@ class MessageFilterTests(unittest.TestCase):
         )
         self.assertEqual(run.returncode, 0, run.stderr)
         self.assertEqual(run.stdout.strip(), "5,2,6,True,Excel returned values that do not fit the range.,2,2,2,2,2")
+
+
+class ExcelExitTests(unittest.TestCase):
+    """The native gates refuse to start while any Excel runs, so each waits for its own to exit."""
+
+    @unittest.skipUnless(WINDOWS, "needs Windows PowerShell")
+    def test_only_the_given_process_is_ended_and_only_once_the_wait_runs_out(self):  # pragma: no cover - Windows only; the coverage job runs on Ubuntu
+        run = powershell(
+            function(EXCEL_PROCESS.read_text(encoding="utf-8"), "Wait-ExcelExit") + "\n"
+            "function Start-Waiting { Start-Process ping.exe -ArgumentList '-n','60','127.0.0.1' -WindowStyle Hidden -PassThru };"
+            "$stuck = Start-Waiting; $other = Start-Waiting;"
+            "$done = Start-Process cmd.exe -ArgumentList '/c','exit' -WindowStyle Hidden -PassThru;"
+            "$ended = Wait-ExcelExit $stuck 1;"
+            "$quiet = Wait-ExcelExit $done 30;"
+            "$none = Wait-ExcelExit $null;"
+            "$left = $other.HasExited; Stop-Process -Id $other.Id;"
+            "\"$($stuck.HasExited),$left,$($ended -like '*was still running 1 s after Quit()*'),$($null -eq $quiet),$($null -eq $none)\""
+        )
+        self.assertEqual(run.returncode, 0, run.stderr)
+        self.assertEqual(run.stdout.strip(), "True,False,True,True,True")
 
 
 if __name__ == "__main__":

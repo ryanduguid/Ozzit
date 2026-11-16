@@ -237,6 +237,15 @@ shape and values from one range, again until they agree, and fails if they never
 1 of 3 runs on an unchanged workbook with an invalid cell position, on the line that
 holds the first cell of a sheet, where a blank read would write a position of 0.
 
+`tools/dump_values.ps1`, `tools/refresh_cache.ps1` and `tools/excel_selftest.ps1` now
+release every Excel object they hold and wait up to 30 seconds after Quit() for the
+Excel process they started, found from its window rather than by name, then end that
+process if it is still running. One `ozzit verify_cache` run had left a windowless
+Excel behind, and the native gates after it refused to start. The self-test's
+YearToDate case for an error in an earlier column built its input with
+`HSTACK(NA(), 20)`, which Excel turns into a single #N/A, so the function never
+received a column with an error in it; it now passes `{#N/A,20}`.
+
 ### Known issues
 
 - `oz.CorkScrewReversalλ` still totals each period's flows with SUM, as `oz.Corkscrewλ`
