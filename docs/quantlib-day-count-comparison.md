@@ -9,9 +9,9 @@ financial-year period functions were added, on 24 October 2026 after the input-s
 and help-field changes, on 1 November 2026 after the corkscrew flag check, after the
 level payment and rate corkscrew were added and after the rate corkscrew's input checks,
 on 3 November 2026 after the help examples, links and VERSION dates changed, and
-in build 20625 on 8 November 2026 after the Corkscrew input check and on 14 November
-2026 after the v3.6.0 cover label and after the corkscrew companion checks, with
-identical results each time. The largest absolute difference was
+in build 20625 on 8 November 2026 after the Corkscrew input check, on 14 November
+2026 after the v3.6.0 cover label and after the corkscrew companion checks, and on
+16 November 2026 after the ReversalFlags shape check, with identical results each time. The largest absolute difference was
 `4.163336342344337e-17`, below the comparison tolerance of `1e-12`.
 
 The retained record is
