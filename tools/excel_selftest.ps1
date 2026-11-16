@@ -267,9 +267,12 @@ Same 'PAYGWithholding: a column of payments'     "TEXTJOIN(`",`",FALSE,$pw({116;
 Same 'PAYGWithholding: a blank payment is blank' "$pw(Z1, $($pwScale[2]))" ''
 $pwOne = "IF(AND(ROWS(x) = 1, COLUMNS(x) = 1), x, `"array`")"
 $pwTable = 'Coefficients must be 3 columns of numbers: weekly earnings less than, a and b, with the earnings rising and only the last row repeating the bound above it.'
-$pwPaid = "PAYGWithholding$L needs each payment to be a number of 0 or more in whole cents, or blank."
+$pwPaid = "PAYGWithholding$L needs each payment to be a number from 0 to under 10,000,000,000 in whole cents, or blank."
 # A bound repeated above the last row would skip the row below it, and a fraction of a cent
-# could tip the monthly 33-cent rule (17.329 a month reads as 17.34) or a weekly dollar.
+# could tip the monthly 33-cent rule (17.329 a month reads as 17.34) or a weekly dollar. From
+# 10,000,000,000 a double cannot show a fraction of a cent reliably: the nearest double to
+# 46,000,000,000,000 and 1/128 is 0.21875 cents off a whole cent and passed the cents test. A
+# small difference of very large sums carries noise above the allowance and is refused.
 foreach ($r in @(@("1000, $($pwScale[2]), `"X`"", 'Period must be W, F, M or Q.'),
                  @("1000, {362,0;538,0.15}", $pwTable),
                  @("1000, {538,0.15,54.3462;362,0,0}", $pwTable),
@@ -282,6 +285,9 @@ foreach ($r in @(@("1000, $($pwScale[2]), `"X`"", 'Period must be W, F, M or Q.'
                  @("{1000;1000.005}, $($pwScale[2])", $pwPaid),
                  @("537.9999, $($pwScale[1])", $pwPaid),
                  @("5000000000.005, $($pwScale[2])", $pwPaid),
+                 @("46000000000000 + 1/128, $($pwScale[2])", $pwPaid),
+                 @("10000000000, $($pwScale[2])", $pwPaid),
+                 @("REDUCE(5000000000, SEQUENCE(50, 1, 0.01, 0), LAMBDA(a, v, a + v)) - 5000000000, $($pwScale[2])", $pwPaid),
                  @("1000, {362,0,0;#N/A,0.15,54.3462}", $pwTable))) {
     Same "PAYGWithholding refuses ($($r[0]))" "LET(x, $pw($($r[0])), $pwOne)" $r[1]
 }
@@ -299,6 +305,7 @@ Near 'PAYGWithholding: 538 less arithmetic noise is 538'  "$pw(538 - 1E-13, $($p
 Near 'PAYGWithholding: 538 less a billionth is 538'      "$pw(537.999999999, $($pwScale[1]))" '100'
 Near 'PAYGWithholding: a long running sum of cents'      "$pw(REDUCE(0, SEQUENCE(10000, 1, 12.34, 0), LAMBDA(a, v, a + v)), $($pwScale[2]))" '57343'
 Near 'PAYGWithholding: a large whole-cent amount'         "--ISNUMBER($pw(5000000000.02, $($pwScale[2])))" '1'
+Near 'PAYGWithholding: the largest whole-cent amount'      "--ISNUMBER($pw(9999999999.99, $($pwScale[2])))" '1'
 # A column keeps its shape: a number gives its amount, empty text stays empty and an error shows.
 # The error is in an array constant: VSTACK returns #N/A whole when an argument is NA().
 Same 'PAYGWithholding: a column of a number, empty text and an error' "LET(x, $pw({1333.45;`"`";#N/A}, $($pwScale[2])), INDEX(x,1,1) & `"|`" & INDEX(x,2,1) & `"|`" & ISNA(INDEX(x,3,1)))" '245||TRUE'

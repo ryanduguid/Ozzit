@@ -2784,12 +2784,14 @@ PAYGWithholdingλ = LAMBDA(
     //  weekly dollar, is refused rather than rounded. A payment within a thousandth of a
     //  cent of a whole cent is that cent: binary arithmetic leaves such noise on sums of
     //  cents, and the cents are rounded off it before x is taken, so 538 less that noise
-    //  is still 538.
-    //  shortcut: the noise grows with the amount and the number of terms summed. 10,000
-    //  additions of 12.34 one at a time leave about a 400th of the allowance; a sum of
-    //  millions of dollars built from far more terms could be refused, never mispriced.
-        ValidEarnings?, AND( IFERROR( IF( ISNUMBER( Earnings), ( Earnings >= 0) * ( ABS( Earnings * 100 - ROUND( Earnings * 100, 0)) < 0.001), 0) + ( TRIM( Earnings & "") = ""), TRUE)),
-        EarningsMessage, "PAYGWithholdingλ needs each payment to be a number of 0 or more in whole cents, or blank.",
+    //  is still 538. Payments must be under 1E10: there a double resolves a payment to
+    //  about a ten-thousandth of a cent, so the test holds; at 46,000,000,000,000 the
+    //  nearest double to a whole cent can be a fifth of a cent off and still pass it.
+    //  shortcut: noise above the allowance is refused, never mispriced. A small difference
+    //  of very large sums can carry it (5,000,000,000 plus 50 cents, less 5,000,000,000,
+    //  is 0.50001144); the caller rounds such a payment to the cent first.
+        ValidEarnings?, AND( IFERROR( IF( ISNUMBER( Earnings), ( Earnings >= 0) * ( Earnings < 1E10) * ( ABS( Earnings * 100 - ROUND( Earnings * 100, 0)) < 0.001), 0) + ( TRIM( Earnings & "") = ""), TRUE)),
+        EarningsMessage, "PAYGWithholdingλ needs each payment to be a number from 0 to under 10,000,000,000 in whole cents, or blank.",
     //  Procedure
         Result,         MAP( Earnings, LAMBDA( Paid,
                             IF( TRIM( Paid & "") = "", "",
