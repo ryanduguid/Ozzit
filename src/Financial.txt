@@ -2789,8 +2789,10 @@ PAYGWithholdingλ = LAMBDA(
     //  nearest double to a whole cent can be a fifth of a cent off and still pass it.
     //  shortcut: noise above the allowance is refused, never mispriced. A small difference
     //  of very large sums can carry it (5,000,000,000 plus 50 cents, less 5,000,000,000,
-    //  is 0.50001144); the caller rounds such a payment to the cent first.
-        ValidEarnings?, AND( IFERROR( IF( ISNUMBER( Earnings), ( Earnings >= 0) * ( Earnings < 1E10) * ( ABS( Earnings * 100 - ROUND( Earnings * 100, 0)) < 0.001), 0) + ( TRIM( Earnings & "") = ""), TRUE)),
+    //  is 0.50001144); the caller rounds such a payment to the cent first. Only a
+    //  payment that is itself an error passes, so it shows. The cents are tested only
+    //  under the bound, where Earnings * 100 cannot overflow, so 9E307 is refused.
+        ValidEarnings?, AND( IF( ISERROR( Earnings), TRUE, IF( ISNUMBER( Earnings), IF( ( Earnings >= 0) * ( Earnings < 1E10), ABS( Earnings * 100 - ROUND( Earnings * 100, 0)) < 0.001, FALSE), FALSE) + ( TRIM( Earnings & "") = ""))),
         EarningsMessage, "PAYGWithholdingλ needs each payment to be a number from 0 to under 10,000,000,000 in whole cents, or blank.",
     //  Procedure
         Result,         MAP( Earnings, LAMBDA( Paid,
