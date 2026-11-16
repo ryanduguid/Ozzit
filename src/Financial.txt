@@ -2781,14 +2781,17 @@ PAYGWithholdingλ = LAMBDA(
         TableMessage,   "Coefficients must be 3 columns of numbers: weekly earnings less than, a and b, with the earnings rising and only the last row repeating the bound above it.",
     //  A blank is nil and stays blank; an error passes so it shows. Schedule 1 works in
     //  cents, so a fraction of a cent, which could tip the monthly 33-cent rule or a
-    //  weekly dollar, is refused rather than rounded.
-        ValidEarnings?, AND( IFERROR( IF( ISNUMBER( Earnings), ( Earnings >= 0) * ( ABS( Earnings * 100 - ROUND( Earnings * 100, 0)) < 0.000001), 0) + ( TRIM( Earnings & "") = ""), TRUE)),
+    //  weekly dollar, is refused rather than rounded. Only the noise of binary arithmetic,
+    //  a millionth of a millionth of the amount, is let through, and the cents are
+    //  rounded off it before x is taken, so 538 less that noise is still 538.
+        ValidEarnings?, AND( IFERROR( IF( ISNUMBER( Earnings), ( Earnings >= 0) * ( ABS( Earnings * 100 - ROUND( Earnings * 100, 0)) <= ABS( Earnings * 100) * 1E-12), 0) + ( TRIM( Earnings & "") = ""), TRUE)),
         EarningsMessage, "PAYGWithholdingλ needs each payment to be a number of 0 or more in whole cents, or blank.",
     //  Procedure
         Result,         MAP( Earnings, LAMBDA( Paid,
                             IF( TRIM( Paid & "") = "", "",
                                 LET(
-                                    Gross,  IF( AND( Pay = "M", ROUND( MOD( Paid, 1), 2) = 0.33), Paid + 0.01, Paid),
+                                    Cents,  ROUND( Paid, 2),
+                                    Gross,  IF( AND( Pay = "M", ROUND( MOD( Cents, 1), 2) = 0.33), Cents + 0.01, Cents),
                                     Weekly, SWITCH( Pay, "W", Gross, "F", Gross / 2, "M", Gross * 3 / 13, "Q", Gross / 13),
                                     X,      INT( Weekly) + 0.99,
                                     Row,    IFERROR( XMATCH( TRUE, X < Bounds), ROWS( Bounds)),
