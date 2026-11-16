@@ -4305,15 +4305,16 @@ PAYGWithholdingλ = LAMBDA(
     //  weekly dollar, is refused rather than rounded. A payment within a thousandth of a
     //  cent of a whole cent is that cent: binary arithmetic leaves such noise on sums of
     //  cents, and the cents are rounded off it before x is taken, so 538 less that noise
-    //  is still 538. Payments must be under 1E10: there a double resolves a payment to
-    //  about a ten-thousandth of a cent, so the test holds; at 46,000,000,000,000 the
-    //  nearest double to a whole cent can be a fifth of a cent off and still pass it.
+    //  is still 538. Payments, and the whole cents they round to, must be under 1E10:
+    //  there a double resolves a payment to about a ten-thousandth of a cent, so the
+    //  test holds; at 46,000,000,000,000 the nearest double to a whole cent can be a
+    //  fifth of a cent off and still pass it.
     //  shortcut: noise above the allowance is refused, never mispriced. A small difference
     //  of very large sums can carry it (5,000,000,000 plus 50 cents, less 5,000,000,000,
     //  is 0.50001144); the caller rounds such a payment to the cent first. Only a
     //  payment that is itself an error passes, so it shows. The cents are tested only
     //  under the bound, where Earnings * 100 cannot overflow, so 9E307 is refused.
-        ValidEarnings?, AND( IF( ISERROR( Earnings), TRUE, IF( ISNUMBER( Earnings), IF( ( Earnings >= 0) * ( Earnings < 1E10), ABS( Earnings * 100 - ROUND( Earnings * 100, 0)) < 0.001, FALSE), FALSE) + ( TRIM( Earnings & "") = ""))),
+        ValidEarnings?, AND( IF( ISERROR( Earnings), TRUE, IF( ISNUMBER( Earnings), IF( ( Earnings >= 0) * ( Earnings < 1E10), ( ABS( Earnings * 100 - ROUND( Earnings * 100, 0)) < 0.001) * ( ROUND( Earnings, 2) < 1E10), FALSE), FALSE) + ( TRIM( Earnings & "") = ""))),
         EarningsMessage, "PAYGWithholdingλ needs each payment to be a number from 0 to under 10,000,000,000 in whole cents, or blank.",
     //  Procedure
         Result,         MAP( Earnings, LAMBDA( Paid,
