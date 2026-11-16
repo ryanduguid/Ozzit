@@ -43,3 +43,31 @@ fn value_dump_filters_excel_calls_and_reads_each_sheet_through_one_range() {
         assert_eq!(count(&text, read), 1, "{read}");
     }
 }
+
+#[test]
+fn excel_scripts_wait_for_their_own_excel_to_exit() {
+    // On 16 November 2026 a value dump left an Excel running after Quit(), and every
+    // native gate after it refused to start. Each script finds its own process from the
+    // Application object it created and waits for that process, in its last cleanup.
+    for script in [
+        "tools/dump_values.ps1",
+        "tools/refresh_cache.ps1",
+        "tools/excel_selftest.ps1",
+    ] {
+        let text = read(script);
+        let sourced = index(&text, ". (Join-Path $PSScriptRoot 'excel_process.ps1')", 0);
+        let created = index(
+            &text,
+            "$xl = New-Object -ComObject Excel.Application",
+            sourced,
+        );
+        index(
+            &text,
+            "$excel = Invoke-Excel { Get-ExcelProcess $xl }",
+            created,
+        );
+        let cleanup = text.rfind("finally {").expect("a finally block");
+        let quit = index(&text, "$xl.Quit()", cleanup);
+        index(&text, "Wait-ExcelExit $excel", quit);
+    }
+}

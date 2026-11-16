@@ -100,13 +100,15 @@ if (@(Get-Process EXCEL -ErrorAction SilentlyContinue).Count -gt 0) {
     Write-Output 'Excel is already running. Close it first: this drives Excel over COM and quits it when done.'
     exit 2
 }
+. (Join-Path $PSScriptRoot 'excel_process.ps1')
 
 [OzzitMessageFilter]::Register()
 $xl = New-Object -ComObject Excel.Application
 # msoAutomationSecurityForceDisable (3), not Low (1): reading values needs no macros.
 $xl.Visible = $false; $xl.DisplayAlerts = $false; $xl.AutomationSecurity = 3
-$wb = $null; $sw = $null; $exit = 0
+$wb = $null; $ws = $null; $sw = $null; $excel = $null; $exit = 0
 try {
+    $excel = Invoke-Excel { Get-ExcelProcess $xl }
     # Inside the try: a bad -Out path must still reach the finally that quits Excel.
     $sw = [System.IO.StreamWriter]::new($Out, $false, (New-Object System.Text.UTF8Encoding $false))
     $wb = Invoke-Excel { $xl.Workbooks.Open($Path, 0, $false) }
@@ -154,8 +156,16 @@ finally {
     if ($sw) { $sw.Close() }
     if ($wb) { try { $wb.Close($false) } catch {} }
     try { $xl.Quit() } catch {}
-    [void][Runtime.InteropServices.Marshal]::ReleaseComObject($xl)
+    # Every reference left keeps Excel running after Quit().
+    foreach ($com in @($ws, $wb, $xl)) {
+        if ($null -ne $com -and [Runtime.InteropServices.Marshal]::IsComObject($com)) {
+            [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($com)
+        }
+    }
+    $com = $ws = $wb = $xl = $null
     [GC]::Collect(); [GC]::WaitForPendingFinalizers()
+    [GC]::Collect(); [GC]::WaitForPendingFinalizers()
+    Wait-ExcelExit $excel
     [OzzitMessageFilter]::Revoke()
 }
 exit $exit

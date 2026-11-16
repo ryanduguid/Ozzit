@@ -33,14 +33,16 @@ if (@(Get-Process EXCEL -ErrorAction SilentlyContinue).Count -gt 0) {
     Write-Output 'Excel is already running. Close it first: this drives Excel over COM and quits it when done.'
     exit 2
 }
+. (Join-Path $PSScriptRoot 'excel_process.ps1')
 
 $before = (Get-Item $Path).Length
 $xl = New-Object -ComObject Excel.Application
 # msoAutomationSecurityForceDisable (3), not Low (1). $Path is a parameter, and a
 # recalculation needs no macros: the shipped workbook is an ordinary .xlsx with none.
 $xl.Visible = $false; $xl.DisplayAlerts = $false; $xl.AutomationSecurity = 3
-$wb = $null; $exit = 0
+$wb = $null; $excel = $null; $exit = 0
 try {
+    $excel = Invoke-Excel { Get-ExcelProcess $xl }
     $wb = Invoke-Excel { $xl.Workbooks.Open($Path, 0, $false) }
     Invoke-Excel { $xl.CalculateFullRebuild() }
     # xlDone = 0. Saving while the engine is still working would write half an answer.
@@ -66,7 +68,15 @@ catch { Write-Output ('FAIL: ' + $_.Exception.Message); $exit = 1 }
 finally {
     if ($wb) { try { $wb.Close($false) } catch {} }
     try { $xl.Quit() } catch {}
-    [void][Runtime.InteropServices.Marshal]::ReleaseComObject($xl)
+    # Every reference left keeps Excel running after Quit().
+    foreach ($com in @($wb, $xl)) {
+        if ($null -ne $com -and [Runtime.InteropServices.Marshal]::IsComObject($com)) {
+            [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($com)
+        }
+    }
+    $com = $wb = $xl = $null
     [GC]::Collect(); [GC]::WaitForPendingFinalizers()
+    [GC]::Collect(); [GC]::WaitForPendingFinalizers()
+    Wait-ExcelExit $excel
 }
 exit $exit

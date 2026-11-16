@@ -1430,7 +1430,8 @@ Near 'FinancialQuarter: a range of starts refused'  "--ISNUMBER(SEARCH(`"1 to 12
 Near 'YearToDate: a range of starts refused'        "--ISNUMBER(SEARCH(`"1 to 12`", $ytd({10,20}, DATE(2026,{2,5},1), DATE(2026,8,31), {1,7})))" '1'
 Near 'YearToDate: text values are refused'          "--ISNUMBER(SEARCH(`"numbers or blank`", $ytd({`"10`",20}, DATE(2026,{7,8},1), DATE(2026,8,31))))" '1'
 Near 'YearToDate: TRUE values are refused'          "--ISNUMBER(SEARCH(`"numbers or blank`", $ytd({TRUE,20}, DATE(2026,{7,8},1), DATE(2026,8,31))))" '1'
-Near 'YearToDate: an error in an earlier column'    "ERROR.TYPE($ytd(HSTACK(NA(), 20), DATE(2026,{6,8},1), DATE(2026,8,31)))" '7' '0.1'
+# The error is in an array constant: HSTACK, like VSTACK, returns #N/A whole when an argument is NA().
+Near 'YearToDate: an error in an earlier column'    "ERROR.TYPE($ytd({#N/A,20}, DATE(2026,{6,8},1), DATE(2026,8,31)))" '7' '0.1'
 Near 'YearToDate: a time of day is ignored'         "$ytd({10,20}, DATE(2026,8,31) + {0,0.5}, DATE(2026,8,31))" '30'
 Near 'YearToDate: a year before 1900 is #NUM!'      "ERROR.TYPE($ytd({10,20}, DATE(1900,{1,6},1), DATE(1900,6,30)))" '6' '0.1'
 Near 'YearToDate: a 1900 calendar year'             "$ytd({10,20}, DATE(1900,{1,6},1), DATE(1900,6,30), 1)" '30'
@@ -1668,7 +1669,7 @@ Fuzz 'fuzz: DebtSculptVariableLRV interest on the average balance' `
 # The randomised checks rest on MAP() drawing fresh values for every trial. Prove it.
 Near 'fuzz: MAP draws fresh values per trial' "--(ROWS(UNIQUE(MAP(SEQUENCE(25), LAMBDA(i, RANDBETWEEN(1,1000000))))) > 1)" '1'
 
-$xl = $null; $wb = $null; $tmp = $null; $exit = 0
+$xl = $null; $wb = $null; $tmp = $null; $excel = $null; $exit = 0
 
 # Excel rejects incoming COM calls while it is mid-calculation (RPC_E_CALL_REJECTED),
 # so anything that can arrive at a busy moment gets retried with a backoff.
@@ -1703,9 +1704,11 @@ if (@(Get-Process EXCEL -ErrorAction SilentlyContinue).Count -gt 0) {
     Write-Output 'Excel is already running. Close it first: this test drives Excel over COM and quits it when done.'
     exit 2
 }
+. (Join-Path $PSScriptRoot 'excel_process.ps1')
 
 try {
     $xl = New-Object -ComObject Excel.Application
+    $excel = Invoke-Excel { Get-ExcelProcess $xl }
     $xl.Visible = $false; $xl.DisplayAlerts = $false
     # msoAutomationSecurityForceDisable (3), not Low (1): the self-test needs no macros.
     $xl.AutomationSecurity = 3; $xl.AskToUpdateLinks = $false; $xl.EnableEvents = $false
@@ -1805,7 +1808,16 @@ catch {
 finally {
     if ($tmp) { try { $tmp.Delete() } catch {} }
     if ($wb)  { try { $wb.Close($false) } catch {} }
-    if ($xl)  { try { $xl.Quit() } catch {}; [void][Runtime.InteropServices.Marshal]::ReleaseComObject($xl) }
+    if ($xl)  { try { $xl.Quit() } catch {} }
+    # Every reference left keeps Excel running after Quit().
+    foreach ($com in @($cell, $bad, $used, $ws, $tmp, $wb, $xl)) {
+        if ($null -ne $com -and [Runtime.InteropServices.Marshal]::IsComObject($com)) {
+            [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($com)
+        }
+    }
+    $com = $cell = $bad = $used = $ws = $tmp = $wb = $xl = $null
     [GC]::Collect(); [GC]::WaitForPendingFinalizers()
+    [GC]::Collect(); [GC]::WaitForPendingFinalizers()
+    Wait-ExcelExit $excel
 }
 exit $exit
