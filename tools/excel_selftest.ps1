@@ -1808,7 +1808,8 @@ catch {
 finally {
     if ($tmp) { try { $tmp.Delete() } catch {} }
     if ($wb)  { try { $wb.Close($false) } catch {} }
-    if ($xl)  { try { $xl.Quit() } catch {} }
+    # A refused Quit() is reported; Wait-ExcelExit below then ends this script's Excel.
+    if ($xl)  { try { $xl.Quit() } catch { Write-Output ('Excel refused Quit(): ' + $_.Exception.Message) } }
     # Every reference left keeps Excel running after Quit().
     foreach ($com in @($cell, $bad, $used, $ws, $tmp, $wb, $xl)) {
         if ($null -ne $com -and [Runtime.InteropServices.Marshal]::IsComObject($com)) {
