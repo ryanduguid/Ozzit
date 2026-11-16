@@ -273,8 +273,8 @@ $pwPaid = "PAYGWithholding$L needs each payment to be a number from 0 to under 1
 # 10,000,000,000 a double cannot show a fraction of a cent reliably: the nearest double to
 # 46,000,000,000,000 and 1/128 is 0.21875 cents off a whole cent and passed the cents test. A
 # small difference of very large sums carries noise above the allowance and is refused. 9E307
-# * 100 overflows; that error must not pass as an error payment does. 1E10 - 2^-19, the double
-# below the bound, is 9,999,999,999.999998, but its whole cents, 10,000,000,000.00, are not.
+# * 100 overflows; that error must not pass as an error payment does. 9,999,999,999.99999 is
+# under the bound and within the allowance, but its whole cents, 10,000,000,000.00, are not.
 foreach ($r in @(@("1000, $($pwScale[2]), `"X`"", 'Period must be W, F, M or Q.'),
                  @("1000, {362,0;538,0.15}", $pwTable),
                  @("1000, {538,0.15,54.3462;362,0,0}", $pwTable),
@@ -289,7 +289,7 @@ foreach ($r in @(@("1000, $($pwScale[2]), `"X`"", 'Period must be W, F, M or Q.'
                  @("5000000000.005, $($pwScale[2])", $pwPaid),
                  @("46000000000000 + 1/128, $($pwScale[2])", $pwPaid),
                  @("10000000000, $($pwScale[2])", $pwPaid),
-                 @("1E10 - 2^-19, $($pwScale[2])", $pwPaid),
+                 @("9999999999.99999, $($pwScale[2])", $pwPaid),
                  @("9E307, $($pwScale[2])", $pwPaid),
                  @("{1000;9E307}, $($pwScale[2])", $pwPaid),
                  @("REDUCE(5000000000, SEQUENCE(50, 1, 0.01, 0), LAMBDA(a, v, a + v)) - 5000000000, $($pwScale[2])", $pwPaid),
