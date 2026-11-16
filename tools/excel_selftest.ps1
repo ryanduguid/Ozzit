@@ -280,18 +280,24 @@ foreach ($r in @(@("1000, $($pwScale[2]), `"X`"", 'Period must be W, F, M or Q.'
                  @("TRUE, $($pwScale[2])", $pwPaid),
                  @("17.329, $($pwScale[1]), `"M`"", $pwPaid),
                  @("{1000;1000.005}, $($pwScale[2])", $pwPaid),
-                 @("537.999999999, $($pwScale[1])", $pwPaid),
+                 @("537.9999, $($pwScale[1])", $pwPaid),
+                 @("5000000000.005, $($pwScale[2])", $pwPaid),
                  @("1000, VSTACK({362,0,0}, HSTACK(NA(),0.15,54.3462))", $pwTable))) {
     Same "PAYGWithholding refuses ($($r[0]))" "LET(x, $pw($($r[0])), $pwOne)" $r[1]
 }
 # Only the last row may repeat the bound above it: a 2-row table whose rows share a bound is
-# accepted, as is a 1-row table. A whole-cent amount computed by arithmetic, with 3 * 0.1 not
-# exactly 0.3 in binary, is not taken for a fraction of a cent, and 538 less the noise of binary
-# arithmetic is 538: x is 538.99, and scale 1 gives 0.3227 * 538.99 - 74.1674 = 99.76, so 100.
+# accepted, as is a 1-row table. A payment within a thousandth of a cent of a whole cent is that
+# cent, so arithmetic noise is not taken for a fraction of a cent: 3 * 0.1 is not exactly 0.3 in
+# binary, and 538 less a little is 538, so x is 538.99 and scale 1 gives
+# 0.3227 * 538.99 - 74.1674 = 99.76, so 100. 10,000 additions of 12.34 one at a time leave
+# 123,399.99999997; as 123,400.00, x is 123,400.99 and scale 2 gives
+# 0.47 * 123,400.99 - 655.7704 = 57,342.69, so 57,343.
 Near 'PAYGWithholding: a 2-row table may repeat its bound' "$pw(100, {200,0,0;200,0.1,0})" '0'
 Near 'PAYGWithholding: a 1-row table'                     "$pw(100, {1000,0.1,0})"         '10'
 Near 'PAYGWithholding: arithmetic in whole cents is accepted' "$pw(1333.15 + 3 * 0.1, $($pwScale[2]))" '245'
 Near 'PAYGWithholding: 538 less arithmetic noise is 538'  "$pw(538 - 1E-13, $($pwScale[1]))"   '100'
+Near 'PAYGWithholding: 538 less a billionth is 538'      "$pw(537.999999999, $($pwScale[1]))" '100'
+Near 'PAYGWithholding: a long running sum of cents'      "$pw(REDUCE(0, SEQUENCE(10000, 1, 12.34, 0), LAMBDA(a, v, a + v)), $($pwScale[2]))" '57343'
 Near 'PAYGWithholding: a large whole-cent amount'         "--ISNUMBER($pw(5000000000.02, $($pwScale[2])))" '1'
 # A column keeps its shape: a number gives its amount, empty text stays empty and an error shows.
 Same 'PAYGWithholding: a column of a number, empty text and an error' "LET(x, $pw(VSTACK(1333.45, `"`", NA()), $($pwScale[2])), INDEX(x,1,1) & `"|`" & INDEX(x,2,1) & `"|`" & ISNA(INDEX(x,3,1)))" '245||TRUE'
