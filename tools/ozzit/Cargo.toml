@@ -16,11 +16,12 @@ path = "src/main.rs"
 
 [dependencies]
 base64 = "0.23.1"
-chrono = { version = "0.4.45", default-features = false, features = ["clock", "std"] }
 crc32fast = "1.5.2"
 fancy-regex = "0.20.0"
 flate2 = { version = "1.1.10", default-features = false, features = ["zlib-rs"] }
 indexmap = "2.14.2"
+# The system time zone, read from the zoneinfo files or, on Windows, a bundled copy.
+jiff = { version = "1.0.0", default-features = false, features = ["std", "tz-system", "tzdb-bundle-platform", "tzdb-zoneinfo"] }
 num-bigint = "0.5.1"
 num-traits = "0.2.19"
 roxmltree = "0.21.1"

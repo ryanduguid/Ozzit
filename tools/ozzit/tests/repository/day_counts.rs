@@ -31,7 +31,7 @@
 //! `docs/quantlib-day-count-comparison.md` defines their scope and regeneration
 //! procedure.
 use super::{almost_equal, json, read, sha256, spaced, within};
-use chrono::{Datelike, NaiveDate};
+use jiff::civil::Date;
 use ozzit::common;
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
@@ -44,25 +44,25 @@ const ACTUAL_360: i64 = 2;
 const ACTUAL_365: i64 = 3;
 const ACTUAL_ACTUAL: i64 = 4;
 
-fn date(year: i32, month: u32, day: u32) -> NaiveDate {
-    NaiveDate::from_ymd_opt(year, month, day).expect("a valid date")
+fn date(year: i16, month: i8, day: i8) -> Date {
+    Date::new(year, month, day).expect("a valid date")
 }
 
-fn iso(text: &str) -> NaiveDate {
-    NaiveDate::parse_from_str(text, "%Y-%m-%d").unwrap_or_else(|e| panic!("{text}: {e}"))
+fn iso(text: &str) -> Date {
+    Date::strptime("%Y-%m-%d", text).unwrap_or_else(|e| panic!("{text}: {e}"))
 }
 
-fn days(from: NaiveDate, to: NaiveDate) -> i64 {
-    (to - from).num_days()
+fn days(from: Date, to: Date) -> i64 {
+    (to - from).get_days().into()
 }
 
 /// 366 in a leap year, 365 otherwise, counted the way the LAMBDA counts it.
-fn days_in_year(year: i32) -> i64 {
+fn days_in_year(year: i16) -> i64 {
     days(date(year, 1, 1), date(year + 1, 1, 1))
 }
 
 /// The year fraction one period contributes, restating the shipped LAMBDA.
-fn fraction(start: NaiveDate, following: NaiveDate, convention: i64) -> Result<f64, String> {
+fn fraction(start: Date, following: Date, convention: i64) -> Result<f64, String> {
     match convention {
         THIRTY_360 => {
             // European rule: a 31st counts as the 30th at either end.
@@ -93,7 +93,7 @@ fn fraction(start: NaiveDate, following: NaiveDate, convention: i64) -> Result<f
     }
 }
 
-fn year_fraction(start: NaiveDate, following: NaiveDate, convention: i64) -> f64 {
+fn year_fraction(start: Date, following: Date, convention: i64) -> f64 {
     fraction(start, following, convention).unwrap_or_else(|e| panic!("{e}"))
 }
 
@@ -323,7 +323,7 @@ fn object<'a>(value: &'a Value, context: &str) -> &'a serde_json::Map<String, Va
 }
 
 /// A QuantLib case's id, boundaries and fractions by method.
-type QuantLibCase<'a> = (&'a str, NaiveDate, NaiveDate, Vec<(&'a str, f64)>);
+type QuantLibCase<'a> = (&'a str, Date, Date, Vec<(&'a str, f64)>);
 
 /// Each QuantLib case in the record.
 fn quantlib_cases(record: &Value) -> Vec<QuantLibCase<'_>> {
@@ -532,7 +532,7 @@ fn native_inputs_are_bound_to_the_evaluated_formulas() {
         record["excel"]["evidence_helper_sha256"],
         sha256("tools/excel_eval_formulas_verified.ps1")
     );
-    let numbers = |iso: NaiveDate| format!("{},{},{}", iso.year(), iso.month(), iso.day());
+    let numbers = |iso: Date| format!("{},{},{}", iso.year(), iso.month(), iso.day());
     let wanted: Vec<Value> = quantlib_cases(&record)
         .iter()
         .flat_map(|(id, start, following, fractions)| {
@@ -555,7 +555,7 @@ fn native_inputs_are_bound_to_the_evaluated_formulas() {
 fn the_comparison_rejects_recorded_wrong_variants() {
     let record = record();
     let tolerance = number(&record["absolute_tolerance"], "absolute_tolerance");
-    let cases: BTreeMap<&str, (NaiveDate, NaiveDate)> = quantlib_cases(&record)
+    let cases: BTreeMap<&str, (Date, Date)> = quantlib_cases(&record)
         .into_iter()
         .map(|(id, start, following, _)| (id, (start, following)))
         .collect();
