@@ -9,7 +9,7 @@
 //! and one with no text, and paths resolve with `posixpath` semantics.
 use super::xml::{self, MAIN, PACKAGE_REL, REL};
 use super::{index, part, parts, read, root};
-use chrono::{Days, NaiveDate};
+use jiff::civil::Date;
 use ozzit::archive::Parts;
 use ozzit::{common, py};
 use roxmltree::Node;
@@ -187,11 +187,11 @@ static VOLATILE_PATTERN: LazyLock<String> = LazyLock::new(|| {
     )
 });
 
-fn date(year: i32, month: u32, day: u32) -> NaiveDate {
-    NaiveDate::from_ymd_opt(year, month, day).expect("a valid date")
+fn date(year: i16, month: i8, day: i8) -> Date {
+    Date::new(year, month, day).expect("a valid date")
 }
 
-fn start_date() -> NaiveDate {
+fn start_date() -> Date {
     date(2026, 8, 31)
 }
 
@@ -417,8 +417,8 @@ fn cached_value(parts: &Parts, path: &str, address: &str) -> Option<String> {
 }
 
 /// The Excel date serial: days since 30 December 1899, as text.
-fn excel_serial(value: NaiveDate) -> String {
-    (value - date(1899, 12, 30)).num_days().to_string()
+fn excel_serial(value: Date) -> String {
+    (value - date(1899, 12, 30)).get_days().to_string()
 }
 
 fn markdown_section<'a>(markdown: &'a str, heading: &str, next_heading: Option<&str>) -> &'a str {
@@ -973,7 +973,7 @@ fn scaffold_sheets_and_forecast_headers() {
         assert_eq!(forecast.get(&format!("A{row}")), Some(label), "A{row}");
     }
     let week_starts: Vec<String> = (0..13)
-        .map(|week| excel_serial(start_date() + Days::new(7 * week)))
+        .map(|week| excel_serial(start_date() + jiff::Span::new().days(7 * week)))
         .collect();
     assert_eq!(forecast.row(FORECAST_COLUMNS, 5), texts(&week_starts));
     assert_eq!(forecast.get("O5"), Some("13-week total / terminal"));

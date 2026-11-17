@@ -18,8 +18,8 @@
 //! which CI sets on a push to main to the commit main pointed at before it, or
 //! else with HEAD's first parent, which in a pull request is the base it merges into.
 use super::{modules, root};
-use chrono::NaiveDate;
 use indexmap::IndexMap;
+use jiff::civil::Date;
 use ozzit::{
     common::{self, bounded},
     help,
@@ -112,16 +112,16 @@ fn field<'a>(rows: &'a HashMap<String, String>, label: &str) -> &'a str {
     rows.get(label).map_or("", String::as_str)
 }
 
-fn version(body: &str) -> NaiveDate {
+fn version(body: &str) -> Date {
     let text = rows(body).remove("VERSION").expect("a VERSION row");
-    NaiveDate::parse_from_str(&text, "%d %b %Y").unwrap_or_else(|e| panic!("VERSION {text:?}: {e}"))
+    Date::strptime("%d %b %Y", &text).unwrap_or_else(|e| panic!("VERSION {text:?}: {e}"))
 }
 
 /// Functions whose formula changed since base while VERSION stayed put.
 ///
 /// A function changed again on the day its VERSION was set keeps that date, so
 /// a VERSION within a day of today passes; the day allows for time zones.
-fn unmoved(current: &Functions, base: &Functions, today: NaiveDate) -> Vec<String> {
+fn unmoved(current: &Functions, base: &Functions, today: Date) -> Vec<String> {
     current
         .iter()
         .filter(|(name, body)| {
@@ -129,7 +129,7 @@ fn unmoved(current: &Functions, base: &Functions, today: NaiveDate) -> Vec<Strin
                 !WITHOUT_HELP.contains(&name.as_str())
                     && formula(body) != formula(before)
                     && version(body) <= version(before)
-                    && (version(body) - today).num_days().abs() > 1
+                    && (version(body) - today).get_days().abs() > 1
             })
         })
         .map(|(name, _)| name.clone())
@@ -147,12 +147,12 @@ fn base(named: &str) -> Result<Option<Functions>, String> {
     }
 }
 
-fn today() -> NaiveDate {
-    chrono::Local::now().date_naive()
+fn today() -> Date {
+    jiff::ZonedDateTime::now().date()
 }
 
-fn date(text: &str) -> NaiveDate {
-    NaiveDate::parse_from_str(text, "%d %b %Y").unwrap()
+fn date(text: &str) -> Date {
+    Date::strptime("%d %b %Y", text).unwrap()
 }
 
 #[test]
