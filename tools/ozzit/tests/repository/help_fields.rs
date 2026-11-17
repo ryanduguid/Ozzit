@@ -18,8 +18,8 @@
 //! which CI sets on a push to main to the commit main pointed at before it, or
 //! else with HEAD's first parent, which in a pull request is the base it merges into.
 use super::{modules, root};
-use jiff::civil::Date;
 use indexmap::IndexMap;
+use jiff::civil::Date;
 use ozzit::{
     common::{self, bounded},
     help,

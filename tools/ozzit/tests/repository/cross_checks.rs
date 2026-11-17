@@ -162,7 +162,9 @@ fn remeasure(
 
 /// The Excel date serial: days since 30 December 1899.
 fn serial(year: i16, month: i8, day: i8) -> i64 {
-    (date(year, month, day) - date(1899, 12, 30)).get_days().into()
+    (date(year, month, day) - date(1899, 12, 30))
+        .get_days()
+        .into()
 }
 
 fn date(year: i16, month: i8, day: i8) -> Date {
@@ -561,12 +563,7 @@ fn fy_month(day: Date, start: i64) -> i64 {
 }
 
 /// Each row's total over the dates from the first day of as_at's financial year.
-fn year_to_date(
-    rows: &[[i64; 4]; 2],
-    dates: &[Date; 4],
-    as_at: Date,
-    start: i8,
-) -> Json {
+fn year_to_date(rows: &[[i64; 4]; 2], dates: &[Date; 4], as_at: Date, start: i8) -> Json {
     let first = date(as_at.year() - i16::from(as_at.month() < start), start, 1);
     column(rows.iter().map(|row| {
         let in_year = row
