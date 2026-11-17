@@ -56,6 +56,10 @@ curl --proto '=https' --proto-redir '=https' -sSLO https://github.com/rhysd/acti
 ./actionlint -shellcheck ./shellcheck-v0.11.0/shellcheck
 ```
 
+CI's `dependency-audit` job runs `cargo audit` on `tools/ozzit` and its fuzz crate. A
+vulnerability or an unsound or yanked crate fails any run; an unmaintained crate fails
+only the weekly scheduled run (Ryan's decision, 18 November 2026).
+
 For a workbook change, also run the native Excel self-test and cached-value
 gate named in `RELEASING.md`. Release preparation, tagging and publication are
 governed solely by that document and require the stated human approval.
