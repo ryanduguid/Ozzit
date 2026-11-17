@@ -5,6 +5,9 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  schedule:
+    # Weekly, Sundays 21:17 UTC. The dependency audit also denies unmaintained crates on this run.
+    - cron: "17 21 * * 0"
 
 # On a pull request, a push that supersedes an earlier one cancels it rather than
 # paying for both. Every other run is keyed on its commit, as the attribution workflow's
@@ -227,7 +230,9 @@ jobs:
 
   # Audits the native tools' and the fuzz crate's Cargo.lock against the RustSec
   # advisory database. It sits with the CI-only jobs because its result follows
-  # the advisory database as well as the change.
+  # the advisory database as well as the change. Ryan, 18 November 2026: an
+  # unmaintained crate fails only the weekly scheduled run; a vulnerability, an
+  # unsound or a yanked crate fails every run.
   dependency-audit:
     timeout-minutes: 20
     runs-on: ubuntu-latest
@@ -246,8 +251,8 @@ jobs:
       - name: Audit the native tools' locked dependencies
         working-directory: tools/ozzit
         run: |
-          cargo audit --deny warnings
-          cargo audit --deny warnings --file fuzz/Cargo.lock
+          cargo audit ${{ github.event_name == 'schedule' && '--deny warnings' || '--deny unsound --deny yanked' }}
+          cargo audit ${{ github.event_name == 'schedule' && '--deny warnings' || '--deny unsound --deny yanked' }} --file fuzz/Cargo.lock
 
   # Holds the native tools' tests to their measured line coverage. It sits with
   # the CI-only jobs because it needs cargo-llvm-cov, which the contributor
