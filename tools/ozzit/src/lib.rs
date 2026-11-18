@@ -93,6 +93,10 @@ const COMMANDS: &[(&str, Handler)] = &[
         "payg_withholding",
         postbuild::function_pass::payg_withholding,
     ),
+    (
+        "finance_journals",
+        postbuild::function_pass::finance_journals,
+    ),
 ];
 pub fn dispatch(args: &[String]) -> Output {
     let command = args.first().map(String::as_str);

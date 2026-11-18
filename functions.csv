@@ -64,12 +64,15 @@ oz.EPSλ,Ratios,nabla.r.EPSλ,"EPSλ( NetIncome, PreferredDividends, EndOfPeriod
 oz.EquityMultiplierλ,Ratios,nabla.r.EquityMultiplierλ,"EquityMultiplierλ( TotalAssets, TotalShareholdersEquity)",Measures the portion of a company’s assets financed by shareholders' equity rather than by debt (TotalAssets/TotalShareholdersEquity)
 oz.EquityRatioλ,Ratios,nabla.r.EquityRatioλ,"EquityRatioλ( ShareholdersEquity, TotalAssets, IntangibleAssets)",Measures the long-term solvency of a company by comparing its shareholders’ equity to its total assets (Shareholder's Equity/(Total Assets - Intangible Assets)).
 oz.FilterContainsλ,Financial,nabla.f.FilterContainsλ,"FilterContainsλ( ArrayToFilter, FilterByArray, FilterByText, [IgnoreCase?] )",Filter an array by another array that contains specific text
+oz.FinanceCompareλ,Financial,,"FinanceCompareλ(CashFlows, DiscountRate, [PeriodsPerYear], [Labels])","Present value of each option's cash flows, such as a lease, hire purchase, loan or cash purchase, at one discount rate, pre-tax"
 oz.FinancialMonthλ,Dates,,"FinancialMonthλ(Dates, [StartMonth])","Numbers each date's month within its financial year, so July is month 1 when the year starts on 1 July"
 oz.FinancialQuarterλ,Dates,,"FinancialQuarterλ(Dates, [StartMonth])","Numbers each date's quarter within its financial year, so July to September is quarter 1 when the year starts on 1 July"
 oz.FinancialYearλ,Dates,nabla.d.FinancialYearλ,"FinancialYearλ(Dates, [StartMonth])","Labels dates with their Australian financial year, which starts on 1 July"
 oz.GSTAddλ,Financial,nabla.f.GSTAddλ,"GSTAddλ(Amounts, [Rate])",Adds GST to one or more GST-exclusive amounts.
 oz.GSTExtractλ,Financial,nabla.f.GSTExtractλ,"GSTExtractλ(Amounts, [Rate])",Returns the GST contained in one or more GST-inclusive amounts.
 oz.GrossMarginλ,Ratios,nabla.r.GrossMarginλ,"GrossMarginλ( GrossProfit, NetSales)",Shows how much profit a company makes after paying off its Cost of Goods Sold
+oz.HPJournalλ,Financial,,"HPJournalλ(HPSchedule, [Accounts])","Journal lines for a hire purchase or chattel mortgage from its HPScheduleλ schedule: amount financed, interest, instalments and balloon"
+oz.HPScheduleλ,Financial,,"HPScheduleλ(Financed, AnnualRate, Periods, [PeriodsPerYear], [InAdvance], [Balloon])","Hire purchase or chattel mortgage schedule in cents: opening, payment, interest, principal and closing for each period"
 oz.IRRλ,Financial,nabla.f.IRRλ,"IRRλ( Values, Dates)","Calculates IRR, correcting for when the first investment is not in the first period"
 oz.IntOnIntλ,Financial,nabla.f.IntOnIntλ,"IntOnIntλ( Principal, Rate)",Calculate Interest on Interest. Use to determine amount needed to cover debt plus interest on debt
 oz.InterestCoverageRatioλ,Ratios,nabla.r.InterestCoverageRatioλ,"InterestCoverageRatioλ( OperatingIncome, InterestExpenses)",Determines how easily a company can pay interest on its outstanding debt (Operating Income/Interest Expenses)
@@ -83,6 +86,7 @@ oz.IsInListλ,Essentials,nabla.e.IsInListλ,"IsInListλ( Value, List)",Determine
 oz.IsOccurrenceDateλ,Dates,nabla.d.IsOccurrenceDateλ,"IsOccurrenceDateλ(Dates, FirstOccurrence, [LastOccurrence], [Repeats])","Returns TRUE if Date passed is when something happens. This was developed for budgeting where we have expenses that start, and sometimes repeat at regular intervals."
 oz.LabelAmortiseλ,Financial,nabla.f.LabelAmortiseλ,"LabelAmortiseλ(LoanNames, [LoanAmounts], [LoanAPRs], [LoanTerms])",Create labels for Amortiseλ
 oz.LabelDepreciateλ,Financial,nabla.f.LabelDepreciateλ,LabelDepreciateλ( AssetNames),Create labels for Depreciateλ
+oz.LeaseJournalλ,Financial,,"LeaseJournalλ(LeaseSchedule, ROUSchedule, [Accounts])","Journal lines for an AASB 16 lease: initial recognition, interest, payments and depreciation, from the lease and right-of-use schedules"
 oz.LeaseLiabilityλ,Financial,,"LeaseLiabilityλ(Payments, Rate, [InAdvance])",Present value of the lease payments that are not paid at the commencement date
 oz.LeaseRemeasureλ,Financial,,"LeaseRemeasureλ(RevisedPayments, Rate, CarryingLiability, CarryingROU, [InAdvance])",Remeasures an AASB 16 lease liability for revised payments and adjusts the right-of-use asset
 oz.LeaseScheduleλ,Financial,,"LeaseScheduleλ(Payments, Rate, [InAdvance])","Unwinds an AASB 16 lease liability: opening, payment, interest and closing for each period"

@@ -106,11 +106,18 @@ you can check by hand; the lease guide explains the 4 lessee functions.
 | AASB 16 lease | `=oz.LeaseScheduleλ(Payments, Rate, [InAdvance])` for the liability, `=oz.ROUScheduleλ(Cost, Periods)` for the right-of-use asset | [Lessee functions and rate conversion](docs/australian-modelling.md#aasb-16-leases) |
 | Practice or business calculator | Open the [standalone companion](templates/practice-calculators.xlsx); select one of its 21 calculators | [Inputs, assumptions and coverage](docs/between-spreadsheets.md) |
 | PAYG withholding, on `main` only | `=oz.PAYGWithholdingλ(Earnings, Coefficients, [Period])` with the payee's coefficients from the ATO's Schedule 1 | [What it applies and leaves out](docs/australian-modelling.md#payg-withholding) |
+| Lease journals, on `main` only | `=oz.LeaseJournalλ(LeaseSchedule, ROUSchedule, [Accounts])` from the 2 lease schedules | [Entries and AASB 16 paragraphs](docs/australian-modelling.md#lease-journals) |
+| Hire purchase or chattel mortgage, on `main` only | `=oz.HPScheduleλ(Financed, AnnualRate, Periods, [PeriodsPerYear], [InAdvance], [Balloon])`, journalled by `=oz.HPJournalλ(HPSchedule, [Accounts])` | [Schedule, rounding and journal](docs/australian-modelling.md#hire-purchase-and-chattel-mortgages) |
+| Lease, hire purchase, loan or cash, on `main` only | `=oz.FinanceCompareλ(CashFlows, DiscountRate, [PeriodsPerYear], [Labels])` | [Pre-tax present values](docs/australian-modelling.md#comparing-a-lease-hire-purchase-loan-or-cash) |
 
 `oz.PAYGWithholdingλ` is not yet in a release. It works out the amount before tax
 offsets and the Medicare levy adjustment and does not apply either, or the extra
 withholding for 53 or 27 pays. It does not choose the scale and does not do scale 4,
 for a payee who has not given a TFN.
+
+`oz.LeaseJournalλ`, `oz.HPScheduleλ`, `oz.HPJournalλ` and `oz.FinanceCompareλ` are not
+yet in a release. They are bookkeeping arithmetic: the comparison is before tax, and none
+works out Division 240 of the Income Tax Assessment Act 1997 or GST input tax credits.
 
 [Open, copy functions and use modern Excel](docs/workbook-use.md) shows how to
 copy a function into your own workbook.

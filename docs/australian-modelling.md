@@ -67,3 +67,35 @@ Remeasurement follows paragraphs 39 to 43. A change in future payments caused by
 Paragraph references were read against the AASB 16 compilation on 24 August 2026. Recheck the current compilation at the time of use.
 
 **These are schedules, not determinations.** They do not decide the lease term, decide what counts as a lease payment, decide whether an arrangement contains a lease, or apply the short-term and low-value recognition exemptions. There is no lessor accounting here. Use them to build and check a model, not to conclude on the standard.
+
+### Lease journals
+
+`oz.LeaseJournalλ(LeaseSchedule, ROUSchedule, [Accounts])` turns the two schedules into journal lines: a header row, then a debit line and a credit line for each entry, with the period, account, debit, credit and narration. It follows the compiled [AASB 16](https://standards.aasb.gov.au/aasb-16-nov-2022) (compilation no. 8, applying to annual periods beginning on or after 1 January 2024), read on 18 November 2026:
+
+- **Period 0, commencement.** Debit the right-of-use asset and credit the lease liability with the liability's opening balance: paragraph 22 recognises both, paragraph 23 measures the asset at cost and paragraph 26 measures the liability. The rest of the asset's cost, the payments at or before commencement and the other costs of paragraph 24(b) to (d), is credited to cash.
+- **Each later period.** Debit interest expense and credit the liability with that period's interest (paragraphs 36(a) and 37; paragraph 38(a) takes it to profit or loss), debit the liability and credit cash with the payment (paragraph 36(b)), and debit depreciation expense and credit accumulated depreciation with the right-of-use charge (paragraphs 31 and 32).
+
+Pass `oz.LeaseScheduleλ` and `oz.ROUScheduleλ` for the same lease. For payments in advance the liability schedule is a period shorter than the asset's, so the last period has depreciation only. Amounts are unrounded, as the schedules give them; debits equal credits in every period and the liability closes at nil. A nil amount gives no line and a negative one, such as interest at a negative rate, swaps its debit and credit. `Accounts` takes up to 6 names or codes in the order right-of-use asset, lease liability, interest expense, cash, depreciation expense and accumulated depreciation; a blank keeps its default. Paragraph 49 presents the interest apart from the depreciation, which the separate accounts allow. It does not journal a remeasurement, variable payments left out of the liability, or a restoration provision credited to an account other than cash: post those yourself.
+
+## Hire purchase and chattel mortgages
+
+`oz.HPScheduleλ(Financed, AnnualRate, Periods, [PeriodsPerYear], [InAdvance], [Balloon])` returns 5 rows, one column a payment: opening balance, payment, interest, principal and closing balance, in cents.
+
+- The rate per period is `oz.PeriodRateλ(AnnualRate, PeriodsPerYear)`, an effective annual rate converted to the payment frequency (52 weekly, 26 fortnightly, 12 monthly by default, 4 quarterly). For a nominal rate that compounds with each payment, pass `EFFECT(Nominal, PeriodsPerYear)`. For the rate a contract's instalment implies, pass `oz.AnnualRateλ(RATE(Periods, -Instalment, Financed, -Balloon, InAdvance), PeriodsPerYear)`.
+- The level payment is `oz.LevelPaymentλ` at that rate, the same as `-PMT(rate, Periods, Financed, -Balloon, InAdvance)`, rounded to the cent.
+- Interest is rounded to the cent each period: on the opening balance for payments in arrears, and on the balance left after the payment for payments in advance.
+- The final payment takes the rounding difference, so the last closing balance is the `Balloon` exactly. The balloon is paid at the end of the last period.
+
+`oz.HPJournalλ(HPSchedule, [Accounts])` journals that schedule: at period 0 a debit to the asset and a credit to the liability for the amount financed, then each period's interest (debit interest expense, credit the liability) and instalment (debit the liability, credit cash), and the balloon in the last period. Debits equal credits in every period and the liability closes at nil. `Accounts` takes up to 4 names or codes: asset, liability, interest expense and cash. Rename the liability for a chattel mortgage; the arithmetic is the same.
+
+**Bookkeeping only.** Neither function works out the tax treatment: not Division 240 of the *Income Tax Assessment Act 1997* and not the GST input tax credits on the purchase or the finance. A deposit, a trade-in, fees and the asset's depreciation are outside the schedule and the journal.
+
+## Comparing a lease, hire purchase, loan or cash
+
+`oz.FinanceCompareλ(CashFlows, DiscountRate, [PeriodsPerYear], [Labels])` takes one row of cash flows per option and returns a header row and, for each option, its label, the undiscounted total and the present value at `DiscountRate`, an effective annual rate converted with `oz.PeriodRateλ`. Column 1 is at the start and column k + 1 at the end of period k. Enter payments positive and receipts, such as the sale of the asset at the end, negative.
+
+- **Cash purchase:** the price in column 1.
+- **Lease:** its payments, in arrears from column 2 or in advance from column 1.
+- **Hire purchase or loan:** 0, or the deposit, in column 1, then the payment row of `oz.HPScheduleλ` with the balloon added to the last payment; for payments in advance, the payment row from column 1 and the balloon in the column after it.
+
+The comparison is **pre-tax only**, as its last column heading says. It leaves out income tax deductions, depreciation, GST input tax credits and Division 240, which an after-tax comparison needs, and it ranks and recommends nothing.

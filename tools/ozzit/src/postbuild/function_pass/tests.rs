@@ -179,7 +179,10 @@ fn level_payment_pass_reproduces_the_published_financial_module() {
     let follower = absent.find(about.follower.as_deref().unwrap()).unwrap();
     assert!(absent[start + joined.len()..follower].trim().is_empty());
     absent.replace_range(start..follower, "");
-    assert!(!absent.contains("LevelPaymentλ") && !absent.contains("CorkscrewRateλ"));
+    // HPScheduleλ calls LevelPaymentλ by name, so look for the definitions.
+    assert!(
+        !absent.contains("LevelPaymentλ = LAMBDA(") && !absent.contains("CorkscrewRateλ = LAMBDA(")
+    );
     assert_eq!(
         add_to_src(&SPECS[4], &t, "Financial", &absent).unwrap(),
         current
@@ -213,6 +216,46 @@ fn payg_withholding_pass_reproduces_the_published_financial_module() {
     assert!(!absent.contains("PAYGWithholdingλ"));
     assert_eq!(
         add_to_src(&SPECS[5], &t, "Financial", &absent).unwrap(),
+        current
+    );
+}
+#[test]
+fn finance_journals_pass_reproduces_the_published_financial_module() {
+    let t = tables(&SPECS[6]);
+    let current = std::fs::read_to_string(root().join("src/Financial.txt")).unwrap();
+    let about = lookup_about(&t.about, "Financial");
+    let at = current.find(&about.anchor).unwrap();
+    let indent = &current[current[..at].rfind('\n').unwrap() + 1..at];
+    let heading = about.heading.as_deref().unwrap();
+    let inserted = ["\"→¶\"".to_string(), format!("\"{heading}¶\"")]
+        .into_iter()
+        .chain(t.functions.iter().map(|f| t.about_row("Financial", f)))
+        .map(|line| format!("\n{indent}{line} &"))
+        .collect::<String>();
+    let mut absent = current.replacen(
+        &format!("{} &{inserted}", about.anchor),
+        &format!("{} &", about.anchor),
+        1,
+    );
+    let joined = t
+        .functions
+        .iter()
+        .map(|f| f.block.as_str())
+        .collect::<Vec<_>>()
+        .join("\n\n\n");
+    let start = absent.find(&joined).unwrap();
+    let follower = absent.find(about.follower.as_deref().unwrap()).unwrap();
+    assert!(absent[start + joined.len()..follower].trim().is_empty());
+    absent.replace_range(start..follower, "");
+    for f in &t.functions {
+        assert!(
+            !absent.contains(&f.name),
+            "{} is still in the module",
+            f.name
+        );
+    }
+    assert_eq!(
+        add_to_src(&SPECS[6], &t, "Financial", &absent).unwrap(),
         current
     );
 }
