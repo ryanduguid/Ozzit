@@ -1290,17 +1290,24 @@ Near 'HPSchedule weekly closes to nil' "INDEX($hps(10000,0.08,52,52),5,52)" '0'
 Near 'HPSchedule weekly rate is the annual rate over 52' `
      "INDEX($hps(10000,0.08,52,52),3,1)" "ROUND(10000*$pr(0.08,52),2)"
 Near 'HPSchedule blank optional cells are the defaults' "SUM(ABS($hps(1000,0.1,3,Z1,Z2,Z3)-$hps(1000,0.1,3)))" '0'
-$hpTerms = "HPSchedule$L needs single numbers: Financed above 0, AnnualRate above -1, a whole number of Periods from 1, PeriodsPerYear above 0 and a Balloon from 0, and TRUE or FALSE for InAdvance."
+$hpTerms = "HPSchedule$L needs single numbers: Financed above 0 and a Balloon from 0 in whole cents, AnnualRate above -1, a whole number of Periods from 1 and PeriodsPerYear above 0, and TRUE, FALSE, 1 or 0 for InAdvance."
 $hpBalloon = "HPSchedule$L needs a Balloon the payments can reach: no more than Financed grown at the rate."
 foreach ($r in @(@('0, 0.1, 3', $hpTerms), @('1000, -1, 3', $hpTerms), @('1000, 0.1, 0', $hpTerms),
                  @('1000, 0.1, 2.5', $hpTerms), @('1000, 0.1, 3, 0', $hpTerms), @('1000, 0.1, 3, 12, "yes"', $hpTerms),
                  @('1000, 0.1, 3, 12, FALSE, -1', $hpTerms), @('"1000", 0.1, 3', $hpTerms), @('{1000,2000}, 0.1, 3', $hpTerms),
                  @('1000, "10%", 3', $hpTerms), @('1000, 0.1, 3, 1, FALSE, 2000', $hpBalloon),
-                 @('1000, 0.1, 3, 1, FALSE, 1331.01', $hpBalloon), @('1000, 0.1, 3, 1, TRUE, 1331.01', $hpBalloon))) {
+                 @('1000, 0.1, 3, 1, FALSE, 1331.01', $hpBalloon), @('1000, 0.1, 3, 1, TRUE, 1331.01', $hpBalloon),
+                 @('1000.005, 0.1, 3', $hpTerms), @('1000, 0.1, 3, 1, FALSE, 100.005', $hpTerms), @('1000, 0.1, 3, 12, 2', $hpTerms))) {
     Same "HPSchedule refuses ($($r[0]))" "LET(x, $hps($($r[0])), IF(AND(ROWS(x) = 1, COLUMNS(x) = 1), x, `"array`"))" $r[1]
 }
 # 1,000 grown at 10% for 3 years is 1,331: that Balloon is reached with nil payments, and a
 # cent more is refused above rather than scheduled with a final payment of -0.01.
+# Amounts in whole cents may carry binary noise: 10.1 * 3 is 30.299999999999997.
+Near 'HPSchedule takes arithmetic noise as whole cents' "INDEX($hps(10.1*3,0.1,3,1),1,1)" '30.3'
+Near 'HPSchedule takes 1 for InAdvance as TRUE' "SUM(ABS($hps(1000,0.1,3,1,1)-$hps(1000,0.1,3,1,TRUE)))" '0'
+# In advance the last interest is the Balloon's share Rate / (1 + Rate), which can be a cent off
+# interest on the balance left after the last payment, so the help must say so.
+Near 'HPSchedule help states the last interest in advance' "--ISNUMBER(SEARCH(`"Rate / (1 + Rate)`", TEXTJOIN(`" `", TRUE, $hps())))" '1'
 foreach ($adv in 'FALSE', 'TRUE') {
     Near "HPSchedule reaches a Balloon of Financed grown at the rate, advance $adv" `
          "SUMPRODUCT(ABS(CHOOSEROWS($hps(1000,0.1,3,1,$adv,1331),2)))" '0'
@@ -1325,6 +1332,9 @@ foreach ($adv in 'FALSE', 'TRUE') {
         Near "HPJournal runs from period 0 to 36, $tag" "MAX(DROP(TAKE($j,,1),1))*100+MIN(DROP(TAKE($j,,1),1))" '3600'
     }
 }
+# A negative amount swaps its debit and credit: interest at a negative rate reduces the liability.
+Same 'HPJournal swaps a negative interest, debit' "INDEX($hpj($hps(1000,-0.05,2,1)),4,2)" 'Hire purchase liability'
+Same 'HPJournal swaps a negative interest, credit' "INDEX($hpj($hps(1000,-0.05,2,1)),5,2)" 'Interest expense'
 Same 'HPJournal renames the liability for a chattel mortgage' `
      "INDEX($hpj($hps(1000,0.1,3,1),{`"Motor vehicle`",`"Chattel mortgage loan`"}),3,2)" 'Chattel mortgage loan'
 Same 'HPJournal keeps the default for a blank account' `
@@ -1365,6 +1375,19 @@ foreach ($rate in '0', '0.004') {
 Near 'LeaseJournal takes a commencement payment from cash at period 0' `
      "LET(j, $lj($lsch({100,100},0.05,TRUE),$lrou(100+$lli({100,100},0.05,TRUE),2)), SUM((TAKE(j,,1)=0)*(INDEX(j,,2)=`"Cash`")*IF(ISNUMBER(INDEX(j,,4)),INDEX(j,,4),0)))" '100'
 # A negative amount swaps its debit and credit: interest at a negative rate reduces the liability.
+# Payments in advance, period by period: the first payment from cash at commencement, then
+# interest and a payment in periods 1 and 2, and depreciation alone in the last period.
+Same 'LeaseJournal: in advance, every line in its period' `
+     "TEXTJOIN(`";`",FALSE,BYROW(DROP($lj($lsch({100,100,100},0.05,TRUE),$lrou(100+$lli({100,100,100},0.05,TRUE),3)),1),LAMBDA(r,INDEX(r,1)&`",`"&INDEX(r,2)&`",`"&TEXT(N(INDEX(r,3))-N(INDEX(r,4)),`"0.00`"))))" `
+     ('0,Right-of-use asset,185.94;0,Lease liability,-185.94;0,Right-of-use asset,100.00;0,Cash,-100.00;' +
+      '1,Interest expense,9.30;1,Lease liability,-9.30;1,Lease liability,100.00;1,Cash,-100.00;' +
+      '1,Depreciation expense,95.31;1,Accumulated depreciation,-95.31;' +
+      '2,Interest expense,4.76;2,Lease liability,-4.76;2,Lease liability,100.00;2,Cash,-100.00;' +
+      '2,Depreciation expense,95.31;2,Accumulated depreciation,-95.31;' +
+      '3,Depreciation expense,95.31;3,Accumulated depreciation,-95.31')
+# An incentive larger than the other commencement costs comes back from cash; the narration
+# must fit either direction.
+Same 'LeaseJournal narrates the rest of the cost either way' "INDEX($lj($lsch({105},0.05),$lrou(90,1)),4,5)" "Rest of the right-of-use asset's cost at commencement"
 Same 'LeaseJournal swaps a negative interest' "INDEX($lj($lsch({100},-0.01),$lrou($lli({100},-0.01),1)),4,2)" 'Lease liability'
 Same 'LeaseJournal renames an account' `
      "INDEX($lj($lsch({105},0.05),$lrou(100,1),{`"ROU - vehicle`"}),2,2)" 'ROU - vehicle'
@@ -1394,6 +1417,7 @@ Near 'LeaseJournal help keeps a restoration estimate out of cash' "--ISNUMBER(SE
 Near 'LeaseJournal help names the restoration provision' "--ISNUMBER(SEARCH(`"AASB 137`", TEXTJOIN(`" `", TRUE, $lj())))" '1'
 Same 'FinanceCompare labels the options' "INDEX($fc({1;2},0.05,1,{`"Cash`";`"Lease`"}),3,1)" 'Lease'
 Same 'FinanceCompare default labels' "INDEX($fc({1;2},0.05),3,1)" 'Option 2'
+Same 'FinanceCompare: a blank Labels cell keeps the default labels' "INDEX($fc({1;2},0.05,1,Z1),3,1)" 'Option 2'
 Same 'FinanceCompare keeps the default for a blank label' "INDEX($fc({1;2},0.05,1,{`"Cash`";`"`"}),3,1)" 'Option 2'
 Near 'FinanceCompare blank optional cells are the defaults' "SUM(DROP($fc({0,100},0.12,Z1),1,1)-DROP($fc({0,100},0.12),1,1))" '0'
 $fcFlows = "FinanceCompare$L needs every cash flow to be a number or blank."
