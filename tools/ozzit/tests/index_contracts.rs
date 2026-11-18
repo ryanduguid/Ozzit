@@ -16,7 +16,7 @@ const FIELDS: &[&str] = &[
     "signature",
     "description",
 ];
-const GOOD: &str = "OK: all 156 functions.csv rows match the workbook and source modules";
+const GOOD: &str = "OK: all 160 functions.csv rows match the workbook and source modules";
 
 fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")

@@ -1210,6 +1210,224 @@ foreach ($r in @(@('1000, {0.01,-1}', $lpRates), @('1000, {0.01;0.01}', $lpRates
 }
 Near 'LevelPayment: an error in Rates shows' "--ISNA($lp(1000, {0.01,#N/A}))" '1'
 
+# --- Hire purchase and chattel mortgage schedules, their journals, lease journals and the
+# finance comparison. The schedules are checked against cases worked by hand in cents, against
+# PMT(), and by identity: every column rolls forward, the last closing balance is the
+# balloon and the principal repaid is the amount financed less the balloon. Every journal
+# must balance in each period and leave its liability at nil.
+$hps = "oz.HPSchedule$L"
+$hpj = "oz.HPJournal$L"
+$lj  = "oz.LeaseJournal$L"
+$fc  = "oz.FinanceCompare$L"
+$pr  = "oz.PeriodRate$L"
+# The largest gap between a period's debits and credits, over every period of journal $j.
+function Unbalanced($j) {
+    "LET(j, $j, b, DROP(j, 1), p, CHOOSECOLS(b, 1), d, IF(ISNUMBER(CHOOSECOLS(b, 3)), CHOOSECOLS(b, 3), 0)," +
+    " c, IF(ISNUMBER(CHOOSECOLS(b, 4)), CHOOSECOLS(b, 4), 0), MAX(MAP(UNIQUE(p), LAMBDA(k, ABS(SUM((p = k) * (d - c)))))))"
+}
+# Debits less credits on account $a over the whole of journal $j.
+function Ledger($j, $a) {
+    "LET(j, $j, b, DROP(j, 1), d, IF(ISNUMBER(CHOOSECOLS(b, 3)), CHOOSECOLS(b, 3), 0)," +
+    " c, IF(ISNUMBER(CHOOSECOLS(b, 4)), CHOOSECOLS(b, 4), 0), SUM((CHOOSECOLS(b, 2) = `"$a`") * (d - c)))"
+}
+
+# Worked by hand: 1,000 at 10% a year, 3 yearly payments. The level payment is 402.1148,
+# 402.11 in cents; interest is 100.00, 69.789 and 36.557, so the last payment is
+# 365.57 + 36.56 = 402.13 and takes the 2 cents of rounding.
+Same 'HPSchedule: hand-worked, 3 yearly payments in arrears' `
+     "TEXTJOIN(`",`",FALSE,TEXT($hps(1000,0.1,3,1),`"0.00`"))" `
+     '1000.00,697.89,365.57,402.11,402.11,402.13,100.00,69.79,36.56,302.11,332.32,365.57,697.89,365.57,0.00'
+# In advance with a 100 balloon: the payment is (1,000 - 100 / 1.331) / 2.486852 / 1.1 =
+# 338.09; interest runs on 661.91 and 390.01 after each payment; the last is 100 * 0.1 / 1.1
+# = 9.09, so 90.91 left after the last payment grows to the balloon.
+Same 'HPSchedule: hand-worked, in advance with a balloon' `
+     "TEXTJOIN(`",`",FALSE,TEXT($hps(1000,0.1,3,1,TRUE,100),`"0.00`"))" `
+     '1000.00,728.10,429.01,338.09,338.09,338.10,66.19,39.00,9.09,271.90,299.09,329.01,728.10,429.01,100.00'
+foreach ($rate in '0', '0.0721', '0.15') {
+    foreach ($n in '1', '12', '60') {
+        foreach ($adv in 'FALSE', 'TRUE') {
+            foreach ($bal in '0', '10000') {
+                $s = "$hps(50000,$rate,$n,12,$adv,$bal)"
+                $tag = "rate $rate, $n payments, advance $adv, balloon $bal"
+                Near "HPSchedule closes on the balloon, $tag" "INDEX($s,5,$n)" $bal
+                Near "HPSchedule shape, $tag" "ROWS($s)*1000+COLUMNS($s)" "5000+$n"
+                Near "HPSchedule rolls forward each period, $tag" `
+                     "SUMPRODUCT(ABS(CHOOSEROWS($s,1)+CHOOSEROWS($s,3)-CHOOSEROWS($s,2)-CHOOSEROWS($s,5)))" '0' '0.0000001'
+                Near "HPSchedule principal repays the amount financed less the balloon, $tag" `
+                     "SUM(CHOOSEROWS($s,4))" "50000-$bal" '0.0000001'
+                Near "HPSchedule pays, charges and owes whole cents, $tag" `
+                     "LET(x, CHOOSEROWS($s,2,3,5), SUMPRODUCT(--(ABS(x*100-ROUND(x*100,0))>0.000001)))" '0'
+            }
+        }
+    }
+}
+# A schedule of several payments: each opens on the last closing balance, and every payment
+# but the last is PMT()'s in cents.
+foreach ($rate in '0', '0.0721', '0.15') {
+    foreach ($n in '12', '60') {
+        foreach ($adv in 'FALSE', 'TRUE') {
+            foreach ($bal in '0', '10000') {
+                $s = "$hps(50000,$rate,$n,12,$adv,$bal)"
+                $tag = "rate $rate, $n payments, advance $adv, balloon $bal"
+                Near "HPSchedule each opening is the closing before it, $tag" `
+                     "SUMPRODUCT(ABS(DROP(CHOOSEROWS($s,1),,1)-DROP(CHOOSEROWS($s,5),,-1)))" '0'
+                Near "HPSchedule payment is PMT() in cents, $tag" `
+                     "INDEX($s,2,1)" "ROUND(-PMT($pr($rate,12),$n,50000,-$bal,--$adv),2)"
+                Near "HPSchedule only the last payment differs, $tag" `
+                     "SUMPRODUCT(--(DROP(CHOOSEROWS($s,2),,-1)<>INDEX($s,2,1)))" '0'
+            }
+        }
+    }
+}
+# Discounting the payments and the balloon at the agreement's own rate gives back the
+# amount financed, less the interest rounding: half a cent a period at most.
+foreach ($adv in 'FALSE', 'TRUE') {
+    $s = "$hps(50000,0.0721,60,12,$adv,10000)"
+    $flows = if ($adv -eq 'TRUE') { "HSTACK(CHOOSEROWS($s,2),10000)" } else { "HSTACK(0,CHOOSEROWS($s,2)+IF(SEQUENCE(1,60)=60,10000,0))" }
+    Near "HPSchedule present value is the amount financed, advance $adv" "INDEX($fc($flows,0.0721,12),2,3)" '50000' '0.3'
+}
+Near 'HPSchedule weekly closes to nil' "INDEX($hps(10000,0.08,52,52),5,52)" '0'
+Near 'HPSchedule weekly rate is the annual rate over 52' `
+     "INDEX($hps(10000,0.08,52,52),3,1)" "ROUND(10000*$pr(0.08,52),2)"
+Near 'HPSchedule blank optional cells are the defaults' "SUM(ABS($hps(1000,0.1,3,Z1,Z2,Z3)-$hps(1000,0.1,3)))" '0'
+$hpTerms = "HPSchedule$L needs single numbers: Financed above 0 and a Balloon from 0 in whole cents, AnnualRate above -1, a whole number of Periods from 1 and PeriodsPerYear above 0, and TRUE, FALSE, 1 or 0 for InAdvance."
+$hpBalloon = "HPSchedule$L needs a Balloon the payments can reach: no more than Financed grown at the rate."
+foreach ($r in @(@('0, 0.1, 3', $hpTerms), @('1000, -1, 3', $hpTerms), @('1000, 0.1, 0', $hpTerms),
+                 @('1000, 0.1, 2.5', $hpTerms), @('1000, 0.1, 3, 0', $hpTerms), @('1000, 0.1, 3, 12, "yes"', $hpTerms),
+                 @('1000, 0.1, 3, 12, FALSE, -1', $hpTerms), @('"1000", 0.1, 3', $hpTerms), @('{1000,2000}, 0.1, 3', $hpTerms),
+                 @('1000, "10%", 3', $hpTerms), @('1000, 0.1, 3, 1, FALSE, 2000', $hpBalloon),
+                 @('1000, 0.1, 3, 1, FALSE, 1331.01', $hpBalloon), @('1000, 0.1, 3, 1, TRUE, 1331.01', $hpBalloon),
+                 @('1000.005, 0.1, 3', $hpTerms), @('1000, 0.1, 3, 1, FALSE, 100.005', $hpTerms), @('1000, 0.1, 3, 12, 2', $hpTerms))) {
+    Same "HPSchedule refuses ($($r[0]))" "LET(x, $hps($($r[0])), IF(AND(ROWS(x) = 1, COLUMNS(x) = 1), x, `"array`"))" $r[1]
+}
+# 1,000 grown at 10% for 3 years is 1,331: that Balloon is reached with nil payments, and a
+# cent more is refused above rather than scheduled with a final payment of -0.01.
+# Amounts in whole cents may carry binary noise: 10.1 * 3 is 30.299999999999997.
+Near 'HPSchedule takes arithmetic noise as whole cents' "INDEX($hps(10.1*3,0.1,3,1),1,1)" '30.3'
+Near 'HPSchedule takes 1 for InAdvance as TRUE' "SUM(ABS($hps(1000,0.1,3,1,1)-$hps(1000,0.1,3,1,TRUE)))" '0'
+# In advance the last interest is the Balloon's share Rate / (1 + Rate), which can be a cent off
+# interest on the balance left after the last payment, so the help must say so.
+Near 'HPSchedule help states the last interest in advance' "--ISNUMBER(SEARCH(`"Rate / (1 + Rate)`", TEXTJOIN(`" `", TRUE, $hps())))" '1'
+foreach ($adv in 'FALSE', 'TRUE') {
+    Near "HPSchedule reaches a Balloon of Financed grown at the rate, advance $adv" `
+         "SUMPRODUCT(ABS(CHOOSEROWS($hps(1000,0.1,3,1,$adv,1331),2)))" '0'
+}
+
+# --- Hire purchase journal
+Same 'HPJournal: hand-worked, one payment and a balloon' `
+     "TEXTJOIN(`"|`",FALSE,$hpj($hps(1000,0.1,1,1,,500)))" `
+     ('Period|Account|Debit|Credit|Narration|0|Asset at cost|1000||Amount financed|0|Hire purchase liability||1000|Amount financed|' +
+      '1|Interest expense|100||Interest on the agreement|1|Hire purchase liability||100|Interest on the agreement|' +
+      '1|Hire purchase liability|600||Instalment|1|Cash||600|Instalment|1|Hire purchase liability|500||Balloon|1|Cash||500|Balloon')
+foreach ($adv in 'FALSE', 'TRUE') {
+    foreach ($bal in '0', '10000') {
+        $s = "$hps(50000,0.0721,36,12,$adv,$bal)"
+        $j = "$hpj($s)"
+        $tag = "advance $adv, balloon $bal"
+        Near "HPJournal balances in every period, $tag" (Unbalanced $j) '0' '0.0000001'
+        Near "HPJournal leaves the liability at nil, $tag" (Ledger $j 'Hire purchase liability') '0' '0.0000001'
+        Near "HPJournal debits the asset with the amount financed, $tag" (Ledger $j 'Asset at cost') '50000'
+        Near "HPJournal charges the schedule's interest, $tag" (Ledger $j 'Interest expense') "SUM(CHOOSEROWS($s,3))"
+        Near "HPJournal pays the instalments and the balloon, $tag" (Ledger $j 'Cash') "-SUM(CHOOSEROWS($s,2))-$bal"
+        Near "HPJournal runs from period 0 to 36, $tag" "MAX(DROP(TAKE($j,,1),1))*100+MIN(DROP(TAKE($j,,1),1))" '3600'
+    }
+}
+# A negative amount swaps its debit and credit: interest at a negative rate reduces the liability.
+Same 'HPJournal swaps a negative interest, debit' "INDEX($hpj($hps(1000,-0.05,2,1)),4,2)" 'Hire purchase liability'
+Same 'HPJournal swaps a negative interest, credit' "INDEX($hpj($hps(1000,-0.05,2,1)),5,2)" 'Interest expense'
+Same 'HPJournal renames the liability for a chattel mortgage' `
+     "INDEX($hpj($hps(1000,0.1,3,1),{`"Motor vehicle`",`"Chattel mortgage loan`"}),3,2)" 'Chattel mortgage loan'
+Same 'HPJournal keeps the default for a blank account' `
+     "INDEX($hpj($hps(1000,0.1,3,1),{`"`",`"Chattel mortgage loan`"}),2,2)" 'Asset at cost'
+Near 'HPJournal takes an account code' "INDEX($hpj($hps(1000,0.1,3,1),{1200}),2,2)" '1200'
+$hpjSchedule = "HPJournal$L needs the five rows of HPSchedule$L(), all numbers."
+foreach ($r in @(@('{1;2;3}', $hpjSchedule), @("$hps(0,0.1,3)", $hpjSchedule),
+                 @("$hps(1000,0.1,3,1), SEQUENCE(1,5)", "HPJournal$L takes at most four account names."))) {
+    Same "HPJournal refuses ($($r[0]))" "LET(x, $hpj($($r[0])), IF(AND(ROWS(x) = 1, COLUMNS(x) = 1), x, `"array`"))" $r[1]
+}
+
+# --- Lease journal, from LeaseSchedule and ROUSchedule
+Same 'LeaseJournal: hand-worked, one payment in arrears' `
+     "TEXTJOIN(`"|`",FALSE,$lj($lsch({105},0.05),$lrou(100,1)))" `
+     ('Period|Account|Debit|Credit|Narration|0|Right-of-use asset|100||Lease liability recognised at commencement|' +
+      '0|Lease liability||100|Lease liability recognised at commencement|1|Interest expense|5||Interest on the lease liability|' +
+      '1|Lease liability||5|Interest on the lease liability|1|Lease liability|105||Lease payment|1|Cash||105|Lease payment|' +
+      '1|Depreciation expense|100||Depreciation of the right-of-use asset|1|Accumulated depreciation||100|Depreciation of the right-of-use asset')
+foreach ($rate in '0', '0.004') {
+    foreach ($n in '1', '3', '12') {
+        foreach ($adv in 'FALSE', 'TRUE') {
+            $p = "SEQUENCE(,$n,100,0)"
+            $cost = "($lli($p,$rate,$adv)+IF($adv,100,0))"
+            $ls = "$lsch($p,$rate,$adv)"
+            $j = "$lj($ls,$lrou($cost,$n))"
+            $tag = "rate $rate, $n periods, advance $adv"
+            Near "LeaseJournal balances in every period, $tag" (Unbalanced $j) '0' '0.0000001'
+            Near "LeaseJournal leaves the lease liability at nil, $tag" (Ledger $j 'Lease liability') '0' '0.0000001'
+            Near "LeaseJournal debits the asset with its cost, $tag" (Ledger $j 'Right-of-use asset') $cost
+            Near "LeaseJournal depreciates the whole cost, $tag" (Ledger $j 'Accumulated depreciation') "-$cost"
+            Near "LeaseJournal pays every payment, $tag" (Ledger $j 'Cash') "-100*$n"
+            Near "LeaseJournal charges the schedule's interest, $tag" (Ledger $j 'Interest expense') "SUM(CHOOSEROWS($ls,3))"
+            Near "LeaseJournal runs to the last period, $tag" "MAX(DROP(TAKE($j,,1),1))" $n
+        }
+    }
+}
+# A payment at commencement is the rest of the asset's cost, taken from cash at period 0.
+Near 'LeaseJournal takes a commencement payment from cash at period 0' `
+     "LET(j, $lj($lsch({100,100},0.05,TRUE),$lrou(100+$lli({100,100},0.05,TRUE),2)), SUM((TAKE(j,,1)=0)*(INDEX(j,,2)=`"Cash`")*IF(ISNUMBER(INDEX(j,,4)),INDEX(j,,4),0)))" '100'
+# A negative amount swaps its debit and credit: interest at a negative rate reduces the liability.
+# Payments in advance, period by period: the first payment from cash at commencement, then
+# interest and a payment in periods 1 and 2, and depreciation alone in the last period.
+Same 'LeaseJournal: in advance, every line in its period' `
+     "TEXTJOIN(`";`",FALSE,BYROW(DROP($lj($lsch({100,100,100},0.05,TRUE),$lrou(100+$lli({100,100,100},0.05,TRUE),3)),1),LAMBDA(r,INDEX(r,1)&`",`"&INDEX(r,2)&`",`"&TEXT(N(INDEX(r,3))-N(INDEX(r,4)),`"0.00`"))))" `
+     ('0,Right-of-use asset,185.94;0,Lease liability,-185.94;0,Right-of-use asset,100.00;0,Cash,-100.00;' +
+      '1,Interest expense,9.30;1,Lease liability,-9.30;1,Lease liability,100.00;1,Cash,-100.00;' +
+      '1,Depreciation expense,95.31;1,Accumulated depreciation,-95.31;' +
+      '2,Interest expense,4.76;2,Lease liability,-4.76;2,Lease liability,100.00;2,Cash,-100.00;' +
+      '2,Depreciation expense,95.31;2,Accumulated depreciation,-95.31;' +
+      '3,Depreciation expense,95.31;3,Accumulated depreciation,-95.31')
+# An incentive larger than the other commencement costs comes back from cash; the narration
+# must fit either direction.
+Same 'LeaseJournal narrates the rest of the cost either way' "INDEX($lj($lsch({105},0.05),$lrou(90,1)),4,5)" "Rest of the right-of-use asset's cost at commencement"
+Same 'LeaseJournal swaps a negative interest' "INDEX($lj($lsch({100},-0.01),$lrou($lli({100},-0.01),1)),4,2)" 'Lease liability'
+Same 'LeaseJournal renames an account' `
+     "INDEX($lj($lsch({105},0.05),$lrou(100,1),{`"ROU - vehicle`"}),2,2)" 'ROU - vehicle'
+Same 'LeaseJournal keeps the default for a blank account' `
+     "INDEX($lj($lsch({105},0.05),$lrou(100,1),{`"`",`"Lease liability - current`"}),2,2)" 'Right-of-use asset'
+$ljSchedule = "LeaseJournal$L needs the four rows of LeaseSchedule$L() and the three rows of ROUSchedule$L(), all numbers."
+foreach ($r in @(@("{1;2;3}, $lrou(100,1)", $ljSchedule), @("$lsch({105},0.05), $lrou(100,0)", $ljSchedule),
+                 @("$lsch({105},0.05), {1;2}", $ljSchedule),
+                 @("$lsch({105},0.05), $lrou(100,1), SEQUENCE(1,7)", "LeaseJournal$L takes at most six account names."))) {
+    Same "LeaseJournal refuses ($($r[0]))" "LET(x, $lj($($r[0])), IF(AND(ROWS(x) = 1, COLUMNS(x) = 1), x, `"array`"))" $r[1]
+}
+
+# --- Finance comparison: present values pre-tax
+Near 'FinanceCompare equals the lease liability in arrears' "INDEX($fc({0,100,100,100},0.05,1),2,3)" "$lli({100,100,100},0.05)"
+Near 'FinanceCompare: column 1 is undiscounted' "INDEX($fc({100,100,100},0.05,1),2,3)" '100+NPV(0.05,100,100)'
+Near 'FinanceCompare converts the annual rate per period' "INDEX($fc({0,100},0.12),2,3)" '100/1.12^(1/12)'
+Near 'FinanceCompare totals each row undiscounted' "INDEX($fc({1000,0,0,0;0,350,350,350},0.05,1),3,2)" '1050'
+Near 'FinanceCompare: a receipt is negative' "INDEX($fc({1000,0,-500},0.1,1),2,3)" '1000-500/1.21'
+Near 'FinanceCompare shape' "ROWS($fc({1;2;3},0.05))*10+COLUMNS($fc({1;2;3},0.05))" '43'
+Same 'FinanceCompare says it is pre-tax' "INDEX($fc({1},0.05),1,3)" 'Present value (pre-tax)'
+# Payments in advance start in column 1; laid out as for arrears they are discounted a period
+# too far, so the help must say where they go.
+Near 'FinanceCompare help places payments in advance' "--ISNUMBER(SEARCH(`"in advance`", TEXTJOIN(`" `", TRUE, $fc())))" '1'
+# A restoration estimate in the asset's cost (AASB 16 paragraph 24(d)) is a provision under
+# AASB 137, not a cash payment, so the help must not send it to cash.
+Near 'LeaseJournal help keeps a restoration estimate out of cash' "--ISNUMBER(SEARCH(`"24(b) to (d)`", TEXTJOIN(`" `", TRUE, $lj())))" '0'
+Near 'LeaseJournal help names the restoration provision' "--ISNUMBER(SEARCH(`"AASB 137`", TEXTJOIN(`" `", TRUE, $lj())))" '1'
+Same 'FinanceCompare labels the options' "INDEX($fc({1;2},0.05,1,{`"Cash`";`"Lease`"}),3,1)" 'Lease'
+Same 'FinanceCompare default labels' "INDEX($fc({1;2},0.05),3,1)" 'Option 2'
+Same 'FinanceCompare: a blank Labels cell keeps the default labels' "INDEX($fc({1;2},0.05,1,Z1),3,1)" 'Option 2'
+Same 'FinanceCompare keeps the default for a blank label' "INDEX($fc({1;2},0.05,1,{`"Cash`";`"`"}),3,1)" 'Option 2'
+Near 'FinanceCompare blank optional cells are the defaults' "SUM(DROP($fc({0,100},0.12,Z1),1,1)-DROP($fc({0,100},0.12),1,1))" '0'
+$fcFlows = "FinanceCompare$L needs every cash flow to be a number or blank."
+$fcRate = "FinanceCompare$L needs DiscountRate to be a single number above -1 and PeriodsPerYear a single number above 0."
+foreach ($r in @(@('{100,"x"}, 0.05', $fcFlows), @('{100,TRUE}, 0.05', $fcFlows), @('{100,100}, -1', $fcRate),
+                 @('{100,100}, "5%"', $fcRate), @('{100,100}, {0.05,0.06}', $fcRate), @('{100,100}, 0.05, 0', $fcRate),
+                 @('{100;100}, 0.05, 1, {"Cash"}', "FinanceCompare$L needs one label for each row of CashFlows."))) {
+    Same "FinanceCompare refuses ($($r[0]))" "LET(x, $fc($($r[0])), IF(AND(ROWS(x) = 1, COLUMNS(x) = 1), x, `"array`"))" $r[1]
+}
+
 # --- CorkscrewRate. Interest is on the average balance and added to it. The check solves
 # each period again by fixed-point iteration, I = r * (2 * O + F + I) / 2, rather than the
 # closed form, and every column must add up: opening + flows + interest = closing.

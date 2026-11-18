@@ -1,5 +1,29 @@
 # Changelog
 
+## Unreleased
+
+Changes on `main` since the v3.7.0 cut. They reach the published workbook in the next
+release; until then v3.7.0 behaves as it did.
+
+### Added
+
+- `oz.LeaseJournalλ(LeaseSchedule, ROUSchedule, [Accounts])` turns the rows of
+  `oz.LeaseScheduleλ` and `oz.ROUScheduleλ` into journal lines (period, account, debit,
+  credit, narration): the right-of-use asset and lease liability at commencement, then
+  each period's interest, payment and depreciation, citing AASB 16 paragraphs 22 to 26,
+  31, 32, 36 to 38 and 49 of compilation no. 8. Account names are a parameter.
+- `oz.HPScheduleλ(Financed, AnnualRate, Periods, [PeriodsPerYear], [InAdvance], [Balloon])`
+  schedules a hire purchase or chattel mortgage in cents, in arrears or in advance, with a
+  balloon: the payment is `oz.LevelPaymentλ` at `oz.PeriodRateλ`'s rate, and the final
+  payment takes the rounding so the schedule closes on the balloon.
+  `oz.HPJournalλ(HPSchedule, [Accounts])` journals it. Neither computes the tax treatment
+  (Division 240 of the Income Tax Assessment Act 1997) or GST input tax credits.
+- `oz.FinanceCompareλ(CashFlows, DiscountRate, [PeriodsPerYear], [Labels])` returns the
+  undiscounted total and the pre-tax present value of each option's cash flows, such as a
+  lease, a hire purchase, a loan or a cash purchase, and recommends nothing.
+  `ozzit finance_journals` adds the 4 functions to `src/`, the workbook and
+  `functions.csv`.
+
 ## v3.7.0, 18 November 2026, PAYG withholding and the v3.6.0 known issues fixed
 
 Cut on 18 November 2026 from the changes on `main` since v3.6.0. It takes the library

@@ -51,6 +51,7 @@ tools/ozzit/target/release/ozzit ato_benchmarks_rate_lookup ozzit.xlsx src funct
 tools/ozzit/target/release/ozzit variance_fy_periods ozzit.xlsx src functions.csv
 tools/ozzit/target/release/ozzit level_payment_corkscrew_rate ozzit.xlsx src functions.csv
 tools/ozzit/target/release/ozzit payg_withholding ozzit.xlsx src functions.csv
+tools/ozzit/target/release/ozzit finance_journals ozzit.xlsx src functions.csv
 tools/ozzit/target/release/ozzit cover_label ozzit.xlsx
 tools/ozzit/target/release/ozzit compile_sources ozzit.xlsx src --index=functions.csv
 tools/ozzit/target/release/ozzit build_module src oz.txt
@@ -143,18 +144,23 @@ corkscrew pass exists only as the native
 `ozzit level_payment_corkscrew_rate`: it adds `oz.LevelPaymentλ` and `oz.CorkscrewRateλ`
 under a new LOANS heading after the REPORTING rows of the Financial About table, with
 their blocks after the variance pass's and before the rate helpers'. The PAYG withholding
-pass is the last text pass and exists only as the native `ozzit payg_withholding`: it adds
+pass exists only as the native `ozzit payg_withholding`: it adds
 `oz.PAYGWithholdingλ` under a new PAYG WITHHOLDING heading after the LOANS rows of the
 Financial About table, with its block after the variance pass's and before the level
-payment pass's. The cover-label pass is one swap in `xl/sharedStrings.xml`:
+payment pass's. The finance contract pass is the last text pass and exists only as the
+native `ozzit finance_journals`: it adds `oz.LeaseJournalλ`, `oz.HPScheduleλ`,
+`oz.HPJournalλ` and `oz.FinanceCompareλ` under a new FINANCE CONTRACTS heading after the
+PAYG WITHHOLDING rows, with their blocks before the PAYG pass's, so that pass's contract
+test still finds its block just before the level payment pass's. The cover-label pass is
+one swap in `xl/sharedStrings.xml`:
 Cover!A3 kept reading 20 August 2026 and 130 functions after 3 cuts, and
 `ozzit verify_cover` now keeps that label equal to `functions.csv` and the
 changelog's current cut. The pass accepts any earlier label it records, so it also
 carries the count from 133 to 137 for the working-capital functions, to 143 with the
 v3.5.0 cut date for the ATO benchmark and rate functions, to 148 for the variance
 and financial-year period functions, to 150 for the level payment and rate corkscrew,
-to the v3.6.0 cut date of 14 November 2026, to 151 for PAYG withholding, and to the
-v3.7.0 cut date of 18 November 2026.
+to the v3.6.0 cut date of 14 November 2026, to 151 for PAYG withholding, to the
+v3.7.0 cut date of 18 November 2026, and to 155 for the finance contract functions.
 
 ## What is intentionally not here
 
