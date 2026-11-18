@@ -1,10 +1,10 @@
 # Changelog
 
-## Unreleased
+## v3.7.0, 18 November 2026, PAYG withholding and the v3.6.0 known issues fixed
 
-Changes on `main` since the v3.6.0 cut. They reach the published workbook in the next
-release; until then v3.6.0 behaves as it did, including its 3 known issues, which
-these changes fix.
+Cut on 18 November 2026 from the changes on `main` since v3.6.0. It takes the library
+from 150 to 151 functions. v3.6.0 still behaves as it did, including its 3 known issues,
+which the fixes below resolve.
 
 ### Added
 
