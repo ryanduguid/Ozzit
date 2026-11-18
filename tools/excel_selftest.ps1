@@ -1295,8 +1295,15 @@ $hpBalloon = "HPSchedule$L needs a Balloon the payments can reach: no more than 
 foreach ($r in @(@('0, 0.1, 3', $hpTerms), @('1000, -1, 3', $hpTerms), @('1000, 0.1, 0', $hpTerms),
                  @('1000, 0.1, 2.5', $hpTerms), @('1000, 0.1, 3, 0', $hpTerms), @('1000, 0.1, 3, 12, "yes"', $hpTerms),
                  @('1000, 0.1, 3, 12, FALSE, -1', $hpTerms), @('"1000", 0.1, 3', $hpTerms), @('{1000,2000}, 0.1, 3', $hpTerms),
-                 @('1000, "10%", 3', $hpTerms), @('1000, 0.1, 3, 1, FALSE, 2000', $hpBalloon))) {
+                 @('1000, "10%", 3', $hpTerms), @('1000, 0.1, 3, 1, FALSE, 2000', $hpBalloon),
+                 @('1000, 0.1, 3, 1, FALSE, 1331.01', $hpBalloon), @('1000, 0.1, 3, 1, TRUE, 1331.01', $hpBalloon))) {
     Same "HPSchedule refuses ($($r[0]))" "LET(x, $hps($($r[0])), IF(AND(ROWS(x) = 1, COLUMNS(x) = 1), x, `"array`"))" $r[1]
+}
+# 1,000 grown at 10% for 3 years is 1,331: that Balloon is reached with nil payments, and a
+# cent more is refused above rather than scheduled with a final payment of -0.01.
+foreach ($adv in 'FALSE', 'TRUE') {
+    Near "HPSchedule reaches a Balloon of Financed grown at the rate, advance $adv" `
+         "SUMPRODUCT(ABS(CHOOSEROWS($hps(1000,0.1,3,1,$adv,1331),2)))" '0'
 }
 
 # --- Hire purchase journal
@@ -1378,6 +1385,13 @@ Near 'FinanceCompare totals each row undiscounted' "INDEX($fc({1000,0,0,0;0,350,
 Near 'FinanceCompare: a receipt is negative' "INDEX($fc({1000,0,-500},0.1,1),2,3)" '1000-500/1.21'
 Near 'FinanceCompare shape' "ROWS($fc({1;2;3},0.05))*10+COLUMNS($fc({1;2;3},0.05))" '43'
 Same 'FinanceCompare says it is pre-tax' "INDEX($fc({1},0.05),1,3)" 'Present value (pre-tax)'
+# Payments in advance start in column 1; laid out as for arrears they are discounted a period
+# too far, so the help must say where they go.
+Near 'FinanceCompare help places payments in advance' "--ISNUMBER(SEARCH(`"in advance`", TEXTJOIN(`" `", TRUE, $fc())))" '1'
+# A restoration estimate in the asset's cost (AASB 16 paragraph 24(d)) is a provision under
+# AASB 137, not a cash payment, so the help must not send it to cash.
+Near 'LeaseJournal help keeps a restoration estimate out of cash' "--ISNUMBER(SEARCH(`"24(b) to (d)`", TEXTJOIN(`" `", TRUE, $lj())))" '0'
+Near 'LeaseJournal help names the restoration provision' "--ISNUMBER(SEARCH(`"AASB 137`", TEXTJOIN(`" `", TRUE, $lj())))" '1'
 Same 'FinanceCompare labels the options' "INDEX($fc({1;2},0.05,1,{`"Cash`";`"Lease`"}),3,1)" 'Lease'
 Same 'FinanceCompare default labels' "INDEX($fc({1;2},0.05),3,1)" 'Option 2'
 Same 'FinanceCompare keeps the default for a blank label' "INDEX($fc({1;2},0.05,1,{`"Cash`";`"`"}),3,1)" 'Option 2'
