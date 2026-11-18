@@ -39,8 +39,6 @@ the v3.5.0 release keeps Apache-2.0, and v3.4.2 and earlier releases keep MIT.
 
 **[Latest release](https://github.com/ryanduguid/Ozzit/releases/latest)** on GitHub.
 
-- **v3.7.0**, cut dated 18 November 2026 from `main`, with 151 functions:
-  [releases/tag/v3.7.0](https://github.com/ryanduguid/Ozzit/releases/tag/v3.7.0).
 - **[v3.6.0](https://github.com/ryanduguid/Ozzit/releases/tag/v3.6.0)**, published
   14 November 2026 from the cut dated 14 November 2026, with 150 functions.
   [Download ozzit.xlsx](https://github.com/ryanduguid/Ozzit/releases/download/v3.6.0/ozzit.xlsx)
