@@ -3,7 +3,7 @@
     <source media="(max-width: 600px) and (prefers-color-scheme: light)" srcset=".github/assets/banner-phone-light.svg">
     <source media="(max-width: 600px)" srcset=".github/assets/banner-phone.svg">
     <source media="(prefers-color-scheme: light)" srcset=".github/assets/banner-light.svg">
-    <img src=".github/assets/banner.svg" width="100%" alt="Ozzit. 150 native Excel LAMBDAs. No add-ins, no macros. Pixel art of a lambda in a circle beside the Ozzit wordmark in slab-serif block letters.">
+    <img src=".github/assets/banner.svg" width="100%" alt="Ozzit. 151 native Excel LAMBDAs. No add-ins, no macros. Pixel art of a lambda in a circle beside the Ozzit wordmark in slab-serif block letters.">
   </picture>
 </p>
 
@@ -17,7 +17,7 @@
 
 Ozzit is one Excel workbook of native LAMBDA functions under the `oz.` prefix, for
 accountants and analysts modelling in Excel, with Australian GST and financial-year
-helpers: 150 functions and 5 named help tables in release v3.6.0.
+helpers: 151 functions and 5 named help tables in release v3.7.0.
 
 Ozzit is not a bookkeeping tool and never touches a ledger. The functions cover amortisation, depreciation, ratios including the ATO's small business
 benchmarks, a checked dated rate lookup and AASB 16 lessee schedules. They need no add-in,
@@ -39,6 +39,10 @@ the v3.5.0 release keeps Apache-2.0, and v3.4.2 and earlier releases keep MIT.
 
 **[Latest release](https://github.com/ryanduguid/Ozzit/releases/latest)** on GitHub.
 
+- **[v3.7.0](https://github.com/ryanduguid/Ozzit/releases/tag/v3.7.0)**, published
+  18 November 2026 from the cut dated 18 November 2026, with 151 functions.
+  [Download ozzit.xlsx](https://github.com/ryanduguid/Ozzit/releases/download/v3.7.0/ozzit.xlsx)
+  (492,757 bytes, SHA-256 `0ed09fc130d30394c97f6a41e40ab72d3f68093b65a5e109adf11bd901f006bd`).
 - **[v3.6.0](https://github.com/ryanduguid/Ozzit/releases/tag/v3.6.0)**, published
   14 November 2026 from the cut dated 14 November 2026, with 150 functions.
   [Download ozzit.xlsx](https://github.com/ryanduguid/Ozzit/releases/download/v3.6.0/ozzit.xlsx)
@@ -91,7 +95,7 @@ check above used a different workbook file.
 
 ## Start with a task
 
-An Ozzit user does not need all 150 functions. Start with the task you need to complete.
+An Ozzit user does not need all 151 functions. Start with the task you need to complete.
 The loan and depreciation guides show the spilled result for a synthetic input
 you can check by hand; the lease guide explains the 4 lessee functions.
 
@@ -113,14 +117,13 @@ copy a function into your own workbook.
 
 To bring in every function at once, the Advanced Formula Environment in the Excel
 Labs add-in imports a module from a URL. From its Names tab, import
-`https://raw.githubusercontent.com/ryanduguid/Ozzit/v3.6.0/oz.txt` under the module
-name `oz`: that file is the v3.6.0 library as one module, and its 155 names match
+`https://raw.githubusercontent.com/ryanduguid/Ozzit/v3.7.0/oz.txt` under the module
+name `oz`: that file is the v3.7.0 library as one module, and its 156 names match
 that release's workbook. Then type `=oz.` in a cell and pick a function from
 autocomplete. This route has not been tested in Excel. Microsoft's
 [module import page](https://github.com/microsoft/Excel-Labs/blob/main/advanced-formula-environment/documentation/module-import.md),
 last changed 9 February 2023, says the add-in imports only from a GitHub gist URL
-and does not allow tab characters in a module; the v3.6.0 `oz.txt` ends 4 comment
-lines with a tab.
+and does not allow tab characters in a module; the v3.7.0 `oz.txt` has none.
 
 For an AI assistant, [the Ozzit skill](skills/ozzit/SKILL.md) routes function
 selection and composition through the existing catalogue and approved workbook.
@@ -229,11 +232,11 @@ source views included in this cut, and its known issues. [RELEASING.md](RELEASIN
 requires the 18 gates and exact-candidate approval before a release is published.
 
 **v3.7.0**, cut dated 18 November 2026, is under the Ryan Duguid Public Attribution Licence 1.0.
-Its [citation metadata](CITATION.cff) names the cut. Cite the signed tag `v3.7.0` once its
-[release page](https://github.com/ryanduguid/Ozzit/releases/tag/v3.7.0) exists, and the
-exact commit before then. [The v3.7.0 changes](CHANGELOG.md) describe what it adds and fixes.
+Its [citation metadata](CITATION.cff) names the cut. Cite the signed tag `v3.7.0` on commit
+`44257fc252afc67e87c3788776d10f67663a3136`; GitHub reports its
+[release page](https://github.com/ryanduguid/Ozzit/releases/tag/v3.7.0) immutable. [The v3.7.0 changes](CHANGELOG.md) describe what it adds and fixes.
 
-v3.6.0 `ozzit.xlsx` SHA-256: `95006168d685496f27b04ab95099a7c103d3013cf031178046ffcbfcfd88d65b` (485,256 bytes), the same bytes as the release asset. `main` is ahead of that tag, so the file you clone is not the file the release ships: the tracked `ozzit.xlsx` is SHA-256 `0ed09fc130d30394c97f6a41e40ab72d3f68093b65a5e109adf11bd901f006bd` (492,757 bytes), pinned in [release/workbook-base.json](release/workbook-base.json) and checked by the tool tests, and adds the function and the changes listed under v3.7.0 in the [changelog](CHANGELOG.md). On 18 November 2026, Excel 16.0 build 20625 recalculated 1,129 formulas in the tracked workbook with 0 in error, ran 2,074 self-test assertions with 0 failures and found 19,483 cached values equal to what their formulas produce. The workbook was byte-identical before and after both native gates.
+v3.7.0 `ozzit.xlsx` SHA-256: `0ed09fc130d30394c97f6a41e40ab72d3f68093b65a5e109adf11bd901f006bd` (492,757 bytes), the same bytes as the release asset and as the tracked `ozzit.xlsx` on `main`, pinned in [release/workbook-base.json](release/workbook-base.json) and checked by the tool tests. On 18 November 2026, Excel 16.0 build 20625 recalculated 1,129 formulas in the tracked workbook with 0 in error, ran 2,074 self-test assertions with 0 failures and found 19,483 cached values equal to what their formulas produce. The workbook was byte-identical before and after both native gates.
 
 - [Repository checks](AGENTS.md) and [release and native verification](RELEASING.md)
 - [Changes](CHANGELOG.md) and [citation](CITATION.cff)
