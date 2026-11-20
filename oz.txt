@@ -4360,7 +4360,7 @@ HPScheduleλ = LAMBDA(
                             "FUNCTION:      →HPScheduleλ(Financed, AnnualRate, Periods, [PeriodsPerYear], [InAdvance], [Balloon])¶" &
                             "DESCRIPTION:   →Schedule of a hire purchase or chattel mortgage, in cents.¶NOTES!         →Returns five rows, one column a payment: opening balance, payment,¶               →interest, principal and closing balance. The rate per period is¶               →PeriodRateλ(AnnualRate, PeriodsPerYear). The level payment is¶               →LevelPaymentλ() at that rate, divided by 1 + rate for payments in¶               →advance, rounded to the cent. Interest is rounded to the cent each period,¶               →charged on the balance after the payment when payments are in advance.¶               →The final payment takes the rounding difference, so the last closing¶               →balance is the Balloon exactly; the Balloon is paid at the end of the last¶               →period. In advance the last period's interest is the Balloon's share¶               →Rate / (1 + Rate), in cents, which can be a cent off interest on the¶               →balance left after the last payment. Financed and Balloon are in whole¶               →cents. For the rate a contract's instalment implies, pass¶               →AnnualRateλ(RATE(Periods, -Instalment, Financed, -Balloon, InAdvance), PeriodsPerYear).¶               →For a nominal rate that compounds with each payment, pass EFFECT(Nominal,¶               →PeriodsPerYear). Bookkeeping arithmetic only: it does not work out the tax¶               →treatment, such as Division 240 of the Income Tax Assessment Act 1997 for¶               →a hire purchase, or GST input tax credits, and leaves out fees.¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
-                            "VERSION:       →18 Nov 2026¶" &
+                            "VERSION:       →20 Nov 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Financed       →(Required) Amount financed at the start, in whole cents: the price less any deposit or trade-in.¶" &
                             "AnnualRate     →(Required) Effective annual interest rate.¶" &
@@ -4387,10 +4387,12 @@ HPScheduleλ = LAMBDA(
         Final,          IF( ISOMITTED( Balloon), 0, IF( TRIM( Balloon & "") = "", 0, Balloon)),
     //  One agreement: single numbers, TRUE, FALSE, 1 or 0 for InAdvance, and terms that
     //  make a schedule. Arithmetic would read "1000" as 1000, so text is refused. The
-    //  amounts are whole cents, within a thousandth of a cent for binary noise such as
-    //  10.1 * 3, and are taken at the cent they round to.
+    //  amounts are whole cents. Allow binary rounding when reading the amount and
+    //  scaling to cents (for example 10.1 * 3), within the thousandth-of-a-cent cap.
         Single?,        LAMBDA( x, AND( ROWS( x) = 1, COLUMNS( x) = 1, ISNUMBER( x))),
-        Cents?,         LAMBDA( x, ABS( x * 100 - ROUND( x * 100, 0)) < 0.001),
+        Cents?,         LAMBDA( x, LET( Scaled, x * 100,
+                                        Difference, ABS( Scaled - ROUND( Scaled, 0)),
+                                        AND( Difference < 0.001, Difference <= MAX( 1, ABS( Scaled)) * 2^-51))),
         Valid?,         IFERROR( AND( Single?( Financed), Single?( AnnualRate), Single?( Periods), Single?( PerYear),
                             Single?( Final), OR( --Advance? = 0, --Advance? = 1), Financed > 0, AnnualRate > -1,
                             Periods >= 1, Periods = INT( Periods), PerYear > 0, Final >= 0, Cents?( Financed),
