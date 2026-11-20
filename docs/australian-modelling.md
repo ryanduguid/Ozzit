@@ -70,12 +70,14 @@ Paragraph references were read against the AASB 16 compilation on 24 August 2026
 
 ### Lease journals
 
-`oz.LeaseJournalλ(LeaseSchedule, ROUSchedule, [Accounts])` turns the two schedules into journal lines: a header row, then a debit line and a credit line for each entry, with the period, account, debit, credit and narration. It follows the compiled [AASB 16](https://standards.aasb.gov.au/aasb-16-nov-2022) (compilation no. 8, applying to annual periods beginning on or after 1 January 2024), read on 18 November 2026:
+`oz.LeaseJournalλ(LeaseSchedule, ROUSchedule, [Accounts])` turns the two schedules into journal lines with the period, account, debit, credit and narration. The journal has a header and a debit and credit line for each entry. The paragraph references are to compilation 8, checked on 20 November 2026. It covers annual reporting periods that start from 1 January 2024 to 31 December 2026. [AASB 16 compilation 8](https://standards.aasb.gov.au/aasb-16-nov-2022)
 
 - **Period 0, commencement.** Debit the right-of-use asset and credit the lease liability with the liability's opening balance: paragraph 22 recognises both, paragraph 23 measures the asset at cost and paragraph 26 measures the liability. The rest of the asset's cost, the payments at or before commencement less incentives received and the initial direct costs of paragraph 24(b) and (c), is credited to cash, or debited when an incentive received is larger than those costs. A restoration estimate in the cost, paragraph 24(d), is a provision under AASB 137 (paragraph 25), not cash: journal it from cash to the provision yourself.
 - **Each later period.** Debit interest expense and credit the liability with that period's interest (paragraphs 36(a) and 37; paragraph 38(a) takes it to profit or loss), debit the liability and credit cash with the payment (paragraph 36(b)), and debit depreciation expense and credit accumulated depreciation with the right-of-use charge (paragraphs 31 and 32).
 
 Pass `oz.LeaseScheduleλ` and `oz.ROUScheduleλ` for the same lease. For payments in advance the liability schedule is a period shorter than the asset's, so the last period has depreciation only. Amounts are unrounded, as the schedules give them; debits equal credits in every period and the liability closes at nil. A nil amount gives no line and a negative one, such as interest at a negative rate, swaps its debit and credit. `Accounts` takes up to 6 names or codes in the order right-of-use asset, lease liability, interest expense, cash, depreciation expense and accumulated depreciation; a blank keeps its default. Paragraph 49 presents the interest apart from the depreciation, which the separate accounts allow. It does not journal a remeasurement or variable payments left out of the liability: post those yourself.
+
+When an entity applies AASB 18, amended AASB 16 paragraph 49 requires it to classify interest on the lease liability in the financing category of profit or loss. [AASB 18 Appendix D, AASB 16 amendments](https://standards.aasb.gov.au/sites/default/files/2024-06/AASB18_06-24_AppendixD_0.pdf)
 
 ## Hire purchase and chattel mortgages
 
