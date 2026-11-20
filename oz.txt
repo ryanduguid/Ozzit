@@ -4387,10 +4387,12 @@ HPScheduleλ = LAMBDA(
         Final,          IF( ISOMITTED( Balloon), 0, IF( TRIM( Balloon & "") = "", 0, Balloon)),
     //  One agreement: single numbers, TRUE, FALSE, 1 or 0 for InAdvance, and terms that
     //  make a schedule. Arithmetic would read "1000" as 1000, so text is refused. The
-    //  amounts are whole cents, within a thousandth of a cent for binary noise such as
-    //  10.1 * 3, and are taken at the cent they round to.
+    //  amounts are whole cents. Allow binary rounding when reading the amount and
+    //  scaling to cents (for example 10.1 * 3), within the thousandth-of-a-cent cap.
         Single?,        LAMBDA( x, AND( ROWS( x) = 1, COLUMNS( x) = 1, ISNUMBER( x))),
-        Cents?,         LAMBDA( x, ABS( x * 100 - ROUND( x * 100, 0)) < 0.001),
+        Cents?,         LAMBDA( x, LET( Scaled, x * 100,
+                                        Difference, ABS( Scaled - ROUND( Scaled, 0)),
+                                        AND( Difference < 0.001, Difference <= MAX( 1, ABS( Scaled)) * 2^-51))),
         Valid?,         IFERROR( AND( Single?( Financed), Single?( AnnualRate), Single?( Periods), Single?( PerYear),
                             Single?( Final), OR( --Advance? = 0, --Advance? = 1), Financed > 0, AnnualRate > -1,
                             Periods >= 1, Periods = INT( Periods), PerYear > 0, Final >= 0, Cents?( Financed),

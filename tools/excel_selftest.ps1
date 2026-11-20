@@ -1297,13 +1297,16 @@ foreach ($r in @(@('0, 0.1, 3', $hpTerms), @('1000, -1, 3', $hpTerms), @('1000, 
                  @('1000, 0.1, 3, 12, FALSE, -1', $hpTerms), @('"1000", 0.1, 3', $hpTerms), @('{1000,2000}, 0.1, 3', $hpTerms),
                  @('1000, "10%", 3', $hpTerms), @('1000, 0.1, 3, 1, FALSE, 2000', $hpBalloon),
                  @('1000, 0.1, 3, 1, FALSE, 1331.01', $hpBalloon), @('1000, 0.1, 3, 1, TRUE, 1331.01', $hpBalloon),
-                 @('1000.005, 0.1, 3', $hpTerms), @('1000, 0.1, 3, 1, FALSE, 100.005', $hpTerms), @('1000, 0.1, 3, 12, 2', $hpTerms))) {
+                 @('1000.005, 0.1, 3', $hpTerms), @('1000, 0.1, 3, 1, FALSE, 100.005', $hpTerms), @('1000, 0.1, 3, 12, 2', $hpTerms),
+                 @('257446.20001, 0.1, 3, 1', $hpTerms), @('257446.20 + 5E-10, 0.1, 3, 1', $hpTerms),
+                 @('1000, 0.1, 3, 1, FALSE, 100.000001', $hpTerms))) {
     Same "HPSchedule refuses ($($r[0]))" "LET(x, $hps($($r[0])), IF(AND(ROWS(x) = 1, COLUMNS(x) = 1), x, `"array`"))" $r[1]
 }
 # 1,000 grown at 10% for 3 years is 1,331: that Balloon is reached with nil payments, and a
 # cent more is refused above rather than scheduled with a final payment of -0.01.
 # Amounts in whole cents may carry binary noise: 10.1 * 3 is 30.299999999999997.
 Near 'HPSchedule takes arithmetic noise as whole cents' "INDEX($hps(10.1*3,0.1,3,1),1,1)" '30.3'
+Near 'HPSchedule accepts binary noise on a six-figure amount' "INDEX($hps(257446.20 + 5E-11,0.1,3,1),1,1)" '257446.20'
 Near 'HPSchedule takes 1 for InAdvance as TRUE' "SUM(ABS($hps(1000,0.1,3,1,1)-$hps(1000,0.1,3,1,TRUE)))" '0'
 # In advance the last interest is the Balloon's share Rate / (1 + Rate), which can be a cent off
 # interest on the balance left after the last payment, so the help must say so.
