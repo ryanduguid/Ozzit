@@ -33,7 +33,7 @@ Each earlier release keeps its own licence.
 
 | Excel | Tested |
 | --- | --- |
-| Windows desktop | Yes: the native gates on the tracked workbook (Excel 16.0 build 20625, 21 November 2026) and a copy-cell install check on v3.4.2 (build 20430, 25 September 2026) |
+| Windows desktop | Yes: the native gates on the tracked workbook (Excel 16.0 build 20625, 22 November 2026) and a copy-cell install check on v3.4.2 (build 20430, 25 September 2026) |
 | Mac | Not tested |
 | Web | Not tested |
 | Advanced Formula Environment import of `oz.txt` | Not tested |
@@ -110,6 +110,7 @@ you can check by hand; the lease guide explains the 4 lessee functions.
 | Lease journals, on `main` only | `=oz.LeaseJournalλ(LeaseSchedule, ROUSchedule, [Accounts])` from the 2 lease schedules | [Entries and AASB 16 paragraphs](docs/australian-modelling.md#lease-journals) |
 | Hire purchase or chattel mortgage, on `main` only | `=oz.HPScheduleλ(Financed, AnnualRate, Periods, [PeriodsPerYear], [InAdvance], [Balloon])`, journalled by `=oz.HPJournalλ(HPSchedule, [Accounts])` | [Schedule, rounding and journal](docs/australian-modelling.md#hire-purchase-and-chattel-mortgages) |
 | Lease, hire purchase, loan or cash, on `main` only | `=oz.FinanceCompareλ(CashFlows, DiscountRate, [PeriodsPerYear], [Labels])` | [Pre-tax present values](docs/australian-modelling.md#comparing-a-lease-hire-purchase-loan-or-cash) |
+| Capital gains on shares or units, on `main` only | `=oz.CGTParcelsλ(Parcels, Sales)` first in, first out, then `=oz.NetCapitalGainλ(IncomeYear, Gains, [Discountable], [Losses], [PriorLosses], [Entity])` for 2025-26 or 2026-27 | [Parcels, the 12 months and the discount](docs/australian-modelling.md#capital-gains) |
 
 `oz.PAYGWithholdingλ` arrived in v3.7.0. It works out the amount before tax
 offsets and the Medicare levy adjustment and does not apply either, or the extra
@@ -119,6 +120,10 @@ for a payee who has not given a TFN.
 `oz.LeaseJournalλ`, `oz.HPScheduleλ`, `oz.HPJournalλ` and `oz.FinanceCompareλ` are not
 yet in a release. They are bookkeeping arithmetic: the comparison is before tax, and none
 works out Division 240 of the Income Tax Assessment Act 1997 or GST input tax credits.
+
+`oz.CGTParcelsλ` and `oz.NetCapitalGainλ` are not yet in a release. They are arithmetic for
+the 2025-26 and 2026-27 income years: they do not decide who can use the CGT discount,
+apportion it for foreign or temporary residents, or apply the small business concessions.
 
 [Open, copy functions and use modern Excel](docs/workbook-use.md) shows how to
 copy a function into your own workbook.
@@ -244,7 +249,7 @@ Its [citation metadata](CITATION.cff) names the cut. Cite the signed tag `v3.7.0
 `44257fc252afc67e87c3788776d10f67663a3136`; GitHub reports its
 [release page](https://github.com/ryanduguid/Ozzit/releases/tag/v3.7.0) immutable. [The v3.7.0 changes](CHANGELOG.md) describe what it adds and fixes.
 
-v3.7.0 `ozzit.xlsx` SHA-256: `0ed09fc130d30394c97f6a41e40ab72d3f68093b65a5e109adf11bd901f006bd` (492,757 bytes), the same bytes as the release asset. `main` is ahead of that tag, so the file you clone is not the file the release ships: the tracked `ozzit.xlsx` is SHA-256 `352d5151009c502064d23b32d4f91c636f1154dc1e40ceff899a7b4c84ec7bf8` (510,848 bytes), pinned in [release/workbook-base.json](release/workbook-base.json) and checked by the tool tests, and adds the changes listed under Unreleased in the [changelog](CHANGELOG.md). On 21 November 2026, Excel 16.0 build 20625 recalculated 1,129 formulas in the tracked workbook with 0 in error, ran 2,521 self-test assertions with 0 failures and found 19,483 cached values equal to what their formulas produce. The workbook was byte-identical before and after both native gates.
+v3.7.0 `ozzit.xlsx` SHA-256: `0ed09fc130d30394c97f6a41e40ab72d3f68093b65a5e109adf11bd901f006bd` (492,757 bytes), the same bytes as the release asset. `main` is ahead of that tag, so the file you clone is not the file the release ships: the tracked `ozzit.xlsx` is SHA-256 `82a0b1eca6861534466df5e2483bd8f60e878c692a2dd4cf1af8ebcac9e5a5f5` (523,910 bytes), pinned in [release/workbook-base.json](release/workbook-base.json) and checked by the tool tests, and adds the changes listed under Unreleased in the [changelog](CHANGELOG.md). On 22 November 2026, Excel 16.0 build 20625 recalculated 1,129 formulas in the tracked workbook with 0 in error, ran 2,598 self-test assertions with 0 failures and found 19,483 cached values equal to what their formulas produce. The workbook was byte-identical before and after both native gates.
 
 - [Repository checks](AGENTS.md) and [release and native verification](RELEASING.md)
 - [Changes](CHANGELOG.md) and [citation](CITATION.cff)

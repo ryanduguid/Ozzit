@@ -52,6 +52,7 @@ tools/ozzit/target/release/ozzit variance_fy_periods ozzit.xlsx src functions.cs
 tools/ozzit/target/release/ozzit level_payment_corkscrew_rate ozzit.xlsx src functions.csv
 tools/ozzit/target/release/ozzit payg_withholding ozzit.xlsx src functions.csv
 tools/ozzit/target/release/ozzit finance_journals ozzit.xlsx src functions.csv
+tools/ozzit/target/release/ozzit cgt_parcels ozzit.xlsx src functions.csv
 tools/ozzit/target/release/ozzit cover_label ozzit.xlsx
 tools/ozzit/target/release/ozzit compile_sources ozzit.xlsx src --index=functions.csv
 tools/ozzit/target/release/ozzit build_module src oz.txt
@@ -151,7 +152,10 @@ payment pass's. The finance contract pass is the last text pass and exists only 
 native `ozzit finance_journals`: it adds `oz.LeaseJournalλ`, `oz.HPScheduleλ`,
 `oz.HPJournalλ` and `oz.FinanceCompareλ` under a new FINANCE CONTRACTS heading after the
 PAYG WITHHOLDING rows, with their blocks before the PAYG pass's, so that pass's contract
-test still finds its block just before the level payment pass's. The cover-label pass is
+test still finds its block just before the level payment pass's. The capital gains pass is
+the native `ozzit cgt_parcels`: it adds `oz.CGTParcelsλ` and `oz.NetCapitalGainλ` under a
+new CAPITAL GAINS heading after the FINANCE CONTRACTS rows, with their blocks before the
+finance contract pass's, for the same reason. The cover-label pass is
 one swap in `xl/sharedStrings.xml`:
 Cover!A3 kept reading 20 August 2026 and 130 functions after 3 cuts, and
 `ozzit verify_cover` now keeps that label equal to `functions.csv` and the
@@ -160,7 +164,8 @@ carries the count from 133 to 137 for the working-capital functions, to 143 with
 v3.5.0 cut date for the ATO benchmark and rate functions, to 148 for the variance
 and financial-year period functions, to 150 for the level payment and rate corkscrew,
 to the v3.6.0 cut date of 14 November 2026, to 151 for PAYG withholding, to the
-v3.7.0 cut date of 18 November 2026, and to 155 for the finance contract functions.
+v3.7.0 cut date of 18 November 2026, to 155 for the finance contract functions, and to
+157 for the capital gains functions.
 
 ## What is intentionally not here
 

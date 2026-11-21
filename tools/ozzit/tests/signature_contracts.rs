@@ -89,11 +89,11 @@ impl Fixture {
 
 fn published_output() -> Vec<String> {
     [
-        "160 declarations read: 152 signatures, 152 parameter tables and 152 example blocks checked",
+        "162 declarations read: 154 signatures, 154 parameter tables and 154 example blocks checked",
         "   no FUNCTION line (3): AmortiseλDV, CorkscrewλDV, DepreciateλDV",
         "   no parameter table (3): AmortiseλDV, CorkscrewλDV, DepreciateλDV",
         "   not a LAMBDA (5): AboutDatesλ, AboutEssentialsλ, AboutFinancialλ, AboutRatiosλ, AboutUtilitiesλ",
-        "OK: all 152 signatures, 152 parameter tables and 152 example blocks describe their own function",
+        "OK: all 154 signatures, 154 parameter tables and 154 example blocks describe their own function",
     ].map(String::from).to_vec()
 }
 
