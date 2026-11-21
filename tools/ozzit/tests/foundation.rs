@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan Duguid
-// SPDX-License-Identifier: LicenseRef-Duguid-Public-Attribution-1.0
+// SPDX-License-Identifier: Apache-2.0
 
 //! Native counterparts of the compiler, source, help and index contracts.
 use ozzit::{archive, common::*, compiler, formula, help, index, sources};

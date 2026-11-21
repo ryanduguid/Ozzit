@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan Duguid
-// SPDX-License-Identifier: LicenseRef-Duguid-Public-Attribution-1.0
+// SPDX-License-Identifier: Apache-2.0
 
 //! The workbook gate's banned-token scan matches Python's `BANNED.finditer`.
 use ozzit::workbook::banned_tokens;

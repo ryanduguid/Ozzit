@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan Duguid
-// SPDX-License-Identifier: LicenseRef-Duguid-Public-Attribution-1.0
+// SPDX-License-Identifier: Apache-2.0
 
 //! Replay the retired prepare_release_bundle.py's recorded argument parsing and
 //! verification results, with recorded bundles moved to provenance schema 2.
@@ -350,7 +350,11 @@ fn verification_results_match_the_python_tool() {
         };
         let mut expected = case["expected"].clone();
         if let Some(error) = expected.get("error").and_then(Value::as_str) {
-            expected = json!({"error": error.replace('\\', "/")});
+            // Schema 3 adds files; the same inventory refusal now covers both layouts.
+            expected = json!({"error": error.replace('\\', "/").replace(
+                "bundle inventory does not match the three reviewed assets",
+                "bundle inventory does not match the reviewed assets",
+            )});
         }
         if got != expected {
             differences.push(format!("{name}: got {got}, expected {expected}"));

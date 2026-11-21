@@ -1,5 +1,5 @@
 # Copyright 2026 Ryan Duguid
-# SPDX-License-Identifier: LicenseRef-Duguid-Public-Attribution-1.0
+# SPDX-License-Identifier: Apache-2.0
 
 # The Excel process a script started, and a wait for it to exit after Quit(). Dot-sourced
 # by the scripts that drive Excel over COM and refuse to start while any Excel runs.

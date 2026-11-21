@@ -30,6 +30,10 @@ release; until then v3.7.0 behaves as it did.
   size of the financed amount or balloon. It refuses genuine fractions of a
   cent such as 257,446.20001. Valid cent amounts produce the same schedule.
 
+### Changed
+
+- Relicensed Ryan Duguid's original work under Apache-2.0. Earlier releases keep their original terms.
+
 ## v3.7.0, 18 November 2026, PAYG withholding and the v3.6.0 known issues fixed
 
 Cut on 18 November 2026 from the changes on `main` since v3.6.0. It takes the library
@@ -80,7 +84,7 @@ it did, including the defects fixed here. The defects that remain are listed und
 [Known issues](#known-issues).
 
 **Licence:** v3.6.0 is the first release under the
-[Ryan Duguid Public Attribution Licence 1.0](LICENSE); v3.5.0 stays under Apache-2.0,
+[Ryan Duguid Public Attribution Licence 1.0](https://github.com/ryanduguid/Ozzit/blob/v3.6.0/LICENSE); v3.5.0 stays under Apache-2.0,
 and v3.4.2 and earlier releases under MIT. See Changed below.
 
 ### Added
@@ -1444,7 +1448,7 @@ baseline that grew around them.
   fixed in `nb.TimelineOffsetλ` and named as still outstanding here. `nb.LabelDepreciateλ`'s
   said 'teh'.
 
-- **A licence, for the parts of this repository that can carry one.** [LICENCE](LICENSE) is
+- **A licence, for the parts of this repository that can carry one.** [LICENCE](https://github.com/ryanduguid/Ozzit/blob/v2.6.0/LICENCE) is
   MIT and covers `tools/`, `.github/`, the Markdown files and `assets/`. It does not extend
   to `nabla.xlsx`, `src/` or `functions.csv`, which were carved out at the time. v3.2.0
   removed the carve-out; MIT now covers the whole repository. v3.0.0 and v3.1.0 still

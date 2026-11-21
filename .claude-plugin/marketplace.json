@@ -23,7 +23,7 @@
       "source": "./",
       "strict": true,
       "homepage": "https://duguid.com.au/tools/ozzit/",
-      "license": "LicenseRef-Duguid-Public-Attribution-1.0"
+      "license": "Apache-2.0"
     }
   ]
 }

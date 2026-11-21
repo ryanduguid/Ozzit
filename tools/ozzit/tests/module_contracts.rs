@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan Duguid
-// SPDX-License-Identifier: LicenseRef-Duguid-Public-Attribution-1.0
+// SPDX-License-Identifier: Apache-2.0
 
 //! Assertion-level replacements for the retired Python module-builder tests.
 use ozzit::{common::*, compiler, formula, module};

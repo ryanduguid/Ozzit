@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan Duguid
-// SPDX-License-Identifier: LicenseRef-Duguid-Public-Attribution-1.0
+// SPDX-License-Identifier: Apache-2.0
 
 //! The per-function record of native checks stays bound to the files it is read from.
 use ozzit::native_checks::{OUTPUT, record};

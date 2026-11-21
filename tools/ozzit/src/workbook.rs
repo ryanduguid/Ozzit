@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan Duguid
-// SPDX-License-Identifier: LicenseRef-Duguid-Public-Attribution-1.0
+// SPDX-License-Identifier: Apache-2.0
 
 //! Structural workbook checks, without evaluating formulas or altering evidence.
 use crate::{afe, archive::*, common::*, py, pyjson};

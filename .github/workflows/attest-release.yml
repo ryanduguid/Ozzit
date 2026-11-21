@@ -1,7 +1,7 @@
 name: Attest release
 
 # Adds a signed build provenance bundle for the tagged workbook to a draft
-# release. Run it on the signed tag after the three bundle assets are uploaded
+# release. Run it on the signed tag after the five bundle assets are uploaded
 # and before the release is published:
 #
 #   gh workflow run attest-release.yml --ref vX.Y.Z
@@ -133,7 +133,7 @@ jobs:
           printf '%s  %s\n' "$EXPECTED" "$RUNNER_TEMP/native/ozzit" | sha256sum --check --strict
           chmod +x "$RUNNER_TEMP/native/ozzit"
 
-      - name: Download the draft release's three assets
+      - name: Download the draft release's five assets
         id: draft
         # Scratch files stay out of the checkout, which the bundle verifier requires clean.
         working-directory: ${{ runner.temp }}
@@ -146,9 +146,9 @@ jobs:
             | jq -s --arg tag "$GITHUB_REF_NAME" '[.[][] | select(.tag_name == $tag)]' > releases.json
           jq -e 'length == 1 and .[0].draft == true' releases.json >/dev/null \
             || { echo "Expected exactly one draft release for $GITHUB_REF_NAME" >&2; exit 1; }
-          jq -e '[.[0].assets[].name] | sort == ["SHA256SUMS", "ozzit.xlsx", "provenance.json"]' \
+          jq -e '[.[0].assets[].name] | sort == ["LICENSE", "NOTICE", "SHA256SUMS", "ozzit.xlsx", "provenance.json"]' \
             releases.json >/dev/null \
-            || { echo "The draft must hold exactly the three bundle assets" >&2; exit 1; }
+            || { echo "The draft must hold exactly the five bundle assets" >&2; exit 1; }
           mkdir "$RUNNER_TEMP/draft"
           jq -r '.[0].assets[] | "\(.id) \(.name) \(.digest // "" | ltrimstr("sha256:"))"' releases.json \
             | while read -r id name digest; do
@@ -183,7 +183,7 @@ jobs:
           subject-path: ${{ runner.temp }}/subject/ozzit.xlsx
 
       # The bundle is a separate asset, outside SHA256SUMS, so the reviewed
-      # three-file bundle keeps its fixed inventory.
+      # five-file bundle keeps its fixed inventory.
       - name: Write the bundle and verify it before upload
         id: bundle
         env:
@@ -242,12 +242,12 @@ jobs:
             -H "Accept: application/vnd.github+json" -H "Content-Type: application/octet-stream" \
             --data-binary "@$BUNDLE" "$upload?name=$name" > uploaded.json
           gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" > after.json
-          # The three verified assets are untouched and the bundle is the only addition.
+          # The five verified assets are untouched and the bundle is the only addition.
           jq --arg id "$(jq -r .id uploaded.json)" "$view | .assets |= map(select((.id | tostring) != \$id))" \
             after.json | cmp -s - snapshot.json \
             || { echo "The verified assets changed during upload" >&2; exit 1; }
           jq -e --arg name "$name" --arg digest "sha256:$(sha256sum "$BUNDLE" | cut -d' ' -f1)" \
-            '.draft == true and (.assets | length) == 4
+            '.draft == true and (.assets | length) == 6
              and ([.assets[] | select(.name == $name and .digest == $digest and .state == "uploaded")] | length) == 1' \
             after.json >/dev/null \
             || { echo "The uploaded bundle does not match the verified one" >&2; exit 1; }

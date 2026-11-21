@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan Duguid
-// SPDX-License-Identifier: LicenseRef-Duguid-Public-Attribution-1.0
+// SPDX-License-Identifier: Apache-2.0
 
 //! The original Python release staging contracts, using real owned files.
 use super::*;
@@ -7,13 +7,13 @@ use std::{cell::Cell, collections::BTreeMap, fs};
 
 const WORKBOOK: &[u8] = b"synthetic workbook fixture\n";
 const COMMIT: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-// The original Python fixture, including its final LF, with the schema 2
-// number and native gate labels.
+// The original Python fixture, including its final LF, with schema 3, the 2 notice files
+// and native gate labels.
 const PROVENANCE: &str = concat!(
-    r#"{"assets":["ozzit.xlsx","provenance.json","SHA256SUMS"],"project":"Ozzit","schema":2,"source":{"commit":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","workbook_path":"ozzit.xlsx"},"verification":{"limitations":["The bundle copies the reviewed tracked workbook; it does not regenerate it from the earlier workbook.","The documented Mypy, unit, native Excel and cache gates remain required before publication."],"native_gates":{"included":false,"required_before_publication":true},"static_gates":[{"command":"ozzit verify_workbook ozzit.xlsx","output":"OK: fixture gate 1"},{"command":"ozzit verify_sources ozzit.xlsx src","output":"OK: fixture gate 2"},{"command":"ozzit verify_signatures src","output":"OK: fixture gate 3"},{"command":"ozzit verify_previous_names functions.csv","output":"OK: fixture gate 4"},{"command":"ozzit verify_index ozzit.xlsx src functions.csv","output":"OK: fixture gate 5"},{"command":"ozzit verify_cover ozzit.xlsx functions.csv CHANGELOG.md","output":"OK: fixture gate 6"},{"command":"ozzit verify_afe ozzit.xlsx src","output":"OK: fixture gate 7"}]},"version":"3.2.0","workbook":{"base_manifest":"release/workbook-base.json","copy_only":true,"git_blob_sha1":"cdcd75d14f66018911bfafa9d5c23b7f25f532fd","last_workbook_commit":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","sha256":"c14e507ac5aa35f6ddd08da5ff1a041ee9bba1f2db7f676e70ca88a94a665df6","size":27}}"#,
+    r#"{"assets":["ozzit.xlsx","provenance.json","SHA256SUMS","LICENSE","NOTICE"],"project":"Ozzit","schema":3,"source":{"commit":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","workbook_path":"ozzit.xlsx"},"verification":{"limitations":["The bundle copies the reviewed tracked workbook; it does not regenerate it from the earlier workbook.","The documented Mypy, unit, native Excel and cache gates remain required before publication."],"native_gates":{"included":false,"required_before_publication":true},"static_gates":[{"command":"ozzit verify_workbook ozzit.xlsx","output":"OK: fixture gate 1"},{"command":"ozzit verify_sources ozzit.xlsx src","output":"OK: fixture gate 2"},{"command":"ozzit verify_signatures src","output":"OK: fixture gate 3"},{"command":"ozzit verify_previous_names functions.csv","output":"OK: fixture gate 4"},{"command":"ozzit verify_index ozzit.xlsx src functions.csv","output":"OK: fixture gate 5"},{"command":"ozzit verify_cover ozzit.xlsx functions.csv CHANGELOG.md","output":"OK: fixture gate 6"},{"command":"ozzit verify_afe ozzit.xlsx src","output":"OK: fixture gate 7"}]},"version":"3.2.0","workbook":{"base_manifest":"release/workbook-base.json","copy_only":true,"git_blob_sha1":"cdcd75d14f66018911bfafa9d5c23b7f25f532fd","last_workbook_commit":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","sha256":"c14e507ac5aa35f6ddd08da5ff1a041ee9bba1f2db7f676e70ca88a94a665df6","size":27}}"#,
     "\n"
 );
-const CHECKSUMS: &[u8] = b"c14e507ac5aa35f6ddd08da5ff1a041ee9bba1f2db7f676e70ca88a94a665df6  ozzit.xlsx\nff85512c4cd9bdd70ac19948d348ca8f60ece749f34a998eda694f6f84a0ab07  provenance.json\n";
+const CHECKSUMS: &[u8] = b"530283f9231a7c6c57db8ad874fc1872927e022eed2f005ca17b9bcde5ffa2a0  LICENSE\n7fa2976f756da6414c8e13d1389763519a97d800ff17391437632e46d87660fb  NOTICE\nc14e507ac5aa35f6ddd08da5ff1a041ee9bba1f2db7f676e70ca88a94a665df6  ozzit.xlsx\n878faeef09e8d1fc74367d5d9569ae26b7661b8ad2212ef96bb08b519e652b7f  provenance.json\n";
 
 fn gates() -> Vec<(String, String)> {
     GATE_COMMANDS
@@ -77,6 +77,8 @@ impl Fixture {
         fs::create_dir(&root).unwrap();
         let workbook = root.join("ozzit.xlsx");
         fs::write(&workbook, WORKBOOK).unwrap();
+        fs::write(root.join("LICENSE"), b"Fixture licence\n").unwrap();
+        fs::write(root.join("NOTICE"), b"Fixture notice\n").unwrap();
         let manifest = root.join(BASE_MANIFEST);
         fs::create_dir(manifest.parent().unwrap()).unwrap();
         let base = object(vec![
@@ -136,13 +138,19 @@ impl Fixture {
 }
 
 #[test]
-fn create_writes_only_the_three_reviewed_assets() {
+fn create_writes_only_the_five_reviewed_assets() {
     let fixture = Fixture::new();
     let output = fixture.output("bundle");
     let document = fixture.create(&output).unwrap();
     assert_eq!(
         names(&output),
-        ["SHA256SUMS", "ozzit.xlsx", "provenance.json"]
+        [
+            "LICENSE",
+            "NOTICE",
+            "SHA256SUMS",
+            "ozzit.xlsx",
+            "provenance.json"
+        ]
     );
     let expected = pyjson::loads(PROVENANCE).unwrap();
     assert!(py_eq(&document, &expected));
@@ -152,6 +160,12 @@ fn create_writes_only_the_three_reviewed_assets() {
         PROVENANCE.as_bytes()
     );
     assert_eq!(fs::read(output.join("ozzit.xlsx")).unwrap(), WORKBOOK);
+    for name in LICENCE_FILES {
+        assert_eq!(
+            fs::read(output.join(name)).unwrap(),
+            fs::read(fixture.root.join(name)).unwrap()
+        );
+    }
     assert!(py_eq(
         &verify_bundle(&output, &fixture.root, false).unwrap(),
         &document
@@ -161,7 +175,7 @@ fn create_writes_only_the_three_reviewed_assets() {
 }
 
 #[test]
-fn checksum_file_covers_workbook_and_provenance_without_a_cycle() {
+fn checksum_file_covers_every_other_asset_without_a_cycle() {
     let fixture = Fixture::new();
     let output = fixture.output("bundle");
     fixture.create(&output).unwrap();
@@ -178,6 +192,25 @@ fn checksum_file_covers_workbook_and_provenance_without_a_cycle() {
     }
     assert_eq!(fs::read(output.join("SHA256SUMS")).unwrap(), CHECKSUMS);
     fixture.assert_source_unchanged();
+}
+
+#[test]
+fn refuses_replaced_licence_even_after_checksums_are_recomputed() {
+    let fixture = Fixture::new();
+    let output = fixture.output("bundle");
+    fixture.create(&output).unwrap();
+    fs::write(output.join("LICENSE"), b"Different terms\n").unwrap();
+    let checksums = CHECKSUMMED.map(|name| (name.into(), sha256(&output.join(name)).unwrap()));
+    fs::write(output.join("SHA256SUMS"), checksum_bytes(&checksums)).unwrap();
+    assert_eq!(
+        verify_bundle(&output, &fixture.root, false).unwrap_err(),
+        "bundle LICENSE does not match the candidate checkout"
+    );
+    fs::remove_file(output.join("NOTICE")).unwrap();
+    assert_eq!(
+        verify_bundle(&output, &fixture.root, false).unwrap_err(),
+        "bundle inventory does not match the reviewed assets"
+    );
 }
 
 #[test]

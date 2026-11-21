@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan Duguid
-// SPDX-License-Identifier: LicenseRef-Duguid-Public-Attribution-1.0
+// SPDX-License-Identifier: Apache-2.0
 
 //! The function-adding passes that compile through `compile_sources`:
 //! working-capital days, rate and date helpers, ATO benchmark and rate lookup,

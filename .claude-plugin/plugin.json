@@ -6,7 +6,7 @@
   },
   "homepage": "https://duguid.com.au/tools/ozzit/",
   "repository": "https://github.com/ryanduguid/Ozzit",
-  "license": "LicenseRef-Duguid-Public-Attribution-1.0",
+  "license": "Apache-2.0",
   "keywords": [
     "excel",
     "lambda",

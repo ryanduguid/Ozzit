@@ -1,5 +1,5 @@
 # Copyright 2026 Ryan Duguid
-# SPDX-License-Identifier: LicenseRef-Duguid-Public-Attribution-1.0
+# SPDX-License-Identifier: Apache-2.0
 
 # Write every calculated cell value in a workbook to a tab-separated file, so a checker can
 # compare what Excel produces against what the file has cached. Columns are
