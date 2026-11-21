@@ -251,9 +251,11 @@ v3.7.0 `ozzit.xlsx` SHA-256: `0ed09fc130d30394c97f6a41e40ab72d3f68093b65a5e109ad
 
 Ozzit's functions were written by Ryan Duguid. Ozzit is not derived from any third-party workbook or library.
 
-Ryan Duguid's original work is licensed under the [Apache License, Version 2.0](LICENSE). When redistributing this work or a derivative, preserve the applicable attribution notices in [NOTICE](NOTICE) as required by section 4(d). Versions released before this change keep the licence they were released with. See [DISCLAIMER.md](DISCLAIMER.md) for scope and review requirements.
-
 </details>
+
+## Licence
+
+Ryan Duguid's original work is licensed under the [Apache License, Version 2.0](LICENSE). When redistributing this work or a derivative, preserve the applicable attribution notices in [NOTICE](NOTICE) as required by section 4(d). Versions released before this change keep the licence they were released with. See [DISCLAIMER.md](DISCLAIMER.md) for scope and review requirements.
 
 ---
 
