@@ -18,11 +18,19 @@ use num_traits::FromPrimitive;
 use std::path::{Component, Path, PathBuf};
 use std::time::Duration;
 
-pub const ASSETS: [&str; 3] = ["ozzit.xlsx", "provenance.json", "SHA256SUMS"];
-const CHECKSUMMED: [&str; 2] = ["ozzit.xlsx", "provenance.json"];
-/// Schema 2 names each gate by the native command that produced its evidence;
-/// schema 1 bundles staged by the retired Python tool verify from their own tags.
-pub const SCHEMA: i64 = 2;
+const LEGACY_ASSETS: [&str; 3] = ["ozzit.xlsx", "provenance.json", "SHA256SUMS"];
+const LEGACY_CHECKSUMMED: [&str; 2] = ["ozzit.xlsx", "provenance.json"];
+pub const ASSETS: [&str; 5] = [
+    "ozzit.xlsx",
+    "provenance.json",
+    "SHA256SUMS",
+    "LICENSE",
+    "NOTICE",
+];
+const CHECKSUMMED: [&str; 4] = ["LICENSE", "NOTICE", "ozzit.xlsx", "provenance.json"];
+const LICENCE_FILES: [&str; 2] = ["LICENSE", "NOTICE"];
+/// Schema 3 adds the exact source licence and notice to the bundle.
+pub const SCHEMA: i64 = 3;
 /// The provenance records each gate by the command its schema names.
 pub const GATE_COMMANDS: [&str; 7] = [
     "ozzit verify_workbook ozzit.xlsx",
@@ -594,7 +602,7 @@ fn parse_ascii_checksums(data: &[u8]) -> Result<Vec<(String, String)>> {
         .map(|(n, _)| n.as_str())
         .collect::<Vec<_>>();
     names.sort_unstable();
-    if names != CHECKSUMMED {
+    if names != CHECKSUMMED && names != LEGACY_CHECKSUMMED {
         return Err("SHA256SUMS has an unexpected inventory".into());
     }
     if data != checksum_bytes(&checksums) {
@@ -603,8 +611,8 @@ fn parse_ascii_checksums(data: &[u8]) -> Result<Vec<(String, String)>> {
     Ok(checksums)
 }
 
-/// The bundle must hold exactly the three reviewed assets as regular files.
-fn check_inventory(bundle: &Path) -> Result<()> {
+/// Return the schema for the exact inventory of regular files.
+fn check_inventory(bundle: &Path) -> Result<i64> {
     if !bundle.is_dir() || bundle.is_symlink() {
         return Err("bundle must be a regular non-symlink directory".into());
     }
@@ -620,16 +628,25 @@ fn check_inventory(bundle: &Path) -> Result<()> {
         .map(|e| e.file_name().to_string_lossy().into_owned())
         .collect::<Vec<_>>();
     names.sort();
-    let mut assets = ASSETS.to_vec();
-    assets.sort_unstable();
-    if names != assets {
-        return Err("bundle inventory does not match the three reviewed assets".into());
+    if names
+        == [
+            "LICENSE",
+            "NOTICE",
+            "SHA256SUMS",
+            "ozzit.xlsx",
+            "provenance.json",
+        ]
+    {
+        Ok(SCHEMA)
+    } else if names == ["SHA256SUMS", "ozzit.xlsx", "provenance.json"] {
+        Ok(2)
+    } else {
+        Err("bundle inventory does not match the reviewed assets".into())
     }
-    Ok(())
 }
 
 /// The provenance identity, assets, version and source.
-fn check_provenance_source(document: &Json) -> Result<()> {
+fn check_provenance_source(document: &Json, schema: i64) -> Result<()> {
     if !has_keys(
         document,
         &[
@@ -645,10 +662,15 @@ fn check_provenance_source(document: &Json) -> Result<()> {
         return Err("provenance.json has an unexpected top-level schema".into());
     }
     let get = |k| document.get(k);
-    if !int_is(get("schema"), SCHEMA) || get("project").and_then(Json::as_str) != Some("Ozzit") {
+    if !int_is(get("schema"), schema) || get("project").and_then(Json::as_str) != Some("Ozzit") {
         return Err("provenance.json identifies an unsupported bundle".into());
     }
-    if !get("assets").is_some_and(|a| py_eq(a, &strings(&ASSETS))) {
+    let assets: &[&str] = if schema == SCHEMA {
+        &ASSETS
+    } else {
+        &LEGACY_ASSETS
+    };
+    if !get("assets").is_some_and(|a| py_eq(a, &strings(assets))) {
         return Err("provenance asset inventory is invalid".into());
     }
     let Some(version) = get("version").and_then(Json::as_str) else {
@@ -737,8 +759,14 @@ fn verify_bundle_with<F>(
 where
     F: FnOnce(&Path, &Path) -> Result<Vec<(String, String)>>,
 {
-    check_inventory(bundle)?;
-    for (name, expected) in parse_checksums(&bundle.join("SHA256SUMS"))? {
+    let schema = check_inventory(bundle)?;
+    let checksums = parse_checksums(&bundle.join("SHA256SUMS"))?;
+    if schema == SCHEMA && checksums.len() != CHECKSUMMED.len()
+        || schema != SCHEMA && checksums.len() != LEGACY_CHECKSUMMED.len()
+    {
+        return Err("SHA256SUMS has an unexpected inventory".into());
+    }
+    for (name, expected) in checksums {
         if sha256(&bundle.join(&name))? != expected {
             return Err(format!("checksum mismatch for {name}"));
         }
@@ -749,7 +777,16 @@ where
     if read_bytes(&path)? != canonical_json(&document) {
         return Err("provenance.json is not canonical JSON".into());
     }
-    check_provenance_source(&document)?;
+    check_provenance_source(&document, schema)?;
+    if schema == SCHEMA {
+        for name in LICENCE_FILES {
+            if read_bytes(&bundle.join(name))? != read_bytes(&root.join(name))? {
+                return Err(format!(
+                    "bundle {name} does not match the candidate checkout"
+                ));
+            }
+        }
+    }
 
     let base = verify_base_workbook(&bundle.join("ozzit.xlsx"), &root.join(BASE_MANIFEST))?;
     let workbook = document.get("workbook").expect("checked keys");
@@ -846,6 +883,13 @@ where
         let staged = dir.join("ozzit.xlsx");
         write_bytes(&staged, &read_bytes(&workbook)?)?;
         verify_base_workbook(&staged, &base_manifest)?;
+        for name in LICENCE_FILES {
+            let source = root.join(name);
+            if !regular_file(&source) {
+                return Err(format!("candidate {name} must be a regular file"));
+            }
+            write_bytes(&dir.join(name), &read_bytes(&source)?)?;
+        }
         let gates = checks.0(&root, &staged)?;
         let document = provenance(&base, version, source_commit, &gates);
         write_bytes(&dir.join("provenance.json"), &canonical_json(&document))?;
@@ -1275,7 +1319,12 @@ where
 }
 
 fn run_verify(arguments: &Arguments, root: &Path, head: &str) -> Result<String> {
-    run_verify_with(arguments, root, head, verify_bundle)
+    run_verify_with(arguments, root, head, |bundle, root, check_semantics| {
+        if check_inventory(bundle)? != SCHEMA {
+            return Err("verify older bundles with the tool from their own tag".into());
+        }
+        verify_bundle(bundle, root, check_semantics)
+    })
 }
 
 fn run_verify_with<V>(arguments: &Arguments, root: &Path, head: &str, verify: V) -> Result<String>
