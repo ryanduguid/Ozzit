@@ -42,6 +42,21 @@ struct Spec {
     always_index: bool,
 }
 
+/// A pass that inserts its blocks before a follower, needs the index and always lists it.
+macro_rules! added {
+    ($stem:literal, $what:literal, $rows:literal) => {
+        Spec {
+            stem: $stem,
+            data: include_str!(concat!("../data/postbuild/", $stem, ".json")),
+            what: $what,
+            rows: $rows,
+            layout: Layout::BeforeFollower,
+            index: IndexRule::Required,
+            always_index: true,
+        }
+    };
+}
+
 const SPECS: [Spec; 8] = [
     Spec {
         stem: "working_capital_days",
@@ -61,60 +76,36 @@ const SPECS: [Spec; 8] = [
         index: IndexRule::Optional,
         always_index: false,
     },
-    Spec {
-        stem: "ato_benchmarks_rate_lookup",
-        data: include_str!("../data/postbuild/ato_benchmarks_rate_lookup.json"),
-        what: "benchmark and rate functions",
-        rows: "benchmark and rate",
-        layout: Layout::BeforeFollower,
-        index: IndexRule::Required,
-        always_index: true,
-    },
-    Spec {
-        stem: "variance_fy_periods",
-        data: include_str!("../data/postbuild/variance_fy_periods.json"),
-        what: "variance and financial-year period functions",
-        rows: "variance and period",
-        layout: Layout::BeforeFollower,
-        index: IndexRule::Required,
-        always_index: true,
-    },
-    Spec {
-        stem: "level_payment_corkscrew_rate",
-        data: include_str!("../data/postbuild/level_payment_corkscrew_rate.json"),
-        what: "level payment and rate corkscrew functions",
-        rows: "level payment and corkscrew",
-        layout: Layout::BeforeFollower,
-        index: IndexRule::Required,
-        always_index: true,
-    },
-    Spec {
-        stem: "payg_withholding",
-        data: include_str!("../data/postbuild/payg_withholding.json"),
-        what: "PAYG withholding function",
-        rows: "PAYG withholding",
-        layout: Layout::BeforeFollower,
-        index: IndexRule::Required,
-        always_index: true,
-    },
-    Spec {
-        stem: "finance_journals",
-        data: include_str!("../data/postbuild/finance_journals.json"),
-        what: "lease and hire purchase journal and finance comparison functions",
-        rows: "finance contract",
-        layout: Layout::BeforeFollower,
-        index: IndexRule::Required,
-        always_index: true,
-    },
-    Spec {
-        stem: "cgt_parcels",
-        data: include_str!("../data/postbuild/cgt_parcels.json"),
-        what: "CGT parcel and net capital gain functions",
-        rows: "capital gains",
-        layout: Layout::BeforeFollower,
-        index: IndexRule::Required,
-        always_index: true,
-    },
+    added!(
+        "ato_benchmarks_rate_lookup",
+        "benchmark and rate functions",
+        "benchmark and rate"
+    ),
+    added!(
+        "variance_fy_periods",
+        "variance and financial-year period functions",
+        "variance and period"
+    ),
+    added!(
+        "level_payment_corkscrew_rate",
+        "level payment and rate corkscrew functions",
+        "level payment and corkscrew"
+    ),
+    added!(
+        "payg_withholding",
+        "PAYG withholding function",
+        "PAYG withholding"
+    ),
+    added!(
+        "finance_journals",
+        "lease and hire purchase journal and finance comparison functions",
+        "finance contract"
+    ),
+    added!(
+        "cgt_parcels",
+        "CGT parcel and net capital gain functions",
+        "capital gains"
+    ),
 ];
 
 struct Function {
