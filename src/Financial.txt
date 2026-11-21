@@ -2763,12 +2763,12 @@ CGTParcelsλ = LAMBDA(
     //  Help
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →CGTParcelsλ(Parcels, Sales)¶" &
-                            "DESCRIPTION:   →Capital gain or loss on each parcel a sale takes, first in, first out.¶NOTES!         →Returns a header row and one row for each parcel a sale takes units from:¶               →the sale and acquisition dates, the units, their share of the sale's¶               →proceeds and of the parcel's cost base, the capital gain or loss, and TRUE¶               →under 12 months when the parcel was acquired at least 12 months before the¶               →sale, counting neither day (ITAA 1997 s 115-25(1)). Sales take the earliest¶               →parcels first, which TD 33 accepts for identical shares; parcels and sales¶               →on the same day keep the order given. Each share is rounded to the cent so¶               →that the shares add up to the whole. Pass one class of shares or units in¶               →one company or fund, dated by contract. The loss uses the cost base too, so¶               →leave the third element, costs of owning, out of a parcel's cost base.¶               →Refused: a sale from 1 July 2027, when the Treasury Laws Amendment (Tax¶               →Reform No. 1) Act 2026 changes CGT; a sale taking units from a parcel¶               →acquired on or before 21 September 1999, which indexation or the pre-CGT¶               →rules can reach; and a sale of more units than are held by its date.¶               →Arithmetic only: it does not decide whether the entity can use the¶               →discount, adjust cost bases for returns of capital, bonus shares or¶               →rollovers, or select parcels. NetCapitalGainλ() takes its Gain, Loss and 12¶               →months columns.¶" &
+                            "DESCRIPTION:   →Capital gain or loss on each parcel a sale takes, first in, first out.¶NOTES!         →Returns a header row and one row for each parcel a sale takes units from:¶               →the sale and acquisition dates, the units, their share of the sale's¶               →proceeds and of the parcel's cost base, the capital gain or loss, and TRUE¶               →under 12 months when the parcel was acquired at least 12 months before the¶               →sale, counting neither day (ITAA 1997 s 115-25(1)). Sales take the earliest¶               →parcels first, which TD 33 accepts for identical shares; parcels and sales¶               →on the same day keep the order given. Each share is rounded to the cent so¶               →that the shares add up to the whole. Pass one class of shares or units in¶               →one company or fund, dated by contract, at most 1,000 parcels and 1,000¶               →sales, units in millionths under 1,000,000,000 in all and amounts in whole¶               →cents. The loss uses the cost base too, so leave the third element, costs¶               →of owning, out of a parcel's cost base. Refused: a sale from 1 July 2027,¶               →when the Treasury Laws Amendment (Tax Reform No. 1) Act 2026 changes CGT; a¶               →sale taking units from a parcel acquired on or before 21 September 1999,¶               →which indexation or the pre-CGT rules can reach; and a sale of more units¶               →than are held by its date. Arithmetic only: it does not decide whether the¶               →entity can use the discount, adjust cost bases for returns of capital,¶               →bonus shares or rollovers, or select parcels. NetCapitalGainλ() takes its¶               →Gain, Loss and 12 months columns.¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
                             "VERSION:       →22 Nov 2026¶" &
                             "PARAMETERS:    →¶" &
-                            "Parcels        →(Required) One row a parcel: the date acquired, the units and the cost base, without costs of owning.¶" &
-                            "Sales          →(Required) One row a sale: the contract date, the units and the capital proceeds less selling costs.¶" &
+                            "Parcels        →(Required) One row a parcel: the date acquired, the units and the cost base in cents, without costs of owning.¶" &
+                            "Sales          →(Required) One row a sale: the contract date, the units and the capital proceeds less selling costs, in cents.¶" &
                             "EXAMPLES:      →¶" &
                             "→Formula (oz is assumed to be the module's name)¶" &
                             "→=oz.CGTParcelsλ(VSTACK(HSTACK(DATE(2024,3,1), 1000, 5000), HSTACK(DATE(2025,3,3), 3000, 30000)), HSTACK(DATE(2026,3,2), 1500, 12000))¶" &
@@ -2780,18 +2780,20 @@ CGTParcelsλ = LAMBDA(
                         )),
     //  Check inputs - Omitted required arguments
         Help?,          OR( ISOMITTED( Parcels), ISOMITTED( Sales)),
-    //  Each table is 3 columns of numbers: whole-day dates, units above 0 in at most 6
-    //  decimal places and under 1E9, and amounts under 1E12, a parcel's cost base not
-    //  below 0. A sale's net proceeds may be below 0.
-        Valid?,         LAMBDA( Table, Floor, IFERROR( AND( COLUMNS( Table) = 3, ROWS( Table) <= 10000,
+    //  Each table is 3 columns of numbers, at most 1,000 rows so the 1,000,000 pairs fit
+    //  a column: whole-day dates; units in whole millionths, at least one, under 1E9 in
+    //  all, so spans in millionths stay exact integers; and amounts in whole cents under
+    //  1E10, a parcel's cost base not below 0. A sale's net proceeds may be below 0.
+        Valid?,         LAMBDA( Table, Floor, IFERROR( AND( COLUMNS( Table) = 3, ROWS( Table) <= 1000,
                             AND( ISNUMBER( Table)),
                             AND( TAKE( Table, , 1) = INT( TAKE( Table, , 1)), TAKE( Table, , 1) >= 1),
-                            AND( CHOOSECOLS( Table, 2) > 0, CHOOSECOLS( Table, 2) < 1E9),
+                            AND( ROUND( CHOOSECOLS( Table, 2) * 1E6, 0) >= 1, SUM( CHOOSECOLS( Table, 2)) < 1E9),
                             AND( ABS( CHOOSECOLS( Table, 2) * 1E6 - ROUND( CHOOSECOLS( Table, 2) * 1E6, 0)) < 0.001),
-                            AND( TAKE( Table, , -1) >= Floor, ABS( TAKE( Table, , -1)) < 1E12)), FALSE)),
+                            AND( TAKE( Table, , -1) >= Floor, ABS( TAKE( Table, , -1)) < 1E10),
+                            AND( ABS( TAKE( Table, , -1) * 100 - ROUND( TAKE( Table, , -1) * 100, 0)) < 0.001)), FALSE)),
         ValidParcels?,  Valid?( Parcels, 0),
-        ValidSales?,    Valid?( Sales, -1E12),
-        TableMessage,   "Parcels and Sales must each be 3 columns of numbers: the date, the units, above 0 in at most 6 decimal places, and the parcel's cost base, 0 or more, or the sale's proceeds less its selling costs.",
+        ValidSales?,    Valid?( Sales, -1E10),
+        TableMessage,   "Parcels and Sales must each be 3 columns of numbers, at most 1,000 rows: the date; the units, in millionths from 0.000001 and under 1,000,000,000 in all; and the parcel's cost base, 0 or more, or the sale's proceeds less its selling costs, in whole cents under 10,000,000,000.",
     //  Procedure - sort each table by date, keeping the order given on the same day
         PCount,         ROWS( Parcels),
         SCount,         ROWS( Sales),
@@ -2799,16 +2801,19 @@ CGTParcelsλ = LAMBDA(
         S,              CHOOSEROWS( Sales, SORTBY( SEQUENCE( SCount), TAKE( Sales, , 1), 1, SEQUENCE( SCount), 1)),
         Acquired,       TAKE( P, , 1),
         Sold,           TAKE( S, , 1),
-        PUnits,         ROUND( CHOOSECOLS( P, 2), 6),
-        SUnits,         ROUND( CHOOSECOLS( S, 2), 6),
+    //  Units in millionths and amounts in cents, as whole numbers
+        PUnits,         ROUND( CHOOSECOLS( P, 2) * 1E6, 0),
+        SUnits,         ROUND( CHOOSECOLS( S, 2) * 1E6, 0),
+        PCents,         ROUND( TAKE( P, , -1) * 100, 0),
+        SCents,         ROUND( TAKE( S, , -1) * 100, 0),
     //  Laid end to end in date order, each parcel and each sale is a span of units. A
     //  sale takes the units its span shares with each parcel's: first in, first out.
-        PTo,            ROUND( SCAN( 0, PUnits, LAMBDA( Total, Units, Total + Units)), 6),
-        PFrom,          ROUND( PTo - PUnits, 6),
-        STo,            ROUND( SCAN( 0, SUnits, LAMBDA( Total, Units, Total + Units)), 6),
-        SFrom,          ROUND( STo - SUnits, 6),
+        PTo,            SCAN( 0, PUnits, LAMBDA( Total, Units, Total + Units)),
+        PFrom,          PTo - PUnits,
+        STo,            SCAN( 0, SUnits, LAMBDA( Total, Units, Total + Units)),
+        SFrom,          STo - SUnits,
     //  So a sale may only take units acquired by its date
-        Held,           ROUND( MMULT( --( TRANSPOSE( Acquired) <= Sold), PUnits), 6),
+        Held,           MMULT( --( TRANSPOSE( Acquired) <= Sold), PUnits),
         Covered?,       AND( STo <= Held),
         CoverMessage,   "CGTParcelsλ refuses a sale of more units than the parcels acquired by its date.",
         Late?,          OR( Sold >= DATE( 2027, 7, 1)),
@@ -2816,17 +2821,17 @@ CGTParcelsλ = LAMBDA(
     //  The spans each parcel shares with each sale, read sale by sale
         Low,            IF( PFrom > TRANSPOSE( SFrom), PFrom, TRANSPOSE( SFrom)),
         High,           IF( PTo < TRANSPOSE( STo), PTo, TRANSPOSE( STo)),
-        Taken?,         TOCOL( ROUND( High - Low, 6) > 0, , TRUE),
+        Taken?,         TOCOL( High > Low, , TRUE),
         PAt,            FILTER( TOCOL( SEQUENCE( PCount) + 0 * SEQUENCE( 1, SCount), , TRUE), Taken?),
         SAt,            FILTER( TOCOL( SEQUENCE( 1, SCount) + 0 * SEQUENCE( PCount), , TRUE), Taken?),
         From,           FILTER( TOCOL( Low, , TRUE), Taken?),
         To,             FILTER( TOCOL( High, , TRUE), Taken?),
     //  A span's share of an amount is the difference of the rounded shares to its ends,
-    //  so the shares of a parcel or a sale are each in cents and add up to the whole.
-        Share,          LAMBDA( Amount, Start, Units,
-                            ROUND( Amount * ROUND( To - Start, 6) / Units, 2) - ROUND( Amount * ROUND( From - Start, 6) / Units, 2)),
-        Cost,           Share( CHOOSEROWS( TAKE( P, , -1), PAt), CHOOSEROWS( PFrom, PAt), CHOOSEROWS( PUnits, PAt)),
-        Proceeds,       Share( CHOOSEROWS( TAKE( S, , -1), SAt), CHOOSEROWS( SFrom, SAt), CHOOSEROWS( SUnits, SAt)),
+    //  so the shares of a parcel or a sale are each whole cents and add up to the whole.
+        Share,          LAMBDA( Cents, Start, Units,
+                            ROUND( Cents * ( To - Start) / Units, 0) - ROUND( Cents * ( From - Start) / Units, 0)),
+        Cost,           Share( CHOOSEROWS( PCents, PAt), CHOOSEROWS( PFrom, PAt), CHOOSEROWS( PUnits, PAt)),
+        Proceeds,       Share( CHOOSEROWS( SCents, SAt), CHOOSEROWS( SFrom, SAt), CHOOSEROWS( SUnits, SAt)),
         SoldOn,         CHOOSEROWS( Sold, SAt),
         AcquiredOn,     CHOOSEROWS( Acquired, PAt),
         Old?,           OR( AcquiredOn <= DATE( 1999, 9, 21)),
@@ -2835,10 +2840,10 @@ CGTParcelsλ = LAMBDA(
     //  29 February, DATE rolls to 1 March, where the 12 months end.
         Start,          AcquiredOn + 1,
         Twelve,         DATE( YEAR( Start) + 1, MONTH( Start), DAY( Start)),
-        Gain,           ROUND( IF( Proceeds > Cost, Proceeds - Cost, 0), 2),
-        Loss,           ROUND( IF( Cost > Proceeds, Cost - Proceeds, 0), 2),
+        Gain,           IF( Proceeds > Cost, Proceeds - Cost, 0),
+        Loss,           IF( Cost > Proceeds, Cost - Proceeds, 0),
         Result,         VSTACK( {"Sold", "Acquired", "Units", "Proceeds", "Cost base", "Gain", "Loss", "12 months"},
-                            HSTACK( SoldOn, AcquiredOn, ROUND( To - From, 6), Proceeds, Cost, Gain, Loss, SoldOn >= Twelve)),
+                            HSTACK( SoldOn, AcquiredOn, ( To - From) / 1E6, Proceeds / 100, Cost / 100, Gain / 100, Loss / 100, SoldOn >= Twelve)),
     //  Return Result, Help, or the message
         Return,         IF( Help?, 2, IF( NOT( AND( ValidParcels?, ValidSales?)), 3, IF( Late?, 4, IF( NOT( Covered?), 5, IF( Old?, 6, 1))))),
         CHOOSE( Return, Result, Help, TableMessage, LateMessage, CoverMessage, OldMessage)
@@ -2880,7 +2885,7 @@ NetCapitalGainλ = LAMBDA(
                             "VERSION:       →22 Nov 2026¶" &
                             "PARAMETERS:    →¶" &
                             "IncomeYear     →(Required) The year the income year ends: 2026 for 2025-26 or 2027 for 2026-27.¶" &
-                            "Gains          →(Required) The year's capital gains, each 0 or more. A blank is nil.¶" &
+                            "Gains          →(Required) The year's capital gains in whole cents, each 0 or more. A blank is nil.¶" &
                             "Discountable   →(Optional: Default = FALSE) Cell for cell with Gains, TRUE or 1 for a discount capital gain.¶" &
                             "Losses         →(Optional: Default = 0) The year's capital losses.¶" &
                             "PriorLosses    →(Optional: Default = 0) Net capital losses of earlier years not yet applied.¶" &
@@ -2901,11 +2906,17 @@ NetCapitalGainλ = LAMBDA(
         Kind,           IF( ISOMITTED( Entity), "I", IF( TRIM( Entity & "") = "", "I", UPPER( TRIM( Entity)))),
         ValidEntity?,   IFERROR( AND( ROWS( Kind) = 1, COLUMNS( Kind) = 1, ISNUMBER( XMATCH( Kind, {"I", "T", "S", "C"}, 0))), FALSE),
         EntityMessage,  "Entity must be I (individual), T (trust), S (complying superannuation entity) or C (company).",
-    //  Amounts are numbers from 0 to under 1E13, or blank, which is nil
-        Amounts?,       LAMBDA( Values, IFERROR( AND( IF( ISNUMBER( Values), ( Values >= 0) * ( Values < 1E13), TRIM( Values & "") = "")), FALSE)),
-        Total,          LAMBDA( Values, IF( ISOMITTED( Values), 0, SUM( Values))),
-        ValidAmounts?,  AND( Amounts?( Gains), IF( ISOMITTED( Losses), TRUE, Amounts?( Losses)), IF( ISOMITTED( PriorLosses), TRUE, Amounts?( PriorLosses))),
-        AmountMessage,  "Gains, Losses and PriorLosses must be numbers from 0 to under 10,000,000,000,000, or blank.",
+    //  Amounts are whole cents from 0 to under 1E10, or blank, which is nil. The sums are
+    //  taken in cents, which stay exact integers while the gains, and the losses, are each
+    //  under 1E13 in all.
+        Amounts?,       LAMBDA( Values, IFERROR( AND( IF( ISNUMBER( Values),
+                            ( Values >= 0) * ( Values < 1E10) * ( ABS( Values * 100 - ROUND( Values * 100, 0)) < 0.001),
+                            TRIM( Values & "") = "")), FALSE)),
+        Cents,          LAMBDA( Values, IF( ISNUMBER( Values), ROUND( Values * 100, 0), 0)),
+        Total,          LAMBDA( Values, IF( ISOMITTED( Values), 0, SUM( Cents( Values)))),
+        ValidAmounts?,  IF( AND( Amounts?( Gains), IF( ISOMITTED( Losses), TRUE, Amounts?( Losses)), IF( ISOMITTED( PriorLosses), TRUE, Amounts?( PriorLosses))),
+                            AND( Total( Gains) < 1E15, Total( Losses) + Total( PriorLosses) < 1E15), FALSE),
+        AmountMessage,  "Gains, Losses and PriorLosses must be whole cents from 0 to under 10,000,000,000, or blank, with the gains, and the losses, each under 10,000,000,000,000 in all.",
     //  Discountable matches Gains cell for cell: TRUE or 1 for a discount capital gain,
     //  FALSE, 0 or blank for any other
         Flag,           IF( ISOMITTED( Discountable), FALSE, IF( ISLOGICAL( Discountable), Discountable, IF( ISNUMBER( Discountable), Discountable = 1, FALSE))),
@@ -2913,17 +2924,17 @@ NetCapitalGainλ = LAMBDA(
                             AND( ISLOGICAL( Discountable) + ISNUMBER( Discountable) * ( ( Discountable = 0) + ( Discountable = 1)) + ( TRIM( Discountable & "") = ""))), FALSE)),
         FlagMessage,    "Discountable must match Gains cell for cell, each TRUE, FALSE, 1, 0 or blank.",
     //  Procedure - losses take the gains not eligible for the discount first (steps 1 and 2)
-        Gain,           IF( ISNUMBER( Gains), Gains, 0),
+        Gain,           Cents( Gains),
         Eligible,       SUM( IF( Flag, Gain, 0)),
         Other,          SUM( IF( Flag, 0, Gain)),
         Applied,        Total( Losses) + Total( PriorLosses),
         OtherLeft,      MAX( 0, Other - Applied),
         LossLeft,       MAX( 0, Applied - Other),
         EligibleLeft,   MAX( 0, Eligible - LossLeft),
-    //  Step 3: the discount percentage, a third or a half by division so whole cents stay exact
+    //  Step 3: the discount percentage, a third or a half of the cents left
         Discount,       SWITCH( Kind, "S", EligibleLeft / 3, "C", 0, EligibleLeft / 2),
         Result,         VSTACK( {"Net capital gain", "Discount", "Losses carried forward"},
-                            HSTACK( OtherLeft + EligibleLeft - Discount, Discount, MAX( 0, LossLeft - Eligible))),
+                            HSTACK( OtherLeft + EligibleLeft - Discount, Discount, MAX( 0, LossLeft - Eligible)) / 100),
     //  Return Result, Help, or the message
         Return,         IF( Help?, 2, IF( NOT( ValidYear?), 3, IF( NOT( ValidEntity?), 4, IF( NOT( ValidAmounts?), 5, IF( NOT( ValidFlags?), 6, 1))))),
         CHOOSE( Return, Result, Help, YearMessage, EntityMessage, AmountMessage, FlagMessage)

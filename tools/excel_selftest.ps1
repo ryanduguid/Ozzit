@@ -352,7 +352,13 @@ Same 'CGTParcels: units in decimals' "LET(x, $cp(HSTACK(DATE(2025,8,1), 10.5, 10
 Same 'CGTParcels: same-day parcels keep the order given' "LET(x, $cp(VSTACK(HSTACK(DATE(2025,8,1), 1, 10), HSTACK(DATE(2025,8,1), 1, 20)), HSTACK(DATE(2025,9,1), 1, 15)), TEXTJOIN(`",`", FALSE, CHOOSECOLS(DROP(x, 1), 5)))" '10'
 Same 'CGTParcels: net proceeds below 0' "LET(x, $cp(HSTACK(DATE(2025,8,1), 10, 100), HSTACK(DATE(2025,9,1), 10, -10)), TEXTJOIN(`",`", FALSE, CHOOSECOLS(DROP(x, 1), 6, 7)))" '0,110'
 Same 'CGTParcels: a parcel from 22 September 1999' "LET(x, $cp(HSTACK(DATE(1999,9,22), 1, 10), HSTACK(DATE(2027,6,30), 1, 15)), $cpBody)" '46568,36425,1,15,10,5,0,TRUE'
-$cpTable = "Parcels and Sales must each be 3 columns of numbers: the date, the units, above 0 in at most 6 decimal places, and the parcel's cost base, 0 or more, or the sale's proceeds less its selling costs."
+# Spans are counted in whole millionths: a millionth of a unit bought after 999,999,998 units
+# keeps its own cost and proceeds; and 1,000 parcels against 1,000 sales, a million pairs,
+# fit the column TOCOL builds.
+$big = "VSTACK(HSTACK(DATE(2025,8,1), 999999998, 1000), HSTACK(DATE(2025,8,2), 0.000001, 100)), VSTACK(HSTACK(DATE(2025,9,1), 999999998, 1000), HSTACK(DATE(2025,9,2), 0.000001, 120))"
+Same 'CGTParcels: a millionth of a unit after 999,999,998' "LET(x, DROP($cp($big), 2), TEXTJOIN(`",`", FALSE, CHOOSECOLS(x, 3) * 1000000, CHOOSECOLS(x, 4), CHOOSECOLS(x, 5), CHOOSECOLS(x, 6)))" '1,120,100,20'
+Same 'CGTParcels: 1,000 parcels against 1,000 sales' "LET(x, $cp(HSTACK(SEQUENCE(1000,1,45870,0), SEQUENCE(1000,1,1,0), SEQUENCE(1000,1,1,0)), HSTACK(SEQUENCE(1000,1,45901,0), SEQUENCE(1000,1,1,0), SEQUENCE(1000,1,2,0))), ROWS(x) & `"|`" & SUM(CHOOSECOLS(DROP(x, 1), 6)))" '1001|1000'
+$cpTable = "Parcels and Sales must each be 3 columns of numbers, at most 1,000 rows: the date; the units, in millionths from 0.000001 and under 1,000,000,000 in all; and the parcel's cost base, 0 or more, or the sale's proceeds less its selling costs, in whole cents under 10,000,000,000."
 $cpCover = "CGTParcels$L refuses a sale of more units than the parcels acquired by its date."
 $cpLate = "CGTParcels$L works sales before 1 July 2027: the Treasury Laws Amendment (Tax Reform No. 1) Act 2026 changes CGT from that day."
 $cpOld = "CGTParcels$L refuses a sale taking units from a parcel acquired on or before 21 September 1999: indexation or the pre-CGT rules can apply."
@@ -365,6 +371,12 @@ foreach ($r in @(@('{45870,10}, {45901,1,10}', $cpTable),
                  @('{45870.5,10,100}, {45901,1,10}', $cpTable),
                  @('{45870,10,"100"}, {45901,1,10}', $cpTable),
                  @('{45870,10,100}, {45901,1,#N/A}', $cpTable),
+                 @('{45870,0.0000000001,100;45871,1,200}, {45901,1,300}', $cpTable),
+                 @('{45870,999999999,1;45871,1,1}, {45901,1,1}', $cpTable),
+                 @('{45870,1,1.007}, {45901,1,2}', $cpTable),
+                 @('{45870,1,1}, {45901,1,2.003}', $cpTable),
+                 @('{45870,1,10000000000}, {45901,1,2}', $cpTable),
+                 @('HSTACK(SEQUENCE(1001,1,45870,0), SEQUENCE(1001,1,1,0), SEQUENCE(1001,1,1,0)), {45901,1,1}', $cpTable),
                  @('{45870,10,100}, {45901,11,10}', $cpCover),
                  @('{45901,10,100}, {45870,1,10}', $cpCover),
                  @('{45870,10,100}, {46569,1,10}', $cpLate),
@@ -382,12 +394,14 @@ foreach ($r in @(@('2026, 289755, TRUE, , , "S"', '193170,96585,0'),
                  @('2026, 100, TRUE, 300, 50', '0,0,250'),
                  @('2026, 100, , 30', '70,0,0'),
                  @('2026, {100;""}, {TRUE;""}, , , ""', '50,50,0'),
-                 @('2027, 0', '0,0,0'))) {
+                 @('2027, 0', '0,0,0'),
+                 @('2026, {9999999999.99;0.01}, , 9999999999.99', '0.01,0,0'),
+                 @('2026, SEQUENCE(1000,1,9999999999.99,0), SEQUENCE(1000,1,1,0), SEQUENCE(1000,1,9999999999.99,0)', '0,0,0'))) {
     Same "NetCapitalGain: ($($r[0]))" "TEXTJOIN(`",`", FALSE, DROP($ncg($($r[0])), 1))" $r[1]
 }
 $ncgYear = 'IncomeYear must be 2026 for 2025-26 or 2027 for 2026-27: the Treasury Laws Amendment (Tax Reform No. 1) Act 2026 changes the method from 2027-28.'
 $ncgEntity = 'Entity must be I (individual), T (trust), S (complying superannuation entity) or C (company).'
-$ncgAmount = 'Gains, Losses and PriorLosses must be numbers from 0 to under 10,000,000,000,000, or blank.'
+$ncgAmount = 'Gains, Losses and PriorLosses must be whole cents from 0 to under 10,000,000,000, or blank, with the gains, and the losses, each under 10,000,000,000,000 in all.'
 $ncgFlag = 'Discountable must match Gains cell for cell, each TRUE, FALSE, 1, 0 or blank.'
 foreach ($r in @(@('2028, 100', $ncgYear),
                  @('2025, 100', $ncgYear),
@@ -398,6 +412,10 @@ foreach ($r in @(@('2028, 100', $ncgYear),
                  @('2026, "100"', $ncgAmount),
                  @('2026, 100, , -5', $ncgAmount),
                  @('2026, 100, , , #N/A', $ncgAmount),
+                 @('2026, {100;#N/A}, {TRUE;TRUE}', $ncgAmount),
+                 @('2026, 100.005', $ncgAmount),
+                 @('2026, 10000000000', $ncgAmount),
+                 @('2026, SEQUENCE(1001,1,9999999999.99,0)', $ncgAmount),
                  @('2026, {100;200}, TRUE', $ncgFlag),
                  @('2026, 100, 2', $ncgFlag),
                  @('2026, 100, "yes"', $ncgFlag))) {
