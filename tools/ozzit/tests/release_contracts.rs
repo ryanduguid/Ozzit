@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan Duguid
-// SPDX-License-Identifier: LicenseRef-Duguid-Public-Attribution-1.0
+// SPDX-License-Identifier: Apache-2.0
 
 //! Replay the retired prepare_release_bundle.py's recorded argument parsing and
 //! verification results, with recorded bundles moved to provenance schema 2.

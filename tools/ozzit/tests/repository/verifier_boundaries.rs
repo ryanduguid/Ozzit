@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan Duguid
-// SPDX-License-Identifier: LicenseRef-Duguid-Public-Attribution-1.0
+// SPDX-License-Identifier: Apache-2.0
 
 //! The Excel value dump opens its output only inside its Excel cleanup, and every
 //! cell it writes comes through the COM message filter and one checked range.

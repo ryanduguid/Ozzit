@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan Duguid
-// SPDX-License-Identifier: LicenseRef-Duguid-Public-Attribution-1.0
+// SPDX-License-Identifier: Apache-2.0
 
 //! Workbook, template, CLI and no-write contracts retained from Python.
 #[path = "workbook_palette_retirement/mod.rs"]

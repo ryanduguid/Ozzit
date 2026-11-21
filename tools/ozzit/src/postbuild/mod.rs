@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan Duguid
-// SPDX-License-Identifier: LicenseRef-Duguid-Public-Attribution-1.0
+// SPDX-License-Identifier: Apache-2.0
 
 //! The postbuild passes: deterministic, idempotent text surgery on the workbook
 //! and `src/`. No COM, no recalculation; every pass writes through the

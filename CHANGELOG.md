@@ -30,6 +30,10 @@ release; until then v3.7.0 behaves as it did.
   size of the financed amount or balloon. It refuses genuine fractions of a
   cent such as 257,446.20001. Valid cent amounts produce the same schedule.
 
+### Changed
+
+- Relicensed Ryan Duguid's original work under Apache-2.0. Earlier releases keep their original terms.
+
 ## v3.7.0, 18 November 2026, PAYG withholding and the v3.6.0 known issues fixed
 
 Cut on 18 November 2026 from the changes on `main` since v3.6.0. It takes the library

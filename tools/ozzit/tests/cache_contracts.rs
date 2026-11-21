@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan Duguid
-// SPDX-License-Identifier: LicenseRef-Duguid-Public-Attribution-1.0
+// SPDX-License-Identifier: Apache-2.0
 
 //! Replay tools/verify_cache.py's recorded findings for generated workbooks, dumps
 //! and dumper results. Excel is not run: the dumper's result is part of each case.

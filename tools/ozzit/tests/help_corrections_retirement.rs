@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan Duguid
-// SPDX-License-Identifier: LicenseRef-Duguid-Public-Attribution-1.0
+// SPDX-License-Identifier: Apache-2.0
 
 //! Apply, refusal, CLI, temporary siblings and documentation-order contracts.
 #[path = "help_corrections_retirement/mod.rs"]
