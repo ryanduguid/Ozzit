@@ -33,7 +33,7 @@ Each earlier release keeps its own licence.
 
 | Excel | Tested |
 | --- | --- |
-| Windows desktop | Yes: the native gates on the tracked workbook (Excel 16.0 build 20625, 8 November 2026) and a copy-cell install check on v3.4.2 (build 20430, 25 September 2026) |
+| Windows desktop | Yes: the native gates on the tracked workbook (Excel 16.0 build 20625, 21 November 2026) and a copy-cell install check on v3.4.2 (build 20430, 25 September 2026) |
 | Mac | Not tested |
 | Web | Not tested |
 | Advanced Formula Environment import of `oz.txt` | Not tested |
@@ -244,7 +244,7 @@ Its [citation metadata](CITATION.cff) names the cut. Cite the signed tag `v3.7.0
 `44257fc252afc67e87c3788776d10f67663a3136`; GitHub reports its
 [release page](https://github.com/ryanduguid/Ozzit/releases/tag/v3.7.0) immutable. [The v3.7.0 changes](CHANGELOG.md) describe what it adds and fixes.
 
-v3.7.0 `ozzit.xlsx` SHA-256: `0ed09fc130d30394c97f6a41e40ab72d3f68093b65a5e109adf11bd901f006bd` (492,757 bytes), the same bytes as the release asset. `main` is ahead of that tag, so the file you clone is not the file the release ships: the tracked `ozzit.xlsx` is SHA-256 `68c7088ab941c62898555d860b482ef8447035d59d090276235a11439ac1cd2c` (510,789 bytes), pinned in [release/workbook-base.json](release/workbook-base.json) and checked by the tool tests, and adds the changes listed under Unreleased in the [changelog](CHANGELOG.md). On 20 November 2026, Excel 16.0 build 20625 recalculated 1,129 formulas in the tracked workbook with 0 in error, ran 2,517 self-test assertions with 0 failures and found 19,483 cached values equal to what their formulas produce. The workbook was byte-identical before and after both native gates.
+v3.7.0 `ozzit.xlsx` SHA-256: `0ed09fc130d30394c97f6a41e40ab72d3f68093b65a5e109adf11bd901f006bd` (492,757 bytes), the same bytes as the release asset. `main` is ahead of that tag, so the file you clone is not the file the release ships: the tracked `ozzit.xlsx` is SHA-256 `352d5151009c502064d23b32d4f91c636f1154dc1e40ceff899a7b4c84ec7bf8` (510,848 bytes), pinned in [release/workbook-base.json](release/workbook-base.json) and checked by the tool tests, and adds the changes listed under Unreleased in the [changelog](CHANGELOG.md). On 21 November 2026, Excel 16.0 build 20625 recalculated 1,129 formulas in the tracked workbook with 0 in error, ran 2,521 self-test assertions with 0 failures and found 19,483 cached values equal to what their formulas produce. The workbook was byte-identical before and after both native gates.
 
 - [Repository checks](AGENTS.md) and [release and native verification](RELEASING.md)
 - [Changes](CHANGELOG.md) and [citation](CITATION.cff)
