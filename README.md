@@ -27,8 +27,9 @@ Environment task pane used to author the functions; the functions do not depend 
 
 **Needs Microsoft 365 or Excel 2024 or later**, which support `LAMBDA` and dynamic
 arrays. LibreOffice, Google Sheets and earlier Excel versions cannot evaluate the
-functions. `main` is licensed under the [Apache License, Version 2.0](LICENSE);
-the v3.5.0 release keeps Apache-2.0, and v3.4.2 and earlier releases keep MIT.
+functions. The [Apache License, Version 2.0](LICENSE) covers Ryan Duguid's
+original work on `main`. See [NOTICE](NOTICE) for retained third-party terms.
+Each earlier release keeps its own licence.
 
 | Excel | Tested |
 | --- | --- |
