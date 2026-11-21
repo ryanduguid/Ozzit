@@ -1294,6 +1294,8 @@ $hpTerms = "HPSchedule$L needs single numbers: Financed above 0 and a Balloon fr
 $hpBalloon = "HPSchedule$L needs a Balloon the payments can reach: no more than Financed grown at the rate."
 foreach ($r in @(@('0, 0.1, 3', $hpTerms), @('1000, -1, 3', $hpTerms), @('1000, 0.1, 0', $hpTerms),
                  @('1000, 0.1, 2.5', $hpTerms), @('1000, 0.1, 3, 0', $hpTerms), @('1000, 0.1, 3, 12, "yes"', $hpTerms),
+                 @('1000, 0.1, 3, 12, "0"', $hpTerms), @('1000, 0.1, 3, 12, "1"', $hpTerms),
+                 @('1000, 0.1, 3, 12, {0,1}', $hpTerms), @('1000, 0.1, 3, 12, {TRUE;FALSE}', $hpTerms),
                  @('1000, 0.1, 3, 12, FALSE, -1', $hpTerms), @('"1000", 0.1, 3', $hpTerms), @('{1000,2000}, 0.1, 3', $hpTerms),
                  @('1000, "10%", 3', $hpTerms), @('1000, 0.1, 3, 1, FALSE, 2000', $hpBalloon),
                  @('1000, 0.1, 3, 1, FALSE, 1331.01', $hpBalloon), @('1000, 0.1, 3, 1, TRUE, 1331.01', $hpBalloon),
