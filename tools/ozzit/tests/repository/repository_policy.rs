@@ -287,7 +287,9 @@ fn security_and_releasing_docs_exist_and_name_the_reporting_path() {
     assert!(security.to_lowercase().contains("synthetic"));
     assert!(releasing.contains("SHA256SUMS"));
     assert!(releasing.to_lowercase().contains("git archive"));
-    assert!(releasing.contains("exactly 3 files"));
+    assert!(releasing.contains("exactly 5 files"));
+    assert!(releasing.contains("4. `LICENSE`"));
+    assert!(releasing.contains("5. `NOTICE`"));
     assert!(releasing.contains("tools/ozzit/target/release/ozzit prepare_release_bundle create"));
     assert!(releasing.contains("tools/ozzit/target/release/ozzit prepare_release_bundle verify"));
     assert!(!releasing.contains("Ozzit-<version>-source.zip"));

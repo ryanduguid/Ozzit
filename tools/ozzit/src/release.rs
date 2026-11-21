@@ -851,6 +851,17 @@ pub fn create_bundle(
     )
 }
 
+fn stage_licence_files(root: &Path, dir: &Path) -> Result<()> {
+    for name in LICENCE_FILES {
+        let source = root.join(name);
+        if !regular_file(&source) {
+            return Err(format!("candidate {name} must be a regular file"));
+        }
+        write_bytes(&dir.join(name), &read_bytes(&source)?)?;
+    }
+    Ok(())
+}
+
 fn create_bundle_with<G, V>(
     root: &Path,
     workbook: &Path,
@@ -883,13 +894,7 @@ where
         let staged = dir.join("ozzit.xlsx");
         write_bytes(&staged, &read_bytes(&workbook)?)?;
         verify_base_workbook(&staged, &base_manifest)?;
-        for name in LICENCE_FILES {
-            let source = root.join(name);
-            if !regular_file(&source) {
-                return Err(format!("candidate {name} must be a regular file"));
-            }
-            write_bytes(&dir.join(name), &read_bytes(&source)?)?;
-        }
+        stage_licence_files(&root, dir)?;
         let gates = checks.0(&root, &staged)?;
         let document = provenance(&base, version, source_commit, &gates);
         write_bytes(&dir.join("provenance.json"), &canonical_json(&document))?;
