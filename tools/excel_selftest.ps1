@@ -354,11 +354,14 @@ Same 'CGTParcels: net proceeds below 0' "LET(x, $cp(HSTACK(DATE(2025,8,1), 10, 1
 Same 'CGTParcels: a parcel from 22 September 1999' "LET(x, $cp(HSTACK(DATE(1999,9,22), 1, 10), HSTACK(DATE(2027,6,30), 1, 15)), $cpBody)" '46568,36425,1,15,10,5,0,TRUE'
 # Spans are counted in whole millionths: a millionth of a unit bought after 999,999,998 units
 # keeps its own cost and proceeds; and 1,000 parcels against 1,000 sales, a million pairs,
-# fit the column TOCOL builds.
+# fit the column TOCOL builds, as do 1,001 weekly parcels sold together. A share of exactly
+# half a cent rounds away from zero: half of 495,372,740,747 cents is 247,686,370,373.5.
 $big = "VSTACK(HSTACK(DATE(2025,8,1), 999999998, 1000), HSTACK(DATE(2025,8,2), 0.000001, 100)), VSTACK(HSTACK(DATE(2025,9,1), 999999998, 1000), HSTACK(DATE(2025,9,2), 0.000001, 120))"
 Same 'CGTParcels: a millionth of a unit after 999,999,998' "LET(x, DROP($cp($big), 2), TEXTJOIN(`",`", FALSE, CHOOSECOLS(x, 3) * 1000000, CHOOSECOLS(x, 4), CHOOSECOLS(x, 5), CHOOSECOLS(x, 6)))" '1,120,100,20'
 Same 'CGTParcels: 1,000 parcels against 1,000 sales' "LET(x, $cp(HSTACK(SEQUENCE(1000,1,45870,0), SEQUENCE(1000,1,1,0), SEQUENCE(1000,1,1,0)), HSTACK(SEQUENCE(1000,1,45901,0), SEQUENCE(1000,1,1,0), SEQUENCE(1000,1,2,0))), ROWS(x) & `"|`" & SUM(CHOOSECOLS(DROP(x, 1), 6)))" '1001|1000'
-$cpTable = "Parcels and Sales must each be 3 columns of numbers, at most 1,000 rows: the date; the units, in millionths from 0.000001 and under 1,000,000,000 in all; and the parcel's cost base, 0 or more, or the sale's proceeds less its selling costs, in whole cents under 10,000,000,000."
+Same 'CGTParcels: 1,001 parcels sold together' "LET(x, $cp(HSTACK(SEQUENCE(1001,1,38870,7), SEQUENCE(1001,1,1,0), SEQUENCE(1001,1,1,0)), HSTACK(DATE(2026,1,1), 1001, 2002)), ROWS(x) & `"|`" & SUM(CHOOSECOLS(DROP(x, 1), 6)))" '1002|1001'
+Same 'CGTParcels: a half-cent share rounds up' "LET(x, $cp(HSTACK(DATE(2025,8,1), 900000000, 4953727407.47), VSTACK(HSTACK(DATE(2025,9,1), 450000000, 1), HSTACK(DATE(2025,9,2), 450000000, 1))), TEXTJOIN(`",`", FALSE, CHOOSECOLS(DROP(x, 1), 5)))" '2476863703.74,2476863703.73'
+$cpTable = "Parcels and Sales must each be 3 columns of numbers, with at most 1,000,000 parcel and sale pairs: the date; the units, in millionths from 0.000001 and under 1,000,000,000 in all; and the parcel's cost base, 0 or more, or the sale's proceeds less its selling costs, in whole cents under 10,000,000,000."
 $cpCover = "CGTParcels$L refuses a sale of more units than the parcels acquired by its date."
 $cpLate = "CGTParcels$L works sales before 1 July 2027: the Treasury Laws Amendment (Tax Reform No. 1) Act 2026 changes CGT from that day."
 $cpOld = "CGTParcels$L refuses a sale taking units from a parcel acquired on or before 21 September 1999: indexation or the pre-CGT rules can apply."
@@ -376,7 +379,7 @@ foreach ($r in @(@('{45870,10}, {45901,1,10}', $cpTable),
                  @('{45870,1,1.007}, {45901,1,2}', $cpTable),
                  @('{45870,1,1}, {45901,1,2.003}', $cpTable),
                  @('{45870,1,10000000000}, {45901,1,2}', $cpTable),
-                 @('HSTACK(SEQUENCE(1001,1,45870,0), SEQUENCE(1001,1,1,0), SEQUENCE(1001,1,1,0)), {45901,1,1}', $cpTable),
+                 @('HSTACK(SEQUENCE(1001,1,45870,0), SEQUENCE(1001,1,1,0), SEQUENCE(1001,1,1,0)), HSTACK(SEQUENCE(1000,1,45901,0), SEQUENCE(1000,1,1,0), SEQUENCE(1000,1,1,0))', $cpTable),
                  @('{45870,10,100}, {45901,11,10}', $cpCover),
                  @('{45901,10,100}, {45870,1,10}', $cpCover),
                  @('{45870,10,100}, {46569,1,10}', $cpLate),

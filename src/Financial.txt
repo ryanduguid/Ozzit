@@ -2763,7 +2763,7 @@ CGTParcelsλ = LAMBDA(
     //  Help
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →CGTParcelsλ(Parcels, Sales)¶" &
-                            "DESCRIPTION:   →Capital gain or loss on each parcel a sale takes, first in, first out.¶NOTES!         →Returns a header row and one row for each parcel a sale takes units from:¶               →the sale and acquisition dates, the units, their share of the sale's¶               →proceeds and of the parcel's cost base, the capital gain or loss, and TRUE¶               →under 12 months when the parcel was acquired at least 12 months before the¶               →sale, counting neither day (ITAA 1997 s 115-25(1)). Sales take the earliest¶               →parcels first, which TD 33 accepts for identical shares; parcels and sales¶               →on the same day keep the order given. Each share is rounded to the cent so¶               →that the shares add up to the whole. Pass one class of shares or units in¶               →one company or fund, dated by contract, at most 1,000 parcels and 1,000¶               →sales, units in millionths under 1,000,000,000 in all and amounts in whole¶               →cents. The loss uses the cost base too, so leave the third element, costs¶               →of owning, out of a parcel's cost base. Refused: a sale from 1 July 2027,¶               →when the Treasury Laws Amendment (Tax Reform No. 1) Act 2026 changes CGT; a¶               →sale taking units from a parcel acquired on or before 21 September 1999,¶               →which indexation or the pre-CGT rules can reach; and a sale of more units¶               →than are held by its date. Arithmetic only: it does not decide whether the¶               →entity can use the discount, adjust cost bases for returns of capital,¶               →bonus shares or rollovers, or select parcels. NetCapitalGainλ() takes its¶               →Gain, Loss and 12 months columns.¶" &
+                            "DESCRIPTION:   →Capital gain or loss on each parcel a sale takes, first in, first out.¶NOTES!         →Returns a header row and one row for each parcel a sale takes units from:¶               →the sale and acquisition dates, the units, their share of the sale's¶               →proceeds and of the parcel's cost base, the capital gain or loss, and TRUE¶               →under 12 months when the parcel was acquired at least 12 months before the¶               →sale, counting neither day (ITAA 1997 s 115-25(1)). Sales take the earliest¶               →parcels first, which TD 33 accepts for identical shares; parcels and sales¶               →on the same day keep the order given. Each share is rounded to the cent so¶               →that the shares add up to the whole. Pass one class of shares or units in¶               →one company or fund, dated by contract, with parcels times sales at most¶               →1,000,000, units in millionths under 1,000,000,000 in all and amounts in¶               →whole cents. The loss uses the cost base too, so leave the third element,¶               →costs of owning, out of a parcel's cost base. Refused: a sale from 1 July¶               →2027, when the Treasury Laws Amendment (Tax Reform No. 1) Act 2026 changes¶               →CGT; a sale taking units from a parcel acquired on or before 21 September¶               →1999, which indexation or the pre-CGT rules can reach; and a sale of more¶               →units than are held by its date. Arithmetic only: it does not decide¶               →whether the entity can use the discount, adjust cost bases for returns of¶               →capital, bonus shares or rollovers, or select parcels. NetCapitalGainλ()¶               →takes its Gain, Loss and 12 months columns.¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
                             "VERSION:       →22 Nov 2026¶" &
                             "PARAMETERS:    →¶" &
@@ -2780,11 +2780,11 @@ CGTParcelsλ = LAMBDA(
                         )),
     //  Check inputs - Omitted required arguments
         Help?,          OR( ISOMITTED( Parcels), ISOMITTED( Sales)),
-    //  Each table is 3 columns of numbers, at most 1,000 rows so the 1,000,000 pairs fit
-    //  a column: whole-day dates; units in whole millionths, at least one, under 1E9 in
+    //  Each table is 3 columns of numbers, with at most 1,000,000 pairs of a parcel and a
+    //  sale so TOCOL's column holds them: whole-day dates; units in whole millionths, at least one, under 1E9 in
     //  all, so spans in millionths stay exact integers; and amounts in whole cents under
     //  1E10, a parcel's cost base not below 0. A sale's net proceeds may be below 0.
-        Valid?,         LAMBDA( Table, Floor, IFERROR( AND( COLUMNS( Table) = 3, ROWS( Table) <= 1000,
+        Valid?,         LAMBDA( Table, Floor, IFERROR( AND( COLUMNS( Table) = 3,
                             AND( ISNUMBER( Table)),
                             AND( TAKE( Table, , 1) = INT( TAKE( Table, , 1)), TAKE( Table, , 1) >= 1),
                             AND( ROUND( CHOOSECOLS( Table, 2) * 1E6, 0) >= 1, SUM( CHOOSECOLS( Table, 2)) < 1E9),
@@ -2793,7 +2793,8 @@ CGTParcelsλ = LAMBDA(
                             AND( ABS( TAKE( Table, , -1) * 100 - ROUND( TAKE( Table, , -1) * 100, 0)) < 0.001)), FALSE)),
         ValidParcels?,  Valid?( Parcels, 0),
         ValidSales?,    Valid?( Sales, -1E10),
-        TableMessage,   "Parcels and Sales must each be 3 columns of numbers, at most 1,000 rows: the date; the units, in millionths from 0.000001 and under 1,000,000,000 in all; and the parcel's cost base, 0 or more, or the sale's proceeds less its selling costs, in whole cents under 10,000,000,000.",
+        ValidPairs?,    IFERROR( ROWS( Parcels) * ROWS( Sales) <= 1000000, FALSE),
+        TableMessage,   "Parcels and Sales must each be 3 columns of numbers, with at most 1,000,000 parcel and sale pairs: the date; the units, in millionths from 0.000001 and under 1,000,000,000 in all; and the parcel's cost base, 0 or more, or the sale's proceeds less its selling costs, in whole cents under 10,000,000,000.",
     //  Procedure - sort each table by date, keeping the order given on the same day
         PCount,         ROWS( Parcels),
         SCount,         ROWS( Sales),
@@ -2845,7 +2846,7 @@ CGTParcelsλ = LAMBDA(
         Result,         VSTACK( {"Sold", "Acquired", "Units", "Proceeds", "Cost base", "Gain", "Loss", "12 months"},
                             HSTACK( SoldOn, AcquiredOn, ( To - From) / 1E6, Proceeds / 100, Cost / 100, Gain / 100, Loss / 100, SoldOn >= Twelve)),
     //  Return Result, Help, or the message
-        Return,         IF( Help?, 2, IF( NOT( AND( ValidParcels?, ValidSales?)), 3, IF( Late?, 4, IF( NOT( Covered?), 5, IF( Old?, 6, 1))))),
+        Return,         IF( Help?, 2, IF( NOT( AND( ValidParcels?, ValidSales?, ValidPairs?)), 3, IF( Late?, 4, IF( NOT( Covered?), 5, IF( Old?, 6, 1))))),
         CHOOSE( Return, Result, Help, TableMessage, LateMessage, CoverMessage, OldMessage)
     )
 );
