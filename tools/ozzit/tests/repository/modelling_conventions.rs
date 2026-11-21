@@ -160,7 +160,7 @@ fn utilities_repeats_the_essentials_functions() {
 #[test]
 fn if_and_nested_if() {
     let page = page();
-    assert_eq!(calling(r"\bIF\(").len(), 86);
+    assert_eq!(calling(r"\bIF\(").len(), 88);
     let nested_if = bounded(r"\bIF\(");
     let nested = function_bodies()
         .into_values()

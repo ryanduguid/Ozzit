@@ -20,7 +20,8 @@ const OLD_LABELS: [&str; 10] = [
     "Version 19 October 2026    -    150 functions    -    Microsoft 365 or Excel 2024 and later",
     "Version 14 November 2026    -    150 functions    -    Microsoft 365 or Excel 2024 and later",
     "Version 14 November 2026    -    151 functions    -    Microsoft 365 or Excel 2024 and later",
-    "Version 18 November 2026    -    151 functions    -    Microsoft 365 or Excel 2024 and later",    "Version 18 November 2026    -    155 functions    -    Microsoft 365 or Excel 2024 and later",
+    "Version 18 November 2026    -    151 functions    -    Microsoft 365 or Excel 2024 and later",
+    "Version 18 November 2026    -    155 functions    -    Microsoft 365 or Excel 2024 and later",
 ];
 const LABEL: &str =
     "Version 18 November 2026    -    157 functions    -    Microsoft 365 or Excel 2024 and later";
