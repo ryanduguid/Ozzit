@@ -76,7 +76,7 @@ tools/ozzit/target/release/ozzit prepare_release_bundle create --version X.Y.Z -
 tools/ozzit/target/release/ozzit prepare_release_bundle verify --bundle <second-new-directory> --version X.Y.Z --source-commit <full-commit-sha>
 ```
 
-Require all 3 files in both directories to be byte-identical. The tool refuses a dirty checkout, a mismatched workbook base, non-canonical version or commit values, an output inside the source repository and any existing output path. It runs commands as argument lists without a shell, stages under a fresh sibling directory and exposes the final name only after structural verification succeeds. It never tags, uploads or publishes anything.
+Require every file in the 5-file bundle, including LICENSE and NOTICE, to be byte-identical in both directories. The tool refuses a dirty checkout, a mismatched workbook base, non-canonical version or commit values, an output inside the source repository and any existing output path. It runs commands as argument lists without a shell, stages under a fresh sibling directory and exposes the final name only after structural verification succeeds. It never tags, uploads or publishes anything.
 
 The independent verifier must record and compare GitHub's API `digest` for the uploaded checksum file. The attestation bundle sits outside the checksum set so that the reviewed bundle keeps its fixed 5-file inventory. It signs only the workbook. Independent bundle verification checks the other assets. Verify the attestation separately, as packaging step 6 sets out. Do not add a cosmetic SPDX or CycloneDX inventory to this workbook-only bundle.
 
