@@ -33,7 +33,7 @@ Each earlier release keeps its own licence.
 
 | Excel | Tested |
 | --- | --- |
-| Windows desktop | Yes: the native gates on the tracked workbook (Excel 16.0 build 20625, 21 November 2026) and a copy-cell install check on v3.4.2 (build 20430, 25 September 2026) |
+| Windows desktop | Yes: the native gates on the tracked workbook (Excel 16.0 build 20625, 22 November 2026) and a copy-cell install check on v3.4.2 (build 20430, 25 September 2026) |
 | Mac | Not tested |
 | Web | Not tested |
 | Advanced Formula Environment import of `oz.txt` | Not tested |
@@ -110,6 +110,7 @@ you can check by hand; the lease guide explains the 4 lessee functions.
 | Lease journals, on `main` only | `=oz.LeaseJournalλ(LeaseSchedule, ROUSchedule, [Accounts])` from the 2 lease schedules | [Entries and AASB 16 paragraphs](docs/australian-modelling.md#lease-journals) |
 | Hire purchase or chattel mortgage, on `main` only | `=oz.HPScheduleλ(Financed, AnnualRate, Periods, [PeriodsPerYear], [InAdvance], [Balloon])`, journalled by `=oz.HPJournalλ(HPSchedule, [Accounts])` | [Schedule, rounding and journal](docs/australian-modelling.md#hire-purchase-and-chattel-mortgages) |
 | Lease, hire purchase, loan or cash, on `main` only | `=oz.FinanceCompareλ(CashFlows, DiscountRate, [PeriodsPerYear], [Labels])` | [Pre-tax present values](docs/australian-modelling.md#comparing-a-lease-hire-purchase-loan-or-cash) |
+| Capital gains on shares or units, on `main` only | `=oz.CGTParcelsλ(Parcels, Sales)` first in, first out, then `=oz.NetCapitalGainλ(IncomeYear, Gains, [Discountable], [Losses], [PriorLosses], [Entity])` for 2025-26 or 2026-27 | [Parcels, the 12 months and the discount](docs/australian-modelling.md#capital-gains) |
 
 `oz.PAYGWithholdingλ` arrived in v3.7.0. It works out the amount before tax
 offsets and the Medicare levy adjustment and does not apply either, or the extra
@@ -119,6 +120,10 @@ for a payee who has not given a TFN.
 `oz.LeaseJournalλ`, `oz.HPScheduleλ`, `oz.HPJournalλ` and `oz.FinanceCompareλ` are not
 yet in a release. They are bookkeeping arithmetic: the comparison is before tax, and none
 works out Division 240 of the Income Tax Assessment Act 1997 or GST input tax credits.
+
+`oz.CGTParcelsλ` and `oz.NetCapitalGainλ` are not yet in a release. They are arithmetic for
+the 2025-26 and 2026-27 income years: they do not decide who can use the CGT discount,
+apportion it for foreign or temporary residents, or apply the small business concessions.
 
 [Open, copy functions and use modern Excel](docs/workbook-use.md) shows how to
 copy a function into your own workbook.

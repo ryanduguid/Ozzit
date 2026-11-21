@@ -219,9 +219,10 @@ fn payg_withholding_pass_reproduces_the_published_financial_module() {
         current
     );
 }
-#[test]
-fn finance_journals_pass_reproduces_the_published_financial_module() {
-    let t = tables(&SPECS[6]);
+/// Removing a Financial pass's About rows and blocks, then applying it, gives the
+/// published module back.
+fn reproduces_the_financial_module(spec: &Spec) {
+    let t = tables(spec);
     let current = std::fs::read_to_string(root().join("src/Financial.txt")).unwrap();
     let about = lookup_about(&t.about, "Financial");
     let at = current.find(&about.anchor).unwrap();
@@ -254,8 +255,15 @@ fn finance_journals_pass_reproduces_the_published_financial_module() {
             f.name
         );
     }
-    assert_eq!(
-        add_to_src(&SPECS[6], &t, "Financial", &absent).unwrap(),
-        current
-    );
+    assert_eq!(add_to_src(spec, &t, "Financial", &absent).unwrap(), current);
+}
+
+#[test]
+fn finance_journals_pass_reproduces_the_published_financial_module() {
+    reproduces_the_financial_module(&SPECS[6]);
+}
+
+#[test]
+fn cgt_parcels_pass_reproduces_the_published_financial_module() {
+    reproduces_the_financial_module(&SPECS[7]);
 }

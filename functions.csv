@@ -21,6 +21,7 @@ oz.AvgRowsUλ,Utilities,nabla.u.AvgRowsλ,AvgRowsUλ( Array),Get the average for
 oz.AvgRowsλ,Essentials,nabla.e.AvgRowsλ,AvgRowsλ( Array),Get the average for each row
 oz.BVPSλ,Ratios,nabla.r.BVPSλ,"BVPSλ( ShareholdersEquity, PreferredStock, AverageSharesOutstanding )",Book value per share ratio is an indicator of the value of a company’s stock (Shareholders' Equity - Preferred Stock)/Average Shares Outstanding)
 oz.CAPERatioλ,Ratios,nabla.r.CAPERatioλ,"CAPERatioλ( SharePrice, TenYearAverageEarningsInflationAdjusted )",CAPE Ratio is a valuation measure that uses real earnings per share (EPS) over a 10-year period to smooth out fluctuations in corporate profits that occur over different periods of a business cycle (aka Shiller PE Ratio) (Share Price/Ten Year Average Earn
+oz.CGTParcelsλ,Financial,,"CGTParcelsλ(Parcels, Sales)","Capital gain or loss on each parcel of shares or units a sale takes, first in, first out, and whether the parcel was held 12 months for the CGT discount"
 oz.CashConversionCycleλ,Ratios,,"CashConversionCycleλ(InventoryDays, ReceivableDays, PayableDays, [WIPDays])",Cash conversion cycle in days: inventory days + WIP days + receivable days - payable days
 oz.CashFlowMarginλ,Ratios,nabla.r.CashFlowMarginλ,"CashFlowMarginλ( CashFlowFromOperatingActivities, Revenue)",Cash Flow Margin is a trusted metric of a company’s profitability and efficiency and its earnings quality (Cash Flow From Operating Activities/Revenue).
 oz.CashRatioλ,Ratios,nabla.r.CashRatioλ,"CashRatioλ( Cash, Liabilities)",Evaluates ability to repay short-term debt w/cash or near-cash resources (Cash and Cash Equivalents / Current Liabilities)
@@ -100,6 +101,7 @@ oz.MinColsλ,Essentials,nabla.e.MinColsλ,MinColsλ( Array),Get the minimum for 
 oz.MinRowsUλ,Utilities,nabla.u.MinRowsλ,MinRowsUλ( Array),Get the minimum for each row
 oz.MinRowsλ,Essentials,nabla.e.MinRowsλ,MinRowsλ( Array),Get the minimum for each row
 oz.Movementλ,Financial,nabla.f.Movementλ,"Movementλ( [BeginningValues], Values)",Create a row of differences from column to column
+oz.NetCapitalGainλ,Financial,,"NetCapitalGainλ(IncomeYear, Gains, [Discountable], [Losses], [PriorLosses], [Entity])","Net capital gain for 2025-26 or 2026-27: capital losses reduce the gains, then the CGT discount applies"
 oz.NetProfitMarginλ,Ratios,nabla.r.NetProfitMarginλ,"NetProfitMarginλ( NetIncome, Revenue)",Measures how much net income or profit a company generates as a percentage of its revenue. (Net Income/Revenue).
 oz.OperatingCashFlowRatioλ,Ratios,nabla.r.OperatingCashFlowRatioλ,"OperatingCashFlowRatioλ( OperatingCashFlow, Liabilities)",Measures how readily current liabilities are covered by cash flows generated from operations
 oz.OperatingMarginλ,Ratios,nabla.r.OperatingMarginλ,"OperatingMarginλ( OperatingEarnings, Revenue)","Measures how much profit a company makes on a dollar of sales after paying for variable costs of production, such as wages and raw materials, but before paying interest or tax (Operating Earnings/Revenue)."

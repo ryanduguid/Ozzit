@@ -21,6 +21,7 @@ oz.AvgRowsUλ,1,1,0,0
 oz.AvgRowsλ,1,1,0,2
 oz.BVPSλ,1,1,0,1
 oz.CAPERatioλ,1,1,0,1
+oz.CGTParcelsλ,1,1,16,0
 oz.CashConversionCycleλ,1,1,6,0
 oz.CashFlowMarginλ,1,1,0,1
 oz.CashRatioλ,1,1,0,1
@@ -100,6 +101,7 @@ oz.MinColsλ,1,1,0,2
 oz.MinRowsUλ,1,1,0,0
 oz.MinRowsλ,1,1,0,2
 oz.Movementλ,1,2,3,2
+oz.NetCapitalGainλ,1,1,4,0
 oz.NetProfitMarginλ,1,1,0,1
 oz.OperatingCashFlowRatioλ,1,1,0,1
 oz.OperatingMarginλ,1,1,0,1

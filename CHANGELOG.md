@@ -23,6 +23,14 @@ release; until then v3.7.0 behaves as it did.
   lease, a hire purchase, a loan or a cash purchase, and recommends nothing.
   `ozzit finance_journals` adds the 4 functions to `src/`, the workbook and
   `functions.csv`.
+- `oz.CGTParcelsλ(Parcels, Sales)` matches sales of shares or units to parcels first in,
+  first out, and returns each match's proceeds, cost base, capital gain or loss and
+  whether the parcel was held 12 months, counting neither day (ITAA 1997 s 115-25(1)).
+  `oz.NetCapitalGainλ(IncomeYear, Gains, [Discountable], [Losses], [PriorLosses], [Entity])`
+  applies the year's and earlier years' capital losses, then the CGT discount, under
+  s 102-5(1) for 2025-26 and 2026-27. Both refuse what the Treasury Laws Amendment (Tax
+  Reform No. 1) Act 2026 changes from 1 July 2027. `ozzit cgt_parcels` adds the 2
+  functions to `src/`, the workbook and `functions.csv`.
 
 ### Fixed
 

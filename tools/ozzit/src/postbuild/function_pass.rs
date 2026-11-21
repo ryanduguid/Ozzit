@@ -4,7 +4,8 @@
 //! The function-adding passes that compile through `compile_sources`:
 //! working-capital days, rate and date helpers, ATO benchmark and rate lookup,
 //! variance and financial-year periods, the level payment and rate corkscrew, PAYG
-//! withholding, and the lease and hire purchase journals and finance comparison.
+//! withholding, the lease and hire purchase journals and finance comparison, and
+//! the CGT parcels and net capital gain.
 //!
 //! Each adds functions and About rows to `src/`, the defined names and the About
 //! tables to the workbook, and rows to functions.csv, in one recoverable step.
@@ -41,7 +42,7 @@ struct Spec {
     always_index: bool,
 }
 
-const SPECS: [Spec; 7] = [
+const SPECS: [Spec; 8] = [
     Spec {
         stem: "working_capital_days",
         data: include_str!("../data/postbuild/working_capital_days.json"),
@@ -101,6 +102,15 @@ const SPECS: [Spec; 7] = [
         data: include_str!("../data/postbuild/finance_journals.json"),
         what: "lease and hire purchase journal and finance comparison functions",
         rows: "finance contract",
+        layout: Layout::BeforeFollower,
+        index: IndexRule::Required,
+        always_index: true,
+    },
+    Spec {
+        stem: "cgt_parcels",
+        data: include_str!("../data/postbuild/cgt_parcels.json"),
+        what: "CGT parcel and net capital gain functions",
+        rows: "capital gains",
         layout: Layout::BeforeFollower,
         index: IndexRule::Required,
         always_index: true,
@@ -512,6 +522,9 @@ pub fn payg_withholding(args: &[String]) -> Output {
 }
 pub fn finance_journals(args: &[String]) -> Output {
     command(&SPECS[6], args)
+}
+pub fn cgt_parcels(args: &[String]) -> Output {
+    command(&SPECS[7], args)
 }
 
 #[cfg(test)]
