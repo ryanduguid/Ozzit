@@ -427,6 +427,53 @@ foreach ($r in @(@('2028, 100', $ncgYear),
     Same "NetCapitalGain refuses ($($r[0]))" "LET(x, $ncg($($r[0])), $one)" $r[1]
 }
 
+# --- Income tax on taxable income (Income Tax Rates Act 1986 Schedule 7 Parts I and II,
+# compilation 66; the ATO's resident and foreign resident rate tables, read 22 November 2026).
+# The base amounts are the ATO's; the other cases are those of australian-accounting's
+# resident-tax and foreign-resident-tax commands.
+$it = "oz.IncomeTax$L"
+foreach ($y in @('2025', '2026')) {
+    foreach ($r in @(@('0', '0'), @('18200', '0'), @('18201', '0.16'), @('45000', '4288'), @('45001', '4288.3'),
+                     @('135000', '31288'), @('135001', '31288.37'), @('190000', '51638'), @('190001', '51638.45'))) {
+        Near "IncomeTax: resident $($r[0]) in $y" "$it($($r[0]), $y)" $r[1] '0.000001'
+    }
+}
+foreach ($r in @(@('18200', '0'), @('18201', '0.15'), @('45000', '4020'), @('135000', '31020'), @('190000', '51370'),
+                 @('200000', '55870'))) {
+    Near "IncomeTax: resident $($r[0]) in 2027" "$it($($r[0]), 2027)" $r[1] '0.000001'
+}
+foreach ($y in @('2025', '2026', '2027')) {
+    foreach ($r in @(@('0', '0'), @('1', '0.3'), @('18200', '5460'), @('134999', '40499.7'), @('135000', '40500'),
+                     @('135001', '40500.37'), @('189999', '60849.63'), @('190000', '60850'), @('190001', '60850.45'))) {
+        Near "IncomeTax: foreign resident $($r[0]) in $y" "$it($($r[0]), $y, FALSE)" $r[1] '0.000001'
+    }
+}
+Near 'IncomeTax: 31,130 in 2025-26'           "$it(31130, 2026)"    '2068.8' '0.000001'
+Near 'IncomeTax: 90,000 in 2026-27'           "$it(90000, 2027)"    '17520' '0.000001'
+Near 'IncomeTax: 0 is a foreign resident'     "$it(50000, 2026, 0)" '15000' '0.000001'
+Near 'IncomeTax: 1 is a resident'             "$it(50000, 2026, 1)" '5788' '0.000001'
+Near 'IncomeTax: a blank Resident is resident' "$it(50000, 2026, Z1)" '5788' '0.000001'
+Near 'IncomeTax: cents are taxed'             "$it(18200.5, 2026)"  '0.08' '0.000001'
+Same 'IncomeTax: a column with a blank'       "TEXTJOIN(`",`", FALSE, $it({0;18201;`"`";45000}, 2026))" '0,0.16,,4288'
+Same 'IncomeTax: a row keeps its shape'       "COLUMNS($it({45000,90000}, 2027)) & `"|`" & INDEX($it({45000,90000}, 2027), 1, 2)" '2|17520'
+Near 'IncomeTax: an error shows'              "--ISNA($it(NA(), 2026))" '1'
+$itYear = 'IncomeYear must be 2025, 2026 or 2027, the year the income year ends; 2027-28 and later are not supported.'
+$itHome = 'Resident must be TRUE or 1 for a resident, FALSE or 0 for a foreign resident.'
+$itIncome = "IncomeTax$L needs each taxable income to be a number from 0 to under 10,000,000,000,000, or blank."
+foreach ($r in @(@('1000, 2024', $itYear),
+                 @('1000, 2028', $itYear),
+                 @('1000, "2026"', $itYear),
+                 @('1000, {2025;2026}', $itYear),
+                 @('1000, 2026, 2', $itHome),
+                 @('1000, 2026, "yes"', $itHome),
+                 @('1000, 2026, {TRUE;FALSE}', $itHome),
+                 @('-1, 2026', $itIncome),
+                 @('"1000", 2026', $itIncome),
+                 @('TRUE, 2026', $itIncome),
+                 @('1E13, 2026', $itIncome))) {
+    Same "IncomeTax refuses ($($r[0]))" "LET(x, $it($($r[0])), $one)" $r[1]
+}
+
 # --- Movement. Each row's opening is its own: a blank one defaults only that row.
 Near 'Movement, per-row opening'       "INDEX($mv({100;`"`";50},{110,120;5,6;60,70}),1,1)" '10'
 Near 'Movement, blank opening row'     "INDEX($mv({100;`"`";50},{110,120;5,6;60,70}),2,1)" '5'

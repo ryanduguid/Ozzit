@@ -267,3 +267,8 @@ fn finance_journals_pass_reproduces_the_published_financial_module() {
 fn cgt_parcels_pass_reproduces_the_published_financial_module() {
     reproduces_the_financial_module(&SPECS[7]);
 }
+
+#[test]
+fn income_tax_pass_reproduces_the_published_financial_module() {
+    reproduces_the_financial_module(&SPECS[8]);
+}
