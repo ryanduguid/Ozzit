@@ -54,6 +54,7 @@ tools/ozzit/target/release/ozzit payg_withholding ozzit.xlsx src functions.csv
 tools/ozzit/target/release/ozzit finance_journals ozzit.xlsx src functions.csv
 tools/ozzit/target/release/ozzit cgt_parcels ozzit.xlsx src functions.csv
 tools/ozzit/target/release/ozzit income_tax ozzit.xlsx src functions.csv
+tools/ozzit/target/release/ozzit div7a_min_repayment ozzit.xlsx src functions.csv
 tools/ozzit/target/release/ozzit cover_label ozzit.xlsx
 tools/ozzit/target/release/ozzit compile_sources ozzit.xlsx src --index=functions.csv
 tools/ozzit/target/release/ozzit build_module src oz.txt
@@ -158,7 +159,10 @@ the native `ozzit cgt_parcels`: it adds `oz.CGTParcelsλ` and `oz.NetCapitalGain
 new CAPITAL GAINS heading after the FINANCE CONTRACTS rows, with their blocks before the
 finance contract pass's, for the same reason. The income tax pass is the native
 `ozzit income_tax`: it adds `oz.IncomeTaxλ` under a new INCOME TAX heading after the
-CAPITAL GAINS rows, with its block before the capital gains pass's. The cover-label pass is
+CAPITAL GAINS rows, with its block before the capital gains pass's. The Division 7A pass is
+the native `ozzit div7a_min_repayment`: it adds `oz.Div7AMinRepaymentλ` under a new
+DIVISION 7A heading after the INCOME TAX rows, with its block before the income tax
+pass's. The cover-label pass is
 one swap in `xl/sharedStrings.xml`:
 Cover!A3 kept reading 20 August 2026 and 130 functions after 3 cuts, and
 `ozzit verify_cover` now keeps that label equal to `functions.csv` and the
@@ -168,7 +172,8 @@ v3.5.0 cut date for the ATO benchmark and rate functions, to 148 for the varianc
 and financial-year period functions, to 150 for the level payment and rate corkscrew,
 to the v3.6.0 cut date of 14 November 2026, to 151 for PAYG withholding, to the
 v3.7.0 cut date of 18 November 2026, to 155 for the finance contract functions, to 157
-for the capital gains functions, and to 158 for income tax.
+for the capital gains functions, to 158 for income tax, and to 159 for the Division 7A
+minimum yearly repayment.
 
 ## What is intentionally not here
 

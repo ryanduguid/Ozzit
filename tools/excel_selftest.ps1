@@ -483,6 +483,61 @@ foreach ($r in @(@('1000, 2024', $itYear),
     Same "IncomeTax refuses ($($r[0]))" "LET(x, $it($($r[0])), $one)" $r[1]
 }
 
+# --- Division 7A minimum yearly repayment (ITAA 1936 s 109E(6), compilation 193; the ATO's
+# benchmark rate page and 'Loans by private companies', read 22 November 2026). The ATO's 2
+# worked examples, then the cases of australian-accounting's div7a minimum-yearly-repayment
+# command within a 25-year remaining term, each rounded there to the cent.
+$d7 = "oz.Div7AMinRepayment$L"
+Near 'Div7A: the ATO 2015 example, $9,835' "ROUND($d7(55000, 5.95%, 7), 0)" '9835'
+Near 'Div7A: the ATO 2016 example, $10,079' "ROUND($d7(50430, 5.45%, 6), 0)" '10079'
+foreach ($r in @(@('10000, 0.0877, 1', '10877'), @('20000, 0.0877, 7', '3943.19'), @('60000, 0.0877, 6', '13283.6'),
+                 @('100000, 0.0877, 5', '25556'), @('120000, 0.0877, 3', '47212.37'),
+                 @('68354493386.42, 0.0877, 3', '26893146759.85'), @('209701339756.06, 0.0837, 4', '63835421599.71'),
+                 @('494255592778.05, 0.0837, 8', '87219223754.29'), @('575073514054.77, 0.0837, 4', '175058777703.66'),
+                 @('1000000000000, 0.0877, 22', '104073401943.45'), @('1000000000000, 0.0877, 4', '307111815954.34'),
+                 @('0, 0.0877, 1', '0'), @('0, 0.0877, 25', '0'))) {
+    Near "Div7A: australian-accounting ($($r[0]))" "$d7($($r[0]))" $r[1] '0.005'
+}
+Near 'Div7A: a part year rounds up'           "$d7(100000, 8.77%, 4.2) - $d7(100000, 8.77%, 5)" '0'
+Near 'Div7A: a sliver over 4 years is 5'      "$d7(100000, 8.77%, 4.000001) - $d7(100000, 8.77%, 5)" '0'
+Near 'Div7A: 25 years is the longest'         "$d7(100000, 8.77%, 25)" '9991.528865' '0.00001'
+Near 'Div7A: 1 year is the balance with interest' "$d7(100000, 8.37%, 1)" '108370' '0.000001'
+Same 'Div7A: one term for a column with a blank' "LET(x, $d7({100000;`"`";60000}, 8.77%, {5;`"`";6}), TEXTJOIN(`",`", FALSE, IF(x = `"`", `"`", ROUND(x, 2))))" '25556,,13283.6'
+Same 'Div7A: one term for every balance'      "TEXTJOIN(`",`", FALSE, ROUND($d7({100000;60000}, 8.77%, 5), 2))" '25556,15333.6'
+Same 'Div7A: a row keeps its shape'           "COLUMNS($d7({100000,60000}, 8.77%, {5,6})) & `"|`" & ROUND(INDEX($d7({100000,60000}, 8.77%, {5,6}), 1, 2), 2)" '2|13283.6'
+Same 'Div7A: a blank balance stays blank'     "$d7(Z1, 8.77%, 5)" ''
+Near 'Div7A: an error balance shows'          "--ISNA($d7(NA(), 8.77%, 5))" '1'
+Near 'Div7A: an error term shows'             "--ISNA($d7(100000, 8.77%, NA()))" '1'
+Near 'Div7A: an error rate shows'             "--ISNA($d7(100000, NA(), 5))" '1'
+Near 'Div7A: a rate of 1E-16 stays stable'    "$d7(1000, 1E-16, 25)" '40' '0.000000001'
+$d7Rate = 'BenchmarkRate must be one rate above 0 and below 1, such as 8.77% or 0.0877.'
+$d7Shape = 'RemainingTerm must be one term, or a term for each opening balance in the same shape.'
+$d7Balance = "Div7AMinRepayment$L needs each opening balance to be a number from 0 to under 10,000,000,000,000, or blank."
+$d7Term = 'RemainingTerm must be more than 0 and at most 25 years for each opening balance.'
+foreach ($r in @(@('1000, 0, 5', $d7Rate),
+                 @('1000, 1, 5', $d7Rate),
+                 @('1000, 8.77, 5', $d7Rate),
+                 @('1000, "8.77%", 5', $d7Rate),
+                 @('1000, {0.08;0.09}, 5', $d7Rate),
+                 @('1000, Z1, 5', $d7Rate),
+                 @('{1000;2000}, 8.77%, {5;6;7}', $d7Shape),
+                 @('{1000;2000}, 8.77%, {5,6}', $d7Shape),
+                 @('-1, 8.77%, 5', $d7Balance),
+                 @('"1000", 8.77%, 5', $d7Balance),
+                 @('" ", 8.77%, 5', $d7Balance),
+                 @('TRUE, 8.77%, 5', $d7Balance),
+                 @('1E13, 8.77%, 5', $d7Balance),
+                 @('1000, 8.77%, 0', $d7Term),
+                 @('1000, 8.77%, -1', $d7Term),
+                 @('1000, 8.77%, 25.000001', $d7Term),
+                 @('1000, 8.77%, 26', $d7Term),
+                 @('1000, 8.77%, "5"', $d7Term),
+                 @('1000, 8.77%, TRUE', $d7Term),
+                 @('1000, 8.77%, Z1', $d7Term),
+                 @('{1000;2000}, 8.77%, {5;""}', $d7Term))) {
+    Same "Div7A refuses ($($r[0]))" "LET(x, $d7($($r[0])), $one)" $r[1]
+}
+
 # --- Movement. Each row's opening is its own: a blank one defaults only that row.
 Near 'Movement, per-row opening'       "INDEX($mv({100;`"`";50},{110,120;5,6;60,70}),1,1)" '10'
 Near 'Movement, blank opening row'     "INDEX($mv({100;`"`";50},{110,120;5,6;60,70}),2,1)" '5'
@@ -2056,6 +2111,10 @@ Fuzz 'fuzz: DebtSculptVariable interest = opening * period rate' `
 Fuzz 'fuzz: DebtSculptVariableLRV interest on the average balance' `
      'd, RANDBETWEEN(1000,100000), r, RANDBETWEEN(1,20)/1000' '"d="&d&" r="&r' `
      "INDEX($lrv(, HSTACK(d,0,0), {300,300,300}, {1.2,1.2,1.2}, , , HSTACK(r,r,r)), 2, 1)" 'r*(d-125)/(1-r/2)' '0.001'
+# The minimum yearly repayment is the s 109E(6) formula as the Act prints it.
+Fuzz 'fuzz: Div7AMinRepayment = the s 109E(6) formula' `
+     'p, RANDBETWEEN(0,10000000), r, RANDBETWEEN(1,1500)/10000, t, RANDBETWEEN(1,250)/10' '"p="&p&" r="&r&" t="&t' `
+     "oz.Div7AMinRepayment$L(p, r, t)" '(p*r)/(1-(1/(1+r))^ROUNDUP(t,0))' '0.000001'
 # The randomised checks rest on MAP() drawing fresh values for every trial. Prove it.
 Near 'fuzz: MAP draws fresh values per trial' "--(ROWS(UNIQUE(MAP(SEQUENCE(25), LAMBDA(i, RANDBETWEEN(1,1000000))))) > 1)" '1'
 

@@ -272,3 +272,8 @@ fn cgt_parcels_pass_reproduces_the_published_financial_module() {
 fn income_tax_pass_reproduces_the_published_financial_module() {
     reproduces_the_financial_module(&SPECS[8]);
 }
+
+#[test]
+fn div7a_min_repayment_pass_reproduces_the_published_financial_module() {
+    reproduces_the_financial_module(&SPECS[9]);
+}

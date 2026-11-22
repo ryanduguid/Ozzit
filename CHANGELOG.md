@@ -35,6 +35,10 @@ release; until then v3.7.0 behaves as it did.
   the general rates of the Income Tax Rates Act 1986, Schedule 7, for a resident or a
   foreign resident for the whole of 2024-25, 2025-26 or 2026-27, and refuses other years.
   It leaves out the Medicare levy, offsets and special rates. `ozzit income_tax` adds it.
+- `oz.Div7AMinRepaymentλ(OpeningBalance, BenchmarkRate, RemainingTerm)` returns the
+  minimum yearly repayment of a Division 7A amalgamated loan under ITAA 1936 s 109E(6),
+  unrounded, rounding a part-year remaining term up and refusing one over 25 years. The
+  benchmark rate is supplied. `ozzit div7a_min_repayment` adds it.
 
 ### Fixed
 

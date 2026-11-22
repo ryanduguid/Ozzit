@@ -112,6 +112,7 @@ you can check by hand; the lease guide explains the 4 lessee functions.
 | Lease, hire purchase, loan or cash, on `main` only | `=oz.FinanceCompareλ(CashFlows, DiscountRate, [PeriodsPerYear], [Labels])` | [Pre-tax present values](docs/australian-modelling.md#comparing-a-lease-hire-purchase-loan-or-cash) |
 | Capital gains on shares or units, on `main` only | `=oz.CGTParcelsλ(Parcels, Sales)` first in, first out, then `=oz.NetCapitalGainλ(IncomeYear, Gains, [Discountable], [Losses], [PriorLosses], [Entity])` for 2025-26 or 2026-27 | [Parcels, the 12 months and the discount](docs/australian-modelling.md#capital-gains) |
 | Income tax on taxable income, on `main` only | `=oz.IncomeTaxλ(TaxableIncome, IncomeYear, [Resident])` at the general rates for 2024-25 to 2026-27 | [Rates and what is left out](docs/australian-modelling.md#income-tax) |
+| Division 7A minimum yearly repayment, on `main` only | `=oz.Div7AMinRepaymentλ(OpeningBalance, BenchmarkRate, RemainingTerm)` under ITAA 1936 s 109E(6) | [Formula, term and what is left out](docs/australian-modelling.md#division-7a-minimum-yearly-repayment) |
 
 `oz.PAYGWithholdingλ` arrived in v3.7.0. It works out the amount before tax
 offsets and the Medicare levy adjustment and does not apply either, or the extra
@@ -126,7 +127,9 @@ works out Division 240 of the Income Tax Assessment Act 1997 or GST input tax cr
 the 2025-26 and 2026-27 income years: they do not decide who can use the CGT discount,
 apportion it for foreign or temporary residents, or apply the small business concessions.
 `oz.IncomeTaxλ`, also unreleased, applies the general rates only: no Medicare levy, tax
-offsets or part-year tax-free threshold.
+offsets or part-year tax-free threshold. `oz.Div7AMinRepaymentλ`, also unreleased, is the
+s 109E(6) arithmetic only: it does not decide whether a loan complies or a shortfall is a
+dividend.
 
 [Open, copy functions and use modern Excel](docs/workbook-use.md) shows how to
 copy a function into your own workbook.
@@ -252,7 +255,7 @@ Its [citation metadata](CITATION.cff) names the cut. Cite the signed tag `v3.7.0
 `44257fc252afc67e87c3788776d10f67663a3136`; GitHub reports its
 [release page](https://github.com/ryanduguid/Ozzit/releases/tag/v3.7.0) immutable. [The v3.7.0 changes](CHANGELOG.md) describe what it adds and fixes.
 
-v3.7.0 `ozzit.xlsx` SHA-256: `0ed09fc130d30394c97f6a41e40ab72d3f68093b65a5e109adf11bd901f006bd` (492,757 bytes), the same bytes as the release asset. `main` is ahead of that tag, so the file you clone is not the file the release ships: the tracked `ozzit.xlsx` is SHA-256 `448fea155b9da93070fa6790b379231b09383a534c48758a79b9e24a8f06df33` (528,223 bytes), pinned in [release/workbook-base.json](release/workbook-base.json) and checked by the tool tests, and adds the changes listed under Unreleased in the [changelog](CHANGELOG.md). On 22 November 2026, Excel 16.0 build 20625 recalculated 1,129 formulas in the tracked workbook with 0 in error, ran 2,682 self-test assertions with 0 failures and found 19,483 cached values equal to what their formulas produce. The workbook was byte-identical before and after both native gates.
+v3.7.0 `ozzit.xlsx` SHA-256: `0ed09fc130d30394c97f6a41e40ab72d3f68093b65a5e109adf11bd901f006bd` (492,757 bytes), the same bytes as the release asset. `main` is ahead of that tag, so the file you clone is not the file the release ships: the tracked `ozzit.xlsx` is SHA-256 `6aa253c0603986b97018416fca477516c484db74dddeb4cdfef3fc7a6003e7e5` (532,496 bytes), pinned in [release/workbook-base.json](release/workbook-base.json) and checked by the tool tests, and adds the changes listed under Unreleased in the [changelog](CHANGELOG.md). On 22 November 2026, Excel 16.0 build 20625 recalculated 1,129 formulas in the tracked workbook with 0 in error, ran 2,682 self-test assertions with 0 failures and found 19,483 cached values equal to what their formulas produce. The workbook was byte-identical before and after both native gates.
 
 - [Repository checks](AGENTS.md) and [release and native verification](RELEASING.md)
 - [Changes](CHANGELOG.md) and [citation](CITATION.cff)
