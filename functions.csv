@@ -94,6 +94,7 @@ oz.LeaseLiabilityλ,Financial,,"LeaseLiabilityλ(Payments, Rate, [InAdvance])",P
 oz.LeaseRemeasureλ,Financial,,"LeaseRemeasureλ(RevisedPayments, Rate, CarryingLiability, CarryingROU, [InAdvance])",Remeasures an AASB 16 lease liability for revised payments and adjusts the right-of-use asset
 oz.LeaseScheduleλ,Financial,,"LeaseScheduleλ(Payments, Rate, [InAdvance])","Unwinds an AASB 16 lease liability: opening, payment, interest and closing for each period"
 oz.LevelPaymentλ,Financial,,"LevelPaymentλ(Principal, Rates, [Balloon])","The level payment at the end of each period that repays a loan over a row of period rates, which may differ from period to period"
+oz.MarginSchemeGSTλ,Financial,,"MarginSchemeGSTλ(Consideration, MarginBase)","GST on a taxable supply of real property under the margin scheme, GST Act s 75-10, unrounded"
 oz.MaxColsUλ,Utilities,nabla.u.MaxColsλ,MaxColsUλ( Array),Get the maximum for each Column
 oz.MaxColsλ,Essentials,nabla.e.MaxColsλ,MaxColsλ( Array),Get the maximum for each Column
 oz.MaxRowsUλ,Utilities,nabla.u.MaxRowsλ,MaxRowsUλ( Array),Get the maximum for each row

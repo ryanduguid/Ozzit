@@ -39,6 +39,9 @@ release; until then v3.7.0 behaves as it did.
   minimum yearly repayment of a Division 7A amalgamated loan under ITAA 1936 s 109E(6),
   unrounded, rounding a part-year remaining term up and refusing one over 25 years. The
   benchmark rate is supplied. `ozzit div7a_min_repayment` adds it.
+- `oz.MarginSchemeGSTλ(Consideration, MarginBase)` returns the GST on a sale of real property
+  under the margin scheme, 1/11 of the amount by which the consideration exceeds the margin
+  base (GST Act s 75-10), nil when it does not, unrounded. `ozzit margin_scheme_gst` adds it.
 
 ### Fixed
 

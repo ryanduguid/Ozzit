@@ -277,3 +277,8 @@ fn income_tax_pass_reproduces_the_published_financial_module() {
 fn div7a_min_repayment_pass_reproduces_the_published_financial_module() {
     reproduces_the_financial_module(&SPECS[9]);
 }
+
+#[test]
+fn margin_scheme_gst_pass_reproduces_the_published_financial_module() {
+    reproduces_the_financial_module(&SPECS[10]);
+}
