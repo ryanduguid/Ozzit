@@ -20,6 +20,7 @@ oz.AvgColsλ,Essentials,nabla.e.AvgColsλ,AvgColsλ( Array),Get the average for 
 oz.AvgRowsUλ,Utilities,nabla.u.AvgRowsλ,AvgRowsUλ( Array),Get the average for each row
 oz.AvgRowsλ,Essentials,nabla.e.AvgRowsλ,AvgRowsλ( Array),Get the average for each row
 oz.BVPSλ,Ratios,nabla.r.BVPSλ,"BVPSλ( ShareholdersEquity, PreferredStock, AverageSharesOutstanding )",Book value per share ratio is an indicator of the value of a company’s stock (Shareholders' Equity - Preferred Stock)/Average Shares Outstanding)
+oz.BulletLoanλ,Financial,,"BulletLoanλ(Principal, Rates, [CashInterest])","Bullet loan schedule with cash, capitalised (payment in kind) or split interest, one period in each column, unrounded"
 oz.CAPERatioλ,Ratios,nabla.r.CAPERatioλ,"CAPERatioλ( SharePrice, TenYearAverageEarningsInflationAdjusted )",CAPE Ratio is a valuation measure that uses real earnings per share (EPS) over a 10-year period to smooth out fluctuations in corporate profits that occur over different periods of a business cycle (aka Shiller PE Ratio) (Share Price/Ten Year Average Earn
 oz.CGTParcelsλ,Financial,,"CGTParcelsλ(Parcels, Sales)","Capital gain or loss on each parcel of shares or units a sale takes, first in, first out, and whether the parcel was held 12 months for the CGT discount"
 oz.CashConversionCycleλ,Ratios,,"CashConversionCycleλ(InventoryDays, ReceivableDays, PayableDays, [WIPDays])",Cash conversion cycle in days: inventory days + WIP days + receivable days - payable days
@@ -78,6 +79,7 @@ oz.HPJournalλ,Financial,,"HPJournalλ(HPSchedule, [Accounts])","Journal lines f
 oz.HPScheduleλ,Financial,,"HPScheduleλ(Financed, AnnualRate, Periods, [PeriodsPerYear], [InAdvance], [Balloon])","Hire purchase or chattel mortgage schedule in cents: opening, payment, interest, principal and closing for each period"
 oz.IRRλ,Financial,nabla.f.IRRλ,"IRRλ( Values, Dates)","Calculates IRR, correcting for when the first investment is not in the first period"
 oz.IncomeTaxλ,Financial,,"IncomeTaxλ(TaxableIncome, IncomeYear, [Resident])","Tax on taxable income at the general rates for a full-year resident or foreign resident individual, 2024-25 to 2026-27, before the Medicare levy and offsets"
+oz.IndexFactorλ,Financial,,"IndexFactorλ(Rates, [Periods])","Cumulative index factor for each period from a row of period rates, or one rate over a number of periods, unrounded"
 oz.IntOnIntλ,Financial,nabla.f.IntOnIntλ,"IntOnIntλ( Principal, Rate)",Calculate Interest on Interest. Use to determine amount needed to cover debt plus interest on debt
 oz.InterestCoverageRatioλ,Ratios,nabla.r.InterestCoverageRatioλ,"InterestCoverageRatioλ( OperatingIncome, InterestExpenses)",Determines how easily a company can pay interest on its outstanding debt (Operating Income/Interest Expenses)
 oz.InterestLRVλ,Debt,nabla.debt.InterestLRVλ,"InterestLRVλ(CFADS, DSCR, Principal, InterestRate)","Calculates debt sculpting interest on the average balance over the period, the method presented by Lance Rubin"

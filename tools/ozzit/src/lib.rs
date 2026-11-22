@@ -112,6 +112,10 @@ const COMMANDS: &[(&str, Handler)] = &[
         "depreciation_pools",
         postbuild::function_pass::depreciation_pools,
     ),
+    (
+        "index_factor_bullet_loan",
+        postbuild::function_pass::index_factor_bullet_loan,
+    ),
 ];
 pub fn dispatch(args: &[String]) -> Output {
     let command = args.first().map(String::as_str);
