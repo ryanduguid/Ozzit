@@ -89,11 +89,7 @@ AboutFinancialλ = TRIM(TEXTSPLIT(
                                            "→¶" &
                                            "DEPRECIATION POOLS →¶" &
                                            "LowValuePoolλ      →Low-value pool roll-forward: opening, decline in value, closing and assessable rows for each income year¶" &
-                                           "SmallBusinessPoolλ →General small business pool roll-forward: opening, deduction, closing and assessable rows for each income year¶" &
-                                           "→¶" &
-                                           "INDEXING AND DEBT  →¶" &
-                                           "IndexFactorλ       →Cumulative index factor for each period from its rate¶" &
-                                           "BulletLoanλ        →Bullet loan with cash or capitalised (PIK) interest¶" & 
+                                           "SmallBusinessPoolλ →General small business pool roll-forward: opening, deduction, closing and assessable rows for each income year¶" & 
                                            "→¶" &
                                            "DEBT MODULE        →¶" &
                                            "AmortiseBλ         →Creates an amortisation schedule for a debt/loan across a model's periods¶" &
@@ -2756,110 +2752,6 @@ YearToDateλ = LAMBDA(
 
 
 
-/*  FUNCTION NAME:  IndexFactorλ
-    DESCRIPTION:*//**Cumulative index factor for each period from a row of period rates, or one rate over a number of periods, unrounded*/
-IndexFactorλ = LAMBDA(
-//  Parameter Declaration
-    [Rates],
-    [Periods],
-    LET(
-    //  Help
-        Help,           TRIM(TEXTSPLIT(
-                            "FUNCTION:      →IndexFactorλ(Rates, [Periods])¶" &
-                            "DESCRIPTION:   →Cumulative index factor at the end of each period.¶NOTES!         →Cumulative index factor at the end of each period: the product of 1 plus¶               →each period's rate up to and including it, so a base amount times the¶               →factor is that amount indexed, for example by an inflation or escalation¶               →rate. Pass a row of period rates, or one rate and the number of periods.¶               →Each rate is per period: convert an annual rate first, for example with¶               →PeriodRateλ. The result is not rounded.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/index-factor-and-bullet-loan.md¶" &
-                            "VERSION:       →22 Nov 2026¶" &
-                            "PARAMETERS:    →¶" &
-                            "Rates          →(Required) One row with a rate for each period, each above -1 and below 2, or one rate with Periods.¶" &
-                            "Periods        →(Optional) With one rate, the number of periods, a whole number from 1 to 1,000.¶" &
-                            "EXAMPLES:      →¶" &
-                            "→Formula (oz is assumed to be the module's name)¶" &
-                            "→=oz.IndexFactorλ(0.03, 3)¶" &
-                            "→Result¶" &
-                            "→1.03, 1.0609, 1.092727",
-                            "→", "¶"
-                        )),
-    //  Check inputs - Omitted required arguments
-        Help?,          ISOMITTED( Rates),
-    //  A row of rates, or one rate for a number of periods
-        One?,           IFERROR( ROWS( Rates) * COLUMNS( Rates) = 1, TRUE),
-        ValidShape?,    IFERROR( AND( ROWS( Rates) = 1, OR( ISOMITTED( Periods), One?)), ISERROR( Rates)),
-        ShapeMessage,   "IndexFactorλ needs Rates to be one row with a rate for each period, or one rate with Periods.",
-        ValidPeriods?,  IF( ISOMITTED( Periods), TRUE, IFERROR( AND( ROWS( Periods) * COLUMNS( Periods) = 1, ISNUMBER( Periods), Periods = INT( Periods), Periods >= 1, Periods <= 1000), FALSE)),
-        PeriodMessage,  "Periods must be a whole number from 1 to 1,000.",
-        RateRow,        IF( ISOMITTED( Periods), Rates, IF( SEQUENCE( 1, IF( ValidPeriods?, Periods, 1)), INDEX( Rates, 1, 1))),
-    //  A blank rate is a missing period; an error passes so it shows
-        ValidRates?,    AND( IF( ISERROR( RateRow), TRUE, IF( ISNUMBER( RateRow), ( RateRow > -1) * ( RateRow < 2), FALSE))),
-        RateMessage,    "IndexFactorλ needs every rate to be a number above -1 and below 2.",
-    //  Procedure - the running product of 1 plus each rate
-        Result,         SCAN( 1, RateRow, LAMBDA( Factor, Rate, Factor * ( 1 + Rate))),
-    //  Return Result, Help, or the message
-        Return,         IF( Help?, 2, IF( NOT( ValidShape?), 3, IF( NOT( ValidPeriods?), 4, IF( NOT( ValidRates?), 5, 1)))),
-        CHOOSE( Return, Result, Help, ShapeMessage, PeriodMessage, RateMessage)
-    )
-);
-
-
-/*  FUNCTION NAME:  BulletLoanλ
-    DESCRIPTION:*//**Bullet loan schedule with cash, capitalised (payment in kind) or split interest, one period in each column, unrounded*/
-BulletLoanλ = LAMBDA(
-//  Parameter Declaration
-    [Principal],
-    [Rates],
-    [CashInterest],
-    LET(
-    //  Help
-        Help,           TRIM(TEXTSPLIT(
-                            "FUNCTION:      →BulletLoanλ(Principal, Rates, [CashInterest])¶" &
-                            "DESCRIPTION:   →Bullet loan: opening, interest, cash, capitalised, repayment and closing rows.¶NOTES!         →Schedule for a loan repaid in one amount at the end of the last period,¶               →with interest paid in cash, capitalised (payment in kind) or split between¶               →them. Returns six rows: opening balance, interest, cash interest,¶               →capitalised interest, repayment and closing balance, one period in each¶               →column. Interest is the opening balance times the period's rate; the¶               →capitalised part is added to the balance, and the last period repays the¶               →balance with that period's capitalised interest. Rates are per period. The¶               →result is not rounded.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/index-factor-and-bullet-loan.md¶" &
-                            "VERSION:       →22 Nov 2026¶" &
-                            "PARAMETERS:    →¶" &
-                            "Principal      →(Required) The amount lent, from 0 to under 10,000,000,000,000.¶" &
-                            "Rates          →(Required) One row with an interest rate for each period, each above -1 and below 2.¶" &
-                            "CashInterest   →(Optional) Share of each period's interest paid in cash, from 0 to 1: one for every period, or one for each. Omitted, 1; 0 capitalises it all.¶" &
-                            "EXAMPLES:      →¶" &
-                            "→Formula (oz is assumed to be the module's name)¶" &
-                            "→=oz.BulletLoanλ(1000, {0.1,0.1}, 0)¶" &
-                            "→Result¶" &
-                            "→1000, 1100¶" &
-                            "→100,  110¶" &
-                            "→  0,    0¶" &
-                            "→100,  110¶" &
-                            "→  0, 1210¶" &
-                            "→1100,    0",
-                            "→", "¶"
-                        )),
-    //  Check inputs - Omitted required arguments
-        Help?,          OR( ISOMITTED( Principal), ISOMITTED( Rates)),
-    //  One principal; Rates sets the periods; CashInterest is one share or one for each period
-        Periods,        IFERROR( COLUMNS( Rates), 1),
-        ValidShape?,    AND( IFERROR( ROWS( Principal) * COLUMNS( Principal) = 1, ISERROR( Principal)),
-                            IFERROR( ROWS( Rates) = 1, ISERROR( Rates)),
-                            IF( ISOMITTED( CashInterest), TRUE, IFERROR( AND( ROWS( CashInterest) = 1, OR( COLUMNS( CashInterest) = 1, COLUMNS( CashInterest) = Periods)), ISERROR( CashInterest)))),
-        ShapeMessage,   "BulletLoanλ needs one Principal, Rates as one row with a rate for each period, and CashInterest as one share or one for each period.",
-    //  A blank is refused; an error passes so it shows
-        ValidValue?,    AND( IF( ISERROR( Principal), TRUE, IF( ISNUMBER( Principal), ( Principal >= 0) * ( Principal < 1E13), FALSE)),
-                            AND( IF( ISERROR( Rates), TRUE, IF( ISNUMBER( Rates), ( Rates > -1) * ( Rates < 2), FALSE))),
-                            IF( ISOMITTED( CashInterest), TRUE, AND( IF( ISERROR( CashInterest), TRUE, IF( ISNUMBER( CashInterest), ( CashInterest >= 0) * ( CashInterest <= 1), FALSE))))),
-        ValueMessage,   "BulletLoanλ needs Principal from 0 to under 10,000,000,000,000, every rate above -1 and below 2, and every CashInterest share from 0 to 1.",
-    //  Procedure - interest on the opening balance; the part not paid in cash is added to it
-        Shares,         IF( ISOMITTED( CashInterest), SEQUENCE( 1, Periods, 1, 0), IF( SEQUENCE( 1, Periods), CashInterest)),
-        Growth,         1 + Rates * ( 1 - Shares),
-        Opening,        Principal * DROP( HSTACK( 1, SCAN( 1, Growth, LAMBDA( Factor, Step, Factor * Step))), , -1),
-        Interest,       Opening * Rates,
-        Cash,           Interest * Shares,
-        Capitalised,    Interest - Cash,
-        Repayment,      IF( SEQUENCE( 1, Periods) = Periods, Opening + Capitalised, 0),
-        Result,         VSTACK( Opening, Interest, Cash, Capitalised, Repayment, Opening + Capitalised - Repayment),
-    //  Return Result, Help, or the message
-        Return,         IF( Help?, 2, IF( NOT( ValidShape?), 3, IF( NOT( ValidValue?), 4, 1))),
-        CHOOSE( Return, Result, Help, ShapeMessage, ValueMessage)
-    )
-);
-
-
-
 /*  FUNCTION NAME:  LowValuePoolλ
     DESCRIPTION:*//**Low-value pool roll-forward under ITAA 1997 s 40-440 and s 40-445, one income year in each column, unrounded*/
 /*  SOURCE:         Income Tax Assessment Act 1997, compilation 268 (1 October 2026), volume 2, read
@@ -2994,30 +2886,42 @@ SmallBusinessPoolλ = LAMBDA(
                             IF( ISOMITTED( CostAdditions), TRUE, Fits?( CostAdditions)),
                             IF( ISOMITTED( TerminationValues), TRUE, Fits?( TerminationValues))),
         ShapeMessage,   "OpeningBalance must be one value, Additions one row with a value for each income year, and CostAdditions and TerminationValues one value or one for each year.",
-    //  A blank is 0; an error passes so it shows
-        Amount?,        LAMBDA( x, AND( IF( ISERROR( x), TRUE, IF( ISNUMBER( x), ( x >= 0) * ( x < 1E13), x & "" = "")))),
+    //  A blank is 0; an error passes so it shows. Under 10 cents, 15 significant digits can pass the
+    //  15th decimal place, finer than the 1E-15 dollars the pool adds in, so such an amount is refused
+        Amount?,        LAMBDA( x, AND( IF( ISERROR( x), TRUE, IF( ISNUMBER( x), ( x >= 0) * ( x < 1E13) *
+                            ( ( x >= 0.1) + ( ABS( 1E15 * x - ROUND( 1E15 * x, 0)) <= x / 2) > 0), x & "" = "")))),
         ValidValue?,    AND( Amount?( OpeningBalance), Amount?( Additions),
                             IF( ISOMITTED( CostAdditions), TRUE, Amount?( CostAdditions)),
                             IF( ISOMITTED( TerminationValues), TRUE, Amount?( TerminationValues))),
-        ValueMessage,   "SmallBusinessPoolλ needs the opening balance and each amount to be a number from 0 to under 10,000,000,000,000, or blank.",
+        ValueMessage,   "SmallBusinessPoolλ needs the opening balance and each amount to be a number from 0 to under 10,000,000,000,000, with no digit past the 15th decimal place, or blank.",
         Yearly,         LAMBDA( x, IF( SEQUENCE( 1, Years), IF( x & "" = "", 0, x))),
         Nil,            SEQUENCE( 1, Years, 0, 0),
         Start,          LET( x, INDEX( OpeningBalance, 1, 1), IF( x & "" = "", 0, x)),
         Added,          Yearly( Additions),
         Improved,       IF( ISOMITTED( CostAdditions), Nil, Yearly( CostAdditions)),
         Ended,          IF( ISOMITTED( TerminationValues), Nil, Yearly( TerminationValues)),
+    //  Whole dollars add exactly. The rest of each amount, to its 15 significant digits and at most
+    //  15 decimal places, is a whole count of 1E-15 dollars, so it adds exactly too; each boundary
+    //  compares that count with the whole dollars short of it
+        Dollars,        LAMBDA( w, x, y, z, INT( w) + INT( x) + INT( y) - INT( z)),
+        Units,          LAMBDA( x, ROUND( 1E15 * ROUND( x - INT( x), IF( x < 1, 15, 15 - LEN( TEXT( INT( x), "0")))), 0)),
+        Rest,           LAMBDA( w, x, y, z, Units( w) + Units( x) + Units( y) - Units( z)),
     //  Procedure - s 328-190, s 328-200, s 328-210 at $20,000, then s 328-215
         Closing,        SCAN( Start, SEQUENCE( 1, Years), LAMBDA( Prev, Year, LET(
                             New, INDEX( Added, 1, Year) + INDEX( Improved, 1, Year),
-                            Amount, Prev + New - INDEX( Ended, 1, Year),
-                            IF( Amount < 20000, 0, MAX( 0, Amount - ( 0.3 * Prev + 0.15 * New)))
+                            Out, INDEX( Ended, 1, Year),
+                            Base, Dollars( Prev, INDEX( Added, 1, Year), INDEX( Improved, 1, Year), Out),
+                            Extra, Rest( Prev, INDEX( Added, 1, Year), INDEX( Improved, 1, Year), Out),
+                            IF( Extra < 1E15 * ( 20000 - Base), 0, MAX( 0, Base + Extra / 1E15 - ( 0.3 * Prev + 0.15 * New)))
                         ))),
         Opening,        DROP( HSTACK( Start, Closing), , -1),
-        Pool,           Opening + Added + Improved - Ended,
+        Whole,          Dollars( Opening, Added, Improved, Ended),
+        Part,           Rest( Opening, Added, Improved, Ended),
+        Pool,           Whole + Part / 1E15,
         Rated,          0.3 * Opening + 0.15 * ( Added + Improved),
-        Small?,         ( Pool > 0) * ( Pool < 20000),
-        Deduction,      IF( Pool < 0, 0, IF( Small?, Pool, Rated)),
-        Assessable,     IF( Pool < 0, -Pool, IF( Small?, 0, IF( Rated > Pool, Rated - Pool, 0))),
+        Small?,         ( Part > -1E15 * Whole) * ( Part < 1E15 * ( 20000 - Whole)),
+        Deduction,      IF( Part < -1E15 * Whole, 0, IF( Small?, Pool, Rated)),
+        Assessable,     IF( Part < -1E15 * Whole, -Pool, IF( Small?, 0, IF( Rated > Pool, Rated - Pool, 0))),
         Result,         VSTACK( Opening, Deduction, Closing, Assessable),
     //  Return Result, Help, or the message
         Return,         IF( Help?, 2, IF( NOT( ValidShape?), 3, IF( NOT( ValidValue?), 4, 1))),

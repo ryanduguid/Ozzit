@@ -6,8 +6,7 @@
 //! variance and financial-year periods, the level payment and rate corkscrew, PAYG
 //! withholding, the lease and hire purchase journals and finance comparison, and
 //! the CGT parcels and net capital gain, income tax, the Division 7A minimum
-//! yearly repayment, margin scheme GST, the FBT gross-up, the depreciation pools, and the index
-//! factor and bullet loan.
+//! yearly repayment, margin scheme GST, the FBT gross-up, and the depreciation pools.
 //!
 //! Each adds functions and About rows to `src/`, the defined names and the About
 //! tables to the workbook, and rows to functions.csv, in one recoverable step.
@@ -59,7 +58,7 @@ macro_rules! added {
     };
 }
 
-const SPECS: [Spec; 14] = [
+const SPECS: [Spec; 13] = [
     Spec {
         stem: "working_capital_days",
         data: include_str!("../data/postbuild/working_capital_days.json"),
@@ -124,11 +123,6 @@ const SPECS: [Spec; 14] = [
         "depreciation_pools",
         "depreciation pool functions",
         "depreciation pools"
-    ),
-    added!(
-        "index_factor_bullet_loan",
-        "index factor and bullet loan functions",
-        "index factor and bullet loan"
     ),
 ];
 
@@ -555,9 +549,6 @@ pub fn fbt_gross_up(args: &[String]) -> Output {
 }
 pub fn depreciation_pools(args: &[String]) -> Output {
     command(&SPECS[12], args)
-}
-pub fn index_factor_bullet_loan(args: &[String]) -> Output {
-    command(&SPECS[13], args)
 }
 
 #[cfg(test)]

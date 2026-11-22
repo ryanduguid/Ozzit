@@ -20,7 +20,6 @@ oz.AvgColsλ,1,1,0,2
 oz.AvgRowsUλ,1,1,0,0
 oz.AvgRowsλ,1,1,0,2
 oz.BVPSλ,1,1,0,1
-oz.BulletLoanλ,1,2,6,0
 oz.CAPERatioλ,1,1,0,1
 oz.CGTParcelsλ,1,1,22,0
 oz.CashConversionCycleλ,1,1,6,0
@@ -79,7 +78,6 @@ oz.HPJournalλ,1,1,13,0
 oz.HPScheduleλ,1,3,32,0
 oz.IRRλ,1,1,0,2
 oz.IncomeTaxλ,1,2,17,0
-oz.IndexFactorλ,1,2,6,0
 oz.IntOnIntλ,1,1,0,4
 oz.InterestCoverageRatioλ,1,1,0,1
 oz.InterestLRVλ,1,1,5,0
@@ -151,7 +149,7 @@ oz.ScheduleRatesByItemsλ,1,0,1,2
 oz.ScheduleRatesλ,1,1,2,4
 oz.ScheduleValuesByItemsλ,1,0,0,3
 oz.ScheduleValuesλ,1,1,1,7
-oz.SmallBusinessPoolλ,1,2,9,0
+oz.SmallBusinessPoolλ,1,2,11,0
 oz.SumAmortiseλ,1,0,0,6
 oz.SumColsUλ,1,1,0,0
 oz.SumColsλ,1,1,0,11

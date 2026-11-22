@@ -11,7 +11,7 @@ use std::{
 
 const LABEL: &str = "Version 1 May 2026 - 3 functions - Excel";
 const CELL: &str = "<c r=\"A3\" t=\"s\"><v>0</v></c>";
-const GOOD: &str = "OK: cover label states 18 November 2026 and 165 functions";
+const GOOD: &str = "OK: cover label states 18 November 2026 and 163 functions";
 fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
@@ -198,20 +198,20 @@ fn committed_cover_matches_index_and_changelog() {
 #[test]
 fn stale_function_count_fails() {
     let f = Fixture::published();
-    f.rewrite("xl/sharedStrings.xml", "165 functions", "133 functions");
+    f.rewrite("xl/sharedStrings.xml", "163 functions", "133 functions");
     failure(
         f.run(),
-        &["FAIL: cover says 133 functions; functions.csv publishes 165"],
+        &["FAIL: cover says 133 functions; functions.csv publishes 163"],
     );
 }
 
 #[test]
 fn current_looking_decoy_does_not_rescue_the_stale_displayed_cell() {
     let f = Fixture::published();
-    let current = "Version 18 November 2026    -    165 functions    -    Microsoft 365 or Excel 2024 and later";
+    let current = "Version 18 November 2026    -    163 functions    -    Microsoft 365 or Excel 2024 and later";
     let stale = current
         .replace("18 November 2026", "20 August 2026")
-        .replace("165", "133");
+        .replace("163", "133");
     f.rewrite(
         "xl/sharedStrings.xml",
         &format!("<t>{current}</t>"),
@@ -225,7 +225,7 @@ fn current_looking_decoy_does_not_rescue_the_stale_displayed_cell() {
     failure(
         f.run(),
         &[
-            "FAIL: cover says 133 functions; functions.csv publishes 165",
+            "FAIL: cover says 133 functions; functions.csv publishes 163",
             "FAIL: cover is dated 20 August 2026; the changelog's current cut is 18 November 2026",
         ],
     );
@@ -253,7 +253,7 @@ fn missing_function_names_fail_without_a_false_count() {
         .position(|name| !name.starts_with("oz.About"))
         .unwrap();
     names.remove(removed);
-    assert_eq!(names.len(), 169);
+    assert_eq!(names.len(), 167);
     for missing in [None, Some(""), Some("   ")] {
         let mut text = "signature,function\r\n".to_owned();
         for name in &names {

@@ -58,7 +58,6 @@ tools/ozzit/target/release/ozzit div7a_min_repayment ozzit.xlsx src functions.cs
 tools/ozzit/target/release/ozzit margin_scheme_gst ozzit.xlsx src functions.csv
 tools/ozzit/target/release/ozzit fbt_gross_up ozzit.xlsx src functions.csv
 tools/ozzit/target/release/ozzit depreciation_pools ozzit.xlsx src functions.csv
-tools/ozzit/target/release/ozzit index_factor_bullet_loan ozzit.xlsx src functions.csv
 tools/ozzit/target/release/ozzit cover_label ozzit.xlsx
 tools/ozzit/target/release/ozzit compile_sources ozzit.xlsx src --index=functions.csv
 tools/ozzit/target/release/ozzit build_module src oz.txt
@@ -173,9 +172,7 @@ it adds `oz.FBTGrossUpλ` under a new FRINGE BENEFITS TAX heading after the DIVI
 rows, with its block before the margin scheme pass's. The pools pass is the native
 `ozzit depreciation_pools`: it adds `oz.LowValuePoolλ` and `oz.SmallBusinessPoolλ` under a new
 DEPRECIATION POOLS heading after the FRINGE BENEFITS TAX rows, with their blocks before the FBT
-pass's. The index factor and bullet loan pass is the native `ozzit index_factor_bullet_loan`:
-it adds `oz.IndexFactorλ` and `oz.BulletLoanλ` under a new INDEXING AND DEBT heading after the
-DEPRECIATION POOLS rows, with their blocks before the pools pass's. The cover-label pass is
+pass's. The cover-label pass is
 one swap in `xl/sharedStrings.xml`:
 Cover!A3 kept reading 20 August 2026 and 130 functions after 3 cuts, and
 `ozzit verify_cover` now keeps that label equal to `functions.csv` and the
@@ -186,7 +183,7 @@ and financial-year period functions, to 150 for the level payment and rate corks
 to the v3.6.0 cut date of 14 November 2026, to 151 for PAYG withholding, to the
 v3.7.0 cut date of 18 November 2026, to 155 for the finance contract functions, to 157
 for the capital gains functions, to 158 for income tax, to 159 for the Division 7A
-minimum yearly repayment, to 160 for margin scheme GST, to 161 for the FBT gross-up, to 163 for the depreciation pools, and to 165 for the index factor and bullet loan.
+minimum yearly repayment, to 160 for margin scheme GST, to 161 for the FBT gross-up, and to 163 for the depreciation pools.
 
 ## What is intentionally not here
 

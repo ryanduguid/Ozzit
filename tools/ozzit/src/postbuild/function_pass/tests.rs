@@ -297,8 +297,3 @@ fn fbt_gross_up_pass_reproduces_the_published_financial_module() {
 fn depreciation_pools_pass_reproduces_the_published_financial_module() {
     reproduces_the_financial_module(&SPECS[12]);
 }
-
-#[test]
-fn index_factor_bullet_loan_pass_reproduces_the_published_financial_module() {
-    reproduces_the_financial_module(&SPECS[13]);
-}

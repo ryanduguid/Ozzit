@@ -669,60 +669,71 @@ foreach ($r in @(@('100000, 28000, 0, 8000', '100000,34200,85800,0'),
     Same "SmallBusinessPool: ($($r[0]))" "LET(x, $sb($($r[0])), $rows)" $r[1]
 }
 Near 'SmallBusinessPool: the s 328-210 example, Cassidy, deducts 15,700' "INDEX($sb(28500, 16800, 0, 29600), 2, 1)" '15700'
+# Boundary cases at 0 and $20,000, one per line: name|arguments|row (2 deduction, 3 closing,
+# 4 assessable)|expected|tolerance, then name|arguments|all 4 rows to 2 places.
+$sbEdges = @'
+cents summing to exactly 20,000 are not below it, deduction|2420135.56, 2116636.38, 0, 4516771.94|2|1043536.125|0.000001
+cents summing to exactly 20,000 are not below it, assessable|2420135.56, 2116636.38, 0, 4516771.94|4|1023536.125|0.000001
+2E-8 under 20,000 on 240,000 added is deducted in full|0, 130000, 0, 110000.00000002|2|19999.99999998|0.000001
+2E-8 under 20,000 on 240,000 added closes at 0|0, 130000, 0, 110000.00000002|3|0|0.000001
+2E-7 below 0 on 2,200,000 added deducts nothing|1100000, 0, 0, 1100000.0000002|2|0|0.000001
+2E-7 below 0 on 2,200,000 added is assessable|1100000, 0, 0, 1100000.0000002|4|0.0000002|1E-9
+1E-15 on 2 trillion added is deducted in full|1E12, 1E-15, 0, 1E12|2|1E-15|1E-17
+1E-15 on 2 trillion added is not assessable|1E12, 1E-15, 0, 1E12|4|0|1E-17
+15 decimal places under 10 cents are kept|0, 0.012345678901234|2|0.012345678901234|1E-18
+1E-15 under 20,000 is deducted in full|19999, 0.999999999999999|2|19999.999999999999|0.000001
+1E-15 under 20,000 closes at 0|19999, 0.999999999999999|3|0|0.000001
+3E-15 over 0 is deducted in full|0.123456789012344, 0, 0, 0.123456789012341|2|3E-15|1E-17
+3E-15 over 0 is not assessable|0.123456789012344, 0, 0, 0.123456789012341|4|0|1E-17
+3E-15 below 0 deducts nothing|0.123456789012341, 0, 0, 0.123456789012344|2|0|1E-17
+3E-15 below 0 is assessable|0.123456789012341, 0, 0, 0.123456789012344|4|3E-15|1E-17
+a 15-digit pool under 1 keeps its 15th digit|0.123456789012341, 0|2|0.123456789012341|1E-17
+a trillionth under 20,000 is deducted in full|19000, 999.999999999999|2|19999.999999999999|0.000001
+a trillionth under 20,000 closes at 0|19000, 999.999999999999|3|0|0.000001
+a cent under 20,000 on 6 trillion added is deducted in full|3E12, 19999.99, 0, 3E12|2|19999.99|0.000001
+a cent under 20,000 on 6 trillion added closes at 0|3E12, 19999.99, 0, 3E12|3|0|0.000001
+a cent under 20,000 on 6 trillion added is not assessable|3E12, 19999.99, 0, 3E12|4|0|0.000001
+20,000 on 6 trillion added deducts 30% and 15%|3E12, 20000, 0, 3E12|2|900000003000|0.01
+20,000 on 6 trillion added is assessable above the pool|3E12, 20000, 0, 3E12|4|899999983000|0.01
+a cent over 20,000 on 6 trillion added deducts 30% and 15%|3E12, 20000.01, 0, 3E12|2|900000003000.0015|0.01
+a cent below 0 on 6 trillion added deducts nothing|3E12, 0, 0, 3000000000000.01|2|0|0.000001
+a cent below 0 on 6 trillion added is assessable|3E12, 0, 0, 3000000000000.01|4|0.01|0.000001
+0 on 6 trillion added deducts 30%|3E12, 0, 0, 3E12|2|900000000000|0.01
+a cent over 0 on 6 trillion added is deducted in full|3E12, 0.01, 0, 3E12|2|0.01|0.000001
+a cent over 0 on 6 trillion added is not assessable|3E12, 0.01, 0, 3E12|4|0|0.000001
+a fraction of a cent under 20,000 is deducted in full|20000, 0, 0, 0.0000002|2|19999.9999998|0.000001
+a fraction of a cent under 20,000 closes at 0|20000, 0, 0, 0.0000002|3|0|0.000001
+a fraction of a cent below 0 deducts nothing|0.1, 0.2, 0, 0.3000001|2|0|0.000001
+a fraction of a cent below 0 is assessable|0.1, 0.2, 0, 0.3000001|4|0.0000001|1E-12
+cents summing to exactly 0 are not above it, deduction|0.1, 0.2, 0, 0.3|2|0.06|0.000001
+cents summing to exactly 0 are not above it, assessable|0.1, 0.2, 0, 0.3|4|0.06|0.000001
+0.1 x 0.1, binary noise on the 1E-15 grid, is accepted|0, 0.1*0.1|2|0.01|1E-18
+'@
+foreach ($f in $sbEdges -split "`n" | ForEach-Object { ,($_.Trim() -split '\|') }) {
+    Near "SmallBusinessPool: $($f[0])" "INDEX($sb($($f[1])), $($f[2]), 1)" $f[3] $f[4]
+}
+$sbEdgeRows = @'
+a cent under 20,000 (15000.55, 5000.44, 0, 1)|15000.55, 5000.44, 0, 1|15000.55,19999.99,0,0
+20,000 (15000.55, 5000.45, 0, 1)|15000.55, 5000.45, 0, 1|15000.55,5250.23,14749.77,0
+a cent over 20,000 (15000.55, 5000.46, 0, 1)|15000.55, 5000.46, 0, 1|15000.55,5250.23,14749.78,0
+a cent below 0 (5000.4, 0, 0, 5000.41)|5000.4, 0, 0, 5000.41|5000.4,0,0,0.01
+0 (5000.4, 0, 0, 5000.4)|5000.4, 0, 0, 5000.4|5000.4,1500.12,0,1500.12
+a cent over 0 (5000.4, 0.01, 0, 5000.4)|5000.4, 0.01, 0, 5000.4|5000.4,0.01,0,0
+'@
+foreach ($f in $sbEdgeRows -split "`n" | ForEach-Object { ,($_.Trim() -split '\|') }) {
+    Same "SmallBusinessPool: $($f[0])" "LET(x, $sb($($f[1])), $rows)" $f[2]
+}
 Same 'SmallBusinessPool: two years' "LET(x, $sb(100000, {28000,0}, 0, {8000,0}), $rows)" '100000,85800,34200,25740,85800,60060,0,0'
 Same 'SmallBusinessPool: a low pool value in a later year' "LET(x, $sb(30000, {0,0,0}), $rows)" '30000,21000,14700,9000,6300,14700,21000,14700,0,0,0,0'
 Same 'SmallBusinessPool: a blank opening is 0' "LET(x, $sb(Z1, 100), $rows)" '0,100,0,0'
 Near 'SmallBusinessPool: an error opening shows' "--ISNA(INDEX($sb(NA(), 100), 1, 1))" '1'
 Near 'SmallBusinessPool: an error amount shows' "--ISNA(INDEX($sb(100000, NA()), 2, 1))" '1'
 $sbShape = 'OpeningBalance must be one value, Additions one row with a value for each income year, and CostAdditions and TerminationValues one value or one for each year.'
-$sbValue = "SmallBusinessPool$L needs the opening balance and each amount to be a number from 0 to under 10,000,000,000,000, or blank."
+$sbValue = "SmallBusinessPool$L needs the opening balance and each amount to be a number from 0 to under 10,000,000,000,000, with no digit past the 15th decimal place, or blank."
 foreach ($r in @(@('{1,2}, 100', $sbShape), @('100, {1;2}', $sbShape), @('100, {1,2}, {1,2,3}', $sbShape),
-                 @('-1, 100', $sbValue), @('100, -1', $sbValue), @('100, 1, , "5"', $sbValue), @('100, TRUE', $sbValue))) {
+                 @('-1, 100', $sbValue), @('100, -1', $sbValue), @('100, 1, , "5"', $sbValue), @('100, TRUE', $sbValue),
+                 @('1E12, 1E-16, 0, 1E12', $sbValue), @('0, 0.0123456789012345', $sbValue), @('1E-16, 0', $sbValue))) {
     Same "SmallBusinessPool refuses ($($r[0]))" "LET(x, $sb($($r[0])), $one)" $r[1]
-}
-
-# --- Index factor and bullet loan. Worked by hand: an index factor is the running product of
-# 1 plus each rate; a bullet loan adds the capitalised share of each period's interest to the
-# balance and repays it all in the last period.
-$ix = "oz.IndexFactor$L"
-$bl = "oz.BulletLoan$L"
-$rows6 = "TEXTJOIN(`",`", FALSE, ROUND(x, 6))"
-foreach ($r in @(@('0.03, 3', '1.03,1.0609,1.092727'),
-                 @('{0.02,0.03,-0.01}', '1.02,1.0506,1.040094'),
-                 @('0, 2', '1,1'),
-                 @('0.05', '1.05'),
-                 @('SEQUENCE(1, 4, 0.01, 0)', '1.01,1.0201,1.030301,1.040604'))) {
-    Same "IndexFactor: ($($r[0]))" "LET(x, $ix($($r[0])), $rows6)" $r[1]
-}
-Near 'IndexFactor: 1% a month for 12 months is 1.01^12' "INDEX($ix(0.01, 12), 1, 12)" '1.12682503013197' '0.0000000001'
-Near 'IndexFactor: an error rate shows' "--ISNA(INDEX($ix(HSTACK(0.1, NA())), 1, 2))" '1'
-Near 'IndexFactor: an error rate with Periods shows' "--ISNA(INDEX($ix(NA(), 2), 1, 1))" '1'
-$ixShape = 'IndexFactor' + $L + ' needs Rates to be one row with a rate for each period, or one rate with Periods.'
-$ixPeriods = 'Periods must be a whole number from 1 to 1,000.'
-$ixRate = 'IndexFactor' + $L + ' needs every rate to be a number above -1 and below 2.'
-foreach ($r in @(@('{0.1;0.2}', $ixShape), @('{0.1,0.2}, 2', $ixShape),
-                 @('0.1, 0', $ixPeriods), @('0.1, 1.5', $ixPeriods), @('0.1, 1001', $ixPeriods), @('0.1, "2"', $ixPeriods), @('0.1, {1,2}', $ixPeriods),
-                 @('-1', $ixRate), @('2', $ixRate), @('"0.1"', $ixRate), @('TRUE', $ixRate), @('Z1', $ixRate), @('{0.1,-1}', $ixRate))) {
-    Same "IndexFactor refuses ($($r[0]))" "LET(x, $ix($($r[0])), $one)" $r[1]
-}
-foreach ($r in @(@('1000, {0.1,0.1}, 0', '1000,1100,100,110,0,0,100,110,0,1210,1100,0'),
-                 @('1000, {0.1,0.1,0.1}', '1000,1000,1000,100,100,100,100,100,100,0,0,0,0,0,1000,1000,1000,0'),
-                 @('1000, {0.1,0.1}, 0.5', '1000,1050,100,105,50,52.5,50,52.5,0,1102.5,1050,0'),
-                 @('1000, {0.1,0.1}, {0,1}', '1000,1100,100,110,0,110,100,0,0,1100,1100,0'),
-                 @('500, 0.08', '500,40,40,0,500,0'),
-                 @('0, {0.1,0.1}, 0', '0,0,0,0,0,0,0,0,0,0,0,0'))) {
-    Same "BulletLoan: ($($r[0]))" "LET(x, $bl($($r[0])), $rows6)" $r[1]
-}
-Same 'BulletLoan: six rows and a column for each period' "ROWS($bl(1, {0.1,0.1,0.1})) & `"x`" & COLUMNS($bl(1, {0.1,0.1,0.1}))" '6x3'
-Near 'BulletLoan: an error principal shows' "--ISNA(INDEX($bl(NA(), {0.1}), 1, 1))" '1'
-Near 'BulletLoan: an error rate shows' "--ISNA(INDEX($bl(1000, HSTACK(0.1, NA())), 2, 1))" '1'
-$blShape = 'BulletLoan' + $L + ' needs one Principal, Rates as one row with a rate for each period, and CashInterest as one share or one for each period.'
-$blValue = 'BulletLoan' + $L + ' needs Principal from 0 to under 10,000,000,000,000, every rate above -1 and below 2, and every CashInterest share from 0 to 1.'
-foreach ($r in @(@('{1,2}, 0.1', $blShape), @('1000, {0.1;0.1}', $blShape), @('1000, {0.1,0.1}, {1,1,1}', $blShape), @('1000, {0.1,0.1}, {1;1}', $blShape),
-                 @('-1, 0.1', $blValue), @('"1000", 0.1', $blValue), @('TRUE, 0.1', $blValue), @('1E13, 0.1', $blValue), @('Z1, 0.1', $blValue),
-                 @('1000, -1', $blValue), @('1000, 2', $blValue), @('1000, Z1', $blValue),
-                 @('1000, 0.1, 1.5', $blValue), @('1000, 0.1, -0.1', $blValue), @('1000, 0.1, "1"', $blValue))) {
-    Same "BulletLoan refuses ($($r[0]))" "LET(x, $bl($($r[0])), $one)" $r[1]
 }
 
 # --- Movement. Each row's opening is its own: a blank one defaults only that row.
@@ -2318,14 +2329,6 @@ Fuzz 'fuzz: LowValuePool decline = 0.1875 x low-cost + 0.375 x (opening + low-va
 Fuzz 'fuzz: SmallBusinessPool deduction = 30% x opening + 15% x additions' `
      'o, RANDBETWEEN(2000000,100000000)/100, a, RANDBETWEEN(0,1000000)/100' '"o="&o&" a="&a' `
      "INDEX(oz.SmallBusinessPool$L(o, a), 2, 1)" '0.3*o + 0.15*a' '0.000001'
-# A constant rate compounds: the factor after n periods is (1 + r)^n.
-Fuzz 'fuzz: IndexFactor after 12 periods = (1 + r)^12' `
-     'r, RANDBETWEEN(-5000,5000)/100000' '"r="&r' `
-     "INDEX(oz.IndexFactor$L(r, 12), 1, 12)" '(1 + r)^12' '0.000001'
-# With all interest capitalised, the last repayment is the principal compounded over the term.
-Fuzz 'fuzz: BulletLoan payment in kind repays p x (1 + r)^5' `
-     'p, RANDBETWEEN(0,10000000)/100, r, RANDBETWEEN(0,2000)/10000' '"p="&p&" r="&r' `
-     "INDEX(oz.BulletLoan$L(p, SEQUENCE(1, 5, r, 0), 0), 5, 5)" 'p*(1 + r)^5' '0.0001'
 # The randomised checks rest on MAP() drawing fresh values for every trial. Prove it.
 Near 'fuzz: MAP draws fresh values per trial' "--(ROWS(UNIQUE(MAP(SEQUENCE(25), LAMBDA(i, RANDBETWEEN(1,1000000))))) > 1)" '1'
 
