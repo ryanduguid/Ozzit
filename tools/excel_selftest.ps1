@@ -675,6 +675,9 @@ Near 'SmallBusinessPool: 2E-8 under 20,000 on 240,000 added is deducted in full'
 Near 'SmallBusinessPool: 2E-8 under 20,000 on 240,000 added closes at 0' "INDEX($sb(0, 130000, 0, 110000.00000002), 3, 1)" '0'
 Near 'SmallBusinessPool: 2E-7 below 0 on 2,200,000 added deducts nothing' "INDEX($sb(1100000, 0, 0, 1100000.0000002), 2, 1)" '0'
 Near 'SmallBusinessPool: 2E-7 below 0 on 2,200,000 added is assessable' "INDEX($sb(1100000, 0, 0, 1100000.0000002), 4, 1)" '0.0000002' '1E-9'
+Near 'SmallBusinessPool: 1E-15 on 2 trillion added is deducted in full' "INDEX($sb(1E12, 1E-15, 0, 1E12), 2, 1)" '1E-15' '1E-17'
+Near 'SmallBusinessPool: 1E-15 on 2 trillion added is not assessable' "INDEX($sb(1E12, 1E-15, 0, 1E12), 4, 1)" '0' '1E-17'
+Near 'SmallBusinessPool: 15 decimal places under 10 cents are kept' "INDEX($sb(0, 0.012345678901234), 2, 1)" '0.012345678901234' '1E-18'
 Near 'SmallBusinessPool: 1E-15 under 20,000 is deducted in full' "INDEX($sb(19999, 0.999999999999999), 2, 1)" '19999.999999999999'
 Near 'SmallBusinessPool: 1E-15 under 20,000 closes at 0' "INDEX($sb(19999, 0.999999999999999), 3, 1)" '0'
 Near 'SmallBusinessPool: 3E-15 over 0 is deducted in full' "INDEX($sb(0.123456789012344, 0, 0, 0.123456789012341), 2, 1)" '3E-15' '1E-17'
@@ -713,9 +716,10 @@ Same 'SmallBusinessPool: a blank opening is 0' "LET(x, $sb(Z1, 100), $rows)" '0,
 Near 'SmallBusinessPool: an error opening shows' "--ISNA(INDEX($sb(NA(), 100), 1, 1))" '1'
 Near 'SmallBusinessPool: an error amount shows' "--ISNA(INDEX($sb(100000, NA()), 2, 1))" '1'
 $sbShape = 'OpeningBalance must be one value, Additions one row with a value for each income year, and CostAdditions and TerminationValues one value or one for each year.'
-$sbValue = "SmallBusinessPool$L needs the opening balance and each amount to be a number from 0 to under 10,000,000,000,000, or blank."
+$sbValue = "SmallBusinessPool$L needs the opening balance and each amount to be a number from 0 to under 10,000,000,000,000, with no digit past the 15th decimal place, or blank."
 foreach ($r in @(@('{1,2}, 100', $sbShape), @('100, {1;2}', $sbShape), @('100, {1,2}, {1,2,3}', $sbShape),
-                 @('-1, 100', $sbValue), @('100, -1', $sbValue), @('100, 1, , "5"', $sbValue), @('100, TRUE', $sbValue))) {
+                 @('-1, 100', $sbValue), @('100, -1', $sbValue), @('100, 1, , "5"', $sbValue), @('100, TRUE', $sbValue),
+                 @('1E12, 1E-16, 0, 1E12', $sbValue), @('0, 0.0123456789012345', $sbValue), @('1E-16, 0', $sbValue))) {
     Same "SmallBusinessPool refuses ($($r[0]))" "LET(x, $sb($($r[0])), $one)" $r[1]
 }
 
