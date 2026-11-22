@@ -132,7 +132,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\excel_selftest.p
 tools/ozzit/target/release/ozzit verify_cache ozzit.xlsx
 ```
 
-The current acceptance baseline is 1,129 formulas recalculated with zero error cells and 2,914 assertions run with zero failures: the 2,538 hand-written assertions, 28 of them randomised checks that draw fresh inputs on every run and name the inputs behind any miss, and the 376 that `ozzit generate_selftest_examples` derives from the help. The generated count is a static count of the fragment; record the number the script prints.
+The current acceptance baseline is 1,129 formulas recalculated with zero error cells and 2,915 assertions run with zero failures: the 2,539 hand-written assertions, 28 of them randomised checks that draw fresh inputs on every run and name the inputs behind any miss, and the 376 that `ozzit generate_selftest_examples` derives from the help. The generated count is a static count of the fragment; record the number the script prints.
 The cached-value gate must pass and report its actual comparison count. Record
 the Excel version and build. Hash the workbook immediately before and after
 both native gates and require the bytes to be byte-identical.

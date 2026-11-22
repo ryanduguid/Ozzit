@@ -149,7 +149,7 @@ oz.ScheduleRatesByItemsλ,1,0,1,2
 oz.ScheduleRatesλ,1,1,2,4
 oz.ScheduleValuesByItemsλ,1,0,0,3
 oz.ScheduleValuesλ,1,1,1,7
-oz.SmallBusinessPoolλ,1,2,50,0
+oz.SmallBusinessPoolλ,1,2,11,0
 oz.SumAmortiseλ,1,0,0,6
 oz.SumColsUλ,1,1,0,0
 oz.SumColsλ,1,1,0,11

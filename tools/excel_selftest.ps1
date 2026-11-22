@@ -669,47 +669,60 @@ foreach ($r in @(@('100000, 28000, 0, 8000', '100000,34200,85800,0'),
     Same "SmallBusinessPool: ($($r[0]))" "LET(x, $sb($($r[0])), $rows)" $r[1]
 }
 Near 'SmallBusinessPool: the s 328-210 example, Cassidy, deducts 15,700' "INDEX($sb(28500, 16800, 0, 29600), 2, 1)" '15700'
-Near 'SmallBusinessPool: cents summing to exactly 20,000 are not below it, deduction' "INDEX($sb(2420135.56, 2116636.38, 0, 4516771.94), 2, 1)" '1043536.125'
-Near 'SmallBusinessPool: cents summing to exactly 20,000 are not below it, assessable' "INDEX($sb(2420135.56, 2116636.38, 0, 4516771.94), 4, 1)" '1023536.125'
-Near 'SmallBusinessPool: 2E-8 under 20,000 on 240,000 added is deducted in full' "INDEX($sb(0, 130000, 0, 110000.00000002), 2, 1)" '19999.99999998'
-Near 'SmallBusinessPool: 2E-8 under 20,000 on 240,000 added closes at 0' "INDEX($sb(0, 130000, 0, 110000.00000002), 3, 1)" '0'
-Near 'SmallBusinessPool: 2E-7 below 0 on 2,200,000 added deducts nothing' "INDEX($sb(1100000, 0, 0, 1100000.0000002), 2, 1)" '0'
-Near 'SmallBusinessPool: 2E-7 below 0 on 2,200,000 added is assessable' "INDEX($sb(1100000, 0, 0, 1100000.0000002), 4, 1)" '0.0000002' '1E-9'
-Near 'SmallBusinessPool: 1E-15 on 2 trillion added is deducted in full' "INDEX($sb(1E12, 1E-15, 0, 1E12), 2, 1)" '1E-15' '1E-17'
-Near 'SmallBusinessPool: 1E-15 on 2 trillion added is not assessable' "INDEX($sb(1E12, 1E-15, 0, 1E12), 4, 1)" '0' '1E-17'
-Near 'SmallBusinessPool: 15 decimal places under 10 cents are kept' "INDEX($sb(0, 0.012345678901234), 2, 1)" '0.012345678901234' '1E-18'
-Near 'SmallBusinessPool: 1E-15 under 20,000 is deducted in full' "INDEX($sb(19999, 0.999999999999999), 2, 1)" '19999.999999999999'
-Near 'SmallBusinessPool: 1E-15 under 20,000 closes at 0' "INDEX($sb(19999, 0.999999999999999), 3, 1)" '0'
-Near 'SmallBusinessPool: 3E-15 over 0 is deducted in full' "INDEX($sb(0.123456789012344, 0, 0, 0.123456789012341), 2, 1)" '3E-15' '1E-17'
-Near 'SmallBusinessPool: 3E-15 over 0 is not assessable' "INDEX($sb(0.123456789012344, 0, 0, 0.123456789012341), 4, 1)" '0' '1E-17'
-Near 'SmallBusinessPool: 3E-15 below 0 deducts nothing' "INDEX($sb(0.123456789012341, 0, 0, 0.123456789012344), 2, 1)" '0' '1E-17'
-Near 'SmallBusinessPool: 3E-15 below 0 is assessable' "INDEX($sb(0.123456789012341, 0, 0, 0.123456789012344), 4, 1)" '3E-15' '1E-17'
-Near 'SmallBusinessPool: a 15-digit pool under 1 keeps its 15th digit' "INDEX($sb(0.123456789012341, 0), 2, 1)" '0.123456789012341' '1E-17'
-Near 'SmallBusinessPool: a trillionth under 20,000 is deducted in full' "INDEX($sb(19000, 999.999999999999), 2, 1)" '19999.999999999999'
-Near 'SmallBusinessPool: a trillionth under 20,000 closes at 0' "INDEX($sb(19000, 999.999999999999), 3, 1)" '0'
-Near 'SmallBusinessPool: a cent under 20,000 on 6 trillion added is deducted in full' "INDEX($sb(3E12, 19999.99, 0, 3E12), 2, 1)" '19999.99'
-Near 'SmallBusinessPool: a cent under 20,000 on 6 trillion added closes at 0' "INDEX($sb(3E12, 19999.99, 0, 3E12), 3, 1)" '0'
-Near 'SmallBusinessPool: a cent under 20,000 on 6 trillion added is not assessable' "INDEX($sb(3E12, 19999.99, 0, 3E12), 4, 1)" '0'
-Near 'SmallBusinessPool: 20,000 on 6 trillion added deducts 30% and 15%' "INDEX($sb(3E12, 20000, 0, 3E12), 2, 1)" '900000003000' '0.01'
-Near 'SmallBusinessPool: 20,000 on 6 trillion added is assessable above the pool' "INDEX($sb(3E12, 20000, 0, 3E12), 4, 1)" '899999983000' '0.01'
-Near 'SmallBusinessPool: a cent over 20,000 on 6 trillion added deducts 30% and 15%' "INDEX($sb(3E12, 20000.01, 0, 3E12), 2, 1)" '900000003000.0015' '0.01'
-Near 'SmallBusinessPool: a cent below 0 on 6 trillion added deducts nothing' "INDEX($sb(3E12, 0, 0, 3000000000000.01), 2, 1)" '0'
-Near 'SmallBusinessPool: a cent below 0 on 6 trillion added is assessable' "INDEX($sb(3E12, 0, 0, 3000000000000.01), 4, 1)" '0.01'
-Near 'SmallBusinessPool: 0 on 6 trillion added deducts 30%' "INDEX($sb(3E12, 0, 0, 3E12), 2, 1)" '900000000000' '0.01'
-Near 'SmallBusinessPool: a cent over 0 on 6 trillion added is deducted in full' "INDEX($sb(3E12, 0.01, 0, 3E12), 2, 1)" '0.01'
-Near 'SmallBusinessPool: a cent over 0 on 6 trillion added is not assessable' "INDEX($sb(3E12, 0.01, 0, 3E12), 4, 1)" '0'
-Same 'SmallBusinessPool: a cent under 20,000 (15000.55, 5000.44, 0, 1)' "LET(x, $sb(15000.55, 5000.44, 0, 1), $rows)" '15000.55,19999.99,0,0'
-Same 'SmallBusinessPool: 20,000 (15000.55, 5000.45, 0, 1)' "LET(x, $sb(15000.55, 5000.45, 0, 1), $rows)" '15000.55,5250.23,14749.77,0'
-Same 'SmallBusinessPool: a cent over 20,000 (15000.55, 5000.46, 0, 1)' "LET(x, $sb(15000.55, 5000.46, 0, 1), $rows)" '15000.55,5250.23,14749.78,0'
-Same 'SmallBusinessPool: a cent below 0 (5000.4, 0, 0, 5000.41)' "LET(x, $sb(5000.4, 0, 0, 5000.41), $rows)" '5000.4,0,0,0.01'
-Same 'SmallBusinessPool: 0 (5000.4, 0, 0, 5000.4)' "LET(x, $sb(5000.4, 0, 0, 5000.4), $rows)" '5000.4,1500.12,0,1500.12'
-Same 'SmallBusinessPool: a cent over 0 (5000.4, 0.01, 0, 5000.4)' "LET(x, $sb(5000.4, 0.01, 0, 5000.4), $rows)" '5000.4,0.01,0,0'
-Near 'SmallBusinessPool: a fraction of a cent under 20,000 is deducted in full' "INDEX($sb(20000, 0, 0, 0.0000002), 2, 1)" '19999.9999998'
-Near 'SmallBusinessPool: a fraction of a cent under 20,000 closes at 0' "INDEX($sb(20000, 0, 0, 0.0000002), 3, 1)" '0'
-Near 'SmallBusinessPool: a fraction of a cent below 0 deducts nothing' "INDEX($sb(0.1, 0.2, 0, 0.3000001), 2, 1)" '0'
-Near 'SmallBusinessPool: a fraction of a cent below 0 is assessable' "INDEX($sb(0.1, 0.2, 0, 0.3000001), 4, 1)" '0.0000001' '1E-12'
-Near 'SmallBusinessPool: cents summing to exactly 0 are not above it, deduction' "INDEX($sb(0.1, 0.2, 0, 0.3), 2, 1)" '0.06'
-Near 'SmallBusinessPool: cents summing to exactly 0 are not above it, assessable' "INDEX($sb(0.1, 0.2, 0, 0.3), 4, 1)" '0.06'
+# Boundary cases at 0 and $20,000, one per line: name|arguments|row (2 deduction, 3 closing,
+# 4 assessable)|expected|tolerance, then name|arguments|all 4 rows to 2 places.
+$sbEdges = @'
+cents summing to exactly 20,000 are not below it, deduction|2420135.56, 2116636.38, 0, 4516771.94|2|1043536.125|0.000001
+cents summing to exactly 20,000 are not below it, assessable|2420135.56, 2116636.38, 0, 4516771.94|4|1023536.125|0.000001
+2E-8 under 20,000 on 240,000 added is deducted in full|0, 130000, 0, 110000.00000002|2|19999.99999998|0.000001
+2E-8 under 20,000 on 240,000 added closes at 0|0, 130000, 0, 110000.00000002|3|0|0.000001
+2E-7 below 0 on 2,200,000 added deducts nothing|1100000, 0, 0, 1100000.0000002|2|0|0.000001
+2E-7 below 0 on 2,200,000 added is assessable|1100000, 0, 0, 1100000.0000002|4|0.0000002|1E-9
+1E-15 on 2 trillion added is deducted in full|1E12, 1E-15, 0, 1E12|2|1E-15|1E-17
+1E-15 on 2 trillion added is not assessable|1E12, 1E-15, 0, 1E12|4|0|1E-17
+15 decimal places under 10 cents are kept|0, 0.012345678901234|2|0.012345678901234|1E-18
+1E-15 under 20,000 is deducted in full|19999, 0.999999999999999|2|19999.999999999999|0.000001
+1E-15 under 20,000 closes at 0|19999, 0.999999999999999|3|0|0.000001
+3E-15 over 0 is deducted in full|0.123456789012344, 0, 0, 0.123456789012341|2|3E-15|1E-17
+3E-15 over 0 is not assessable|0.123456789012344, 0, 0, 0.123456789012341|4|0|1E-17
+3E-15 below 0 deducts nothing|0.123456789012341, 0, 0, 0.123456789012344|2|0|1E-17
+3E-15 below 0 is assessable|0.123456789012341, 0, 0, 0.123456789012344|4|3E-15|1E-17
+a 15-digit pool under 1 keeps its 15th digit|0.123456789012341, 0|2|0.123456789012341|1E-17
+a trillionth under 20,000 is deducted in full|19000, 999.999999999999|2|19999.999999999999|0.000001
+a trillionth under 20,000 closes at 0|19000, 999.999999999999|3|0|0.000001
+a cent under 20,000 on 6 trillion added is deducted in full|3E12, 19999.99, 0, 3E12|2|19999.99|0.000001
+a cent under 20,000 on 6 trillion added closes at 0|3E12, 19999.99, 0, 3E12|3|0|0.000001
+a cent under 20,000 on 6 trillion added is not assessable|3E12, 19999.99, 0, 3E12|4|0|0.000001
+20,000 on 6 trillion added deducts 30% and 15%|3E12, 20000, 0, 3E12|2|900000003000|0.01
+20,000 on 6 trillion added is assessable above the pool|3E12, 20000, 0, 3E12|4|899999983000|0.01
+a cent over 20,000 on 6 trillion added deducts 30% and 15%|3E12, 20000.01, 0, 3E12|2|900000003000.0015|0.01
+a cent below 0 on 6 trillion added deducts nothing|3E12, 0, 0, 3000000000000.01|2|0|0.000001
+a cent below 0 on 6 trillion added is assessable|3E12, 0, 0, 3000000000000.01|4|0.01|0.000001
+0 on 6 trillion added deducts 30%|3E12, 0, 0, 3E12|2|900000000000|0.01
+a cent over 0 on 6 trillion added is deducted in full|3E12, 0.01, 0, 3E12|2|0.01|0.000001
+a cent over 0 on 6 trillion added is not assessable|3E12, 0.01, 0, 3E12|4|0|0.000001
+a fraction of a cent under 20,000 is deducted in full|20000, 0, 0, 0.0000002|2|19999.9999998|0.000001
+a fraction of a cent under 20,000 closes at 0|20000, 0, 0, 0.0000002|3|0|0.000001
+a fraction of a cent below 0 deducts nothing|0.1, 0.2, 0, 0.3000001|2|0|0.000001
+a fraction of a cent below 0 is assessable|0.1, 0.2, 0, 0.3000001|4|0.0000001|1E-12
+cents summing to exactly 0 are not above it, deduction|0.1, 0.2, 0, 0.3|2|0.06|0.000001
+cents summing to exactly 0 are not above it, assessable|0.1, 0.2, 0, 0.3|4|0.06|0.000001
+0.1 x 0.1, binary noise on the 1E-15 grid, is accepted|0, 0.1*0.1|2|0.01|1E-18
+'@
+foreach ($f in $sbEdges -split "`n" | ForEach-Object { ,($_.Trim() -split '\|') }) {
+    Near "SmallBusinessPool: $($f[0])" "INDEX($sb($($f[1])), $($f[2]), 1)" $f[3] $f[4]
+}
+$sbEdgeRows = @'
+a cent under 20,000 (15000.55, 5000.44, 0, 1)|15000.55, 5000.44, 0, 1|15000.55,19999.99,0,0
+20,000 (15000.55, 5000.45, 0, 1)|15000.55, 5000.45, 0, 1|15000.55,5250.23,14749.77,0
+a cent over 20,000 (15000.55, 5000.46, 0, 1)|15000.55, 5000.46, 0, 1|15000.55,5250.23,14749.78,0
+a cent below 0 (5000.4, 0, 0, 5000.41)|5000.4, 0, 0, 5000.41|5000.4,0,0,0.01
+0 (5000.4, 0, 0, 5000.4)|5000.4, 0, 0, 5000.4|5000.4,1500.12,0,1500.12
+a cent over 0 (5000.4, 0.01, 0, 5000.4)|5000.4, 0.01, 0, 5000.4|5000.4,0.01,0,0
+'@
+foreach ($f in $sbEdgeRows -split "`n" | ForEach-Object { ,($_.Trim() -split '\|') }) {
+    Same "SmallBusinessPool: $($f[0])" "LET(x, $sb($($f[1])), $rows)" $f[2]
+}
 Same 'SmallBusinessPool: two years' "LET(x, $sb(100000, {28000,0}, 0, {8000,0}), $rows)" '100000,85800,34200,25740,85800,60060,0,0'
 Same 'SmallBusinessPool: a low pool value in a later year' "LET(x, $sb(30000, {0,0,0}), $rows)" '30000,21000,14700,9000,6300,14700,21000,14700,0,0,0,0'
 Same 'SmallBusinessPool: a blank opening is 0' "LET(x, $sb(Z1, 100), $rows)" '0,100,0,0'
