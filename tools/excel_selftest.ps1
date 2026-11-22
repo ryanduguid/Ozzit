@@ -579,6 +579,48 @@ foreach ($r in @(@('{1000;2000}, 100', $msShape),
     Same "MarginSchemeGST refuses ($($r[0]))" "LET(x, $ms($($r[0])), $one)" $r[1]
 }
 
+# --- FBT gross-up (FBTAA s 5B(1B) and (1C), compilation 97; Fringe Benefits Tax Act 1986 s 6;
+# the ATO's FBT rates and thresholds page, read 22 November 2026). The ATO's published factors
+# and reportable example, then the cases of australian-accounting's fbt command, which uses
+# the statute's factors and rounds to the cent.
+$fg = "oz.FBTGrossUp$L"
+Near 'FBTGrossUp: type 1 factor is the ATO 2.0802' "ROUND($fg(1, 1), 4)" '2.0802'
+Near 'FBTGrossUp: type 2 factor is the ATO 1.8868' "ROUND($fg(1, 2), 4)" '1.8868'
+Near 'FBTGrossUp: type 1 factor = 57000/27401'    "$fg(1, 1)" '2.08021605050910' '0.0000000000001'
+Near 'FBTGrossUp: type 2 factor = 100/53'         "$fg(1, 2)" '1.88679245283019' '0.0000000000001'
+Near 'FBTGrossUp: the ATO reportable $2,000.01 example, $3,773' "INT($fg(2000.01, 2))" '3773'
+foreach ($r in @(@('16500, 1', '34323.56'), @('6000, 2', '11320.75'), @('11000, 1', '22882.38'), @('9000, 2', '16981.13'),
+                 @('10000, 2', '18867.92'), @('1000000, 1', '2080216.05'), @('1000000, 2', '1886792.45'))) {
+    Near "FBTGrossUp: australian-accounting ($($r[0]))" "ROUND($fg($($r[0])), 2)" $r[1]
+}
+Near 'FBTGrossUp: nil is nil'                     "$fg(0, 1)" '0'
+Same 'FBTGrossUp: one type for a column with a blank' "LET(x, $fg({16500;`"`";6000}, 2), TEXTJOIN(`",`", FALSE, IF(x = `"`", `"`", ROUND(x, 2))))" '31132.08,,11320.75'
+Same 'FBTGrossUp: a type for each'               "TEXTJOIN(`",`", FALSE, ROUND($fg({16500;6000}, {1;2}), 2))" '34323.56,11320.75'
+Same 'FBTGrossUp: a row keeps its shape'          "COLUMNS($fg({16500,6000}, {1,2})) & `"|`" & ROUND(INDEX($fg({16500,6000}, {1,2}), 1, 2), 2)" '2|11320.75'
+Same 'FBTGrossUp: a blank value stays blank'      "$fg(Z1, 1)" ''
+Same 'FBTGrossUp: a blank value needs no type'    "LET(x, $fg({16500;`"`"}, {1;`"`"}), TEXTJOIN(`",`", FALSE, IF(x = `"`", `"`", ROUND(x, 2))))" '34323.56,'
+Near 'FBTGrossUp: an error value shows'           "--ISNA($fg(NA(), 1))" '1'
+Near 'FBTGrossUp: an error type shows'            "--ISNA($fg(100, NA()))" '1'
+$fgShape = 'Type must be one type, or a type for each taxable value in the same shape.'
+$fgValue = "FBTGrossUp$L needs each taxable value to be a number from 0 to under 10,000,000,000,000, or blank."
+$fgType = 'Type must be 1 or 2 for each taxable value.'
+foreach ($r in @(@('{1000;2000}, {1;2;1}', $fgShape),
+                 @('{1000;2000}, {1,2}', $fgShape),
+                 @('-1, 1', $fgValue),
+                 @('"1000", 1', $fgValue),
+                 @('" ", 1', $fgValue),
+                 @('TRUE, 1', $fgValue),
+                 @('1E13, 1', $fgValue),
+                 @('1000, 0', $fgType),
+                 @('1000, 3', $fgType),
+                 @('1000, 1.5', $fgType),
+                 @('1000, "1"', $fgType),
+                 @('1000, TRUE', $fgType),
+                 @('1000, Z1', $fgType),
+                 @('{1000;2000}, {1;""}', $fgType))) {
+    Same "FBTGrossUp refuses ($($r[0]))" "LET(x, $fg($($r[0])), $one)" $r[1]
+}
+
 # --- Movement. Each row's opening is its own: a blank one defaults only that row.
 Near 'Movement, per-row opening'       "INDEX($mv({100;`"`";50},{110,120;5,6;60,70}),1,1)" '10'
 Near 'Movement, blank opening row'     "INDEX($mv({100;`"`";50},{110,120;5,6;60,70}),2,1)" '5'
@@ -2160,6 +2202,10 @@ Fuzz 'fuzz: Div7AMinRepayment = the s 109E(6) formula' `
 Fuzz 'fuzz: MarginSchemeGST = 1/11 of the excess' `
      'p, RANDBETWEEN(0,5000000), b, RANDBETWEEN(0,5000000)' '"p="&p&" b="&b' `
      "oz.MarginSchemeGST$L(p, b)" 'IF(p>b, (p-b)/11, 0)' '0.000001'
+# The gross-up factors reduce to 57000/27401 (type 1) and 100/53 (type 2) at 47% FBT and 10% GST.
+Fuzz 'fuzz: FBTGrossUp = value x 57000/27401 or 100/53' `
+     'v, RANDBETWEEN(0,1000000)/100, t, RANDBETWEEN(1,2)' '"v="&v&" t="&t' `
+     "oz.FBTGrossUp$L(v, t)" 'v*IF(t=1, 57000/27401, 100/53)' '0.000001'
 # The randomised checks rest on MAP() drawing fresh values for every trial. Prove it.
 Near 'fuzz: MAP draws fresh values per trial' "--(ROWS(UNIQUE(MAP(SEQUENCE(25), LAMBDA(i, RANDBETWEEN(1,1000000))))) > 1)" '1'
 

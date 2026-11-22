@@ -114,6 +114,7 @@ you can check by hand; the lease guide explains the 4 lessee functions.
 | Income tax on taxable income, on `main` only | `=oz.IncomeTaxλ(TaxableIncome, IncomeYear, [Resident])` at the general rates for 2024-25 to 2026-27 | [Rates and what is left out](docs/australian-modelling.md#income-tax) |
 | Division 7A minimum yearly repayment, on `main` only | `=oz.Div7AMinRepaymentλ(OpeningBalance, BenchmarkRate, RemainingTerm)` under ITAA 1936 s 109E(6) | [Formula, term and what is left out](docs/australian-modelling.md#division-7a-minimum-yearly-repayment) |
 | GST under the margin scheme, on `main` only | `=oz.MarginSchemeGSTλ(Consideration, MarginBase)` under GST Act s 75-10 | [Margin, base and what is left out](docs/australian-modelling.md#margin-scheme-gst) |
+| FBT gross-up, on `main` only | `=oz.FBTGrossUpλ(TaxableValues, Type)` under FBTAA s 5B at 47% | [Factors and what is left out](docs/australian-modelling.md#fbt-gross-up) |
 
 `oz.PAYGWithholdingλ` arrived in v3.7.0. It works out the amount before tax
 offsets and the Medicare levy adjustment and does not apply either, or the extra
@@ -131,7 +132,8 @@ apportion it for foreign or temporary residents, or apply the small business con
 offsets or part-year tax-free threshold. `oz.Div7AMinRepaymentλ`, also unreleased, is the
 s 109E(6) arithmetic only: it does not decide whether a loan complies or a shortfall is a
 dividend. `oz.MarginSchemeGSTλ`, also unreleased, does not decide whether the margin scheme
-applies or which base is right.
+applies or which base is right. `oz.FBTGrossUpλ`, also unreleased, grosses up taxable values
+only: it does not value a benefit or decide its type.
 
 [Open, copy functions and use modern Excel](docs/workbook-use.md) shows how to
 copy a function into your own workbook.
@@ -257,7 +259,7 @@ Its [citation metadata](CITATION.cff) names the cut. Cite the signed tag `v3.7.0
 `44257fc252afc67e87c3788776d10f67663a3136`; GitHub reports its
 [release page](https://github.com/ryanduguid/Ozzit/releases/tag/v3.7.0) immutable. [The v3.7.0 changes](CHANGELOG.md) describe what it adds and fixes.
 
-v3.7.0 `ozzit.xlsx` SHA-256: `0ed09fc130d30394c97f6a41e40ab72d3f68093b65a5e109adf11bd901f006bd` (492,757 bytes), the same bytes as the release asset. `main` is ahead of that tag, so the file you clone is not the file the release ships: the tracked `ozzit.xlsx` is SHA-256 `9406ba21ea02d5b8aaaca7e30b3a913a5d800f9d6eed100054bce39427681b6a` (535,504 bytes), pinned in [release/workbook-base.json](release/workbook-base.json) and checked by the tool tests, and adds the changes listed under Unreleased in the [changelog](CHANGELOG.md). On 22 November 2026, Excel 16.0 build 20625 recalculated 1,129 formulas in the tracked workbook with 0 in error, ran 2,682 self-test assertions with 0 failures and found 19,483 cached values equal to what their formulas produce. The workbook was byte-identical before and after both native gates.
+v3.7.0 `ozzit.xlsx` SHA-256: `0ed09fc130d30394c97f6a41e40ab72d3f68093b65a5e109adf11bd901f006bd` (492,757 bytes), the same bytes as the release asset. `main` is ahead of that tag, so the file you clone is not the file the release ships: the tracked `ozzit.xlsx` is SHA-256 `b3c1c7b9b73bdb3c511fbb6a5cf64d933f2062a037917c841d171b442b3ac250` (539,003 bytes), pinned in [release/workbook-base.json](release/workbook-base.json) and checked by the tool tests, and adds the changes listed under Unreleased in the [changelog](CHANGELOG.md). On 22 November 2026, Excel 16.0 build 20625 recalculated 1,129 formulas in the tracked workbook with 0 in error, ran 2,682 self-test assertions with 0 failures and found 19,483 cached values equal to what their formulas produce. The workbook was byte-identical before and after both native gates.
 
 - [Repository checks](AGENTS.md) and [release and native verification](RELEASING.md)
 - [Changes](CHANGELOG.md) and [citation](CITATION.cff)

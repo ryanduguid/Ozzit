@@ -82,7 +82,10 @@ AboutFinancialλ = TRIM(TEXTSPLIT(
                                            "IncomeTaxλ         →Tax on taxable income at the general rates, 2024-25 to 2026-27, before the Medicare levy and offsets¶" &
                                            "→¶" &
                                            "DIVISION 7A        →¶" &
-                                           "Div7AMinRepaymentλ →Division 7A minimum yearly repayment from the unpaid balance, benchmark rate and remaining term¶" & 
+                                           "Div7AMinRepaymentλ →Division 7A minimum yearly repayment from the unpaid balance, benchmark rate and remaining term¶" &
+                                           "→¶" &
+                                           "FRINGE BENEFITS TAX→¶" &
+                                           "FBTGrossUpλ        →Grossed-up taxable value of type 1 or type 2 fringe benefits at the 47% FBT rate¶" & 
                                            "→¶" &
                                            "DEBT MODULE        →¶" &
                                            "AmortiseBλ         →Creates an amortisation schedule for a debt/loan across a model's periods¶" &
@@ -2740,6 +2743,72 @@ YearToDateλ = LAMBDA(
     //  Return Result, Help or the message
         Return,         IF(Help?, 2, IF(NOT(ValidStart?), 3, IF(NOT(Shaped?), 4, IF(NOT(OneDate?), 5, IF(NOT(Numbers?), 6, 1))))),
         CHOOSE( Return, Result, Help, StartMessage, ShapeMessage, AsAtMessage, ValuesMessage)
+    )
+);
+
+
+
+/*  FUNCTION NAME:  FBTGrossUpλ
+    DESCRIPTION:*//**Grossed-up taxable value of type 1 or type 2 fringe benefits, FBTAA s 5B, at the 47% FBT rate and 10% GST rate, unrounded*/
+/*  SOURCE:         Fringe Benefits Tax Assessment Act 1986, compilation 97 (1 July 2026), read 22 November 2026:
+                    https://www.legislation.gov.au/C2004A03280/2026-07-01/2026-07-01/text/original/epub/OEBPS/document_1/document_1.html
+                    s 5B(1B): type 1 aggregate fringe benefits amount x (FBT rate + GST rate) /
+                    ((1 - FBT rate) x (1 + GST rate) x FBT rate). s 5B(1C): type 2 aggregate fringe
+                    benefits amount x 1 / (1 - FBT rate). s 5B(3): the GST rate is the rate payable under
+                    the GST Act, 10% (A New Tax System (Goods and Services Tax) Act 1999 s 9-70).
+                    Fringe Benefits Tax Act 1986, compilation 9 (19 June 2018), read 22 November 2026: s 6
+                    sets the FBT rate at 47%; s 6A added 2 points for the years starting 1 April 2015 and
+                    1 April 2016 only:
+                    https://www.legislation.gov.au/C2004A03281/2018-06-19/2018-06-19/text/1/epub/OEBPS/document_1/document_1.html
+                    ATO, 'Fringe benefits tax - rates and thresholds', last updated 20 May 2026, read 22 November
+                    2026: 47%, type 1 2.0802 and type 2 1.8868 for the years ending 31 March 2023 to 2027,
+                    which are these formulas to 4 decimal places:
+                    https://www.ato.gov.au/tax-rates-and-codes/fringe-benefits-tax-rates-and-thresholds
+*/
+FBTGrossUpλ = LAMBDA(
+//  Parameter Declaration
+    [TaxableValues],
+    [Type],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →FBTGrossUpλ(TaxableValues, Type)¶" &
+                            "DESCRIPTION:   →Grossed-up taxable value of type 1 or type 2 fringe benefits, FBTAA s 5B.¶NOTES!         →Grossed-up taxable value of fringe benefits under FBTAA s 5B: a type 1¶               →value (the employer can claim a GST credit for the benefit) times (47% +¶               →10%) / ((1 - 47%) x (1 + 10%) x 47%), a type 2 value times 1 / (1 - 47%).¶               →Those are the statute's factors, 2.08021... and 1.88679...; the ATO¶               →publishes them to 4 places as 2.0802 and 1.8868, so a figure from those¶               →differs by at most 0.01%. The type 2 factor also grosses up a reportable¶               →fringe benefits amount (s 135P). For FBT years from 1 April 2017 on, at¶               →47%; the years starting 1 April 2015 and 2016 used 49%. The result is not¶               →rounded. Rates only: it does not value a benefit, decide its type, or apply¶               →exemptions, the $30,000 or $17,000 caps or rebates.¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
+                            "VERSION:       →22 Nov 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "TaxableValues  →(Required) One or more taxable values, each 0 or more and under 10,000,000,000,000. A blank stays blank.¶" &
+                            "Type           →(Required) 1 for a type 1 benefit, which carries a GST credit, or 2 for type 2: one for every value, or one for each.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.FBTGrossUpλ({16500;6000}, {1;2})¶" &
+                            "→Result¶" &
+                            "→34323.5648¶" &
+                            "→11320.7547",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR( ISOMITTED( TaxableValues), ISOMITTED( Type)),
+    //  One type for every value, or one for each in the same shape
+        OneType?,       AND( ROWS( Type) = 1, COLUMNS( Type) = 1),
+        ValidShape?,    OR( OneType?, AND( ROWS( Type) = ROWS( TaxableValues), COLUMNS( Type) = COLUMNS( TaxableValues))),
+        ShapeMessage,   "Type must be one type, or a type for each taxable value in the same shape.",
+    //  A blank is nil and stays blank; an error passes so it shows
+        ValidValue?,    AND( IF( ISERROR( TaxableValues), TRUE, IF( ISNUMBER( TaxableValues), ( TaxableValues >= 0) * ( TaxableValues < 1E13), TaxableValues & "" = ""))),
+        ValueMessage,   "FBTGrossUpλ needs each taxable value to be a number from 0 to under 10,000,000,000,000, or blank.",
+        Types,          IF( OneType?, IF( SEQUENCE( ROWS( TaxableValues), COLUMNS( TaxableValues)), Type), Type),
+    //  A type is needed only beside a value; an error passes so it shows
+        ValidType?,     IFERROR( AND( IF( ISERROR( TaxableValues), TRUE, IF( TaxableValues & "" = "", TRUE, IF( ISERROR( Types), TRUE, IF( ISNUMBER( Types), ( Types = 1) + ( Types = 2), FALSE))))), FALSE),
+        TypeMessage,    "Type must be 1 or 2 for each taxable value.",
+    //  Procedure - s 5B(1B) and (1C) at the 47% FBT rate and 10% GST rate
+        FBT,            0.47,
+        GST,            0.1,
+        Result,         MAP( TaxableValues, Types, LAMBDA( Value, Kind,
+                            IF( Value & "" = "", "", IF( Kind = 1, Value * ( FBT + GST) / (( 1 - FBT) * ( 1 + GST) * FBT), Value / ( 1 - FBT)))
+                        )),
+    //  Return Result, Help, or the message
+        Return,         IF( Help?, 2, IF( NOT( ValidShape?), 3, IF( NOT( ValidValue?), 4, IF( NOT( ValidType?), 5, 1)))),
+        CHOOSE( Return, Result, Help, ShapeMessage, ValueMessage, TypeMessage)
     )
 );
 

@@ -42,6 +42,9 @@ release; until then v3.7.0 behaves as it did.
 - `oz.MarginSchemeGSTλ(Consideration, MarginBase)` returns the GST on a sale of real property
   under the margin scheme, 1/11 of the amount by which the consideration exceeds the margin
   base (GST Act s 75-10), nil when it does not, unrounded. `ozzit margin_scheme_gst` adds it.
+- `oz.FBTGrossUpλ(TaxableValues, Type)` grosses up type 1 or type 2 taxable values with the
+  FBTAA s 5B factors at the 47% FBT rate and 10% GST rate, unrounded. It does not value a
+  benefit. `ozzit fbt_gross_up` adds it.
 
 ### Fixed
 
