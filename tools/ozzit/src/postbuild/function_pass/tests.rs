@@ -292,3 +292,8 @@ fn margin_scheme_gst_pass_reproduces_the_published_financial_module() {
 fn fbt_gross_up_pass_reproduces_the_published_financial_module() {
     reproduces_the_financial_module(&SPECS[11]);
 }
+
+#[test]
+fn depreciation_pools_pass_reproduces_the_published_financial_module() {
+    reproduces_the_financial_module(&SPECS[12]);
+}

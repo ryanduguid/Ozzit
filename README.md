@@ -115,6 +115,7 @@ you can check by hand; the lease guide explains the 4 lessee functions.
 | Division 7A minimum yearly repayment, on `main` only | `=oz.Div7AMinRepaymentλ(OpeningBalance, BenchmarkRate, RemainingTerm)` under ITAA 1936 s 109E(6) | [Formula, term and what is left out](docs/australian-modelling.md#division-7a-minimum-yearly-repayment) |
 | GST under the margin scheme, on `main` only | `=oz.MarginSchemeGSTλ(Consideration, MarginBase)` under GST Act s 75-10 | [Margin, base and what is left out](docs/australian-modelling.md#margin-scheme-gst) |
 | FBT gross-up, on `main` only | `=oz.FBTGrossUpλ(TaxableValues, Type)` under FBTAA s 5B at 47% | [Factors and what is left out](docs/australian-modelling.md#fbt-gross-up) |
+| Low-value and small business pools, on `main` only | `=oz.LowValuePoolλ(OpeningBalance, LowCostAssets)` and `=oz.SmallBusinessPoolλ(OpeningBalance, Additions)`, a year in each column | [Rates, thresholds and what is left out](docs/australian-modelling.md#depreciation-pools) |
 
 `oz.PAYGWithholdingλ` arrived in v3.7.0. It works out the amount before tax
 offsets and the Medicare levy adjustment and does not apply either, or the extra
@@ -133,7 +134,9 @@ offsets or part-year tax-free threshold. `oz.Div7AMinRepaymentλ`, also unreleas
 s 109E(6) arithmetic only: it does not decide whether a loan complies or a shortfall is a
 dividend. `oz.MarginSchemeGSTλ`, also unreleased, does not decide whether the margin scheme
 applies or which base is right. `oz.FBTGrossUpλ`, also unreleased, grosses up taxable values
-only: it does not value a benefit or decide its type.
+only: it does not value a benefit or decide its type. `oz.LowValuePoolλ` and
+`oz.SmallBusinessPoolλ`, also unreleased, roll a pool forward; they do not decide which assets
+belong in it.
 
 [Open, copy functions and use modern Excel](docs/workbook-use.md) shows how to
 copy a function into your own workbook.

@@ -45,6 +45,11 @@ release; until then v3.7.0 behaves as it did.
 - `oz.FBTGrossUpλ(TaxableValues, Type)` grosses up type 1 or type 2 taxable values with the
   FBTAA s 5B factors at the 47% FBT rate and 10% GST rate, unrounded. It does not value a
   benefit. `ozzit fbt_gross_up` adds it.
+- `oz.LowValuePoolλ(OpeningBalance, LowCostAssets, [LowValueAssets], [TerminationValues])` and
+  `oz.SmallBusinessPoolλ(OpeningBalance, Additions, [CostAdditions], [TerminationValues])` roll a
+  low-value pool (ITAA 1997 s 40-440 and s 40-445) and a general small business pool (Subdivision
+  328-D, with the $20,000 low pool value) forward, a year in each column, returning opening,
+  deduction, closing and assessable rows, unrounded. `ozzit depreciation_pools` adds them.
 
 ### Fixed
 

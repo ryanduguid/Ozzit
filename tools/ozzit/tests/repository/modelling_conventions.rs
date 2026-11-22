@@ -107,9 +107,9 @@ fn calling(pattern: &str) -> BTreeSet<String> {
 #[test]
 fn the_function_and_help_table_counts() {
     let page = page();
-    assert_eq!(function_bodies().len(), 161);
-    page_says(&page, "a library of 161 LAMBDA functions and 5 help tables");
-    page_says(&page, "Ozzit's 161 functions exist to be called from cells");
+    assert_eq!(function_bodies().len(), 163);
+    page_says(&page, "a library of 163 LAMBDA functions and 5 help tables");
+    page_says(&page, "Ozzit's 163 functions exist to be called from cells");
     let tables: BTreeSet<String> = modules()
         .iter()
         .flat_map(|(_, text)| findall(r"(?m)^(About\w+λ)\s*=", text))
@@ -160,7 +160,7 @@ fn utilities_repeats_the_essentials_functions() {
 #[test]
 fn if_and_nested_if() {
     let page = page();
-    assert_eq!(calling(r"\bIF\(").len(), 92);
+    assert_eq!(calling(r"\bIF\(").len(), 94);
     let nested_if = bounded(r"\bIF\(");
     let nested = function_bodies()
         .into_values()
@@ -171,7 +171,7 @@ fn if_and_nested_if() {
         })
         .count();
     assert!(nested >= 22, "{nested} functions nest IF");
-    page_says(&page, "92 functions call `IF`");
+    page_says(&page, "94 functions call `IF`");
     page_says(&page, "At least 22 functions nest one `IF` inside another");
 }
 

@@ -621,6 +621,66 @@ foreach ($r in @(@('{1000;2000}, {1;2;1}', $fgShape),
     Same "FBTGrossUp refuses ($($r[0]))" "LET(x, $fg($($r[0])), $one)" $r[1]
 }
 
+# --- Depreciation pools (ITAA 1997 compilation 268: s 40-440 and s 40-445; Subdivision 328-D,
+# s 328-190 to s 328-215; IT(TP)A 1997 compilation 104 s 328-180(6)(e); read 22 November 2026).
+# Rows: opening, deduction, closing, assessable; one column per income year. The cases of
+# australian-accounting's depreciation_low_value_pool and depreciation_small_business_pool
+# commands (commit 2ef04d2), which round each step to the cent, so results are compared to 2
+# places. That command rounds the decline before the closing balance; this result does not,
+# so its first closing balance differs by half a cent.
+$lv = "oz.LowValuePool$L"
+$sb = "oz.SmallBusinessPool$L"
+$rows = "TEXTJOIN(`",`", FALSE, ROUND(x, 2))"
+foreach ($r in @(@('3608, 0, 0, 300', '3608,1353,1955,0'),
+                 @('1000, 400, 800', '1000,750,1450,0'),
+                 @('0.01, 0.02', '0.01,0.01,0.02,0'),
+                 @('1000, 0, , 1000', '1000,375,0,375'),
+                 @('5000, {594,0}', '5000,3607.63,1986.38,1352.86,3607.63,2254.77,0,0'))) {
+    Same "LowValuePool: ($($r[0]))" "LET(x, $lv($($r[0])), $rows)" $r[1]
+}
+Near 'LowValuePool: australian-accounting 5000 and 594 closes at 3607.62' "INDEX($lv(5000, 594), 3, 1)" '3607.62' '0.0051'
+Near 'LowValuePool: decline is 18.75% and 37.5%' "INDEX($lv(1000, 400, 800), 2, 1)" '750'
+Same 'LowValuePool: each year opens at the last close' "LET(x, $lv(1000, {400,0,0}, {800,0,0}, {0,100,0}), TEXTJOIN(`",`", FALSE, ROUND(CHOOSEROWS(x, 1), 4)) & `"|`" & TEXTJOIN(`",`", FALSE, ROUND(DROP(CHOOSEROWS(x, 3), , -1), 4)))" '1000,1450,806.25|1450,806.25'
+Same 'LowValuePool: termination values above the pool are assessable' "LET(x, $lv(100, 0, 0, {1000}), $rows)" '100,37.5,0,937.5'
+Same 'LowValuePool: one value for every year' "LET(x, $lv(0, {100,100}, 50), $rows)" '0,112.5,37.5,79.69,112.5,182.81,0,0'
+Same 'LowValuePool: a blank opening is 0' "LET(x, $lv(Z1, 100), $rows)" '0,18.75,81.25,0'
+Same 'LowValuePool: a blank amount is 0' "LET(x, $lv(100, Z1), $rows)" '100,37.5,62.5,0'
+Near 'LowValuePool: an error opening shows' "--ISNA(INDEX($lv(NA(), 100), 1, 1))" '1'
+Near 'LowValuePool: an error amount shows' "--ISNA(INDEX($lv(100, NA()), 2, 1))" '1'
+Same 'LowValuePool: four rows and a column for each year' "ROWS($lv(0, {1,2,3})) & `"x`" & COLUMNS($lv(0, {1,2,3}))" '4x3'
+$lvShape = 'OpeningBalance must be one value, LowCostAssets one row with a value for each income year, and LowValueAssets and TerminationValues one value or one for each year.'
+$lvValue = "LowValuePool$L needs the opening balance and each amount to be a number from 0 to under 10,000,000,000,000, or blank."
+foreach ($r in @(@('{1,2}, 100', $lvShape), @('100, {1;2}', $lvShape), @('100, {1,2}, {1,2,3}', $lvShape),
+                 @('100, {1,2}, , {1;2}', $lvShape), @('-1, 100', $lvValue), @('100, -1', $lvValue),
+                 @('100, 1, "1"', $lvValue), @('100, 1, , TRUE', $lvValue), @('1E13, 1', $lvValue), @('" ", 1', $lvValue))) {
+    Same "LowValuePool refuses ($($r[0]))" "LET(x, $lv($($r[0])), $one)" $r[1]
+}
+foreach ($r in @(@('100000, 28000, 0, 8000', '100000,34200,85800,0'),
+                 @('28500, 16800, , 29600', '28500,15700,0,0'),
+                 @('1000000, 0', '1000000,300000,700000,0'),
+                 @('20000, 0', '20000,6000,14000,0'),
+                 @('19999.99, 0', '19999.99,19999.99,0,0'),
+                 @('10000, 0, 0, 15000', '10000,0,0,5000'),
+                 @('1000000, 0, 0, 950000', '1000000,300000,0,250000'),
+                 @('100000, 0, 0, 95000', '100000,5000,0,0'),
+                 @('33333.33, 11111.11, 2222.22', '33333.33,12000,34666.66,0'),
+                 @('0, 5000, 0, 5000', '0,750,0,750'),
+                 @('0, 0', '0,0,0,0'))) {
+    Same "SmallBusinessPool: ($($r[0]))" "LET(x, $sb($($r[0])), $rows)" $r[1]
+}
+Near 'SmallBusinessPool: the s 328-210 example, Cassidy, deducts 15,700' "INDEX($sb(28500, 16800, 0, 29600), 2, 1)" '15700'
+Same 'SmallBusinessPool: two years' "LET(x, $sb(100000, {28000,0}, 0, {8000,0}), $rows)" '100000,85800,34200,25740,85800,60060,0,0'
+Same 'SmallBusinessPool: a low pool value in a later year' "LET(x, $sb(30000, {0,0,0}), $rows)" '30000,21000,14700,9000,6300,14700,21000,14700,0,0,0,0'
+Same 'SmallBusinessPool: a blank opening is 0' "LET(x, $sb(Z1, 100), $rows)" '0,100,0,0'
+Near 'SmallBusinessPool: an error opening shows' "--ISNA(INDEX($sb(NA(), 100), 1, 1))" '1'
+Near 'SmallBusinessPool: an error amount shows' "--ISNA(INDEX($sb(100000, NA()), 2, 1))" '1'
+$sbShape = 'OpeningBalance must be one value, Additions one row with a value for each income year, and CostAdditions and TerminationValues one value or one for each year.'
+$sbValue = "SmallBusinessPool$L needs the opening balance and each amount to be a number from 0 to under 10,000,000,000,000, or blank."
+foreach ($r in @(@('{1,2}, 100', $sbShape), @('100, {1;2}', $sbShape), @('100, {1,2}, {1,2,3}', $sbShape),
+                 @('-1, 100', $sbValue), @('100, -1', $sbValue), @('100, 1, , "5"', $sbValue), @('100, TRUE', $sbValue))) {
+    Same "SmallBusinessPool refuses ($($r[0]))" "LET(x, $sb($($r[0])), $one)" $r[1]
+}
+
 # --- Movement. Each row's opening is its own: a blank one defaults only that row.
 Near 'Movement, per-row opening'       "INDEX($mv({100;`"`";50},{110,120;5,6;60,70}),1,1)" '10'
 Near 'Movement, blank opening row'     "INDEX($mv({100;`"`";50},{110,120;5,6;60,70}),2,1)" '5'
@@ -2206,6 +2266,14 @@ Fuzz 'fuzz: MarginSchemeGST = 1/11 of the excess' `
 Fuzz 'fuzz: FBTGrossUp = value x 57000/27401 or 100/53' `
      'v, RANDBETWEEN(0,1000000)/100, t, RANDBETWEEN(1,2)' '"v="&v&" t="&t' `
      "oz.FBTGrossUp$L(v, t)" 'v*IF(t=1, 57000/27401, 100/53)' '0.000001'
+# One year of a low-value pool declines by 18.75% of the low-cost amount and 37.5% of the rest.
+Fuzz 'fuzz: LowValuePool decline = 0.1875 x low-cost + 0.375 x (opening + low-value)' `
+     'o, RANDBETWEEN(0,1000000)/100, c, RANDBETWEEN(0,100000)/100, v, RANDBETWEEN(0,100000)/100' '"o="&o&" c="&c&" v="&v' `
+     "INDEX(oz.LowValuePool$L(o, c, v), 2, 1)" '0.1875*c + 0.375*(o + v)' '0.000001'
+# A small business pool of $20,000 or more deducts 30% of the opening and 15% of additions.
+Fuzz 'fuzz: SmallBusinessPool deduction = 30% x opening + 15% x additions' `
+     'o, RANDBETWEEN(2000000,100000000)/100, a, RANDBETWEEN(0,1000000)/100' '"o="&o&" a="&a' `
+     "INDEX(oz.SmallBusinessPool$L(o, a), 2, 1)" '0.3*o + 0.15*a' '0.000001'
 # The randomised checks rest on MAP() drawing fresh values for every trial. Prove it.
 Near 'fuzz: MAP draws fresh values per trial' "--(ROWS(UNIQUE(MAP(SEQUENCE(25), LAMBDA(i, RANDBETWEEN(1,1000000))))) > 1)" '1'
 

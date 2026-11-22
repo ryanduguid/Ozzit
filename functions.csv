@@ -95,6 +95,7 @@ oz.LeaseLiabilityλ,Financial,,"LeaseLiabilityλ(Payments, Rate, [InAdvance])",P
 oz.LeaseRemeasureλ,Financial,,"LeaseRemeasureλ(RevisedPayments, Rate, CarryingLiability, CarryingROU, [InAdvance])",Remeasures an AASB 16 lease liability for revised payments and adjusts the right-of-use asset
 oz.LeaseScheduleλ,Financial,,"LeaseScheduleλ(Payments, Rate, [InAdvance])","Unwinds an AASB 16 lease liability: opening, payment, interest and closing for each period"
 oz.LevelPaymentλ,Financial,,"LevelPaymentλ(Principal, Rates, [Balloon])","The level payment at the end of each period that repays a loan over a row of period rates, which may differ from period to period"
+oz.LowValuePoolλ,Financial,,"LowValuePoolλ(OpeningBalance, LowCostAssets, [LowValueAssets], [TerminationValues])","Low-value pool roll-forward under ITAA 1997 s 40-440 and s 40-445, one income year in each column, unrounded"
 oz.MarginSchemeGSTλ,Financial,,"MarginSchemeGSTλ(Consideration, MarginBase)","GST on a taxable supply of real property under the margin scheme, GST Act s 75-10, unrounded"
 oz.MaxColsUλ,Utilities,nabla.u.MaxColsλ,MaxColsUλ( Array),Get the maximum for each Column
 oz.MaxColsλ,Essentials,nabla.e.MaxColsλ,MaxColsλ( Array),Get the maximum for each Column
@@ -148,6 +149,7 @@ oz.ScheduleRatesByItemsλ,Dates,nabla.d.ScheduleRatesByItemsλ,"ScheduleRatesByI
 oz.ScheduleRatesλ,Dates,nabla.d.ScheduleRatesλ,"ScheduleRatesλ(PeriodEnds, RateStarts, Rates)",Schedule rates that persist until replaced in a timeline.
 oz.ScheduleValuesByItemsλ,Dates,nabla.d.ScheduleValuesByItemsλ,"ScheduleValuesByItemsλ(PeriodStarts, PeriodEnds, ItemFilter, ItemList, EffectiveList, ValueList)",Schedule and sum values in a timeline for each item.
 oz.ScheduleValuesλ,Dates,nabla.d.ScheduleValuesλ,"ScheduleValuesλ(PeriodStarts, PeriodEnds, Values, EffectiveDates)",Schedules values in a timeline from a schedule in a table.
+oz.SmallBusinessPoolλ,Financial,,"SmallBusinessPoolλ(OpeningBalance, Additions, [CostAdditions], [TerminationValues])","General small business pool roll-forward under ITAA 1997 Subdivision 328-D, one income year in each column, unrounded"
 oz.SumAmortiseλ,Financial,nabla.f.SumAmortiseλ,SumAmortiseλ(AmortisationSchedule),Create row totals for Amortiseλ
 oz.SumColsUλ,Utilities,nabla.u.SumColsλ,SumColsUλ( Array),Get the total for each Column
 oz.SumColsλ,Essentials,nabla.e.SumColsλ,SumColsλ( Array),Get the total for each Column

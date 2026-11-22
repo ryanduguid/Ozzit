@@ -85,7 +85,11 @@ AboutFinancialλ = TRIM(TEXTSPLIT(
                                            "Div7AMinRepaymentλ →Division 7A minimum yearly repayment from the unpaid balance, benchmark rate and remaining term¶" &
                                            "→¶" &
                                            "FRINGE BENEFITS TAX→¶" &
-                                           "FBTGrossUpλ        →Grossed-up taxable value of type 1 or type 2 fringe benefits at the 47% FBT rate¶" & 
+                                           "FBTGrossUpλ        →Grossed-up taxable value of type 1 or type 2 fringe benefits at the 47% FBT rate¶" &
+                                           "→¶" &
+                                           "DEPRECIATION POOLS →¶" &
+                                           "LowValuePoolλ      →Low-value pool roll-forward: opening, decline in value, closing and assessable rows for each income year¶" &
+                                           "SmallBusinessPoolλ →General small business pool roll-forward: opening, deduction, closing and assessable rows for each income year¶" & 
                                            "→¶" &
                                            "DEBT MODULE        →¶" &
                                            "AmortiseBλ         →Creates an amortisation schedule for a debt/loan across a model's periods¶" &
@@ -2743,6 +2747,173 @@ YearToDateλ = LAMBDA(
     //  Return Result, Help or the message
         Return,         IF(Help?, 2, IF(NOT(ValidStart?), 3, IF(NOT(Shaped?), 4, IF(NOT(OneDate?), 5, IF(NOT(Numbers?), 6, 1))))),
         CHOOSE( Return, Result, Help, StartMessage, ShapeMessage, AsAtMessage, ValuesMessage)
+    )
+);
+
+
+
+/*  FUNCTION NAME:  LowValuePoolλ
+    DESCRIPTION:*//**Low-value pool roll-forward under ITAA 1997 s 40-440 and s 40-445, one income year in each column, unrounded*/
+/*  SOURCE:         Income Tax Assessment Act 1997, compilation 268 (1 October 2026), volume 2, read
+                    22 November 2026:
+                    https://www.legislation.gov.au/C2004A05138/2026-10-01/2026-10-01/text/original/epub/OEBPS/document_2/document_2.html
+                    s 40-440(1): the decline in value is 18 3/4% of the taxable use percentage of the cost of
+                    low-cost assets allocated for the year and of second element amounts for the year, plus
+                    37 1/2% of the previous closing pool balance and the taxable use percentage of the
+                    opening adjustable values of low-value assets allocated for the year. s 40-440(2): the
+                    closing pool balance is the previous closing balance plus the year's amounts, less the
+                    decline. s 40-445: termination values reduce it, not below zero, and any excess is
+                    assessable income.
+*/
+LowValuePoolλ = LAMBDA(
+//  Parameter Declaration
+    [OpeningBalance],
+    [LowCostAssets],
+    [LowValueAssets],
+    [TerminationValues],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →LowValuePoolλ(OpeningBalance, LowCostAssets, [LowValueAssets], [TerminationValues])¶" &
+                            "DESCRIPTION:   →Low-value pool: opening, decline in value, closing and assessable rows for each income year.¶NOTES!         →Rolls a low-value pool forward under ITAA 1997 s 40-440 and s 40-445, one¶               →income year in each column. Returns four rows: opening pool balance,¶               →decline in value (the deduction), closing pool balance, and the amount¶               →included in assessable income when termination values exceed the pool. The¶               →decline is 18 3/4% of the low-cost assets and second element amounts for¶               →the year plus 37 1/2% of the opening balance and the low-value assets¶               →allocated for the year. Every amount is the taxable use percentage of it (s¶               →40-435). The result is not rounded. It does not decide which assets may go¶               →in the pool.¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
+                            "VERSION:       →22 Nov 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "OpeningBalance →(Required) Closing pool balance for the year before the first column, 0 or more. A blank is 0.¶" &
+                            "LowCostAssets  →(Required) A row: for each income year, the low-cost assets allocated and the second element amounts for the year, each 0 or more and under 10,000,000,000,000; a blank is 0.¶" &
+                            "LowValueAssets →(Optional) Opening adjustable values of low-value assets allocated for the year, one value for every year, or one for each year. Omitted, none.¶" &
+                            "TerminationValues →(Optional) Termination values of pooled assets for the year, one value for every year, or one for each year. Omitted, none.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.LowValuePoolλ(5000, {594,0})¶" &
+                            "→Result¶" &
+                            "→5000, 3607.625¶" &
+                            "→1986.375, 1352.859375¶" &
+                            "→3607.625, 2254.765625¶" &
+                            "→0, 0",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR( ISOMITTED( OpeningBalance), ISOMITTED( LowCostAssets)),
+    //  One opening balance; LowCostAssets sets the years, each other row is one value or one for each year
+        Years,          IFERROR( COLUMNS( LowCostAssets), 1),
+        Fits?,          LAMBDA( x, IFERROR( AND( ROWS( x) = 1, OR( COLUMNS( x) = 1, COLUMNS( x) = Years)), ISERROR( x))),
+        ValidShape?,    AND( IFERROR( ROWS( OpeningBalance) * COLUMNS( OpeningBalance) = 1, ISERROR( OpeningBalance)),
+                            IFERROR( ROWS( LowCostAssets) = 1, ISERROR( LowCostAssets)),
+                            IF( ISOMITTED( LowValueAssets), TRUE, Fits?( LowValueAssets)),
+                            IF( ISOMITTED( TerminationValues), TRUE, Fits?( TerminationValues))),
+        ShapeMessage,   "OpeningBalance must be one value, LowCostAssets one row with a value for each income year, and LowValueAssets and TerminationValues one value or one for each year.",
+    //  A blank is 0; an error passes so it shows
+        Amount?,        LAMBDA( x, AND( IF( ISERROR( x), TRUE, IF( ISNUMBER( x), ( x >= 0) * ( x < 1E13), x & "" = "")))),
+        ValidValue?,    AND( Amount?( OpeningBalance), Amount?( LowCostAssets),
+                            IF( ISOMITTED( LowValueAssets), TRUE, Amount?( LowValueAssets)),
+                            IF( ISOMITTED( TerminationValues), TRUE, Amount?( TerminationValues))),
+        ValueMessage,   "LowValuePoolλ needs the opening balance and each amount to be a number from 0 to under 10,000,000,000,000, or blank.",
+        Yearly,         LAMBDA( x, IF( SEQUENCE( 1, Years), IF( x & "" = "", 0, x))),
+        Nil,            SEQUENCE( 1, Years, 0, 0),
+        Start,          LET( x, INDEX( OpeningBalance, 1, 1), IF( x & "" = "", 0, x)),
+        LowCost,        Yearly( LowCostAssets),
+        LowValue,       IF( ISOMITTED( LowValueAssets), Nil, Yearly( LowValueAssets)),
+        Ended,          IF( ISOMITTED( TerminationValues), Nil, Yearly( TerminationValues)),
+    //  Procedure - s 40-440(1) and (2), then s 40-445 for termination values
+        Closing,        SCAN( Start, SEQUENCE( 1, Years), LAMBDA( Prev, Year, LET(
+                            Lc, INDEX( LowCost, 1, Year),
+                            Lv, INDEX( LowValue, 1, Year),
+                            MAX( 0, Prev + Lc + Lv - ( 0.1875 * Lc + 0.375 * ( Prev + Lv)) - INDEX( Ended, 1, Year))
+                        ))),
+        Opening,        DROP( HSTACK( Start, Closing), , -1),
+        Decline,        0.1875 * LowCost + 0.375 * ( Opening + LowValue),
+        Over,           Ended - ( Opening + LowCost + LowValue - Decline),
+        Result,         VSTACK( Opening, Decline, Closing, IF( Over > 0, Over, 0)),
+    //  Return Result, Help, or the message
+        Return,         IF( Help?, 2, IF( NOT( ValidShape?), 3, IF( NOT( ValidValue?), 4, 1))),
+        CHOOSE( Return, Result, Help, ShapeMessage, ValueMessage)
+    )
+);
+
+
+/*  FUNCTION NAME:  SmallBusinessPoolλ
+    DESCRIPTION:*//**General small business pool roll-forward under ITAA 1997 Subdivision 328-D, one income year in each column, unrounded*/
+/*  SOURCE:         Income Tax Assessment Act 1997, compilation 268 (1 October 2026), volume 7, read
+                    22 November 2026:
+                    https://www.legislation.gov.au/C2004A05138/2026-10-01/2026-10-01/text/original/epub/OEBPS/document_7/document_7.html
+                    s 328-190(1): opening pool balance x 30%; s 328-190(2) to (4): 15% of the taxable purpose
+                    proportion of assets first used in the year and of cost addition amounts. s 328-200:
+                    closing pool balance. s 328-210: a pool whose opening balance plus additions and cost
+                    addition amounts, less termination values, is more than zero and less than $20,000 is
+                    deducted in full and closes at zero. s 328-215(2) and (3): a closing balance or that
+                    amount below zero is assessable income, and the balance becomes zero.
+                    Income Tax (Transitional Provisions) Act 1997, compilation 104 (1 October 2026), read
+                    22 November 2026, s 328-180(6)(e): $20,000 for income years ending from 1 July 2023 to
+                    30 June 2026; Act No. 71 of 2026 put $20,000 in s 328-210(1) from 1 July 2026:
+                    https://www.legislation.gov.au/C2004A05128/2026-10-01/2026-10-01/text/original/epub/OEBPS/document_1/document_1.html
+*/
+SmallBusinessPoolλ = LAMBDA(
+//  Parameter Declaration
+    [OpeningBalance],
+    [Additions],
+    [CostAdditions],
+    [TerminationValues],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →SmallBusinessPoolλ(OpeningBalance, Additions, [CostAdditions], [TerminationValues])¶" &
+                            "DESCRIPTION:   →General small business pool: opening, deduction, closing and assessable rows for each income year.¶NOTES!         →Rolls a general small business pool forward under ITAA 1997 Subdivision¶               →328-D, one income year in each column. Returns four rows: opening pool¶               →balance, deduction, closing pool balance, and the amount included in¶               →assessable income. The deduction is 30% of the opening balance plus 15% of¶               →the additions and cost addition amounts; when the opening balance plus¶               →those less termination values is more than zero and less than $20,000 it is¶               →all deducted and the pool closes at zero (s 328-210); below zero it is¶               →assessable income and nothing is deducted (s 328-215). The $20,000 applies¶               →to income years from 2023-24 on; earlier years used other limits and are¶               →not covered. Every amount is the taxable purpose proportion of it. Leave¶               →out assets written off under s 328-180. The result is not rounded.¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
+                            "VERSION:       →22 Nov 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "OpeningBalance →(Required) Opening pool balance for the first column's income year, 0 or more. A blank is 0.¶" &
+                            "Additions      →(Required) A row: for each income year, the assets first used or installed ready for use that year and allocated to the pool, each 0 or more and under 10,000,000,000,000; a blank is 0.¶" &
+                            "CostAdditions  →(Optional) Cost addition amounts for assets already in the pool, one value for every year, or one for each year. Omitted, none.¶" &
+                            "TerminationValues →(Optional) Termination values of pooled assets for the year, one value for every year, or one for each year. Omitted, none.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.SmallBusinessPoolλ(100000, {28000,0}, 0, {8000,0})¶" &
+                            "→Result¶" &
+                            "→100000, 85800¶" &
+                            "→34200, 25740¶" &
+                            "→85800, 60060¶" &
+                            "→0, 0",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR( ISOMITTED( OpeningBalance), ISOMITTED( Additions)),
+    //  One opening balance; Additions sets the years, each other row is one value or one for each year
+        Years,          IFERROR( COLUMNS( Additions), 1),
+        Fits?,          LAMBDA( x, IFERROR( AND( ROWS( x) = 1, OR( COLUMNS( x) = 1, COLUMNS( x) = Years)), ISERROR( x))),
+        ValidShape?,    AND( IFERROR( ROWS( OpeningBalance) * COLUMNS( OpeningBalance) = 1, ISERROR( OpeningBalance)),
+                            IFERROR( ROWS( Additions) = 1, ISERROR( Additions)),
+                            IF( ISOMITTED( CostAdditions), TRUE, Fits?( CostAdditions)),
+                            IF( ISOMITTED( TerminationValues), TRUE, Fits?( TerminationValues))),
+        ShapeMessage,   "OpeningBalance must be one value, Additions one row with a value for each income year, and CostAdditions and TerminationValues one value or one for each year.",
+    //  A blank is 0; an error passes so it shows
+        Amount?,        LAMBDA( x, AND( IF( ISERROR( x), TRUE, IF( ISNUMBER( x), ( x >= 0) * ( x < 1E13), x & "" = "")))),
+        ValidValue?,    AND( Amount?( OpeningBalance), Amount?( Additions),
+                            IF( ISOMITTED( CostAdditions), TRUE, Amount?( CostAdditions)),
+                            IF( ISOMITTED( TerminationValues), TRUE, Amount?( TerminationValues))),
+        ValueMessage,   "SmallBusinessPoolλ needs the opening balance and each amount to be a number from 0 to under 10,000,000,000,000, or blank.",
+        Yearly,         LAMBDA( x, IF( SEQUENCE( 1, Years), IF( x & "" = "", 0, x))),
+        Nil,            SEQUENCE( 1, Years, 0, 0),
+        Start,          LET( x, INDEX( OpeningBalance, 1, 1), IF( x & "" = "", 0, x)),
+        Added,          Yearly( Additions),
+        Improved,       IF( ISOMITTED( CostAdditions), Nil, Yearly( CostAdditions)),
+        Ended,          IF( ISOMITTED( TerminationValues), Nil, Yearly( TerminationValues)),
+    //  Procedure - s 328-190, s 328-200, s 328-210 at $20,000, then s 328-215
+        Closing,        SCAN( Start, SEQUENCE( 1, Years), LAMBDA( Prev, Year, LET(
+                            New, INDEX( Added, 1, Year) + INDEX( Improved, 1, Year),
+                            Amount, Prev + New - INDEX( Ended, 1, Year),
+                            IF( Amount < 20000, 0, MAX( 0, Amount - ( 0.3 * Prev + 0.15 * New)))
+                        ))),
+        Opening,        DROP( HSTACK( Start, Closing), , -1),
+        Pool,           Opening + Added + Improved - Ended,
+        Rated,          0.3 * Opening + 0.15 * ( Added + Improved),
+        Small?,         ( Pool > 0) * ( Pool < 20000),
+        Deduction,      IF( Pool < 0, 0, IF( Small?, Pool, Rated)),
+        Assessable,     IF( Pool < 0, -Pool, IF( Small?, 0, IF( Rated > Pool, Rated - Pool, 0))),
+        Result,         VSTACK( Opening, Deduction, Closing, Assessable),
+    //  Return Result, Help, or the message
+        Return,         IF( Help?, 2, IF( NOT( ValidShape?), 3, IF( NOT( ValidValue?), 4, 1))),
+        CHOOSE( Return, Result, Help, ShapeMessage, ValueMessage)
     )
 );
 

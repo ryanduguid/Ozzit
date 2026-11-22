@@ -82,6 +82,16 @@ Both stop at 30 June 2027: the [Treasury Laws Amendment (Tax Reform No. 1) Act 2
 - `Type` is 1 or 2: one for every value, or one for each in the same shape.
 - It works out rates only. It does not value a benefit, decide whether it is type 1 or type 2, or apply exemptions, the $30,000 or $17,000 caps of section 5B(1E), or rebates.
 
+## Depreciation pools
+
+`oz.LowValuePoolλ` and `oz.SmallBusinessPoolλ` roll a pool forward under the [Income Tax Assessment Act 1997](https://www.legislation.gov.au/C2004A05138/latest/text), one income year in each column. Each returns 4 rows: the opening pool balance, the deduction, the closing pool balance and the amount included in assessable income. Every amount passed in is the taxable use percentage (low-value pool, section 40-435) or taxable purpose proportion (small business pool, section 328-205) of it. Results are not rounded.
+
+- `oz.LowValuePoolλ(OpeningBalance, LowCostAssets, [LowValueAssets], [TerminationValues])`: the decline in value is 18.75% of the low-cost assets allocated for the year and the second element amounts for the year (pass both in `LowCostAssets`), plus 37.5% of the opening balance and the opening adjustable values of low-value assets allocated for the year (section 40-440(1)). The closing balance is the opening balance plus the year's amounts, less the decline (section 40-440(2)), then less termination values, not below zero; any excess is assessable income (section 40-445).
+- `oz.SmallBusinessPoolλ(OpeningBalance, Additions, [CostAdditions], [TerminationValues])`: the deduction is 30% of the opening pool balance (section 328-190(1)) plus 15% of the assets first used or installed ready for use in the year and of cost addition amounts (section 328-190(2) to (4)). When the opening balance plus additions and cost addition amounts, less termination values, is more than zero and less than $20,000, it is all deducted and the pool closes at zero (section 328-210). Below zero, it is assessable income and nothing is deducted (section 328-215). A closing balance that would fall below zero is also assessable income.
+- The $20,000 low pool value applies to income years ending from 1 July 2023 to 30 June 2026 under section 328-180(6)(e) of the [Income Tax (Transitional Provisions) Act 1997](https://www.legislation.gov.au/C2004A05128/latest/text), and from 1 July 2026 under section 328-210(1) itself. Earlier years used other limits, or none for years ending from 6 October 2020 to 30 June 2023 (section 328-181(5)), and are not covered.
+- `OpeningBalance` is one value. `LowCostAssets` and `Additions` are a row with a value for each year; each other row is one value for every year or one for each. A blank is 0.
+- They do not decide which assets may go in a pool, the taxable use or purpose, assets written off under section 328-180, balancing adjustments outside the pool, or roll-over relief.
+
 ## AASB 16 leases
 
 Four functions cover lessee accounting. `oz.ROUScheduleλ` takes the asset's `Cost` directly: the initial liability plus prepayments net of incentives, initial direct costs and applicable restoration costs under [AASB 16 paragraph 24](https://standards.aasb.gov.au/aasb-16-nov-2022). A later index review feeds the remeasurement.
