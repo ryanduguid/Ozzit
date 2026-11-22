@@ -30,7 +30,7 @@ fn snapshot(dir: &Path) -> Vec<(String, Vec<u8>)> {
 }
 
 /// The passes that take the workbook, `src/` and functions.csv, in run order.
-const FUNCTION_PASSES: [&str; 9] = [
+const FUNCTION_PASSES: [&str; 10] = [
     "aasb16_leases",
     "rate_date_helpers",
     "working_capital_days",
@@ -40,6 +40,7 @@ const FUNCTION_PASSES: [&str; 9] = [
     "payg_withholding",
     "finance_journals",
     "cgt_parcels",
+    "income_tax",
 ];
 
 #[test]

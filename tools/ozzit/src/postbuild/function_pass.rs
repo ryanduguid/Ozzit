@@ -5,7 +5,7 @@
 //! working-capital days, rate and date helpers, ATO benchmark and rate lookup,
 //! variance and financial-year periods, the level payment and rate corkscrew, PAYG
 //! withholding, the lease and hire purchase journals and finance comparison, and
-//! the CGT parcels and net capital gain.
+//! the CGT parcels and net capital gain, and income tax.
 //!
 //! Each adds functions and About rows to `src/`, the defined names and the About
 //! tables to the workbook, and rows to functions.csv, in one recoverable step.
@@ -57,7 +57,7 @@ macro_rules! added {
     };
 }
 
-const SPECS: [Spec; 8] = [
+const SPECS: [Spec; 9] = [
     Spec {
         stem: "working_capital_days",
         data: include_str!("../data/postbuild/working_capital_days.json"),
@@ -106,6 +106,7 @@ const SPECS: [Spec; 8] = [
         "CGT parcel and net capital gain functions",
         "capital gains"
     ),
+    added!("income_tax", "income tax function", "income tax"),
 ];
 
 struct Function {
@@ -516,6 +517,9 @@ pub fn finance_journals(args: &[String]) -> Output {
 }
 pub fn cgt_parcels(args: &[String]) -> Output {
     command(&SPECS[7], args)
+}
+pub fn income_tax(args: &[String]) -> Output {
+    command(&SPECS[8], args)
 }
 
 #[cfg(test)]

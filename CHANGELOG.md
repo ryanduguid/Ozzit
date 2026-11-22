@@ -31,6 +31,10 @@ release; until then v3.7.0 behaves as it did.
   s 102-5(1) for 2025-26 and 2026-27. Both refuse what the Treasury Laws Amendment (Tax
   Reform No. 1) Act 2026 changes from 1 July 2027. `ozzit cgt_parcels` adds the 2
   functions to `src/`, the workbook and `functions.csv`.
+- `oz.IncomeTaxλ(TaxableIncome, IncomeYear, [Resident])` returns tax on taxable income at
+  the general rates of the Income Tax Rates Act 1986, Schedule 7, for a resident or a
+  foreign resident for the whole of 2024-25, 2025-26 or 2026-27, and refuses other years.
+  It leaves out the Medicare levy, offsets and special rates. `ozzit income_tax` adds it.
 
 ### Fixed
 

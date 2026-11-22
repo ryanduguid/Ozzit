@@ -75,6 +75,7 @@ oz.GrossMarginλ,Ratios,nabla.r.GrossMarginλ,"GrossMarginλ( GrossProfit, NetSa
 oz.HPJournalλ,Financial,,"HPJournalλ(HPSchedule, [Accounts])","Journal lines for a hire purchase or chattel mortgage from its HPScheduleλ schedule: amount financed, interest, instalments and balloon"
 oz.HPScheduleλ,Financial,,"HPScheduleλ(Financed, AnnualRate, Periods, [PeriodsPerYear], [InAdvance], [Balloon])","Hire purchase or chattel mortgage schedule in cents: opening, payment, interest, principal and closing for each period"
 oz.IRRλ,Financial,nabla.f.IRRλ,"IRRλ( Values, Dates)","Calculates IRR, correcting for when the first investment is not in the first period"
+oz.IncomeTaxλ,Financial,,"IncomeTaxλ(TaxableIncome, IncomeYear, [Resident])","Tax on taxable income at the general rates for a full-year resident or foreign resident individual, 2024-25 to 2026-27, before the Medicare levy and offsets"
 oz.IntOnIntλ,Financial,nabla.f.IntOnIntλ,"IntOnIntλ( Principal, Rate)",Calculate Interest on Interest. Use to determine amount needed to cover debt plus interest on debt
 oz.InterestCoverageRatioλ,Ratios,nabla.r.InterestCoverageRatioλ,"InterestCoverageRatioλ( OperatingIncome, InterestExpenses)",Determines how easily a company can pay interest on its outstanding debt (Operating Income/Interest Expenses)
 oz.InterestLRVλ,Debt,nabla.debt.InterestLRVλ,"InterestLRVλ(CFADS, DSCR, Principal, InterestRate)","Calculates debt sculpting interest on the average balance over the period, the method presented by Lance Rubin"
