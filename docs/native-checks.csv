@@ -59,6 +59,7 @@ oz.DebtToEquityRatioλ,1,1,0,1
 oz.Depreciateλ,1,2,36,5
 oz.DepreciateλDV,1,0,7,0
 oz.DiminishingValueλ,1,2,10,1
+oz.Div7AMinRepaymentλ,1,2,15,0
 oz.DividendYieldRatioλ,1,1,0,1
 oz.EBITDAMarginλ,1,1,0,1
 oz.EPSλ,1,1,0,1

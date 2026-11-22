@@ -53,6 +53,16 @@ Both stop at 30 June 2027: the [Treasury Laws Amendment (Tax Reform No. 1) Act 2
 - 2027-28 and later are refused as a support boundary, although Schedule 7 already sets 14% for the first resident band from 2027-28: the ATO lists no rates for them yet, and the [Treasury Laws Amendment (Tax Reform No. 1) Act 2026](https://www.legislation.gov.au/C2026A00049/asmade/text) adds extra income tax on capital gains (Division 119) for CGT events from 1 July 2027.
 - It leaves out the Medicare levy and surcharge, tax offsets, the pro-rated tax-free threshold of a part-year resident, working holiday makers' rates, minors' unearned income and special income components such as averaging.
 
+## Division 7A minimum yearly repayment
+
+`oz.Div7AMinRepaymentλ(OpeningBalance, BenchmarkRate, RemainingTerm)` returns the minimum yearly repayment of each Division 7A amalgamated loan under section 109E(6) of the [Income Tax Assessment Act 1936](https://www.legislation.gov.au/C1936A00027/latest/text), unrounded. It is `PMT(BenchmarkRate, RemainingTerm rounded up, -OpeningBalance)`.
+
+- `OpeningBalance` is the amount of the loan not repaid by the end of the previous income year: one balance, or a column or row of them. A blank stays blank.
+- `BenchmarkRate` is the current year's benchmark interest rate, which section 109N(2) sets as the Reserve Bank's bank variable housing loan rate last published before the year starts. The ATO's [benchmark rate page](https://www.ato.gov.au/tax-rates-and-codes/division-7a-benchmark-interest-rate) gives 8.77% for the year ending 30 June 2027 and 8.37% for 2026; a company with a substituted accounting period works out its own.
+- `RemainingTerm` is the longest constituent loan's term less the years between the end of the year the loan was made and the end of the previous year. A part year is rounded up, as section 109E(6) requires. One term serves every balance, or give one for each. More than 25 years, the section 109N(3) maximum, is refused.
+- The ATO's [worked examples](https://www.ato.gov.au/businesses-and-organisations/corporate-tax-measures-and-assurance/private-company-benefits-division-7a-dividends/in-detail/division-7a-loans) come out at $9,835 ($55,000 at 5.95% over 7 years) and $10,079 ($50,430 at 5.45% over 6 years) when rounded to the dollar.
+- It is arithmetic only. It does not decide whether a loan meets section 109N, which payments count (section 109R), or whether a shortfall is a dividend, and there is no minimum yearly repayment in the year the loan is made.
+
 ## AASB 16 leases
 
 Four functions cover lessee accounting. `oz.ROUScheduleλ` takes the asset's `Cost` directly: the initial liability plus prepayments net of incentives, initial direct costs and applicable restoration costs under [AASB 16 paragraph 24](https://standards.aasb.gov.au/aasb-16-nov-2022). A later index review feeds the remeasurement.

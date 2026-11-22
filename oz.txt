@@ -1599,7 +1599,10 @@ AboutFinancialλ = TRIM(TEXTSPLIT(
                                            "NetCapitalGainλ    →Net capital gain after capital losses and the CGT discount, for 2025-26 or 2026-27¶" &
                                            "→¶" &
                                            "INCOME TAX         →¶" &
-                                           "IncomeTaxλ         →Tax on taxable income at the general rates, 2024-25 to 2026-27, before the Medicare levy and offsets¶" & 
+                                           "IncomeTaxλ         →Tax on taxable income at the general rates, 2024-25 to 2026-27, before the Medicare levy and offsets¶" &
+                                           "→¶" &
+                                           "DIVISION 7A        →¶" &
+                                           "Div7AMinRepaymentλ →Division 7A minimum yearly repayment from the unpaid balance, benchmark rate and remaining term¶" & 
                                            "→¶" &
                                            "DEBT MODULE        →¶" &
                                            "AmortiseBλ         →Creates an amortisation schedule for a debt/loan across a model's periods¶" &
@@ -4257,6 +4260,79 @@ YearToDateλ = LAMBDA(
     //  Return Result, Help or the message
         Return,         IF(Help?, 2, IF(NOT(ValidStart?), 3, IF(NOT(Shaped?), 4, IF(NOT(OneDate?), 5, IF(NOT(Numbers?), 6, 1))))),
         CHOOSE( Return, Result, Help, StartMessage, ShapeMessage, AsAtMessage, ValuesMessage)
+    )
+);
+
+
+
+/*  FUNCTION NAME:  Div7AMinRepaymentλ
+    DESCRIPTION:*//**Minimum yearly repayment of a Division 7A amalgamated loan under ITAA 1936 s 109E(6), unrounded*/
+/*  SOURCE:         Income Tax Assessment Act 1936, compilation 193 (1 October 2026), read 22 November 2026:
+                    https://www.legislation.gov.au/C1936A00027/2026-10-01/2026-10-01/text/original/epub/OEBPS/document_2/document_2.html
+                    s 109E(5) and (6): the minimum yearly repayment of an amalgamated loan is the amount of
+                    the loan not repaid by the end of the previous year of income times the current year's
+                    benchmark interest rate, divided by 1 less (1 / (1 + that rate)) to the power of the
+                    remaining term, which is rounded up to the next whole number of years. s 109N(2): the
+                    benchmark rate is the Reserve Bank's Indicator Lending Rates bank variable housing loan
+                    rate last published before the year starts. s 109N(3): the maximum term is 25 years
+                    for a loan secured by a registered mortgage over real property, otherwise 7 years.
+                    Income Tax Assessment (1936 Act) Regulation 2015, compilation 8 (9 December 2022), read
+                    22 November 2026, provides no other way of working out either amount.
+                    ATO, 'Division 7A - benchmark interest rate', last updated 1 July 2026, read 22 November
+                    2026: 8.77% for the income year ending 30 June 2027, 8.37% for 2026, 8.77% for 2025:
+                    https://www.ato.gov.au/tax-rates-and-codes/division-7a-benchmark-interest-rate
+                    ATO, 'Loans by private companies', last updated 2 July 2026, read 22 November 2026,
+                    works $55,000 at 5.95% over 7 years to $9,835 and $50,430 at 5.45% over 6 years to
+                    $10,079, each rounded to the dollar:
+                    https://www.ato.gov.au/businesses-and-organisations/corporate-tax-measures-and-assurance/private-company-benefits-division-7a-dividends/in-detail/division-7a-loans
+*/
+Div7AMinRepaymentλ = LAMBDA(
+//  Parameter Declaration
+    [OpeningBalance],
+    [BenchmarkRate],
+    [RemainingTerm],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →Div7AMinRepaymentλ(OpeningBalance, BenchmarkRate, RemainingTerm)¶" &
+                            "DESCRIPTION:   →Division 7A minimum yearly repayment of an amalgamated loan, ITAA 1936 s 109E(6).¶NOTES!         →The minimum yearly repayment of a Division 7A amalgamated loan under ITAA¶               →1936 s 109E(6): the balance not repaid by the end of the previous income¶               →year, at the current year's benchmark interest rate, over the remaining¶               →term rounded up to whole years. It equals PMT(BenchmarkRate, remaining¶               →term, -OpeningBalance). The rate is supplied: the ATO publishes it for each¶               →income year ending 30 June (8.77% for 2026-27), and a company with a¶               →substituted accounting period works out its own. The result is not rounded.¶               →Arithmetic only: it does not decide whether a loan complies with s 109N,¶               →which payments count as repayments (s 109R), or whether a shortfall is a¶               →dividend; there is no minimum yearly repayment in the year the loan is¶               →made.¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
+                            "VERSION:       →22 Nov 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "OpeningBalance →(Required) One or more balances not repaid by the end of the previous income year, each 0 or more and under 10,000,000,000,000. A blank stays blank.¶" &
+                            "BenchmarkRate  →(Required) The current year's benchmark interest rate, such as 8.77% for 2026-27.¶" &
+                            "RemainingTerm  →(Required) Years left of the longest constituent loan term, more than 0 and at most 25: one for every balance, or one for each. A part year is rounded up.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.Div7AMinRepaymentλ({100000;60000}, 8.77%, {5;6})¶" &
+                            "→Result¶" &
+                            "→25556.00¶" &
+                            "→13283.60",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR( ISOMITTED( OpeningBalance), ISOMITTED( BenchmarkRate), ISOMITTED( RemainingTerm)),
+    //  One rate for the year, as a fraction
+        ValidRate?,     IFERROR( AND( ROWS( BenchmarkRate) = 1, COLUMNS( BenchmarkRate) = 1, ISNUMBER( BenchmarkRate), BenchmarkRate > 0, BenchmarkRate < 1), FALSE),
+        RateMessage,    "BenchmarkRate must be one rate above 0 and below 1, such as 8.77% or 0.0877.",
+    //  One term for every loan, or one for each in the same shape
+        OneTerm?,       AND( ROWS( RemainingTerm) = 1, COLUMNS( RemainingTerm) = 1),
+        ValidShape?,    OR( OneTerm?, AND( ROWS( RemainingTerm) = ROWS( OpeningBalance), COLUMNS( RemainingTerm) = COLUMNS( OpeningBalance))),
+        ShapeMessage,   "RemainingTerm must be one term, or a term for each opening balance in the same shape.",
+    //  A blank is nil and stays blank; an error passes so it shows
+        ValidBalance?,  AND( IF( ISERROR( OpeningBalance), TRUE, IF( ISNUMBER( OpeningBalance), ( OpeningBalance >= 0) * ( OpeningBalance < 1E13), OpeningBalance & "" = ""))),
+        BalanceMessage, "Div7AMinRepaymentλ needs each opening balance to be a number from 0 to under 10,000,000,000,000, or blank.",
+        Terms,          IF( OneTerm?, IF( SEQUENCE( ROWS( OpeningBalance), COLUMNS( OpeningBalance)), RemainingTerm), RemainingTerm),
+    //  A term is needed only beside a balance; an error passes so it shows
+        ValidTerm?,     IFERROR( AND( IF( ISERROR( OpeningBalance), TRUE, IF( OpeningBalance & "" = "", TRUE, IF( ISERROR( Terms), TRUE, IF( ISNUMBER( Terms), ( Terms > 0) * ( Terms <= 25), FALSE))))), FALSE),
+        TermMessage,    "RemainingTerm must be more than 0 and at most 25 years for each opening balance.",
+    //  Procedure - s 109E(6), the remaining term rounded up to whole years
+        Result,         MAP( OpeningBalance, Terms, LAMBDA( Balance, Term,
+                            IF( Balance & "" = "", "", PMT( BenchmarkRate, ROUNDUP( Term, 0), -Balance))
+                        )),
+    //  Return Result, Help, or the message
+        Return,         IF( Help?, 2, IF( NOT( ValidRate?), 3, IF( NOT( ValidShape?), 4, IF( NOT( ValidBalance?), 5, IF( NOT( ValidTerm?), 6, 1))))),
+        CHOOSE( Return, Result, Help, RateMessage, ShapeMessage, BalanceMessage, TermMessage)
     )
 );
 

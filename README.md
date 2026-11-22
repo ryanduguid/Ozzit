@@ -112,6 +112,7 @@ you can check by hand; the lease guide explains the 4 lessee functions.
 | Lease, hire purchase, loan or cash, on `main` only | `=oz.FinanceCompareλ(CashFlows, DiscountRate, [PeriodsPerYear], [Labels])` | [Pre-tax present values](docs/australian-modelling.md#comparing-a-lease-hire-purchase-loan-or-cash) |
 | Capital gains on shares or units, on `main` only | `=oz.CGTParcelsλ(Parcels, Sales)` first in, first out, then `=oz.NetCapitalGainλ(IncomeYear, Gains, [Discountable], [Losses], [PriorLosses], [Entity])` for 2025-26 or 2026-27 | [Parcels, the 12 months and the discount](docs/australian-modelling.md#capital-gains) |
 | Income tax on taxable income, on `main` only | `=oz.IncomeTaxλ(TaxableIncome, IncomeYear, [Resident])` at the general rates for 2024-25 to 2026-27 | [Rates and what is left out](docs/australian-modelling.md#income-tax) |
+| Division 7A minimum yearly repayment, on `main` only | `=oz.Div7AMinRepaymentλ(OpeningBalance, BenchmarkRate, RemainingTerm)` under ITAA 1936 s 109E(6) | [Formula, term and what is left out](docs/australian-modelling.md#division-7a-minimum-yearly-repayment) |
 
 `oz.PAYGWithholdingλ` arrived in v3.7.0. It works out the amount before tax
 offsets and the Medicare levy adjustment and does not apply either, or the extra
@@ -126,7 +127,9 @@ works out Division 240 of the Income Tax Assessment Act 1997 or GST input tax cr
 the 2025-26 and 2026-27 income years: they do not decide who can use the CGT discount,
 apportion it for foreign or temporary residents, or apply the small business concessions.
 `oz.IncomeTaxλ`, also unreleased, applies the general rates only: no Medicare levy, tax
-offsets or part-year tax-free threshold.
+offsets or part-year tax-free threshold. `oz.Div7AMinRepaymentλ`, also unreleased, is the
+s 109E(6) arithmetic only: it does not decide whether a loan complies or a shortfall is a
+dividend.
 
 [Open, copy functions and use modern Excel](docs/workbook-use.md) shows how to
 copy a function into your own workbook.
