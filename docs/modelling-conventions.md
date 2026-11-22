@@ -10,7 +10,7 @@ the rules against the source at the commit that adds this page, not a claim that
 Ozzit complies with either guide, and neither body has reviewed it.
 
 Both guides were written for models: workbooks with inputs, a time axis,
-calculations and outputs. Ozzit is a library of 158 LAMBDA functions and 5 help
+calculations and outputs. Ozzit is a library of 159 LAMBDA functions and 5 help
 tables that models call. FAST 02c mentions neither LAMBDA nor dynamic arrays, and
 the ICAEW Code does not mention LAMBDA, so each rule is read for its purpose.
 Rules about workbook and worksheet layout still apply to any model built with
@@ -77,7 +77,7 @@ The Code's text is reserved, so this page quotes its section headings only.
 | Don't hide things | Departs, with copies | The logic sits in Name Manager, not on a sheet; `src/`, `oz.txt` and the help tables are the visible copies, and CI checks them against the workbook. |
 | Use consistent formulas | Depends on the calling model | As FAST 3.02-01. |
 | Use clear and meaningful labels; use clear range names | Follows | Function names say what they return, the `λ` suffix marks a function, and the `oz.` prefix marks the module. |
-| Document VBA code clearly (user-defined functions in cells) | Departs | Under this heading the Code advises against user-defined functions in workbook cells. It has VBA in view and does not mention LAMBDA, but read for its purpose, logic a reader cannot see in the cell, it applies: Ozzit's 158 functions exist to be called from cells. The mitigations are those under [Named LAMBDA functions](#named-lambda-functions). |
+| Document VBA code clearly (user-defined functions in cells) | Departs | Under this heading the Code advises against user-defined functions in workbook cells. It has VBA in view and does not mention LAMBDA, but read for its purpose, logic a reader cannot see in the cell, it applies: Ozzit's 159 functions exist to be called from cells. The mitigations are those under [Named LAMBDA functions](#named-lambda-functions). |
 | Review and test your models | Follows in part | Testing is evidenced: CI runs the verification gates in [CONTRIBUTING.md](../CONTRIBUTING.md), and releases need the native Excel self-test and cached-value evidence in [RELEASING.md](../RELEASING.md), where a maintainer approves each release candidate. No separate review of formula changes is documented. |
 | Minimise calculation complexity | Departs in definitions | As FAST 3.03-01 to 3.03-03; the Code allows it where breaking a hard rule is easier to follow. |
 | Build traceable references (no array formulas) | Departs | As FAST 3.03-09. |
