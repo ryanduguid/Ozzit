@@ -82,6 +82,8 @@ Same 'help: ROUSchedule${L}' "INDEX(oz.ROUSchedule${L}(),1,1)" 'FUNCTION:'
 Same 'help: Variance${L}' "INDEX(oz.Variance${L}(),1,1)" 'FUNCTION:'
 Same 'help: VariancePct${L}' "INDEX(oz.VariancePct${L}(),1,1)" 'FUNCTION:'
 Same 'help: YearToDate${L}' "INDEX(oz.YearToDate${L}(),1,1)" 'FUNCTION:'
+Same 'help: LowValuePool${L}' "INDEX(oz.LowValuePool${L}(),1,1)" 'FUNCTION:'
+Same 'help: SmallBusinessPool${L}' "INDEX(oz.SmallBusinessPool${L}(),1,1)" 'FUNCTION:'
 Same 'help: FBTGrossUp${L}' "INDEX(oz.FBTGrossUp${L}(),1,1)" 'FUNCTION:'
 Same 'help: MarginSchemeGST${L}' "INDEX(oz.MarginSchemeGST${L}(),1,1)" 'FUNCTION:'
 Same 'help: Div7AMinRepayment${L}' "INDEX(oz.Div7AMinRepayment${L}(),1,1)" 'FUNCTION:'
@@ -169,7 +171,7 @@ Same 'help: DebtSculptVariableLRV${L}' "INDEX(oz.DebtSculptVariableLRV${L}(),1,1
 Same 'help: DebtSculptVariable${L}' "INDEX(oz.DebtSculptVariable${L}(),1,1)" 'FUNCTION:'
 Same 'help: InterestLRV${L}' "INDEX(oz.InterestLRV${L}(),1,1)" 'FUNCTION:'
 
-# --- 171 worked examples that stand on their own, as the help prints them
+# --- 173 worked examples that stand on their own, as the help prints them
 Near 'example: CountDOW${L} #1' "oz.CountDOW${L}(`"23/7/2026`", `"11/8/2026`",  1)" '3.0' '0.5'
 Near 'example: IsBetween${L} #1' "N(oz.IsBetween${L}(1, 2, 4))" '0'
 Near 'example: IsBetween${L} #2' "N(oz.IsBetween${L}(Today(), Today(), Today()+1))" '1'
@@ -276,6 +278,10 @@ Near 'example: Variance${L} #1' "SUM(oz.Variance${L}({120;90}, {100;100}, {1;-1}
 Near 'example: VariancePct${L} #1' "oz.VariancePct${L}(-30, -20)" '-0.5' '0.005'
 Near 'example: YearToDate${L} #1' "COUNT(oz.YearToDate${L}({10,20,30,40;1,2,3,4}, DATE(2026,{5,6,7,8},1), DATE(2026,8,31)))" '2'
 Near 'example: YearToDate${L} #1' "SUM(oz.YearToDate${L}({10,20,30,40;1,2,3,4}, DATE(2026,{5,6,7,8},1), DATE(2026,8,31)))" '77.0' '1.0'
+Near 'example: LowValuePool${L} #1' "COUNT(oz.LowValuePool${L}(5000, {594,0}))" '8'
+Near 'example: LowValuePool${L} #1' "SUM(oz.LowValuePool${L}(5000, {594,0}))" '17809.25' '1.501501'
+Near 'example: SmallBusinessPool${L} #1' "COUNT(oz.SmallBusinessPool${L}(100000, {28000,0}, 0, {8000,0}))" '8'
+Near 'example: SmallBusinessPool${L} #1' "SUM(oz.SmallBusinessPool${L}(100000, {28000,0}, 0, {8000,0}))" '391600.0' '4.0'
 Near 'example: FBTGrossUp${L} #1' "COUNT(oz.FBTGrossUp${L}({16500;6000}, {1;2}))" '2'
 Near 'example: FBTGrossUp${L} #1' "SUM(oz.FBTGrossUp${L}({16500;6000}, {1;2}))" '45644.3195' '0.0001'
 Near 'example: MarginSchemeGST${L} #1' "COUNT(oz.MarginSchemeGST${L}({640000;180000}, {448000;200000}))" '2'
