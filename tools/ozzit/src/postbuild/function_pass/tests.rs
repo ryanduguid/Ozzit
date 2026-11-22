@@ -227,8 +227,13 @@ fn reproduces_the_financial_module(spec: &Spec) {
     let about = lookup_about(&t.about, "Financial");
     let at = current.find(&about.anchor).unwrap();
     let indent = &current[current[..at].rfind('\n').unwrap() + 1..at];
-    let heading = about.heading.as_deref().unwrap();
-    let inserted = ["\"→¶\"".to_string(), format!("\"{heading}¶\"")]
+    // A pass without a heading adds its rows straight after the anchor.
+    let inserted = about
+        .heading
+        .as_deref()
+        .map_or_else(Vec::new, |h| {
+            vec!["\"→¶\"".to_string(), format!("\"{h}¶\"")]
+        })
         .into_iter()
         .chain(t.functions.iter().map(|f| t.about_row("Financial", f)))
         .map(|line| format!("\n{indent}{line} &"))
