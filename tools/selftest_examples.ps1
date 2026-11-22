@@ -82,6 +82,7 @@ Same 'help: ROUSchedule${L}' "INDEX(oz.ROUSchedule${L}(),1,1)" 'FUNCTION:'
 Same 'help: Variance${L}' "INDEX(oz.Variance${L}(),1,1)" 'FUNCTION:'
 Same 'help: VariancePct${L}' "INDEX(oz.VariancePct${L}(),1,1)" 'FUNCTION:'
 Same 'help: YearToDate${L}' "INDEX(oz.YearToDate${L}(),1,1)" 'FUNCTION:'
+Same 'help: MarginSchemeGST${L}' "INDEX(oz.MarginSchemeGST${L}(),1,1)" 'FUNCTION:'
 Same 'help: Div7AMinRepayment${L}' "INDEX(oz.Div7AMinRepayment${L}(),1,1)" 'FUNCTION:'
 Same 'help: IncomeTax${L}' "INDEX(oz.IncomeTax${L}(),1,1)" 'FUNCTION:'
 Same 'help: CGTParcels${L}' "INDEX(oz.CGTParcels${L}(),1,1)" 'FUNCTION:'
@@ -167,7 +168,7 @@ Same 'help: DebtSculptVariableLRV${L}' "INDEX(oz.DebtSculptVariableLRV${L}(),1,1
 Same 'help: DebtSculptVariable${L}' "INDEX(oz.DebtSculptVariable${L}(),1,1)" 'FUNCTION:'
 Same 'help: InterestLRV${L}' "INDEX(oz.InterestLRV${L}(),1,1)" 'FUNCTION:'
 
-# --- 169 worked examples that stand on their own, as the help prints them
+# --- 170 worked examples that stand on their own, as the help prints them
 Near 'example: CountDOW${L} #1' "oz.CountDOW${L}(`"23/7/2026`", `"11/8/2026`",  1)" '3.0' '0.5'
 Near 'example: IsBetween${L} #1' "N(oz.IsBetween${L}(1, 2, 4))" '0'
 Near 'example: IsBetween${L} #2' "N(oz.IsBetween${L}(Today(), Today(), Today()+1))" '1'
@@ -274,6 +275,8 @@ Near 'example: Variance${L} #1' "SUM(oz.Variance${L}({120;90}, {100;100}, {1;-1}
 Near 'example: VariancePct${L} #1' "oz.VariancePct${L}(-30, -20)" '-0.5' '0.005'
 Near 'example: YearToDate${L} #1' "COUNT(oz.YearToDate${L}({10,20,30,40;1,2,3,4}, DATE(2026,{5,6,7,8},1), DATE(2026,8,31)))" '2'
 Near 'example: YearToDate${L} #1' "SUM(oz.YearToDate${L}({10,20,30,40;1,2,3,4}, DATE(2026,{5,6,7,8},1), DATE(2026,8,31)))" '77.0' '1.0'
+Near 'example: MarginSchemeGST${L} #1' "COUNT(oz.MarginSchemeGST${L}({640000;180000}, {448000;200000}))" '2'
+Near 'example: MarginSchemeGST${L} #1' "SUM(oz.MarginSchemeGST${L}({640000;180000}, {448000;200000}))" '17454.5455' '0.50005'
 Near 'example: Div7AMinRepayment${L} #1' "COUNT(oz.Div7AMinRepayment${L}({100000;60000}, 8.77%, {5;6}))" '2'
 Near 'example: Div7AMinRepayment${L} #1' "SUM(oz.Div7AMinRepayment${L}({100000;60000}, 8.77%, {5;6}))" '38839.6' '0.01'
 Near 'example: IncomeTax${L} #1' "COUNT(oz.IncomeTax${L}({31130;39000}, 2026))" '2'

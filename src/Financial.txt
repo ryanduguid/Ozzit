@@ -42,7 +42,8 @@ AboutFinancialλ = TRIM(TEXTSPLIT(
                                            "PrimeCostλ         →Straight-line depreciation schedule for one asset or asset class, in whole years. A modelling schedule, not a tax calculation.¶" & 
                                            "→¶" & 
                                            "AUSTRALIAN TAX     →¶" & 
-                                           "GSTAddλ            →Adds GST to one or more GST-exclusive amounts.¶" & 
+                                           "GSTAddλ            →Adds GST to one or more GST-exclusive amounts.¶" &
+                                           "MarginSchemeGSTλ   →GST under the margin scheme: 1/11 of the consideration less the margin base, nil for no margin¶" & 
                                            "GSTExtractλ        →Returns the GST contained in one or more GST-inclusive amounts.¶" &
                                            "LEASES (AASB 16)   →¶" &
                                            "LeaseLiabilityλ    →Present value of the lease payments that are not paid at the commencement date¶" &
@@ -2739,6 +2740,65 @@ YearToDateλ = LAMBDA(
     //  Return Result, Help or the message
         Return,         IF(Help?, 2, IF(NOT(ValidStart?), 3, IF(NOT(Shaped?), 4, IF(NOT(OneDate?), 5, IF(NOT(Numbers?), 6, 1))))),
         CHOOSE( Return, Result, Help, StartMessage, ShapeMessage, AsAtMessage, ValuesMessage)
+    )
+);
+
+
+
+/*  FUNCTION NAME:  MarginSchemeGSTλ
+    DESCRIPTION:*//**GST on a taxable supply of real property under the margin scheme, GST Act s 75-10, unrounded*/
+/*  SOURCE:         A New Tax System (Goods and Services Tax) Act 1999, compilation 96 (1 January 2026),
+                    read 22 November 2026:
+                    https://www.legislation.gov.au/C2004A00446/2026-01-01/2026-01-01/text/original/epub/OEBPS/document_1/document_1.html
+                    s 75-10(1): the GST on a taxable supply of real property under the margin scheme is 1/11
+                    of the margin. s 75-10(2): the margin is the amount by which the consideration for the
+                    supply exceeds the consideration for the supplier's acquisition of the interest, unit or
+                    lease; s 75-10(3): or exceeds an approved valuation, for an interest held from before
+                    1 July 2000 and the other items of its table. s 75-11 sets other bases for acquisitions
+                    from a GST group member, a joint venture operator or a deceased estate. s 9-90(1): GST
+                    on the only taxable supply on an invoice is rounded to the nearest cent, 0.5 up.
+*/
+MarginSchemeGSTλ = LAMBDA(
+//  Parameter Declaration
+    [Consideration],
+    [MarginBase],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →MarginSchemeGSTλ(Consideration, MarginBase)¶" &
+                            "DESCRIPTION:   →GST on a sale of real property under the margin scheme, GST Act s 75-10.¶NOTES!         →GST on a taxable supply of real property under the margin scheme: 1/11 of¶               →the amount by which the consideration exceeds the margin base (GST Act s¶               →75-10). The base is what the supplier paid for the interest (s 75-10(2)) or¶               →an approved valuation (s 75-10(3)), apportioned for a subdivided lot (s¶               →75-15) and leaving out improvements and costs (s 75-14). A margin of nil or¶               →less gives 0. The result is not rounded: s 9-90 rounds the GST on an¶               →invoice to the cent. Arithmetic only: it does not decide whether the margin¶               →scheme applies (s 75-5), which base or valuation is right, or the rules for¶               →supplies to associates and from GST groups, joint ventures or estates (ss¶               →75-11 and 75-13).¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
+                            "VERSION:       →22 Nov 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "Consideration  →(Required) One or more GST-inclusive prices, each 0 or more and under 10,000,000,000,000. A blank stays blank.¶" &
+                            "MarginBase     →(Required) For each price, the consideration for the supplier's acquisition or the approved valuation, in the same shape.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.MarginSchemeGSTλ({640000;180000}, {448000;200000})¶" &
+                            "→Result¶" &
+                            "→17454.5455¶" &
+                            "→0",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR( ISOMITTED( Consideration), ISOMITTED( MarginBase)),
+        ValidShape?,    AND( ROWS( MarginBase) = ROWS( Consideration), COLUMNS( MarginBase) = COLUMNS( Consideration)),
+        ShapeMessage,   "MarginBase must have one base for each consideration, in the same shape.",
+    //  A blank is nil and stays blank; an error passes so it shows
+        ValidPrice?,    AND( IF( ISERROR( Consideration), TRUE, IF( ISNUMBER( Consideration), ( Consideration >= 0) * ( Consideration < 1E13), Consideration & "" = ""))),
+        PriceMessage,   "MarginSchemeGSTλ needs each consideration to be a number from 0 to under 10,000,000,000,000, or blank.",
+    //  A base is needed only beside a consideration
+        ValidBase?,     IFERROR( AND( IF( ISERROR( Consideration), TRUE, IF( Consideration & "" = "", TRUE, IF( ISERROR( MarginBase), TRUE, IF( ISNUMBER( MarginBase), ( MarginBase >= 0) * ( MarginBase < 1E13), FALSE))))), FALSE),
+        BaseMessage,    "MarginBase must be a number from 0 to under 10,000,000,000,000 beside each consideration.",
+    //  Procedure - s 75-10(1) and (2): 1/11 of the excess, nil when there is none
+    //  MAP needs an array: 2 single values alone give #VALUE!
+        Bases,          IF( SEQUENCE( ROWS( Consideration), COLUMNS( Consideration)), MarginBase),
+        Result,         MAP( Consideration, Bases, LAMBDA( Price, Base,
+                            IF( Price & "" = "", "", MAX( 0, Price - Base) / 11)
+                        )),
+    //  Return Result, Help, or the message
+        Return,         IF( Help?, 2, IF( NOT( ValidShape?), 3, IF( NOT( ValidPrice?), 4, IF( NOT( ValidBase?), 5, 1)))),
+        CHOOSE( Return, Result, Help, ShapeMessage, PriceMessage, BaseMessage)
     )
 );
 

@@ -538,6 +538,47 @@ foreach ($r in @(@('1000, 0, 5', $d7Rate),
     Same "Div7A refuses ($($r[0]))" "LET(x, $d7($($r[0])), $one)" $r[1]
 }
 
+# --- Margin scheme GST (GST Act s 75-10, compilation 96; the ATO's 'Calculating the GST
+# payable', read 22 November 2026). The ATO's 3 worked examples, then the cases of
+# australian-accounting's gst-margin-scheme command, which rounds to the cent under s 9-90(1).
+$ms = "oz.MarginSchemeGST$L"
+Near 'MarginSchemeGST: the ATO John example, $36,363' "INT($ms(900000, 500000))" '36363'
+Near 'MarginSchemeGST: the ATO Diane example, $20,000' "$ms(720000, 500000)" '20000'
+Near 'MarginSchemeGST: the ATO Jamie example, valuation' "$ms(880000, 330000)" '50000'
+foreach ($r in @(@('640000, 448000', '17454.55'), @('144000, 100000', '4000'), @('144000, 75000', '6272.73'),
+                 @('360000, 250000', '10000'), @('155000, 100000', '5000'), @('166000, 100000', '6000'),
+                 @('300000, 166666.67', '12121.21'), @('610000, 100000', '46363.64'),
+                 @('1500000, 250000', '113636.36'), @('900000, 500000', '36363.64'),
+                 @('1100000, 220000', '80000'), @('200000, 200000', '0'), @('180000, 200000', '0'))) {
+    Near "MarginSchemeGST: australian-accounting ($($r[0]))" "ROUND($ms($($r[0])), 2)" $r[1]
+}
+Near 'MarginSchemeGST: unrounded'                 "$ms(640000, 448000)" '17454.5454545' '0.0000001'
+Near 'MarginSchemeGST: a nil base'                "$ms(1100, 0)" '100'
+Same 'MarginSchemeGST: a column with a blank'     "LET(x, $ms({640000;`"`";180000}, {448000;`"`";200000}), TEXTJOIN(`",`", FALSE, IF(x = `"`", `"`", ROUND(x, 2))))" '17454.55,,0'
+Same 'MarginSchemeGST: a row keeps its shape'     "COLUMNS($ms({720000,880000}, {500000,330000})) & `"|`" & INDEX($ms({720000,880000}, {500000,330000}), 1, 2)" '2|50000'
+Same 'MarginSchemeGST: a blank price stays blank' "$ms(Z1, 100)" ''
+Same 'MarginSchemeGST: a blank price needs no base' "$ms(Z1, Z1)" ''
+Near 'MarginSchemeGST: an error price shows'      "--ISNA($ms(NA(), 100))" '1'
+Near 'MarginSchemeGST: an error base shows'       "--ISNA($ms(100, NA()))" '1'
+$msShape = 'MarginBase must have one base for each consideration, in the same shape.'
+$msPrice = "MarginSchemeGST$L needs each consideration to be a number from 0 to under 10,000,000,000,000, or blank."
+$msBase = 'MarginBase must be a number from 0 to under 10,000,000,000,000 beside each consideration.'
+foreach ($r in @(@('{1000;2000}, 100', $msShape),
+                 @('{1000;2000}, {100,200}', $msShape),
+                 @('-1, 100', $msPrice),
+                 @('"1000", 100', $msPrice),
+                 @('" ", 100', $msPrice),
+                 @('TRUE, 100', $msPrice),
+                 @('1E13, 100', $msPrice),
+                 @('1000, -1', $msBase),
+                 @('1000, "100"', $msBase),
+                 @('1000, TRUE', $msBase),
+                 @('1000, 1E13', $msBase),
+                 @('1000, Z1', $msBase),
+                 @('{1000;2000}, {100;""}', $msBase))) {
+    Same "MarginSchemeGST refuses ($($r[0]))" "LET(x, $ms($($r[0])), $one)" $r[1]
+}
+
 # --- Movement. Each row's opening is its own: a blank one defaults only that row.
 Near 'Movement, per-row opening'       "INDEX($mv({100;`"`";50},{110,120;5,6;60,70}),1,1)" '10'
 Near 'Movement, blank opening row'     "INDEX($mv({100;`"`";50},{110,120;5,6;60,70}),2,1)" '5'
@@ -2115,6 +2156,10 @@ Fuzz 'fuzz: DebtSculptVariableLRV interest on the average balance' `
 Fuzz 'fuzz: Div7AMinRepayment = the s 109E(6) formula' `
      'p, RANDBETWEEN(0,10000000), r, RANDBETWEEN(1,1500)/10000, t, RANDBETWEEN(1,250)/10' '"p="&p&" r="&r&" t="&t' `
      "oz.Div7AMinRepayment$L(p, r, t)" '(p*r)/(1-(1/(1+r))^ROUNDUP(t,0))' '0.000001'
+# GST under the margin scheme is 1/11 of the margin, and nil when the price does not exceed the base.
+Fuzz 'fuzz: MarginSchemeGST = 1/11 of the excess' `
+     'p, RANDBETWEEN(0,5000000), b, RANDBETWEEN(0,5000000)' '"p="&p&" b="&b' `
+     "oz.MarginSchemeGST$L(p, b)" 'IF(p>b, (p-b)/11, 0)' '0.000001'
 # The randomised checks rest on MAP() drawing fresh values for every trial. Prove it.
 Near 'fuzz: MAP draws fresh values per trial' "--(ROWS(UNIQUE(MAP(SEQUENCE(25), LAMBDA(i, RANDBETWEEN(1,1000000))))) > 1)" '1'
 

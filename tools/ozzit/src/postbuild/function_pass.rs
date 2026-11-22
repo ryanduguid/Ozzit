@@ -5,8 +5,8 @@
 //! working-capital days, rate and date helpers, ATO benchmark and rate lookup,
 //! variance and financial-year periods, the level payment and rate corkscrew, PAYG
 //! withholding, the lease and hire purchase journals and finance comparison, and
-//! the CGT parcels and net capital gain, income tax, and the Division 7A minimum
-//! yearly repayment.
+//! the CGT parcels and net capital gain, income tax, the Division 7A minimum
+//! yearly repayment, and margin scheme GST.
 //!
 //! Each adds functions and About rows to `src/`, the defined names and the About
 //! tables to the workbook, and rows to functions.csv, in one recoverable step.
@@ -58,7 +58,7 @@ macro_rules! added {
     };
 }
 
-const SPECS: [Spec; 10] = [
+const SPECS: [Spec; 11] = [
     Spec {
         stem: "working_capital_days",
         data: include_str!("../data/postbuild/working_capital_days.json"),
@@ -112,6 +112,11 @@ const SPECS: [Spec; 10] = [
         "div7a_min_repayment",
         "Division 7A minimum yearly repayment function",
         "Division 7A"
+    ),
+    added!(
+        "margin_scheme_gst",
+        "margin scheme GST function",
+        "margin scheme GST"
     ),
 ];
 
@@ -529,6 +534,9 @@ pub fn income_tax(args: &[String]) -> Output {
 }
 pub fn div7a_min_repayment(args: &[String]) -> Output {
     command(&SPECS[9], args)
+}
+pub fn margin_scheme_gst(args: &[String]) -> Output {
+    command(&SPECS[10], args)
 }
 
 #[cfg(test)]
