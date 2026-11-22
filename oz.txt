@@ -4420,23 +4420,26 @@ SmallBusinessPoolλ = LAMBDA(
         Improved,       IF( ISOMITTED( CostAdditions), Nil, Yearly( CostAdditions)),
         Ended,          IF( ISOMITTED( TerminationValues), Nil, Yearly( TerminationValues)),
     //  Whole dollars add exactly and the rest of each amount is rounded to the places its 15
-    //  significant digits hold, so a pool is exactly 0 or $20,000 when its amounts add to it
-        Dollars,        LAMBDA( x, INT( x)),
+    //  significant digits hold; each boundary compares that rest with the whole dollars short of it
+        Dollars,        LAMBDA( w, x, y, z, INT( w) + INT( x) + INT( y) - INT( z)),
         Cents,          LAMBDA( x, ROUND( x - INT( x), 15 - LEN( TEXT( INT( x), "0")))),
-        Balance,        LAMBDA( w, x, y, z, Dollars( w) + Dollars( x) + Dollars( y) - Dollars( z) +
-                            ROUND( Cents( w) + Cents( x) + Cents( y) - Cents( z), 14)),
+        Rest,           LAMBDA( w, x, y, z, ROUND( Cents( w) + Cents( x) + Cents( y) - Cents( z), 14)),
     //  Procedure - s 328-190, s 328-200, s 328-210 at $20,000, then s 328-215
         Closing,        SCAN( Start, SEQUENCE( 1, Years), LAMBDA( Prev, Year, LET(
                             New, INDEX( Added, 1, Year) + INDEX( Improved, 1, Year),
-                            Amount, Balance( Prev, INDEX( Added, 1, Year), INDEX( Improved, 1, Year), INDEX( Ended, 1, Year)),
-                            IF( Amount < 20000, 0, MAX( 0, Amount - ( 0.3 * Prev + 0.15 * New)))
+                            Out, INDEX( Ended, 1, Year),
+                            Base, Dollars( Prev, INDEX( Added, 1, Year), INDEX( Improved, 1, Year), Out),
+                            Extra, Rest( Prev, INDEX( Added, 1, Year), INDEX( Improved, 1, Year), Out),
+                            IF( Extra < 20000 - Base, 0, MAX( 0, Base + Extra - ( 0.3 * Prev + 0.15 * New)))
                         ))),
         Opening,        DROP( HSTACK( Start, Closing), , -1),
-        Pool,           Balance( Opening, Added, Improved, Ended),
+        Whole,          Dollars( Opening, Added, Improved, Ended),
+        Part,           Rest( Opening, Added, Improved, Ended),
+        Pool,           Whole + Part,
         Rated,          0.3 * Opening + 0.15 * ( Added + Improved),
-        Small?,         ( Pool > 0) * ( Pool < 20000),
-        Deduction,      IF( Pool < 0, 0, IF( Small?, Pool, Rated)),
-        Assessable,     IF( Pool < 0, -Pool, IF( Small?, 0, IF( Rated > Pool, Rated - Pool, 0))),
+        Small?,         ( Part > -Whole) * ( Part < 20000 - Whole),
+        Deduction,      IF( Part < -Whole, 0, IF( Small?, Pool, Rated)),
+        Assessable,     IF( Part < -Whole, -Pool, IF( Small?, 0, IF( Rated > Pool, Rated - Pool, 0))),
         Result,         VSTACK( Opening, Deduction, Closing, Assessable),
     //  Return Result, Help, or the message
         Return,         IF( Help?, 2, IF( NOT( ValidShape?), 3, IF( NOT( ValidValue?), 4, 1))),
