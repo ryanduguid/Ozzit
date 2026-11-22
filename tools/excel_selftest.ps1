@@ -669,6 +669,10 @@ foreach ($r in @(@('100000, 28000, 0, 8000', '100000,34200,85800,0'),
     Same "SmallBusinessPool: ($($r[0]))" "LET(x, $sb($($r[0])), $rows)" $r[1]
 }
 Near 'SmallBusinessPool: the s 328-210 example, Cassidy, deducts 15,700' "INDEX($sb(28500, 16800, 0, 29600), 2, 1)" '15700'
+Near 'SmallBusinessPool: cents summing to exactly 20,000 are not below it, deduction' "INDEX($sb(2420135.56, 2116636.38, 0, 4516771.94), 2, 1)" '1043536.125'
+Near 'SmallBusinessPool: cents summing to exactly 20,000 are not below it, assessable' "INDEX($sb(2420135.56, 2116636.38, 0, 4516771.94), 4, 1)" '1023536.125'
+Near 'SmallBusinessPool: cents summing to exactly 0 are not above it, deduction' "INDEX($sb(0.1, 0.2, 0, 0.3), 2, 1)" '0.06'
+Near 'SmallBusinessPool: cents summing to exactly 0 are not above it, assessable' "INDEX($sb(0.1, 0.2, 0, 0.3), 4, 1)" '0.06'
 Same 'SmallBusinessPool: two years' "LET(x, $sb(100000, {28000,0}, 0, {8000,0}), $rows)" '100000,85800,34200,25740,85800,60060,0,0'
 Same 'SmallBusinessPool: a low pool value in a later year' "LET(x, $sb(30000, {0,0,0}), $rows)" '30000,21000,14700,9000,6300,14700,21000,14700,0,0,0,0'
 Same 'SmallBusinessPool: a blank opening is 0' "LET(x, $sb(Z1, 100), $rows)" '0,100,0,0'
