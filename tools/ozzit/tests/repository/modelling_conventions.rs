@@ -235,7 +235,6 @@ fn rounding_and_the_days_a_month_constant() {
             "NetCapitalGainλ",
             "PAYGWithholdingλ",
             "PrimeCostλ",
-            "SmallBusinessPoolλ",
             "TimelineOffsetλ",
         ])
     );

@@ -2902,16 +2902,17 @@ SmallBusinessPoolλ = LAMBDA(
         Closing,        SCAN( Start, SEQUENCE( 1, Years), LAMBDA( Prev, Year, LET(
                             New, INDEX( Added, 1, Year) + INDEX( Improved, 1, Year),
                             Amount, Prev + New - INDEX( Ended, 1, Year),
-                            IF( ROUND( Amount, 6) < 20000, 0, MAX( 0, Amount - ( 0.3 * Prev + 0.15 * New)))
+                            Margin, 1E-13 * ( Prev + New + INDEX( Ended, 1, Year)),
+                            IF( Amount < 20000 - Margin, 0, MAX( 0, Amount - ( 0.3 * Prev + 0.15 * New)))
                         ))),
         Opening,        DROP( HSTACK( Start, Closing), , -1),
         Pool,           Opening + Added + Improved - Ended,
         Rated,          0.3 * Opening + 0.15 * ( Added + Improved),
-    //  Tested to 6 places: a sum of cents can land a hair off 0 or $20,000
-        Level,          ROUND( Pool, 6),
-        Small?,         ( Level > 0) * ( Level < 20000),
-        Deduction,      IF( Level < 0, 0, IF( Small?, Pool, Rated)),
-        Assessable,     IF( Level < 0, -Pool, IF( Small?, 0, IF( Rated > Pool, Rated - Pool, 0))),
+    //  Binary sums of cents land a hair off 0 or $20,000; within 1E-13 of the amounts added is on them
+        Margin,         1E-13 * ( Opening + Added + Improved + Ended),
+        Small?,         ( Pool > Margin) * ( Pool < 20000 - Margin),
+        Deduction,      IF( Pool < -Margin, 0, IF( Small?, Pool, Rated)),
+        Assessable,     IF( Pool < -Margin, -Pool, IF( Small?, 0, IF( Rated > Pool, Rated - Pool, 0))),
         Result,         VSTACK( Opening, Deduction, Closing, Assessable),
     //  Return Result, Help, or the message
         Return,         IF( Help?, 2, IF( NOT( ValidShape?), 3, IF( NOT( ValidValue?), 4, 1))),
