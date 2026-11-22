@@ -2757,7 +2757,8 @@ YearToDateλ = LAMBDA(
                     https://www.ato.gov.au/tax-rates-and-codes/tax-rates-foreign-residents
                     Treasury Laws Amendment (Tax Reform No. 1) Act 2026 (No. 49, 2026), Schedule 1 item 119-1,
                     read 22 November 2026: extra income tax on capital gains (ITAA 1997 Division 119) applies
-                    to CGT events from 1 July 2027, so 2027-28 is refused:
+                    to CGT events from 1 July 2027. Schedule 7 sets 14% for 2027-28, but this function
+                    stops at 2026-27, the last year the ATO's tables cover:
                     https://www.legislation.gov.au/C2026A00049/asmade/text
 */
 IncomeTaxλ = LAMBDA(
@@ -2769,11 +2770,11 @@ IncomeTaxλ = LAMBDA(
     //  Help
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →IncomeTaxλ(TaxableIncome, IncomeYear, [Resident])¶" &
-                            "DESCRIPTION:   →Tax on taxable income at the general rates, before the Medicare levy and offsets.¶NOTES!         →Tax on taxable income at the general rates of the Income Tax Rates Act¶               →1986, Schedule 7, for an individual who was a resident (Part I) or a¶               →foreign resident (Part II) for the whole income year: the ATO's 'tax on¶               →this income'. For 2024-25, 2025-26 and 2026-27 only; 2027-28 is refused, as¶               →the ATO has not published its rates and extra tax on capital gains begins¶               →then. The result is not rounded. Arithmetic only: it leaves out the¶               →Medicare levy and surcharge, tax offsets, the pro-rated tax-free threshold¶               →of a part-year resident, working holiday makers' rates, minors' unearned¶               →income, superannuation and employment termination remainders and special¶               →income components such as averaging.¶" &
+                            "DESCRIPTION:   →Tax on taxable income at the general rates, before the Medicare levy and offsets.¶NOTES!         →Tax on taxable income at the general rates of the Income Tax Rates Act¶               →1986, Schedule 7, for an individual who was a resident (Part I) or a¶               →foreign resident (Part II) for the whole income year: the ATO's 'tax on¶               →this income'. For 2024-25, 2025-26 and 2026-27 only: 2027-28 is refused,¶               →although the Act sets its rates, because the ATO has not published them and¶               →extra tax on capital gains begins then. The result is not rounded.¶               →Arithmetic only: it leaves out the Medicare levy and surcharge, tax¶               →offsets, the pro-rated tax-free threshold of a part-year resident, working¶               →holiday makers' rates, minors' unearned income, superannuation and¶               →employment termination remainders and special income components such as¶               →averaging.¶" &
                             "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
                             "VERSION:       →22 Nov 2026¶" &
                             "PARAMETERS:    →¶" &
-                            "TaxableIncome  →(Required) One or more taxable incomes, each 0 or more. A blank stays blank.¶" &
+                            "TaxableIncome  →(Required) One or more taxable incomes, each 0 or more and under 10,000,000,000,000. A blank stays blank.¶" &
                             "IncomeYear     →(Required) The year the income year ends: 2025, 2026 or 2027 for 2024-25 to 2026-27.¶" &
                             "Resident       →(Optional: Default = TRUE) TRUE or 1 for a resident, FALSE or 0 for a foreign resident, for the whole year.¶" &
                             "EXAMPLES:      →¶" &
@@ -2789,18 +2790,18 @@ IncomeTaxλ = LAMBDA(
         ValidYear?,     IFERROR( AND( ROWS( IncomeYear) = 1, COLUMNS( IncomeYear) = 1, ISNUMBER( XMATCH( IncomeYear, {2025, 2026, 2027}, 0))), FALSE),
         YearMessage,    "IncomeYear must be 2025, 2026 or 2027, the year the income year ends; 2027-28 and later are not supported.",
     //  A blank Resident cell is not an omitted argument, so test for both
-        Home,           IF( ISOMITTED( Resident), TRUE, IF( TRIM( Resident & "") = "", TRUE, Resident)),
+        Home,           IF( ISOMITTED( Resident), TRUE, IF( Resident & "" = "", TRUE, Resident)),
         ValidResident?, IFERROR( AND( ROWS( Home) = 1, COLUMNS( Home) = 1, OR( ISLOGICAL( Home), AND( ISNUMBER( Home), OR( Home = 0, Home = 1)))), FALSE),
         ResidentMessage, "Resident must be TRUE or 1 for a resident, FALSE or 0 for a foreign resident.",
     //  A blank is nil and stays blank; an error passes so it shows
-        ValidIncome?,   AND( IF( ISERROR( TaxableIncome), TRUE, IF( ISNUMBER( TaxableIncome), ( TaxableIncome >= 0) * ( TaxableIncome < 1E13), TRIM( TaxableIncome & "") = ""))),
+        ValidIncome?,   AND( IF( ISERROR( TaxableIncome), TRUE, IF( ISNUMBER( TaxableIncome), ( TaxableIncome >= 0) * ( TaxableIncome < 1E13), TaxableIncome & "" = ""))),
         IncomeMessage,  "IncomeTaxλ needs each taxable income to be a number from 0 to under 10,000,000,000,000, or blank.",
     //  Procedure - each slice of income at its rate in whole percent, divided by 100 at
     //  the end so whole dollars give exact cents
         Low,            IF( IncomeYear = 2027, 15, 16),
         Slice,          LAMBDA( Income, From, To, MAX( 0, MIN( Income, To) - From)),
         Result,         MAP( TaxableIncome, LAMBDA( Income,
-                            IF( TRIM( Income & "") = "", "",
+                            IF( Income & "" = "", "",
                                 ( IF( Home,
                                     Slice( Income, 18200, 45000) * Low + Slice( Income, 45000, 135000) * 30,
                                     Slice( Income, 0, 135000) * 30) +

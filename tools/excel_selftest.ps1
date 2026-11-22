@@ -454,6 +454,12 @@ Near 'IncomeTax: 0 is a foreign resident'     "$it(50000, 2026, 0)" '15000' '0.0
 Near 'IncomeTax: 1 is a resident'             "$it(50000, 2026, 1)" '5788' '0.000001'
 Near 'IncomeTax: a blank Resident is resident' "$it(50000, 2026, Z1)" '5788' '0.000001'
 Near 'IncomeTax: cents are taxed'             "$it(18200.5, 2026)"  '0.08' '0.000001'
+foreach ($r in @(@('18200.01', '0.0016'), @('45000.01', '4288.003'), @('135000.01', '31288.0037'), @('190000.01', '51638.0045'))) {
+    Near "IncomeTax: a cent above $($r[0])" "$it($($r[0]), 2026)" $r[1] '0.0000001'
+}
+Near 'IncomeTax: a foreign resident a cent above 135,000' "$it(135000.01, 2026, FALSE)" '40500.0037' '0.0000001'
+Same 'IncomeTax: blank cells stay blank'      "TEXTJOIN(`",`", FALSE, $it(Z1:Z3, 2026))" ',,'
+Same 'IncomeTax: a column with an error'      "LET(x, $it({0;#N/A;18201}, 2026), INDEX(x,1,1) & `"|`" & ISNA(INDEX(x,2,1)) & `"|`" & INDEX(x,3,1))" '0|TRUE|0.16'
 Same 'IncomeTax: a column with a blank'       "TEXTJOIN(`",`", FALSE, $it({0;18201;`"`";45000}, 2026))" '0,0.16,,4288'
 Same 'IncomeTax: a row keeps its shape'       "COLUMNS($it({45000,90000}, 2027)) & `"|`" & INDEX($it({45000,90000}, 2027), 1, 2)" '2|17520'
 Near 'IncomeTax: an error shows'              "--ISNA($it(NA(), 2026))" '1'
@@ -467,6 +473,9 @@ foreach ($r in @(@('1000, 2024', $itYear),
                  @('1000, 2026, 2', $itHome),
                  @('1000, 2026, "yes"', $itHome),
                  @('1000, 2026, {TRUE;FALSE}', $itHome),
+                 @('1000, 2026, " "', $itHome),
+                 @('1000, DATE(2026,6,30)', $itYear),
+                 @('" ", 2026', $itIncome),
                  @('-1, 2026', $itIncome),
                  @('"1000", 2026', $itIncome),
                  @('TRUE, 2026', $itIncome),

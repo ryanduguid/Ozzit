@@ -50,7 +50,7 @@ Both stop at 30 June 2027: the [Treasury Laws Amendment (Tax Reform No. 1) Act 2
 
 - `IncomeYear` is the year the income year ends: 2025, 2026 or 2027. Residents pay nothing to $18,200 (section 3(1)), then 16% to $45,000 in 2024-25 and 2025-26 or 15% in 2026-27, 30% to $135,000, 37% to $190,000 and 45% above. Foreign residents pay 30% from the first dollar to $135,000, then the same higher rates. The tables match the ATO's [resident](https://www.ato.gov.au/tax-rates-and-codes/tax-rates-australian-residents) and [foreign resident](https://www.ato.gov.au/tax-rates-and-codes/tax-rates-foreign-residents) rates for those years.
 - `Resident` defaults to TRUE; FALSE or 0 means a foreign resident.
-- 2027-28 and later are refused: the ATO lists no rates for them yet, and the [Treasury Laws Amendment (Tax Reform No. 1) Act 2026](https://www.legislation.gov.au/C2026A00049/asmade/text) adds extra income tax on capital gains (Division 119) for CGT events from 1 July 2027.
+- 2027-28 and later are refused as a support boundary, although Schedule 7 already sets 14% for the first resident band from 2027-28: the ATO lists no rates for them yet, and the [Treasury Laws Amendment (Tax Reform No. 1) Act 2026](https://www.legislation.gov.au/C2026A00049/asmade/text) adds extra income tax on capital gains (Division 119) for CGT events from 1 July 2027.
 - It leaves out the Medicare levy and surcharge, tax offsets, the pro-rated tax-free threshold of a part-year resident, working holiday makers' rates, minors' unearned income and special income components such as averaging.
 
 ## AASB 16 leases
