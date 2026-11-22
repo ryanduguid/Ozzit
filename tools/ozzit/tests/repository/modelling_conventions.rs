@@ -206,8 +206,8 @@ fn help_tables_and_the_closing_choose() {
             }
         }
     }
-    assert_eq!(calling(r"\bINDEX\(").len(), 21);
-    page_says(&page(), "use `INDEX` (21 functions)");
+    assert_eq!(calling(r"\bINDEX\(").len(), 23);
+    page_says(&page(), "use `INDEX` (23 functions)");
 }
 
 #[test]
