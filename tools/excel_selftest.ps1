@@ -736,6 +736,50 @@ foreach ($r in @(@('{1,2}, 100', $sbShape), @('100, {1;2}', $sbShape), @('100, {
     Same "SmallBusinessPool refuses ($($r[0]))" "LET(x, $sb($($r[0])), $one)" $r[1]
 }
 
+# --- Index factor and bullet loan. Worked by hand: an index factor is the running product of
+# 1 plus each rate; a bullet loan adds the capitalised share of each period's interest to the
+# balance and repays it all in the last period.
+$ix = "oz.IndexFactor$L"
+$bl = "oz.BulletLoan$L"
+$rows6 = "TEXTJOIN(`",`", FALSE, ROUND(x, 6))"
+foreach ($r in @(@('0.03, 3', '1.03,1.0609,1.092727'),
+                 @('{0.02,0.03,-0.01}', '1.02,1.0506,1.040094'),
+                 @('0, 2', '1,1'),
+                 @('0.05', '1.05'),
+                 @('SEQUENCE(1, 4, 0.01, 0)', '1.01,1.0201,1.030301,1.040604'))) {
+    Same "IndexFactor: ($($r[0]))" "LET(x, $ix($($r[0])), $rows6)" $r[1]
+}
+Near 'IndexFactor: 1% a month for 12 months is 1.01^12' "INDEX($ix(0.01, 12), 1, 12)" '1.12682503013197' '0.0000000001'
+Near 'IndexFactor: an error rate shows' "--ISNA(INDEX($ix(HSTACK(0.1, NA())), 1, 2))" '1'
+Near 'IndexFactor: an error rate with Periods shows' "--ISNA(INDEX($ix(NA(), 2), 1, 1))" '1'
+$ixShape = 'IndexFactor' + $L + ' needs Rates to be one row with a rate for each period, or one rate with Periods.'
+$ixPeriods = 'Periods must be a whole number from 1 to 1,000.'
+$ixRate = 'IndexFactor' + $L + ' needs every rate to be a number above -1 and below 2.'
+foreach ($r in @(@('{0.1;0.2}', $ixShape), @('{0.1,0.2}, 2', $ixShape),
+                 @('0.1, 0', $ixPeriods), @('0.1, 1.5', $ixPeriods), @('0.1, 1001', $ixPeriods), @('0.1, "2"', $ixPeriods), @('0.1, {1,2}', $ixPeriods),
+                 @('-1', $ixRate), @('2', $ixRate), @('"0.1"', $ixRate), @('TRUE', $ixRate), @('Z1', $ixRate), @('{0.1,-1}', $ixRate))) {
+    Same "IndexFactor refuses ($($r[0]))" "LET(x, $ix($($r[0])), $one)" $r[1]
+}
+foreach ($r in @(@('1000, {0.1,0.1}, 0', '1000,1100,100,110,0,0,100,110,0,1210,1100,0'),
+                 @('1000, {0.1,0.1,0.1}', '1000,1000,1000,100,100,100,100,100,100,0,0,0,0,0,1000,1000,1000,0'),
+                 @('1000, {0.1,0.1}, 0.5', '1000,1050,100,105,50,52.5,50,52.5,0,1102.5,1050,0'),
+                 @('1000, {0.1,0.1}, {0,1}', '1000,1100,100,110,0,110,100,0,0,1100,1100,0'),
+                 @('500, 0.08', '500,40,40,0,500,0'),
+                 @('0, {0.1,0.1}, 0', '0,0,0,0,0,0,0,0,0,0,0,0'))) {
+    Same "BulletLoan: ($($r[0]))" "LET(x, $bl($($r[0])), $rows6)" $r[1]
+}
+Same 'BulletLoan: six rows and a column for each period' "ROWS($bl(1, {0.1,0.1,0.1})) & `"x`" & COLUMNS($bl(1, {0.1,0.1,0.1}))" '6x3'
+Near 'BulletLoan: an error principal shows' "--ISNA(INDEX($bl(NA(), {0.1}), 1, 1))" '1'
+Near 'BulletLoan: an error rate shows' "--ISNA(INDEX($bl(1000, HSTACK(0.1, NA())), 2, 1))" '1'
+$blShape = 'BulletLoan' + $L + ' needs one Principal, Rates as one row with a rate for each period, and CashInterest as one share or one for each period.'
+$blValue = 'BulletLoan' + $L + ' needs Principal from 0 to under 10,000,000,000,000, every rate above -1 and below 2, and every CashInterest share from 0 to 1.'
+foreach ($r in @(@('{1,2}, 0.1', $blShape), @('1000, {0.1;0.1}', $blShape), @('1000, {0.1,0.1}, {1,1,1}', $blShape), @('1000, {0.1,0.1}, {1;1}', $blShape),
+                 @('-1, 0.1', $blValue), @('"1000", 0.1', $blValue), @('TRUE, 0.1', $blValue), @('1E13, 0.1', $blValue), @('Z1, 0.1', $blValue),
+                 @('1000, -1', $blValue), @('1000, 2', $blValue), @('1000, Z1', $blValue),
+                 @('1000, 0.1, 1.5', $blValue), @('1000, 0.1, -0.1', $blValue), @('1000, 0.1, "1"', $blValue))) {
+    Same "BulletLoan refuses ($($r[0]))" "LET(x, $bl($($r[0])), $one)" $r[1]
+}
+
 # --- Movement. Each row's opening is its own: a blank one defaults only that row.
 Near 'Movement, per-row opening'       "INDEX($mv({100;`"`";50},{110,120;5,6;60,70}),1,1)" '10'
 Near 'Movement, blank opening row'     "INDEX($mv({100;`"`";50},{110,120;5,6;60,70}),2,1)" '5'
@@ -2329,6 +2373,14 @@ Fuzz 'fuzz: LowValuePool decline = 0.1875 x low-cost + 0.375 x (opening + low-va
 Fuzz 'fuzz: SmallBusinessPool deduction = 30% x opening + 15% x additions' `
      'o, RANDBETWEEN(2000000,100000000)/100, a, RANDBETWEEN(0,1000000)/100' '"o="&o&" a="&a' `
      "INDEX(oz.SmallBusinessPool$L(o, a), 2, 1)" '0.3*o + 0.15*a' '0.000001'
+# A constant rate compounds: the factor after n periods is (1 + r)^n.
+Fuzz 'fuzz: IndexFactor after 12 periods = (1 + r)^12' `
+     'r, RANDBETWEEN(-5000,5000)/100000' '"r="&r' `
+     "INDEX(oz.IndexFactor$L(r, 12), 1, 12)" '(1 + r)^12' '0.000001'
+# With all interest capitalised, the last repayment is the principal compounded over the term.
+Fuzz 'fuzz: BulletLoan payment in kind repays p x (1 + r)^5' `
+     'p, RANDBETWEEN(0,10000000)/100, r, RANDBETWEEN(0,2000)/10000' '"p="&p&" r="&r' `
+     "INDEX(oz.BulletLoan$L(p, SEQUENCE(1, 5, r, 0), 0), 5, 5)" 'p*(1 + r)^5' '0.0001'
 # The randomised checks rest on MAP() drawing fresh values for every trial. Prove it.
 Near 'fuzz: MAP draws fresh values per trial' "--(ROWS(UNIQUE(MAP(SEQUENCE(25), LAMBDA(i, RANDBETWEEN(1,1000000))))) > 1)" '1'
 
