@@ -50,6 +50,10 @@ release; until then v3.7.0 behaves as it did.
   low-value pool (ITAA 1997 s 40-440 and s 40-445) and a general small business pool (Subdivision
   328-D, with the $20,000 low pool value) forward, a year in each column, returning opening,
   deduction, closing and assessable rows, unrounded. `ozzit depreciation_pools` adds them.
+- `oz.IndexFactorλ(Rates, [Periods])` returns the cumulative index factor for each period, and
+  `oz.BulletLoanλ(Principal, Rates, [CashInterest])` a bullet loan schedule with interest paid in
+  cash, capitalised (payment in kind) or split, both unrounded. `ozzit index_factor_bullet_loan`
+  adds them. [The page](docs/index-factor-and-bullet-loan.md) describes both.
 
 ### Fixed
 

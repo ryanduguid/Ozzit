@@ -1610,7 +1610,11 @@ AboutFinancialλ = TRIM(TEXTSPLIT(
                                            "→¶" &
                                            "DEPRECIATION POOLS →¶" &
                                            "LowValuePoolλ      →Low-value pool roll-forward: opening, decline in value, closing and assessable rows for each income year¶" &
-                                           "SmallBusinessPoolλ →General small business pool roll-forward: opening, deduction, closing and assessable rows for each income year¶" & 
+                                           "SmallBusinessPoolλ →General small business pool roll-forward: opening, deduction, closing and assessable rows for each income year¶" &
+                                           "→¶" &
+                                           "INDEXING AND DEBT  →¶" &
+                                           "IndexFactorλ       →Cumulative index factor for each period from its rate¶" &
+                                           "BulletLoanλ        →Bullet loan with cash or capitalised (PIK) interest¶" & 
                                            "→¶" &
                                            "DEBT MODULE        →¶" &
                                            "AmortiseBλ         →Creates an amortisation schedule for a debt/loan across a model's periods¶" &
@@ -4268,6 +4272,111 @@ YearToDateλ = LAMBDA(
     //  Return Result, Help or the message
         Return,         IF(Help?, 2, IF(NOT(ValidStart?), 3, IF(NOT(Shaped?), 4, IF(NOT(OneDate?), 5, IF(NOT(Numbers?), 6, 1))))),
         CHOOSE( Return, Result, Help, StartMessage, ShapeMessage, AsAtMessage, ValuesMessage)
+    )
+);
+
+
+
+/*  FUNCTION NAME:  IndexFactorλ
+    DESCRIPTION:*//**Cumulative index factor for each period from a row of period rates, or one rate over a number of periods, unrounded*/
+IndexFactorλ = LAMBDA(
+//  Parameter Declaration
+    [Rates],
+    [Periods],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →IndexFactorλ(Rates, [Periods])¶" &
+                            "DESCRIPTION:   →Cumulative index factor at the end of each period.¶NOTES!         →Cumulative index factor at the end of each period: the product of 1 plus¶               →each period's rate up to and including it, so a base amount times the¶               →factor is that amount indexed, for example by an inflation or escalation¶               →rate. Pass a row of period rates, or one rate and the number of periods.¶               →Each rate is per period: convert an annual rate first, for example with¶               →PeriodRateλ. The result is not rounded.¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/index-factor-and-bullet-loan.md¶" &
+                            "VERSION:       →22 Nov 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "Rates          →(Required) One row with a rate for each period, each above -1 and below 2, or one rate with Periods.¶" &
+                            "Periods        →(Optional) With one rate, the number of periods, a whole number from 1 to 1,000.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.IndexFactorλ(0.03, 3)¶" &
+                            "→Result¶" &
+                            "→1.03, 1.0609, 1.092727",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          ISOMITTED( Rates),
+    //  A row of rates, or one rate for a number of periods
+        One?,           IFERROR( ROWS( Rates) * COLUMNS( Rates) = 1, TRUE),
+        ValidShape?,    IFERROR( AND( ROWS( Rates) = 1, OR( ISOMITTED( Periods), One?)), ISERROR( Rates)),
+        ShapeMessage,   "IndexFactorλ needs Rates to be one row with a rate for each period, or one rate with Periods.",
+        ValidPeriods?,  IF( ISOMITTED( Periods), TRUE, IFERROR( AND( ROWS( Periods) * COLUMNS( Periods) = 1, ISNUMBER( Periods), Periods = INT( Periods), Periods >= 1, Periods <= 1000), FALSE)),
+        PeriodMessage,  "Periods must be a whole number from 1 to 1,000.",
+        RateRow,        IF( ISOMITTED( Periods), Rates, IF( SEQUENCE( 1, IF( ValidPeriods?, Periods, 1)), INDEX( Rates, 1, 1))),
+    //  A blank rate is a missing period; an error passes so it shows. Checked on Rates itself:
+    //  RateRow reads a blank cell given with Periods as 0
+        ValidRates?,    AND( IF( ISERROR( Rates), TRUE, IF( ISNUMBER( Rates), ( Rates > -1) * ( Rates < 2), FALSE))),
+        RateMessage,    "IndexFactorλ needs every rate to be a number above -1 and below 2.",
+    //  Procedure - the running product of 1 plus each rate
+        Result,         SCAN( 1, RateRow, LAMBDA( Factor, Rate, Factor * ( 1 + Rate))),
+    //  Return Result, Help, or the message
+        Return,         IF( Help?, 2, IF( NOT( ValidShape?), 3, IF( NOT( ValidPeriods?), 4, IF( NOT( ValidRates?), 5, 1)))),
+        CHOOSE( Return, Result, Help, ShapeMessage, PeriodMessage, RateMessage)
+    )
+);
+
+
+/*  FUNCTION NAME:  BulletLoanλ
+    DESCRIPTION:*//**Bullet loan schedule with cash, capitalised (payment in kind) or split interest, one period in each column, unrounded*/
+BulletLoanλ = LAMBDA(
+//  Parameter Declaration
+    [Principal],
+    [Rates],
+    [CashInterest],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →BulletLoanλ(Principal, Rates, [CashInterest])¶" &
+                            "DESCRIPTION:   →Bullet loan: opening, interest, cash, capitalised, repayment and closing rows.¶NOTES!         →Schedule for a loan repaid in one amount at the end of the last period,¶               →with interest paid in cash, capitalised (payment in kind) or split between¶               →them. Returns six rows: opening balance, interest, cash interest,¶               →capitalised interest, repayment and closing balance, one period in each¶               →column. Interest is the opening balance times the period's rate; the¶               →capitalised part is added to the balance, and the last period repays the¶               →balance with that period's capitalised interest. Rates are per period. The¶               →result is not rounded.¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/index-factor-and-bullet-loan.md¶" &
+                            "VERSION:       →22 Nov 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "Principal      →(Required) The amount lent, from 0 to under 10,000,000,000,000.¶" &
+                            "Rates          →(Required) One row with an interest rate for each period, each above -1 and below 2.¶" &
+                            "CashInterest   →(Optional) Share of each period's interest paid in cash, from 0 to 1: one for every period, or one for each. Omitted, 1; 0 capitalises it all.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.BulletLoanλ(1000, {0.1,0.1}, 0)¶" &
+                            "→Result¶" &
+                            "→1000, 1100¶" &
+                            "→100,  110¶" &
+                            "→  0,    0¶" &
+                            "→100,  110¶" &
+                            "→  0, 1210¶" &
+                            "→1100,    0",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR( ISOMITTED( Principal), ISOMITTED( Rates)),
+    //  One principal; Rates sets the periods; CashInterest is one share or one for each period
+        Periods,        IFERROR( COLUMNS( Rates), 1),
+        ValidShape?,    AND( IFERROR( ROWS( Principal) * COLUMNS( Principal) = 1, ISERROR( Principal)),
+                            IFERROR( ROWS( Rates) = 1, ISERROR( Rates)),
+                            IF( ISOMITTED( CashInterest), TRUE, IFERROR( AND( ROWS( CashInterest) = 1, OR( COLUMNS( CashInterest) = 1, COLUMNS( CashInterest) = Periods)), ISERROR( CashInterest)))),
+        ShapeMessage,   "BulletLoanλ needs one Principal, Rates as one row with a rate for each period, and CashInterest as one share or one for each period.",
+    //  A blank is refused; an error passes so it shows
+        ValidValue?,    AND( IF( ISERROR( Principal), TRUE, IF( ISNUMBER( Principal), ( Principal >= 0) * ( Principal < 1E13), FALSE)),
+                            AND( IF( ISERROR( Rates), TRUE, IF( ISNUMBER( Rates), ( Rates > -1) * ( Rates < 2), FALSE))),
+                            IF( ISOMITTED( CashInterest), TRUE, AND( IF( ISERROR( CashInterest), TRUE, IF( ISNUMBER( CashInterest), ( CashInterest >= 0) * ( CashInterest <= 1), FALSE))))),
+        ValueMessage,   "BulletLoanλ needs Principal from 0 to under 10,000,000,000,000, every rate above -1 and below 2, and every CashInterest share from 0 to 1.",
+    //  Procedure - interest on the opening balance; the part not paid in cash is added to it
+        Shares,         IF( ISOMITTED( CashInterest), SEQUENCE( 1, Periods, 1, 0), IF( SEQUENCE( 1, Periods), CashInterest)),
+        Growth,         1 + Rates * ( 1 - Shares),
+        Opening,        Principal * DROP( HSTACK( 1, SCAN( 1, Growth, LAMBDA( Factor, Step, Factor * Step))), , -1),
+        Interest,       Opening * Rates,
+        Cash,           Interest * Shares,
+        Capitalised,    Interest - Cash,
+        Repayment,      IF( SEQUENCE( 1, Periods) = Periods, Opening + Capitalised, 0),
+        Result,         VSTACK( Opening, Interest, Cash, Capitalised, Repayment, Opening + Capitalised - Repayment),
+    //  Return Result, Help, or the message
+        Return,         IF( Help?, 2, IF( NOT( ValidShape?), 3, IF( NOT( ValidValue?), 4, 1))),
+        CHOOSE( Return, Result, Help, ShapeMessage, ValueMessage)
     )
 );
 
