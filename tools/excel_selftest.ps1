@@ -757,7 +757,8 @@ $ixPeriods = 'Periods must be a whole number from 1 to 1,000.'
 $ixRate = 'IndexFactor' + $L + ' needs every rate to be a number above -1 and below 2.'
 foreach ($r in @(@('{0.1;0.2}', $ixShape), @('{0.1,0.2}, 2', $ixShape),
                  @('0.1, 0', $ixPeriods), @('0.1, 1.5', $ixPeriods), @('0.1, 1001', $ixPeriods), @('0.1, "2"', $ixPeriods), @('0.1, {1,2}', $ixPeriods),
-                 @('-1', $ixRate), @('2', $ixRate), @('"0.1"', $ixRate), @('TRUE', $ixRate), @('Z1', $ixRate), @('{0.1,-1}', $ixRate))) {
+                 @('-1', $ixRate), @('2', $ixRate), @('"0.1"', $ixRate), @('TRUE', $ixRate), @('Z1', $ixRate), @('{0.1,-1}', $ixRate),
+                 @('Z1, 2', $ixRate), @('AD1:AE1', $ixRate), @('AD1:AE1, 2', $ixShape))) {
     Same "IndexFactor refuses ($($r[0]))" "LET(x, $ix($($r[0])), $one)" $r[1]
 }
 foreach ($r in @(@('1000, {0.1,0.1}, 0', '1000,1100,100,110,0,0,100,110,0,1210,1100,0'),
@@ -776,7 +777,8 @@ $blValue = 'BulletLoan' + $L + ' needs Principal from 0 to under 10,000,000,000,
 foreach ($r in @(@('{1,2}, 0.1', $blShape), @('1000, {0.1;0.1}', $blShape), @('1000, {0.1,0.1}, {1,1,1}', $blShape), @('1000, {0.1,0.1}, {1;1}', $blShape),
                  @('-1, 0.1', $blValue), @('"1000", 0.1', $blValue), @('TRUE, 0.1', $blValue), @('1E13, 0.1', $blValue), @('Z1, 0.1', $blValue),
                  @('1000, -1', $blValue), @('1000, 2', $blValue), @('1000, Z1', $blValue),
-                 @('1000, 0.1, 1.5', $blValue), @('1000, 0.1, -0.1', $blValue), @('1000, 0.1, "1"', $blValue))) {
+                 @('1000, 0.1, 1.5', $blValue), @('1000, 0.1, -0.1', $blValue), @('1000, 0.1, "1"', $blValue),
+                 @('1000, 0.1, Z1', $blValue), @('1000, AD1:AE1', $blValue), @('1000, {0.1,0.1}, AD1:AE1', $blValue))) {
     Same "BulletLoan refuses ($($r[0]))" "LET(x, $bl($($r[0])), $one)" $r[1]
 }
 

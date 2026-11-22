@@ -2788,8 +2788,9 @@ IndexFactorλ = LAMBDA(
         ValidPeriods?,  IF( ISOMITTED( Periods), TRUE, IFERROR( AND( ROWS( Periods) * COLUMNS( Periods) = 1, ISNUMBER( Periods), Periods = INT( Periods), Periods >= 1, Periods <= 1000), FALSE)),
         PeriodMessage,  "Periods must be a whole number from 1 to 1,000.",
         RateRow,        IF( ISOMITTED( Periods), Rates, IF( SEQUENCE( 1, IF( ValidPeriods?, Periods, 1)), INDEX( Rates, 1, 1))),
-    //  A blank rate is a missing period; an error passes so it shows
-        ValidRates?,    AND( IF( ISERROR( RateRow), TRUE, IF( ISNUMBER( RateRow), ( RateRow > -1) * ( RateRow < 2), FALSE))),
+    //  A blank rate is a missing period; an error passes so it shows. Checked on Rates itself:
+    //  RateRow reads a blank cell given with Periods as 0
+        ValidRates?,    AND( IF( ISERROR( Rates), TRUE, IF( ISNUMBER( Rates), ( Rates > -1) * ( Rates < 2), FALSE))),
         RateMessage,    "IndexFactorλ needs every rate to be a number above -1 and below 2.",
     //  Procedure - the running product of 1 plus each rate
         Result,         SCAN( 1, RateRow, LAMBDA( Factor, Rate, Factor * ( 1 + Rate))),
