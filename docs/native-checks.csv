@@ -65,6 +65,7 @@ oz.EBITDAMarginλ,1,1,0,1
 oz.EPSλ,1,1,0,1
 oz.EquityMultiplierλ,1,1,0,1
 oz.EquityRatioλ,1,1,0,1
+oz.FBTGrossUpλ,1,2,16,0
 oz.FilterContainsλ,1,1,0,0
 oz.FinanceCompareλ,1,1,15,0
 oz.FinancialMonthλ,1,1,11,0

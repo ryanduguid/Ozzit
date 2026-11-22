@@ -56,6 +56,7 @@ tools/ozzit/target/release/ozzit cgt_parcels ozzit.xlsx src functions.csv
 tools/ozzit/target/release/ozzit income_tax ozzit.xlsx src functions.csv
 tools/ozzit/target/release/ozzit div7a_min_repayment ozzit.xlsx src functions.csv
 tools/ozzit/target/release/ozzit margin_scheme_gst ozzit.xlsx src functions.csv
+tools/ozzit/target/release/ozzit fbt_gross_up ozzit.xlsx src functions.csv
 tools/ozzit/target/release/ozzit cover_label ozzit.xlsx
 tools/ozzit/target/release/ozzit compile_sources ozzit.xlsx src --index=functions.csv
 tools/ozzit/target/release/ozzit build_module src oz.txt
@@ -165,7 +166,9 @@ the native `ozzit div7a_min_repayment`: it adds `oz.Div7AMinRepaymentλ` under a
 DIVISION 7A heading after the INCOME TAX rows, with its block before the income tax
 pass's. The margin scheme pass is the native `ozzit margin_scheme_gst`: it adds
 `oz.MarginSchemeGSTλ` after the `oz.GSTAddλ` row of the Financial About table, with
-its block before the Division 7A pass's. The cover-label pass is
+its block before the Division 7A pass's. The FBT pass is the native `ozzit fbt_gross_up`:
+it adds `oz.FBTGrossUpλ` under a new FRINGE BENEFITS TAX heading after the DIVISION 7A
+rows, with its block before the margin scheme pass's. The cover-label pass is
 one swap in `xl/sharedStrings.xml`:
 Cover!A3 kept reading 20 August 2026 and 130 functions after 3 cuts, and
 `ozzit verify_cover` now keeps that label equal to `functions.csv` and the
@@ -176,7 +179,7 @@ and financial-year period functions, to 150 for the level payment and rate corks
 to the v3.6.0 cut date of 14 November 2026, to 151 for PAYG withholding, to the
 v3.7.0 cut date of 18 November 2026, to 155 for the finance contract functions, to 157
 for the capital gains functions, to 158 for income tax, to 159 for the Division 7A
-minimum yearly repayment, and to 160 for margin scheme GST.
+minimum yearly repayment, to 160 for margin scheme GST, and to 161 for the FBT gross-up.
 
 ## What is intentionally not here
 

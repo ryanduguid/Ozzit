@@ -107,6 +107,7 @@ const COMMANDS: &[(&str, Handler)] = &[
         "margin_scheme_gst",
         postbuild::function_pass::margin_scheme_gst,
     ),
+    ("fbt_gross_up", postbuild::function_pass::fbt_gross_up),
 ];
 pub fn dispatch(args: &[String]) -> Output {
     let command = args.first().map(String::as_str);

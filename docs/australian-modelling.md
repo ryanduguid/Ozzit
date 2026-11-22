@@ -72,6 +72,16 @@ Both stop at 30 June 2027: the [Treasury Laws Amendment (Tax Reform No. 1) Act 2
 - The ATO's [worked examples](https://www.ato.gov.au/businesses-and-organisations/gst-excise-and-indirect-taxes/gst/in-detail/your-industry/property/gst-and-the-margin-scheme/calculating-the-gst-payable) come out at $36,363 ($900,000 less $500,000, in whole dollars), $20,000 and $50,000.
 - It is arithmetic only. It does not decide whether the margin scheme applies (section 75-5: a written agreement, and an interest not acquired through an ineligible supply), which base or valuation is right, or the margin for an interest from a GST group member, joint venture operator or deceased estate (section 75-11) or a supply to an associate (section 75-13).
 
+## FBT gross-up
+
+`oz.FBTGrossUpλ(TaxableValues, Type)` returns the grossed-up taxable value of each fringe benefit amount under section 5B of the [Fringe Benefits Tax Assessment Act 1986](https://www.legislation.gov.au/C2004A03280/latest/text), unrounded.
+
+- Type 1 (the employer is entitled to a GST credit for the benefit) multiplies by (FBT rate + GST rate) / ((1 - FBT rate) x (1 + GST rate) x FBT rate), section 5B(1B); type 2 multiplies by 1 / (1 - FBT rate), section 5B(1C). The type 2 factor also grosses up a reportable fringe benefits amount (section 135P).
+- The FBT rate is 47% (Fringe Benefits Tax Act 1986 section 6) and the GST rate 10%, so the factors are 57,000/27,401 = 2.08021... and 100/53 = 1.88679.... The ATO's [rates and thresholds page](https://www.ato.gov.au/tax-rates-and-codes/fringe-benefits-tax-rates-and-thresholds) shows them to 4 places, 2.0802 and 1.8868; a figure worked with those can differ by up to 0.01%.
+- It covers FBT years from 1 April 2017. The years starting 1 April 2015 and 2016 used 49% (section 6A) and are not covered.
+- `Type` is 1 or 2: one for every value, or one for each in the same shape.
+- It works out rates only. It does not value a benefit, decide whether it is type 1 or type 2, or apply exemptions, the $30,000 or $17,000 caps of section 5B(1E), or rebates.
+
 ## AASB 16 leases
 
 Four functions cover lessee accounting. `oz.ROUScheduleλ` takes the asset's `Cost` directly: the initial liability plus prepayments net of incentives, initial direct costs and applicable restoration costs under [AASB 16 paragraph 24](https://standards.aasb.gov.au/aasb-16-nov-2022). A later index review feeds the remeasurement.
