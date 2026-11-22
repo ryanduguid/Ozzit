@@ -230,6 +230,7 @@ fn rounding_and_the_days_a_month_constant() {
             "DayCountRateλ",
             "Depreciateλ",
             "DiminishingValueλ",
+            "Div7AMinRepaymentλ",
             "HPScheduleλ",
             "NetCapitalGainλ",
             "PAYGWithholdingλ",
