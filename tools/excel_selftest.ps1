@@ -508,6 +508,8 @@ Same 'Div7A: a row keeps its shape'           "COLUMNS($d7({100000,60000}, 8.77%
 Same 'Div7A: a blank balance stays blank'     "$d7(Z1, 8.77%, 5)" ''
 Near 'Div7A: an error balance shows'          "--ISNA($d7(NA(), 8.77%, 5))" '1'
 Near 'Div7A: an error term shows'             "--ISNA($d7(100000, 8.77%, NA()))" '1'
+Near 'Div7A: an error rate shows'             "--ISNA($d7(100000, NA(), 5))" '1'
+Near 'Div7A: a rate of 1E-16 stays stable'    "$d7(1000, 1E-16, 25)" '40' '0.000000001'
 $d7Rate = 'BenchmarkRate must be one rate above 0 and below 1, such as 8.77% or 0.0877.'
 $d7Shape = 'RemainingTerm must be one term, or a term for each opening balance in the same shape.'
 $d7Balance = "Div7AMinRepayment$L needs each opening balance to be a number from 0 to under 10,000,000,000,000, or blank."
@@ -518,7 +520,6 @@ foreach ($r in @(@('1000, 0, 5', $d7Rate),
                  @('1000, "8.77%", 5', $d7Rate),
                  @('1000, {0.08;0.09}, 5', $d7Rate),
                  @('1000, Z1, 5', $d7Rate),
-                 @('1000, NA(), 5', $d7Rate),
                  @('{1000;2000}, 8.77%, {5;6;7}', $d7Shape),
                  @('{1000;2000}, 8.77%, {5,6}', $d7Shape),
                  @('-1, 8.77%, 5', $d7Balance),

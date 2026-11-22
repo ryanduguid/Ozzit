@@ -2780,7 +2780,7 @@ Div7AMinRepaymentλ = LAMBDA(
                             "PARAMETERS:    →¶" &
                             "OpeningBalance →(Required) One or more balances not repaid by the end of the previous income year, each 0 or more and under 10,000,000,000,000. A blank stays blank.¶" &
                             "BenchmarkRate  →(Required) The current year's benchmark interest rate, such as 8.77% for 2026-27.¶" &
-                            "RemainingTerm  →(Required) Years left of the longest constituent loan term, more than 0 and at most 25: one for every balance, or one for each. A part year is rounded up.¶" &
+                            "RemainingTerm  →(Required) Years left of the longest constituent loan's term, more than 0 and at most 25 (7 unless the loan is secured as s 109N(3)(a) requires): one for every balance, or one for each. A part year is rounded up.¶" &
                             "EXAMPLES:      →¶" &
                             "→Formula (oz is assumed to be the module's name)¶" &
                             "→=oz.Div7AMinRepaymentλ({100000;60000}, 8.77%, {5;6})¶" &
@@ -2791,8 +2791,8 @@ Div7AMinRepaymentλ = LAMBDA(
                         )),
     //  Check inputs - Omitted required arguments
         Help?,          OR( ISOMITTED( OpeningBalance), ISOMITTED( BenchmarkRate), ISOMITTED( RemainingTerm)),
-    //  One rate for the year, as a fraction
-        ValidRate?,     IFERROR( AND( ROWS( BenchmarkRate) = 1, COLUMNS( BenchmarkRate) = 1, ISNUMBER( BenchmarkRate), BenchmarkRate > 0, BenchmarkRate < 1), FALSE),
+    //  One rate for the year, as a fraction; an error passes so it shows
+        ValidRate?,     IFERROR( IF( ROWS( BenchmarkRate) * COLUMNS( BenchmarkRate) = 1, IF( ISERROR( BenchmarkRate), TRUE, AND( ISNUMBER( BenchmarkRate), BenchmarkRate > 0, BenchmarkRate < 1)), FALSE), ISERROR( BenchmarkRate)),
         RateMessage,    "BenchmarkRate must be one rate above 0 and below 1, such as 8.77% or 0.0877.",
     //  One term for every loan, or one for each in the same shape
         OneTerm?,       AND( ROWS( RemainingTerm) = 1, COLUMNS( RemainingTerm) = 1),
