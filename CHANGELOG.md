@@ -1,9 +1,10 @@
 # Changelog
 
-## Unreleased
+## v3.8.0, 24 November 2026, 14 new functions, Apache-2.0 licence and workbook tooling
 
-Changes on `main` since the v3.7.0 cut. They reach the published workbook in the next
-release; until then v3.7.0 behaves as it did.
+Cut on 24 November 2026 from the changes on `main` since v3.7.0. It takes the library
+from 151 to 165 functions, moves Ryan Duguid's original work to Apache-2.0 and adds
+the native `workbook_source` and `audit` commands.
 
 ### Added
 

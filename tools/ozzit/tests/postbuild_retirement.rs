@@ -11,7 +11,7 @@ use ozzit::{
 use std::{path::Path, process::Command};
 
 const STRINGS: &str = "xl/sharedStrings.xml";
-const OLD_LABELS: [&str; 16] = [
+const OLD_LABELS: [&str; 17] = [
     "Version 20 August 2026    -    130 functions    -    Microsoft 365 or Excel 2024 and later",
     "Version 16 September 2026    -    133 functions    -    Microsoft 365 or Excel 2024 and later",
     "Version 16 September 2026    -    137 functions    -    Microsoft 365 or Excel 2024 and later",
@@ -28,9 +28,10 @@ const OLD_LABELS: [&str; 16] = [
     "Version 18 November 2026    -    160 functions    -    Microsoft 365 or Excel 2024 and later",
     "Version 18 November 2026    -    161 functions    -    Microsoft 365 or Excel 2024 and later",
     "Version 18 November 2026    -    163 functions    -    Microsoft 365 or Excel 2024 and later",
+    "Version 18 November 2026    -    165 functions    -    Microsoft 365 or Excel 2024 and later",
 ];
 const LABEL: &str =
-    "Version 18 November 2026    -    165 functions    -    Microsoft 365 or Excel 2024 and later";
+    "Version 24 November 2026    -    165 functions    -    Microsoft 365 or Excel 2024 and later";
 const OLD_CREATOR: &str = "<dc:creator>Ryan Duguid; Ozzit project</dc:creator>";
 const CREATOR: &str = "<dc:creator>Ozzit project</dc:creator>";
 
