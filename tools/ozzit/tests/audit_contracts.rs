@@ -186,6 +186,27 @@ fn absolute_references_keep_their_row_and_column() {
 }
 
 #[test]
+fn whole_column_and_row_references_compare_by_position() {
+    let dir = tempfile::tempdir().unwrap();
+    let rows = concat!(
+        r#"<row r="2"><c r="B2"><f>SUM(A:A)</f><v>0</v></c><c r="C2"><v>4</v></c><c r="D2"><f>SUM(C:C)</f><v>0</v></c></row>"#,
+        r#"<row r="3"><c r="F3"><f>SUM(2:2)</f><v>0</v></c></row>"#,
+        r#"<row r="4"><c r="F4"><v>6</v></c></row>"#,
+        r#"<row r="5"><c r="F5"><f>SUM(4:4)</f><v>0</v></c></row>"#,
+    );
+    Book::new().sheet("Model", "", rows).write(dir.path());
+    let (code, text) = audit(&["book.xlsx"], dir.path());
+    assert_eq!(code, 1, "{text}");
+    assert_eq!(
+        findings(&text),
+        [
+            "hard-coded number: Model!C2 holds 4 between B2 and D2, formulas of one pattern",
+            "hard-coded number: Model!F4 holds 6 between F3 and F5, formulas of one pattern",
+        ]
+    );
+}
+
+#[test]
 fn numbers_beside_unlike_formulas_text_or_function_names_are_not_reported() {
     let dir = tempfile::tempdir().unwrap();
     let rows = concat!(

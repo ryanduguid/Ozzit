@@ -58,7 +58,7 @@ split into LAMBDA functions and About tables, is registered too: it compares
 with the names in `functions.csv` that no sheet in `ozzit.xlsx` is named for.
 
 `audit` reviews any workbook without writing to it. It compares formulas in relative
-R1C1 form, a shared formula's dependants taking their anchor's pattern, and lists a
+R1C1 form, whole columns and rows included, a shared formula's dependants taking their anchor's pattern, and lists a
 plain number between 2 formula cells of one pattern in a row or column; an external
 link whose local file does not exist, that Excel marked missing or that is remote;
 and hidden or very hidden sheets and hidden defined names. String literals, quoted

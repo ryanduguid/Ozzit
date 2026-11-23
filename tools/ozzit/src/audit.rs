@@ -12,8 +12,9 @@ use roxmltree::{Document, Node};
 use std::collections::{BTreeMap, HashMap};
 use std::path::Path;
 
-/// An A1 reference outside a name, a function call or a structured reference.
-const CELL: &str = r"(?<![A-Za-z0-9_.$\[\]])(\$?)([A-Z]{1,3})(\$?)([0-9]{1,7})(?![A-Za-z0-9_.(\[])";
+/// An A1 cell, whole-column or whole-row reference outside a name, a function
+/// call or a structured reference: groups 1 to 4, 5 to 8 and 9 to 12.
+const REFERENCE: &str = r"(?<![A-Za-z0-9_.$\[\]])(?:(\$?)([A-Z]{1,3})(\$?)([0-9]{1,7})|(\$?)([A-Z]{1,3}):(\$?)([A-Z]{1,3})|(\$?)([0-9]{1,7}):(\$?)([0-9]{1,7}))(?![A-Za-z0-9_.(\[])";
 const MAX_COLUMN: usize = 16_384;
 const MAX_ROW: usize = 1_048_576;
 
@@ -72,6 +73,28 @@ fn offset(absolute: bool, value: usize, host: usize, axis: char) -> String {
     }
 }
 
+fn row(dollar: &str, digits: &str, host: usize) -> Option<String> {
+    let row = digits.parse().ok().filter(|r| (1..=MAX_ROW).contains(r))?;
+    Some(offset(!dollar.is_empty(), row, host, 'R'))
+}
+
+fn column(dollar: &str, letters: &str, host: usize) -> Option<String> {
+    let column = Some(column_number(letters)).filter(|&c| c <= MAX_COLUMN)?;
+    Some(offset(!dollar.is_empty(), column, host, 'C'))
+}
+
+/// One matched reference in R1C1 form, or `None` past the sheet's edge.
+fn reference(m: &fancy_regex::Captures<'_, str>, host: (usize, usize)) -> Option<String> {
+    let group = |i: usize| m.get(i).map_or("", |g| g.as_str());
+    if m.get(2).is_some() {
+        Some(row(group(3), group(4), host.0)? + &column(group(1), group(2), host.1)?)
+    } else if m.get(6).is_some() {
+        Some(column(group(5), group(6), host.1)? + ":" + &column(group(7), group(8), host.1)?)
+    } else {
+        Some(row(group(9), group(10), host.0)? + ":" + &row(group(11), group(12), host.0)?)
+    }
+}
+
 /// The formula with each A1 reference rewritten relative to the cell at `host`.
 /// String literals and quoted sheet names stay as written.
 fn relative(formula: &str, host: (usize, usize)) -> String {
@@ -89,16 +112,8 @@ fn relative(formula: &str, host: (usize, usize)) -> String {
                 out.push_str(segment);
                 continue;
             }
-            out.push_str(&sub_fn(CELL, segment, |m| {
-                let column = column_number(&m[2]);
-                match m[4].parse::<usize>() {
-                    Ok(row) if (1..=MAX_ROW).contains(&row) && column <= MAX_COLUMN => format!(
-                        "{}{}",
-                        offset(!m[3].is_empty(), row, host.0, 'R'),
-                        offset(!m[1].is_empty(), column, host.1, 'C')
-                    ),
-                    _ => m[0].to_owned(),
-                }
+            out.push_str(&sub_fn(REFERENCE, segment, |m| {
+                reference(m, host).unwrap_or_else(|| m[0].to_owned())
             }));
         }
     }
@@ -251,6 +266,26 @@ fn percent_decoded(text: &str) -> String {
     String::from_utf8_lossy(&out).into_owned()
 }
 
+/// A decoded link target as a path: file:///C:/x.xlsx names C:/x.xlsx,
+/// file:///home/x.xlsx and file://localhost/home/x.xlsx name /home/x.xlsx, and
+/// file://server/share/x.xlsx names //server/share/x.xlsx. Others are paths already.
+fn local_path(target: &str) -> String {
+    let Some(rest) = target.strip_prefix("file://") else {
+        return target.to_owned();
+    };
+    let rest = rest
+        .strip_prefix("localhost")
+        .filter(|r| r.starts_with('/'))
+        .unwrap_or(rest);
+    if !rest.starts_with(['/', '\\']) {
+        format!("//{rest}")
+    } else if rest.as_bytes().get(2) == Some(&b':') || rest.starts_with(r"/\\") {
+        rest[1..].to_owned()
+    } else {
+        rest.to_owned()
+    }
+}
+
 /// Why an external link's target is not usable, or `None` when its file exists.
 fn missing_target(kind: &str, target: &str, base: &Path) -> Option<String> {
     if kind.ends_with("/xlPathMissing") {
@@ -260,14 +295,8 @@ fn missing_target(kind: &str, target: &str, base: &Path) -> Option<String> {
     if lower.starts_with("http://") || lower.starts_with("https://") {
         return Some(format!("targets {target}, a remote file not checked"));
     }
-    let decoded = percent_decoded(target);
-    let local = match decoded.strip_prefix("file://") {
-        // file:///C:/x.xlsx names C:/x.xlsx; file:///home/x.xlsx names /home/x.xlsx.
-        Some(rest) if rest.as_bytes().get(2) == Some(&b':') => rest[1..].to_owned(),
-        Some(rest) => rest.to_owned(),
-        None => decoded,
-    };
-    (!base.join(local).exists()).then(|| format!("targets {target}, which does not exist"))
+    (!base.join(local_path(&percent_decoded(target))).exists())
+        .then(|| format!("targets {target}, which does not exist"))
 }
 
 fn external_links(parts: &Parts, book: &Document<'_>, base: &Path) -> Result<Vec<String>> {
@@ -401,6 +430,11 @@ mod tests {
         );
         assert_eq!(relative("SUM(A1:B2)", (1, 1)), "SUM(R[0]C[0]:R[1]C[1])");
         assert_eq!(relative("Sheet2!A1", (1, 1)), "Sheet2!R[0]C[0]");
+        assert_eq!(
+            relative("SUM(B:$C)+SUM(2:$3)", (1, 1)),
+            "SUM(C[1]:C3)+SUM(R[1]:R3)"
+        );
+        assert_eq!(relative("SUM(A:A)", (1, 2)), relative("SUM(B:B)", (1, 3)));
     }
 
     #[test]
@@ -444,5 +478,17 @@ mod tests {
             None
         );
         assert_eq!(percent_decoded("%zz%4"), "%zz%4");
+        for (url, path) in [
+            ("file:///C:/a.xlsx", "C:/a.xlsx"),
+            (r"file:///C:\a.xlsx", r"C:\a.xlsx"),
+            ("file:///Users/a.xlsx", "/Users/a.xlsx"),
+            ("file://localhost/Users/a.xlsx", "/Users/a.xlsx"),
+            ("file://localhost/C:/a.xlsx", "C:/a.xlsx"),
+            ("file://server/share/a.xlsx", "//server/share/a.xlsx"),
+            (r"file:///\\server\share\a.xlsx", r"\\server\share\a.xlsx"),
+            ("../a.xlsx", "../a.xlsx"),
+        ] {
+            assert_eq!(local_path(url), path, "{url}");
+        }
     }
 }
