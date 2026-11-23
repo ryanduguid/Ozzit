@@ -1,0 +1,54 @@
+{
+    "excel":  "16.0 build 20625",
+    "workbook_sha256":  "97752143110c22f2cd8f9064e86596713117ec15b71d3ea20c5068767066321b",
+    "results":  {
+                    "rolling":  [
+                                    [
+                                        1,
+                                        3,
+                                        5,
+                                        7
+                                    ]
+                                ],
+                    "rolling-changed":  [
+                                            [
+                                                2,
+                                                6,
+                                                10,
+                                                14
+                                            ]
+                                        ],
+                    "lease":  [
+                                  [
+                                      100
+                                  ],
+                                  [
+                                      105
+                                  ],
+                                  [
+                                      5
+                                  ],
+                                  [
+                                      0
+                                  ]
+                              ],
+                    "lease-changed":  [
+                                          [
+                                              200
+                                          ],
+                                          [
+                                              210
+                                          ],
+                                          [
+                                              10
+                                          ],
+                                          [
+                                              0
+                                          ]
+                                      ]
+                },
+    "cases_sha256":  "13a37e09b7d734ac118d8829d697746fac7929cd770866d6eca248d74fc53d72",
+    "helper_sha256":  "49beb6affa1eb953ad28b69fd6a2f7f3599a28a71f83385bae78bde280360c88",
+    "evidence_helper_sha256":  "4f0db804f1d5ef13ddd8f2d635b51052db175e1c634ddaee5ad6af3dd42e6f59",
+    "evaluated_at_utc":  "2026-11-23T04:53:04.9369695Z"
+}

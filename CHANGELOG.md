@@ -7,6 +7,8 @@ release; until then v3.7.0 behaves as it did.
 
 ### Added
 
+- The native `workbook_source` command rebuilds the tracked workbook from the formula modules and a text layout. CI compares every byte and the release digest. A cross-platform Excel check exercises 4 dynamic-array cases. Windows results are recorded in the [compatibility guide](docs/workbook-use.md#check-recalculation-on-windows-mac-or-the-web).
+
 - `oz.LeaseJournalλ(LeaseSchedule, ROUSchedule, [Accounts])` turns the rows of
   `oz.LeaseScheduleλ` and `oz.ROUScheduleλ` into journal lines (period, account, debit,
   credit, narration): the right-of-use asset and lease liability at commencement, then

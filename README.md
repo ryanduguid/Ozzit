@@ -38,6 +38,8 @@ Each earlier release keeps its own licence.
 | Web | Not tested |
 | Advanced Formula Environment import of `oz.txt` | Not tested |
 
+The [cross-platform recalculation check](docs/workbook-use.md#check-recalculation-on-windows-mac-or-the-web) has 4 cases with expected spill values. All 4 passed on Windows Excel build 20625 on 23 November 2026. The [workbook build instructions](docs/workbook-source.md) reproduce the tracked workbook from text and verify its SHA-256.
+
 **[Latest release](https://github.com/ryanduguid/Ozzit/releases/latest)** on GitHub.
 
 - **[v3.7.0](https://github.com/ryanduguid/Ozzit/releases/tag/v3.7.0)**, published

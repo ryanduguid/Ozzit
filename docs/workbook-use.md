@@ -66,7 +66,7 @@ The workbook opens showing the numbers its own formulas produce, so nothing has 
 
 Functions with a data-validation companion (named with a `DV` suffix, such as `oz.AmortiseλDV`) diagnose argument problems when the parent function returns something unexpected.
 
-### Check installation in a fresh workbook
+### Check installation in a fresh workbook (v3.4.2)
 
 The desktop Excel check below copies existing result cells for `oz.RollingSumλ`
 and `oz.Amortiseλ` into a new workbook. It replaces their example references
@@ -74,7 +74,7 @@ with self-contained inputs, closes the source, checks the required names and
 helpers, then saves and reopens the destination. A second set of inputs checks
 that the reopened formulas recalculate. No external workbook link may remain.
 
-Close Excel first. Use the SHA-256 of the exact workbook being tested and an
+This runner uses the source cell addresses and helper dependencies of v3.4.2. Use the v3.4.2 workbook for this historical check. Close Excel first. Use its SHA-256 and an
 unused output directory outside this checkout, with an existing parent:
 
 ```powershell
@@ -106,6 +106,23 @@ release workbook and `--destination` with the installed workbook. Supplied
 files must match their recorded hashes. CI has neither file and verifies only
 the retained records and runners. This check does not run Excel, recalculate
 the workbook or replace the native gates required for a workbook change.
+
+## Check recalculation on Windows, Mac or the web
+
+Use a disposable copy of the workbook. Record its SHA-256 before opening or uploading it. Record the Excel build on desktop, or the browser version and date on the web. Use the same workbook digest when comparing hosts.
+
+In Excel's **Automate** tab, create a script from [excel_compatibility.ts](../tools/excel_compatibility.ts). Run it with your host and build and the workbook digest. It includes the same [4 cases](../tools/compatibility-cases.json) used by the Windows runner. The script creates a scratch worksheet, enters each formula, forces recalculation, reads each spill and removes the scratch sheet. Save the JSON from the output pane, including any failed cases. Check that all 4 case IDs and both spill dimensions match the case file before recording a pass for that host. Availability depends on the account and Excel version. [Microsoft's Office Scripts requirements](https://learn.microsoft.com/en-us/office/dev/scripts/testing/platform-limits)
+
+For a repeat run with Windows desktop Excel closed, use an unused evidence file. The Windows runner opens the workbook read-only. Compare its result grids with the case file.
+
+```powershell
+$output = Join-Path ([IO.Path]::GetTempPath()) ("ozzit-compat-" + [guid]::NewGuid() + ".json")
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\excel_eval_formulas_verified.ps1 -Cases (Resolve-Path tools\compatibility-cases.json) -Out $output -Path (Resolve-Path ozzit.xlsx)
+```
+
+Without the Automate tab, enter the same 4 formulas in A1 on a blank sheet in the copy, one at a time. Record each spill's dimensions and every cell value. RollingSum produces one row of 4 values. LeaseSchedule calls LeaseLiability and produces one column of 4 values. Compare each numeric cell with its expected value using an absolute tolerance of 0.000001. Record formula errors and blocked spills as observed.
+
+On 23 November 2026, all 4 cases passed on the tracked 552,608-byte workbook in Windows Excel 16.0 build 20625 using the existing Windows evaluator. The [Windows record](compatibility-windows-2026-11-23.json) includes the case and workbook digests, runner digests and actual spill grids. Mac and web await native runs. These cases cover recalculation in the open workbook. Copying names between workbooks and importing `oz.txt` require separate tests.
 
 ## Modern Excel
 
