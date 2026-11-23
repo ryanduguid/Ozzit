@@ -4366,7 +4366,7 @@ BulletLoanλ = LAMBDA(
                             IF( ISOMITTED( CashInterest), TRUE, AND( IF( ISERROR( CashInterest), TRUE, IF( ISNUMBER( CashInterest), ( CashInterest >= 0) * ( CashInterest <= 1), FALSE))))),
         ValueMessage,   "BulletLoanλ needs Principal from 0 to under 10,000,000,000,000, every rate above -1 and below 2, and every CashInterest share from 0 to 1.",
     //  Procedure - interest on the opening balance; the part not paid in cash is added to it
-        Shares,         IF( ISOMITTED( CashInterest), 1, CashInterest),
+        Shares,         IF( ISOMITTED( CashInterest), SEQUENCE( 1, Periods, 1, 0), IF( SEQUENCE( 1, Periods), CashInterest)),
         Growth,         1 + Rates * ( 1 - Shares),
         Opening,        Principal * DROP( HSTACK( 1, SCAN( 1, Growth, LAMBDA( Factor, Step, Factor * Step))), , -1),
         Interest,       Opening * Rates,
