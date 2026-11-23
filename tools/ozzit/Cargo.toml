@@ -35,6 +35,7 @@ too_many_lines = "warn"
 [profile.release]
 codegen-units = 1
 lto = true
+strip = "symbols"
 
 # Dependencies are optimised in test builds; the crate itself stays at
 # debug opt-level so its own panics and overflow checks keep their detail.
