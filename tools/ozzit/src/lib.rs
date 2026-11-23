@@ -3,6 +3,7 @@
 
 pub mod afe;
 pub mod archive;
+pub mod audit;
 pub mod cache;
 mod check_gates;
 pub mod common;
@@ -50,6 +51,7 @@ const COMMANDS: &[(&str, Handler)] = &[
     ("sync_counts", counts::sync),
     ("verify_help_spills", spills::verify),
     ("verify_workbook", workbook::verify),
+    ("audit", audit::command),
     ("verify_native_evidence", native_evidence::command),
     ("verify_cache", cache::verify),
     ("sanitise_workbook", sanitise::command),

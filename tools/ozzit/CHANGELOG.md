@@ -57,6 +57,14 @@ The function guide's count of the names without a worksheet of their own, and it
 split into LAMBDA functions and About tables, is registered too: it compares
 with the names in `functions.csv` that no sheet in `ozzit.xlsx` is named for.
 
+`audit` reviews any workbook without writing to it. It compares formulas in relative
+R1C1 form, a shared formula's dependants taking their anchor's pattern, and lists a
+plain number between 2 formula cells of one pattern in a row or column; an external
+link whose local file does not exist, that Excel marked missing or that is remote;
+and hidden or very hidden sheets and hidden defined names. String literals, quoted
+sheet names, function names such as `LOG10` and references past `XFD1048576` are not
+read as references. It exits 1 when it finds any.
+
 `native_checks` writes `docs/native-checks.csv`: for each name in
 `functions.csv`, the generated help and worked-example assertions, the
 hand-written self-test calls and the worksheet formula cells that reach it, read
