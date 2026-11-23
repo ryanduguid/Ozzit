@@ -25,6 +25,7 @@ use ozzit::{
     help,
 };
 use std::collections::{BTreeSet, HashMap};
+use std::path::Path;
 use std::process::Command;
 
 const REPOSITORY: &str = "https://github.com/ryanduguid/Ozzit";
@@ -65,26 +66,48 @@ fn functions() -> Functions {
     found
 }
 
-fn git(args: &[&str]) -> Option<Vec<u8>> {
+fn git_in(dir: &Path, args: &[&str]) -> Option<Vec<u8>> {
     let output = Command::new("git")
         .args(args)
-        .current_dir(root())
+        .current_dir(dir)
         .output()
         .ok()?;
     output.status.success().then_some(output.stdout)
 }
 
 /// Each LAMBDA's text in `src/` at a commit, or None when Git cannot show it.
-fn committed_functions(revision: &str) -> Option<Functions> {
-    let listing = git(&["ls-tree", "--name-only", revision, "src/"])?;
+fn committed_functions_in(dir: &Path, revision: &str) -> Option<Functions> {
+    let listing = git_in(dir, &["ls-tree", "--name-only", revision, "src/"])?;
     let mut found = Functions::new();
     for name in ozzit::py::split_whitespace(&String::from_utf8(listing).unwrap()) {
         if name.ends_with(".txt") {
-            let shown = git(&["show", &format!("{revision}:{name}")])?;
+            let shown = git_in(dir, &["show", &format!("{revision}:{name}")])?;
             split(&String::from_utf8(shown).unwrap(), &mut found);
         }
     }
     Some(found)
+}
+
+fn committed_functions(revision: &str) -> Option<Functions> {
+    committed_functions_in(&root(), revision)
+}
+
+/// The committer date recorded on `revision`, or None when Git cannot show it.
+fn commit_date_in(dir: &Path, revision: &str) -> Option<Date> {
+    let shown = git_in(dir, &["show", "-s", "--format=%cs", revision])?;
+    Date::strptime("%Y-%m-%d", String::from_utf8(shown).ok()?.trim()).ok()
+}
+
+/// The date the change landed: HEAD's committer date when `src/` has no
+/// uncommitted edits, or `fallback` whilst `src/` is dirty.
+fn change_date_in(dir: &Path, fallback: Date) -> Date {
+    let clean =
+        git_in(dir, &["status", "--porcelain", "--", "src/"]).is_some_and(|out| out.is_empty());
+    if clean && let Some(merged) = commit_date_in(dir, "HEAD") {
+        merged
+    } else {
+        fallback
+    }
 }
 
 /// The labelled rows of a help table; a repeated label keeps its last value.
@@ -120,8 +143,8 @@ fn version(body: &str) -> Date {
 /// Functions whose formula changed since base while VERSION stayed put.
 ///
 /// A function changed again on the day its VERSION was set keeps that date, so
-/// a VERSION within a day of today passes; the day allows for time zones.
-fn unmoved(current: &Functions, base: &Functions, today: Date) -> Vec<String> {
+/// a VERSION within a day of the merge date passes; the day allows for time zones.
+fn unmoved(current: &Functions, base: &Functions, merged: Date) -> Vec<String> {
     current
         .iter()
         .filter(|(name, body)| {
@@ -129,7 +152,7 @@ fn unmoved(current: &Functions, base: &Functions, today: Date) -> Vec<String> {
                 !WITHOUT_HELP.contains(&name.as_str())
                     && formula(body) != formula(before)
                     && version(body) <= version(before)
-                    && (version(body) - today).get_days().abs() > 1
+                    && (version(body) - merged).get_days().abs() > 1
             })
         })
         .map(|(name, _)| name.clone())
@@ -248,7 +271,7 @@ fn a_changed_formula_moves_its_version() {
         return;
     };
     assert_eq!(
-        unmoved(&functions(), &base, today()),
+        unmoved(&functions(), &base, change_date_in(&root(), today())),
         Vec::<String>::new(),
         "the formula changed: set VERSION to the date of the change"
     );
@@ -353,4 +376,110 @@ fn the_version_gate_reads_formulas_not_help() {
         let changed = one("Fλ", body("1 Sep 2026", "", &format!("IF(X, {after}, 1)")));
         assert_eq!(unmoved(&changed, &message, today), ["Fλ"], "{after}");
     }
+}
+
+fn commit_module(repo: &Path, text: &str, when: &str) {
+    let src_dir = repo.join("src");
+    std::fs::create_dir_all(&src_dir).unwrap();
+    std::fs::write(src_dir.join("Test.txt"), text).unwrap();
+    for args in [
+        &["add", "src/Test.txt"][..],
+        &[
+            "-c",
+            "user.name=Test",
+            "-c",
+            "user.email=test@example.invalid",
+            "-c",
+            "commit.gpgsign=false",
+            "commit",
+            "-m",
+            "update formula",
+        ][..],
+    ] {
+        let status = Command::new("git")
+            .args(args)
+            .current_dir(repo)
+            .env("GIT_AUTHOR_DATE", when)
+            .env("GIT_COMMITTER_DATE", when)
+            .status()
+            .unwrap();
+        assert!(status.success(), "git {args:?} failed");
+    }
+}
+
+fn init_repo() -> tempfile::TempDir {
+    let temp = tempfile::tempdir().unwrap();
+    assert!(
+        Command::new("git")
+            .args(["init", "-q"])
+            .current_dir(temp.path())
+            .status()
+            .unwrap()
+            .success()
+    );
+    temp
+}
+
+#[test]
+fn same_day_version_follows_the_merge_date_not_today() {
+    let temp = init_repo();
+    let repo = temp.path();
+    commit_module(
+        repo,
+        &body("1 Oct 2026", "", "X + 1"),
+        "2026-10-01T10:00:00+10:00",
+    );
+    commit_module(
+        repo,
+        &body("1 Oct 2026", "", "X + 2"),
+        "2026-10-01T16:00:00+10:00",
+    );
+
+    let parent = committed_functions_in(repo, "HEAD^1").unwrap();
+    let head = committed_functions_in(repo, "HEAD").unwrap();
+    let weeks_later = date("24 Nov 2026");
+
+    // Weekly verify.yml runs weeks after the merge still see the merge date.
+    assert_eq!(change_date_in(repo, weeks_later), date("1 Oct 2026"));
+    assert_eq!(
+        unmoved(&head, &parent, change_date_in(repo, weeks_later)),
+        Vec::<String>::new()
+    );
+    assert_eq!(unmoved(&head, &parent, weeks_later), ["Fλ"]);
+    assert!(commit_date_in(repo, "no-such-revision").is_none());
+}
+
+#[test]
+fn uncommitted_and_later_day_edits_still_fail_unmoved_version() {
+    let temp = init_repo();
+    let repo = temp.path();
+    commit_module(
+        repo,
+        &body("1 Oct 2026", "", "X + 1"),
+        "2026-10-01T10:00:00+10:00",
+    );
+    let parent = committed_functions_in(repo, "HEAD").unwrap();
+    let weeks_later = date("24 Nov 2026");
+
+    // Uncommitted edits in src/ fall back to today so an unraised VERSION fails locally.
+    let dirty_text = body("1 Oct 2026", "", "X + 2");
+    std::fs::write(repo.join("src/Test.txt"), &dirty_text).unwrap();
+    assert_eq!(change_date_in(repo, weeks_later), weeks_later);
+    assert_eq!(
+        unmoved(
+            &one("Fλ", dirty_text.clone()),
+            &parent,
+            change_date_in(repo, weeks_later)
+        ),
+        ["Fλ"]
+    );
+
+    // Committing an unraised VERSION on a later day fails against that commit's merge date.
+    commit_module(repo, &dirty_text, "2026-10-05T10:00:00+10:00");
+    let head = committed_functions_in(repo, "HEAD").unwrap();
+    assert_eq!(change_date_in(repo, weeks_later), date("5 Oct 2026"));
+    assert_eq!(
+        unmoved(&head, &parent, change_date_in(repo, weeks_later)),
+        ["Fλ"]
+    );
 }
