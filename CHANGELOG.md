@@ -56,6 +56,13 @@ release; until then v3.7.0 behaves as it did.
   `oz.BulletLoanλ(Principal, Rates, [CashInterest])` a bullet loan schedule with interest paid in
   cash, capitalised (payment in kind) or split, both unrounded. `ozzit index_factor_bullet_loan`
   adds them. [The page](docs/index-factor-and-bullet-loan.md) describes both.
+- `oz.FCFFBridgeλ(EBIT, TaxRate, Depreciation, CapitalExpenditure, WorkingCapitalChange)`
+  returns free cash flow to the firm for each period as 7 rows, from EBIT to FCFF;
+  `oz.WACCλ(EquityValue, DebtValue, RiskFreeRate, Beta, EquityRiskPremium, CostOfDebt, TaxRate)`
+  the weighted average cost of capital with a CAPM cost of equity; and
+  `oz.SensitivityGridλ(Calculation, RowValues, ColumnValues)` a two-way sensitivity grid from a
+  `LAMBDA`, without a Data Table. All unrounded. `ozzit valuation_sensitivity` adds them.
+  [The page](docs/valuation-and-sensitivity.md) gives their sources.
 
 ### Fixed
 

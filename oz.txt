@@ -1614,7 +1614,12 @@ AboutFinancialλ = TRIM(TEXTSPLIT(
                                            "→¶" &
                                            "INDEXING AND DEBT  →¶" &
                                            "IndexFactorλ       →Cumulative index factor for each period from its rate¶" &
-                                           "BulletLoanλ        →Bullet loan with cash or capitalised (PIK) interest¶" & 
+                                           "BulletLoanλ        →Bullet loan with cash or capitalised (PIK) interest¶" &
+                                           "→¶" &
+                                           "VALUATION          →¶" &
+                                           "FCFFBridgeλ        →Free cash flow to the firm from EBIT, tax, depreciation, capital expenditure and working capital¶" &
+                                           "WACCλ              →Weighted average cost of capital with a CAPM cost of equity¶" &
+                                           "SensitivityGridλ   →Two-way sensitivity grid from a calculation and its row and column values¶" & 
                                            "→¶" &
                                            "DEBT MODULE        →¶" &
                                            "AmortiseBλ         →Creates an amortisation schedule for a debt/loan across a model's periods¶" &
@@ -4272,6 +4277,193 @@ YearToDateλ = LAMBDA(
     //  Return Result, Help or the message
         Return,         IF(Help?, 2, IF(NOT(ValidStart?), 3, IF(NOT(Shaped?), 4, IF(NOT(OneDate?), 5, IF(NOT(Numbers?), 6, 1))))),
         CHOOSE( Return, Result, Help, StartMessage, ShapeMessage, AsAtMessage, ValuesMessage)
+    )
+);
+
+
+
+/*  FUNCTION NAME:  FCFFBridgeλ
+    DESCRIPTION:*//**Free cash flow to the firm for each period: EBIT less tax on it, plus depreciation, less capital expenditure and the increase in working capital, unrounded*/
+/*  SOURCE:         Aswath Damodaran, 'Discounted cashflow models: what they are and how to choose the
+                    right one', FCFF valuation models, read 24 November 2026: EBIT (1 - t) - (Cap Ex -
+                    Depreciation) - Change in Working Capital = FCFF; its illustration gives EBIT (1 - t)
+                    $960.00 and $1,008.00, net capital expenditure $110.00 and $115.50 and the change in
+                    working capital $150.00 and $17.50, so FCFF $700.00 and $875.00:
+                    https://pages.stern.nyu.edu/~adamodar/New_Home_Page/lectures/fcff.html
+                    Aswath Damodaran, 'Estimating cash flows', slide 146, read 24 November 2026: working
+                    capital for valuation is non-cash current assets less non-debt current liabilities:
+                    https://pages.stern.nyu.edu/~adamodar/pdfiles/eqnotes/dcfcf.pdf
+*/
+FCFFBridgeλ = LAMBDA(
+//  Parameter Declaration
+    [EBIT],
+    [TaxRate],
+    [Depreciation],
+    [CapitalExpenditure],
+    [WorkingCapitalChange],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →FCFFBridgeλ(EBIT, TaxRate, Depreciation, CapitalExpenditure, WorkingCapitalChange)¶" &
+                            "DESCRIPTION:   →Free cash flow to the firm: EBIT, tax, NOPAT, the adjustments and FCFF rows.¶NOTES!         →Free cash flow to the firm for each period, the cash flow a discounted¶               →cash flow valuation discounts at the weighted average cost of capital:¶               →EBIT x (1 - TaxRate), plus depreciation and amortisation, less capital¶               →expenditure, less the increase in non-cash working capital (non-cash¶               →current assets less non-debt current liabilities). Returns seven rows:¶               →EBIT, tax on EBIT, NOPAT, depreciation, capital expenditure, the increase¶               →in working capital and FCFF, one period in each column. Enter capital¶               →expenditure and an increase in working capital as positive amounts and a¶               →decrease as negative. Tax on a negative EBIT is negative, a benefit. The¶               →result is not rounded. It does not set the tax rate or forecast any input.¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/valuation-and-sensitivity.md¶" &
+                            "VERSION:       →24 Nov 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "EBIT           →(Required) One row with earnings before interest and tax for each period.¶" &
+                            "TaxRate        →(Required) Tax rate on EBIT from 0 to under 1: one for every period, or one for each.¶" &
+                            "Depreciation   →(Required) One row with depreciation and amortisation for each period.¶" &
+                            "CapitalExpenditure →(Required) One row with capital expenditure for each period, positive when spent.¶" &
+                            "WorkingCapitalChange →(Required) One row with the increase in non-cash working capital for each period; a decrease is negative.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.FCFFBridgeλ({1600,1680}, 0.4, {90,94.5}, {200,210}, {150,17.5})¶" &
+                            "→Result¶" &
+                            "→1600, 1680¶" &
+                            "→ 640,  672¶" &
+                            "→ 960, 1008¶" &
+                            "→  90, 94.5¶" &
+                            "→ 200,  210¶" &
+                            "→ 150, 17.5¶" &
+                            "→ 700,  875",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR( ISOMITTED( EBIT), ISOMITTED( TaxRate), ISOMITTED( Depreciation), ISOMITTED( CapitalExpenditure), ISOMITTED( WorkingCapitalChange)),
+    //  EBIT sets the periods; TaxRate is one rate or one for each; the adjustments match EBIT
+        Periods,        IFERROR( COLUMNS( EBIT), 1),
+        Fits?,          LAMBDA( x, IFERROR( AND( ROWS( x) = 1, COLUMNS( x) = Periods), ISERROR( x))),
+        ValidShape?,    AND( IFERROR( ROWS( EBIT) = 1, ISERROR( EBIT)),
+                            OR( IFERROR( AND( ROWS( TaxRate) = 1, COLUMNS( TaxRate) = 1), ISERROR( TaxRate)), Fits?( TaxRate)),
+                            Fits?( Depreciation), Fits?( CapitalExpenditure), Fits?( WorkingCapitalChange)),
+        ShapeMessage,   "FCFFBridgeλ needs EBIT as one row with an amount for each period, TaxRate as one rate or one for each period, and Depreciation, CapitalExpenditure and WorkingCapitalChange as rows as wide as EBIT.",
+    //  A blank is refused; an error passes so it shows
+        Amounts,        HSTACK( EBIT, Depreciation, CapitalExpenditure, WorkingCapitalChange),
+        ValidValue?,    AND( AND( IF( ISERROR( Amounts), TRUE, IF( ISNUMBER( Amounts), ABS( Amounts) < 1E13, FALSE))),
+                            AND( IF( ISERROR( TaxRate), TRUE, IF( ISNUMBER( TaxRate), ( TaxRate >= 0) * ( TaxRate < 1), FALSE)))),
+        ValueMessage,   "FCFFBridgeλ needs every amount to be a number above -10,000,000,000,000 and below 10,000,000,000,000, and every tax rate from 0 to under 1.",
+    //  Procedure - NOPAT plus depreciation, less capital expenditure and the increase in working capital
+        Tax,            EBIT * IF( SEQUENCE( 1, Periods), TaxRate),
+        NOPAT,          EBIT - Tax,
+        Result,         VSTACK( EBIT, Tax, NOPAT, Depreciation, CapitalExpenditure, WorkingCapitalChange,
+                            NOPAT + Depreciation - CapitalExpenditure - WorkingCapitalChange),
+    //  Return Result, Help, or the message
+        Return,         IF( Help?, 2, IF( NOT( ValidShape?), 3, IF( NOT( ValidValue?), 4, 1))),
+        CHOOSE( Return, Result, Help, ShapeMessage, ValueMessage)
+    )
+);
+
+
+/*  FUNCTION NAME:  WACCλ
+    DESCRIPTION:*//**Weighted average cost of capital from market values, a CAPM cost of equity and an after-tax cost of debt, unrounded*/
+/*  SOURCE:         Aswath Damodaran, 'The D in the DCF', read 24 November 2026: slide 28, Cost of Equity =
+                    Riskfree Rate + Equity Beta * (Equity Risk Premium); slide 112, Cost of Capital = Cost of
+                    Equity (Equity/(Debt + Equity)) + Cost of Borrowing (1-t) (Debt/(Debt + Equity)), with
+                    market value weights and the marginal tax rate:
+                    https://pages.stern.nyu.edu/~adamodar/pdfiles/eqnotes/dcfrates.pdf
+*/
+WACCλ = LAMBDA(
+//  Parameter Declaration
+    [EquityValue],
+    [DebtValue],
+    [RiskFreeRate],
+    [Beta],
+    [EquityRiskPremium],
+    [CostOfDebt],
+    [TaxRate],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →WACCλ(EquityValue, DebtValue, RiskFreeRate, Beta, EquityRiskPremium, CostOfDebt, TaxRate)¶" &
+                            "DESCRIPTION:   →Weighted average cost of capital with a CAPM cost of equity.¶NOTES!         →Weighted average cost of capital: the cost of equity times equity's share¶               →of equity plus debt, plus the cost of debt times (1 - TaxRate) times debt's¶               →share. The cost of equity is the capital asset pricing model's¶               →RiskFreeRate + Beta x EquityRiskPremium. Use market values for the weights¶               →and the marginal tax rate. Rates are annual and as entered: nominal or real,¶               →but the same for all. The result is not rounded. It does not adjust for¶               →dividend imputation credits, and it chooses no input: the risk-free rate,¶               →beta, premium and cost of debt are the user's.¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/valuation-and-sensitivity.md¶" &
+                            "VERSION:       →24 Nov 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "EquityValue    →(Required) Market value of equity, 0 or more and under 10,000,000,000,000.¶" &
+                            "DebtValue      →(Required) Market value of debt, 0 or more and under 10,000,000,000,000. Equity and debt cannot both be 0.¶" &
+                            "RiskFreeRate   →(Required) Annual risk-free rate, above -1 and below 2.¶" &
+                            "Beta           →(Required) Equity beta, from -10 to 10.¶" &
+                            "EquityRiskPremium →(Required) Annual equity risk premium, above -1 and below 2.¶" &
+                            "CostOfDebt     →(Required) Annual pre-tax cost of debt, above -1 and below 2.¶" &
+                            "TaxRate        →(Required) Marginal tax rate, from 0 to under 1.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.WACCλ(600, 400, 0.04, 1.2, 0.06, 0.07, 0.3)¶" &
+                            "→Result¶" &
+                            "→0.0868",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR( ISOMITTED( EquityValue), ISOMITTED( DebtValue), ISOMITTED( RiskFreeRate), ISOMITTED( Beta),
+                            ISOMITTED( EquityRiskPremium), ISOMITTED( CostOfDebt), ISOMITTED( TaxRate)),
+    //  One value for each input; an error passes so it shows
+        One?,           LAMBDA( x, IFERROR( AND( ROWS( x) = 1, COLUMNS( x) = 1), ISERROR( x))),
+        ValidShape?,    AND( One?( EquityValue), One?( DebtValue), One?( RiskFreeRate), One?( Beta), One?( EquityRiskPremium), One?( CostOfDebt), One?( TaxRate)),
+        ShapeMessage,   "WACCλ needs one value for each input.",
+    //  A blank is refused; an error passes so it shows
+        Amount?,        LAMBDA( x, IF( ISERROR( x), TRUE, IF( ISNUMBER( x), ( x >= 0) * ( x < 1E13) = 1, FALSE))),
+        Rate?,          LAMBDA( x, IF( ISERROR( x), TRUE, IF( ISNUMBER( x), ( x > -1) * ( x < 2) = 1, FALSE))),
+        ValidValue?,    AND( Amount?( EquityValue), Amount?( DebtValue), Rate?( RiskFreeRate), Rate?( EquityRiskPremium), Rate?( CostOfDebt),
+                            IF( ISERROR( Beta), TRUE, IF( ISNUMBER( Beta), ( Beta >= -10) * ( Beta <= 10) = 1, FALSE)),
+                            IF( ISERROR( TaxRate), TRUE, IF( ISNUMBER( TaxRate), ( TaxRate >= 0) * ( TaxRate < 1) = 1, FALSE))),
+        ValueMessage,   "WACCλ needs EquityValue and DebtValue from 0 to under 10,000,000,000,000, rates above -1 and below 2, Beta from -10 to 10 and TaxRate from 0 to under 1.",
+        ValidTotal?,    IFERROR( EquityValue + DebtValue > 0, TRUE),
+        TotalMessage,   "WACCλ needs EquityValue or DebtValue to be above 0.",
+    //  Procedure - CAPM cost of equity, then the weighted average with the after-tax cost of debt
+        CostOfEquity,   RiskFreeRate + Beta * EquityRiskPremium,
+        Total,          EquityValue + DebtValue,
+        Result,         CostOfEquity * EquityValue / Total + CostOfDebt * ( 1 - TaxRate) * DebtValue / Total,
+    //  Return Result, Help, or the message
+        Return,         IF( Help?, 2, IF( NOT( ValidShape?), 3, IF( NOT( ValidValue?), 4, IF( NOT( ValidTotal?), 5, 1)))),
+        CHOOSE( Return, Result, Help, ShapeMessage, ValueMessage, TotalMessage)
+    )
+);
+
+
+/*  FUNCTION NAME:  SensitivityGridλ
+    DESCRIPTION:*//**Two-way sensitivity grid: a calculation's result for each pair of row and column values, recalculated with the workbook and without a Data Table*/
+SensitivityGridλ = LAMBDA(
+//  Parameter Declaration
+    [Calculation],
+    [RowValues],
+    [ColumnValues],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →SensitivityGridλ(Calculation, RowValues, ColumnValues)¶" &
+                            "DESCRIPTION:   →Two-way sensitivity grid: a result for each pair of row and column values.¶NOTES!         →Two-way sensitivity grid: Calculation's result for each value in RowValues¶               →(down) paired with each value in ColumnValues (across), one row for each¶               →row value and one column for each column value, in their order. Place the¶               →row values to the left of the grid and the column values above it. It¶               →recalculates with the workbook like any formula, without a What-If Data¶               →Table. Calculation is a LAMBDA of 2 parameters, the row value then the¶               →column value, returning one value. An error in a result shows in its cell.¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/valuation-and-sensitivity.md¶" &
+                            "VERSION:       →24 Nov 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "Calculation    →(Required) A LAMBDA of a row value and a column value that returns one value.¶" &
+                            "RowValues      →(Required) One column of values to try down the grid, at most 1,000.¶" &
+                            "ColumnValues   →(Required) One row of values to try across the grid, at most 1,000.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.SensitivityGridλ(LAMBDA(Rate, Growth, 100 / (Rate - Growth)), {0.08;0.1}, {0.02,0.03})¶" &
+                            "→Result¶" &
+                            "→1666.6667, 2000¶" &
+                            "→     1250, 1428.5714",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          OR( ISOMITTED( Calculation), ISOMITTED( RowValues), ISOMITTED( ColumnValues)),
+    //  RowValues one column and ColumnValues one row, each at most 1,000 values
+        Down,           IFERROR( ROWS( RowValues), 1),
+        Across,         IFERROR( COLUMNS( ColumnValues), 1),
+        ValidShape?,    AND( IFERROR( COLUMNS( RowValues) = 1, ISERROR( RowValues)), Down <= 1000,
+                            IFERROR( ROWS( ColumnValues) = 1, ISERROR( ColumnValues)), Across <= 1000),
+        ShapeMessage,   "SensitivityGridλ needs RowValues as one column and ColumnValues as one row, each of at most 1,000 values.",
+    //  Calculation returns one value for the first pair; an error result passes so it shows
+        First,          Calculation( INDEX( RowValues, 1, 1), INDEX( ColumnValues, 1, 1)),
+        OneValue?,      IFERROR( ROWS( First) * COLUMNS( First) = 1, ISERROR( First)),
+        CalculationMessage, "SensitivityGridλ needs Calculation to be a LAMBDA of a row value and a column value that returns one value.",
+    //  Procedure - the calculation for each row value and column value
+        Result,         MAKEARRAY( Down, Across, LAMBDA( i, j,
+                            Calculation( INDEX( RowValues, i, 1), INDEX( ColumnValues, 1, j))
+                        )),
+    //  Return Result, Help, or the message
+        Return,         IF( Help?, 2, IF( NOT( ValidShape?), 3, IF( NOT( OneValue?), 4, 1))),
+        CHOOSE( Return, Result, Help, ShapeMessage, CalculationMessage)
     )
 );
 

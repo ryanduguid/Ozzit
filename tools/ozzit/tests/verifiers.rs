@@ -109,10 +109,10 @@ fn all_three_verifiers_pass_the_frozen_library_without_a_writer() {
     let path = root().join("ozzit.xlsx");
     let before = std::fs::read(&path).unwrap();
     let (parts, names) = read_inventory(&path).unwrap();
-    assert_eq!(names.len(), 169);
+    assert_eq!(names.len(), 172);
     let report = workbook::check(&parts, &names);
     assert!(report.failures.is_empty(), "{:?}", report.failures);
-    assert_eq!(report.functions, 170);
+    assert_eq!(report.functions, 173);
     let (stale, anchors) = spills::check(&parts).unwrap();
     assert!(stale.is_empty());
     assert_eq!(anchors, 43);

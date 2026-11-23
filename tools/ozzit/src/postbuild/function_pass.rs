@@ -59,7 +59,7 @@ macro_rules! added {
     };
 }
 
-const SPECS: [Spec; 14] = [
+const SPECS: [Spec; 15] = [
     Spec {
         stem: "working_capital_days",
         data: include_str!("../data/postbuild/working_capital_days.json"),
@@ -129,6 +129,11 @@ const SPECS: [Spec; 14] = [
         "index_factor_bullet_loan",
         "index factor and bullet loan functions",
         "index factor and bullet loan"
+    ),
+    added!(
+        "valuation_sensitivity",
+        "valuation and sensitivity functions",
+        "valuation and sensitivity"
     ),
 ];
 
@@ -558,6 +563,9 @@ pub fn depreciation_pools(args: &[String]) -> Output {
 }
 pub fn index_factor_bullet_loan(args: &[String]) -> Output {
     command(&SPECS[13], args)
+}
+pub fn valuation_sensitivity(args: &[String]) -> Output {
+    command(&SPECS[14], args)
 }
 
 #[cfg(test)]

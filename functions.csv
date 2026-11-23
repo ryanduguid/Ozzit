@@ -67,6 +67,7 @@ oz.EPSλ,Ratios,nabla.r.EPSλ,"EPSλ( NetIncome, PreferredDividends, EndOfPeriod
 oz.EquityMultiplierλ,Ratios,nabla.r.EquityMultiplierλ,"EquityMultiplierλ( TotalAssets, TotalShareholdersEquity)",Measures the portion of a company’s assets financed by shareholders' equity rather than by debt (TotalAssets/TotalShareholdersEquity)
 oz.EquityRatioλ,Ratios,nabla.r.EquityRatioλ,"EquityRatioλ( ShareholdersEquity, TotalAssets, IntangibleAssets)",Measures the long-term solvency of a company by comparing its shareholders’ equity to its total assets (Shareholder's Equity/(Total Assets - Intangible Assets)).
 oz.FBTGrossUpλ,Financial,,"FBTGrossUpλ(TaxableValues, Type)","Grossed-up taxable value of type 1 or type 2 fringe benefits, FBTAA s 5B, at the 47% FBT rate and 10% GST rate, unrounded"
+oz.FCFFBridgeλ,Financial,,"FCFFBridgeλ(EBIT, TaxRate, Depreciation, CapitalExpenditure, WorkingCapitalChange)","Free cash flow to the firm for each period: EBIT less tax on it, plus depreciation, less capital expenditure and the increase in working capital, unrounded"
 oz.FilterContainsλ,Financial,nabla.f.FilterContainsλ,"FilterContainsλ( ArrayToFilter, FilterByArray, FilterByText, [IgnoreCase?] )",Filter an array by another array that contains specific text
 oz.FinanceCompareλ,Financial,,"FinanceCompareλ(CashFlows, DiscountRate, [PeriodsPerYear], [Labels])","Present value of each option's cash flows, such as a lease, hire purchase, loan or cash purchase, at one discount rate, pre-tax"
 oz.FinancialMonthλ,Dates,,"FinancialMonthλ(Dates, [StartMonth])","Numbers each date's month within its financial year, so July is month 1 when the year starts on 1 July"
@@ -151,6 +152,7 @@ oz.ScheduleRatesByItemsλ,Dates,nabla.d.ScheduleRatesByItemsλ,"ScheduleRatesByI
 oz.ScheduleRatesλ,Dates,nabla.d.ScheduleRatesλ,"ScheduleRatesλ(PeriodEnds, RateStarts, Rates)",Schedule rates that persist until replaced in a timeline.
 oz.ScheduleValuesByItemsλ,Dates,nabla.d.ScheduleValuesByItemsλ,"ScheduleValuesByItemsλ(PeriodStarts, PeriodEnds, ItemFilter, ItemList, EffectiveList, ValueList)",Schedule and sum values in a timeline for each item.
 oz.ScheduleValuesλ,Dates,nabla.d.ScheduleValuesλ,"ScheduleValuesλ(PeriodStarts, PeriodEnds, Values, EffectiveDates)",Schedules values in a timeline from a schedule in a table.
+oz.SensitivityGridλ,Financial,,"SensitivityGridλ(Calculation, RowValues, ColumnValues)","Two-way sensitivity grid: a calculation's result for each pair of row and column values, recalculated with the workbook and without a Data Table"
 oz.SmallBusinessPoolλ,Financial,,"SmallBusinessPoolλ(OpeningBalance, Additions, [CostAdditions], [TerminationValues])","General small business pool roll-forward under ITAA 1997 Subdivision 328-D, one income year in each column, unrounded"
 oz.SumAmortiseλ,Financial,nabla.f.SumAmortiseλ,SumAmortiseλ(AmortisationSchedule),Create row totals for Amortiseλ
 oz.SumColsUλ,Utilities,nabla.u.SumColsλ,SumColsUλ( Array),Get the total for each Column
@@ -166,6 +168,7 @@ oz.Timelineλ,Dates,nabla.d.Timelineλ,"Timelineλ(StartDate, Periods, Interval,
 oz.VDBλ,Financial,nabla.f.VDBλ,"VDBλ(Cost, Salvage, Life, [Factor], [No_Switch])",Variable declining balance depreciation method for one asset or asset class.
 oz.VariancePctλ,Financial,,"VariancePctλ(Actual, Budget, [Type])","Variance as a fraction of the budget's size, so its sign always matches the variance even when the budget is negative"
 oz.Varianceλ,Financial,,"Varianceλ(Actual, Budget, [Type])","Actual less budget, signed so a favourable variance is positive for income and expense lines alike"
+oz.WACCλ,Financial,,"WACCλ(EquityValue, DebtValue, RiskFreeRate, Beta, EquityRiskPremium, CostOfDebt, TaxRate)","Weighted average cost of capital from market values, a CAPM cost of equity and an after-tax cost of debt, unrounded"
 oz.WIPDaysλ,Ratios,,"WIPDaysλ(WIP, RelatedFlow, [Days])","Work in progress days: WIP / RelatedFlow x Days, with both on one valuation basis"
 oz.WorkingCapitalTurnoverRatioλ,Ratios,nabla.r.WorkingCapitalTurnoverRatioλ,"WorkingCapitalTurnoverRatioλ( NetAnnualSales, WorkingCapital)",Working Capital Turnover Ratio measures how efficiently a company is using its working capital to support sales and growth (Net Annual Sales/Average Working Capital).
 oz.YearToDateλ,Financial,,"YearToDateλ(Values, Dates, AsAt, [StartMonth])",Totals each row of values from the start of the financial year to an as-at date

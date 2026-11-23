@@ -67,6 +67,7 @@ oz.EPSλ,1,1,0,1
 oz.EquityMultiplierλ,1,1,0,1
 oz.EquityRatioλ,1,1,0,1
 oz.FBTGrossUpλ,1,2,16,0
+oz.FCFFBridgeλ,1,2,8,0
 oz.FilterContainsλ,1,1,0,0
 oz.FinanceCompareλ,1,1,15,0
 oz.FinancialMonthλ,1,1,11,0
@@ -151,6 +152,7 @@ oz.ScheduleRatesByItemsλ,1,0,1,2
 oz.ScheduleRatesλ,1,1,2,4
 oz.ScheduleValuesByItemsλ,1,0,0,3
 oz.ScheduleValuesλ,1,1,1,7
+oz.SensitivityGridλ,1,0,9,0
 oz.SmallBusinessPoolλ,1,2,11,0
 oz.SumAmortiseλ,1,0,0,6
 oz.SumColsUλ,1,1,0,0
@@ -166,6 +168,7 @@ oz.Timelineλ,1,4,1,60
 oz.VDBλ,1,2,0,0
 oz.VariancePctλ,1,1,8,0
 oz.Varianceλ,1,2,20,0
+oz.WACCλ,1,1,8,0
 oz.WIPDaysλ,1,1,2,0
 oz.WorkingCapitalTurnoverRatioλ,1,1,0,1
 oz.YearToDateλ,1,2,21,0
