@@ -198,7 +198,7 @@ fn committed_cover_matches_index_and_changelog() {
 #[test]
 fn stale_function_count_fails() {
     let f = Fixture::published();
-    f.rewrite("xl/sharedStrings.xml", "165 functions", "133 functions");
+    f.rewrite("xl/sharedStrings.xml", "168 functions", "133 functions");
     failure(
         f.run(),
         &["FAIL: cover says 133 functions; functions.csv publishes 168"],
