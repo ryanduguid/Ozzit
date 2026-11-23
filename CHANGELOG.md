@@ -56,6 +56,10 @@ release; until then v3.7.0 behaves as it did.
   `oz.BulletLoanλ(Principal, Rates, [CashInterest])` a bullet loan schedule with interest paid in
   cash, capitalised (payment in kind) or split, both unrounded. `ozzit index_factor_bullet_loan`
   adds them. [The page](docs/index-factor-and-bullet-loan.md) describes both.
+- `ozzit audit [workbook]` reviews any workbook without changing it and lists a plain number
+  sitting between 2 formula cells of one pattern in a row or column (a likely hard-coded
+  override), an external link whose file does not exist, that Excel marked missing or that is
+  remote and not checked, and each hidden or very hidden sheet and hidden defined name.
 
 ### Fixed
 
