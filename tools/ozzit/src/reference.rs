@@ -10,7 +10,6 @@
 //! `functions.csv`, and writes one JSON file a website or an agent can render.
 use crate::{common::*, formula, help, py};
 use serde_json::{Value, json};
-use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
@@ -359,13 +358,6 @@ fn function_json(name: &str, body: &str, row: Option<&IndexRow>) -> Value {
     })
 }
 
-fn hex(bytes: &[u8]) -> String {
-    Sha256::digest(bytes)
-        .iter()
-        .map(|b| format!("{b:02x}"))
-        .collect()
-}
-
 /// The index rows by function name, noting any name listed twice.
 fn index_rows(index: &Path, problems: &mut Vec<String>) -> Result<BTreeMap<String, IndexRow>> {
     let csv = Csv::read(index)?;
@@ -445,7 +437,9 @@ fn module_json(
         functions.push(function_json(&m[1], body, rows.get(&key)));
     }
     let source = format!("src/{module}.txt");
-    Ok(json!({"module": module, "source": source, "sha256": hex(&bytes), "functions": functions}))
+    Ok(
+        json!({"module": module, "source": source, "sha256": crate::common::sha256_hex(&bytes), "functions": functions}),
+    )
 }
 
 /// Build the reference from the module sources and the published index.

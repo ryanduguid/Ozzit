@@ -29,6 +29,7 @@ pub mod selftest;
 pub mod sources;
 pub mod spills;
 pub mod workbook;
+pub mod workbook_source;
 
 use common::Output;
 type Handler = fn(&[String]) -> Output;
@@ -43,6 +44,7 @@ const COMMANDS: &[(&str, Handler)] = &[
     ("verify_afe", afe::verify),
     ("sync_afe_store", afe::sync_command),
     ("build_module", module::command),
+    ("workbook_source", workbook_source::command),
     ("verify_cover", cover::verify),
     ("verify_counts", counts::verify),
     ("sync_counts", counts::sync),

@@ -27,11 +27,7 @@ and stops at the v3.0.0 artefacts. Commit 96b9939 holds that builder and the
 input's byte length and SHA-256. Post-v3.0.0 passes start
 from the committed `ozzit.xlsx` and `src/`. They
 do not regenerate the current workbook from the earlier workbook. The current result also
-includes a one-off Excel-state-dependent date shift. The consistency checks do not prove
-byte-for-byte regeneration of the current workbook. The v3.0.0
-builder, the postbuild limits and any future one-off transformation remain
-disclosed in `tools/postbuild/README.md` and `CHANGELOG.md`. Do not broaden a
-reproducibility claim without a complete regenerator and a byte comparison.
+includes a one-off Excel-state-dependent date shift. That historical route ends at v3.0.0. The current text baseline starts with the reviewed workbook state at 4db8068. The [workbook builder](docs/workbook-source.md) regenerates the tracked file from `src/` and `release/workbook-source.json`. The Rust test builds in a fresh directory, compares every byte and checks the locked SHA-256. After each workbook change, capture the reviewed layout and native calculation caches before running that test.
 
 A pull request that changes `ozzit.xlsx` realigns `release/workbook-base.json`
 (the SHA-256, byte length, Git blob and last workbook-changing commit) and the
@@ -58,7 +54,7 @@ Tag signing, remote tag publication and release publication are separate authori
 The uploaded bundle contains exactly 5 files.
 
 1. `ozzit.xlsx`: the consumer workbook copied byte-for-byte from the tagged tree.
-2. `provenance.json`: canonical JSON binding the version and full candidate commit to the locked workbook hash, size, Git blob, last workbook change and deterministic workbook-gate results. It also states the copy-only build limit and the gates that remain outside the bundle. Provenance schema 3 names each gate by the native command that produced its output, such as `ozzit verify_workbook ozzit.xlsx`. There `ozzit` means the binary built from the recorded source commit with `cargo build --locked --release` and the toolchain `rust-toolchain.toml` pins, run against that tagged checkout. Each name is a repository-relative command, not a process trace: the tool runs its own executable with absolute input paths. v3.6.0 and v3.7.0 use schema 2. Releases through v3.5.0 use schema 1 and record Python commands. Verify each older bundle using the tool from its own tag.
+2. `provenance.json`: canonical JSON binding the version and full candidate commit to the locked workbook hash, size, Git blob, last workbook change and deterministic workbook-gate results. It also states that the bundle copies the reviewed workbook and the gates that remain outside the bundle. Provenance schema 3 names each gate by the native command that produced its output, such as `ozzit verify_workbook ozzit.xlsx`. There `ozzit` means the binary built from the recorded source commit with `cargo build --locked --release` and the toolchain `rust-toolchain.toml` pins, run against that tagged checkout. Each name is a repository-relative command, not a process trace: the tool runs its own executable with absolute input paths. v3.6.0 and v3.7.0 use schema 2. Releases through v3.5.0 use schema 1 and record Python commands. Verify each older bundle using the tool from its own tag.
 3. `SHA256SUMS`: canonical SHA-256 lines for `ozzit.xlsx`, `provenance.json`, `LICENSE` and `NOTICE`. The checksum list covers the other 4 files.
 4. `LICENSE`: the Apache-2.0 text copied from the tagged tree.
 5. `NOTICE`: the attribution and retained terms copied from the tagged tree.

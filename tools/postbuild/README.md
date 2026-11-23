@@ -194,8 +194,7 @@ minimum yearly repayment, to 160 for margin scheme GST, to 161 for the FBT gross
 not re-runnable and is not ported. It computed each sheet's month offset from the sheet's
 *current* earliest date and rewrote cells through Excel COM, so its result depends on the
 workbook's state at the moment it ran. Two runs from different starting states give
-different bytes. That is why the reproducible baseline stops at v3.0.0 and
-why byte-for-byte reproduction of the current workbook is not claimed.
+different bytes. The historical builder stops at v3.0.0. The [current text baseline](../../docs/workbook-source.md) records the resulting date cells and their native caches explicitly and regenerates the reviewed workbook byte for byte.
 
 The one-off scripts that produced v3.1.0 remain in the session record; the FY27 and
 palette passes here are the parts of that work that are deterministic. The GST help pass

@@ -210,6 +210,7 @@ repository root to use their usual path defaults.
 | `verify_afe` | Check the embedded AFE store against the source files |
 | `sync_afe_store` | Synchronise AFE modules and the grouped name index |
 | `build_module` | Join the 6 source modules into the published AFE text |
+| `workbook_source` | Build the workbook from the [text baseline](../../docs/workbook-source.md) or capture a reviewed update |
 | `verify_cover` | Resolve the displayed version label and compare its date and function count |
 | `verify_counts` | Compare each registered statement of the function, help-table and name counts, and the About description when a token is set, with `functions.csv` on `main` or at the release tag it describes, and the function guide's count of names without a worksheet with `functions.csv` and `ozzit.xlsx`, and fail a statement of the size outside the register |
 | `sync_counts` | Rewrite the registered text statements about `main` and the newest release tag to their counts and version, then check them; the banners and social card are regenerated instead |
