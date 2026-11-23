@@ -63,6 +63,10 @@ release; until then v3.7.0 behaves as it did.
   `oz.SensitivityGridλ(Calculation, RowValues, ColumnValues)` a two-way sensitivity grid from a
   `LAMBDA`, without a Data Table. All unrounded. `ozzit valuation_sensitivity` adds them.
   [The page](docs/valuation-and-sensitivity.md) gives their sources.
+- `ozzit audit [workbook]` reviews any workbook without changing it and lists a plain number
+  sitting between 2 formula cells of one pattern in a row or column (a likely hard-coded
+  override), an external link whose file does not exist, that Excel marked missing or that is
+  remote and not checked, and each hidden or very hidden sheet and hidden defined name.
 
 ### Fixed
 
