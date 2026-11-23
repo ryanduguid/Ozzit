@@ -15,7 +15,7 @@ if ((Get-FileHash -LiteralPath $output).Hash -ne $expected.sha256 -or
     (Get-Item -LiteralPath $output).Length -ne $expected.size) { throw 'Workbook differs from release lock' }
 ```
 
-The layout stores the worksheet cells, styles, relationships, date values and Excel-calculated caches as XML text. Each row holds a fragment of a package part. For each library name it stores the compiled formula digest and the spacing and local workbook qualifiers needed to reproduce Excel's spelling. The compiler supplies the formula itself. The same modules populate the Advanced Formula Environment store. The pinned ZIP writer fixes member order, timestamps and compression.
+The layout stores the worksheet cells, styles, relationships, date values and Excel-calculated caches as XML text. Each worksheet cell occupies one JSON line, so its address, formula and cached result appear together in a diff. For each library name the layout stores the compiled formula digest and the spacing and local workbook qualifiers needed to reproduce Excel's spelling. The compiler supplies the formula itself. The same modules populate the Advanced Formula Environment store. The pinned ZIP writer fixes member order, timestamps and compression.
 
 The clean-build regression test runs the command in a fresh directory containing only these text inputs, compares every output byte with the tracked workbook and checks the lock digest. This tests the present baseline. The missing input to the historical v3.0.0 builder and the original FY27 date shift are documented in the [postbuild history](../tools/postbuild/README.md#what-is-intentionally-not-here).
 

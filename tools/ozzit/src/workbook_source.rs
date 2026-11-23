@@ -6,7 +6,7 @@ use crate::{
     afe,
     archive::{self, BOOK, Parts},
     common::{self, Output, Result},
-    compiler, formula,
+    compiler, formula, workbook,
 };
 use base64::{Engine, engine::general_purpose::STANDARD};
 use serde_json::{Value, json};
@@ -136,17 +136,39 @@ fn swap_once(text: &str, from: &str, to: &str) -> Result<String> {
     Ok(text.replacen(from, to, 1))
 }
 
-/// Each XML tag boundary starts a new JSON row. Concatenation preserves all
-/// original bytes, including CRLF, XML entities and native calculation caches.
-fn xml_rows(xml: &str) -> Vec<&str> {
+fn push_tags<'a>(xml: &'a str, rows: &mut Vec<&'a str>) {
     let mut last = 0;
-    let mut rows = Vec::new();
     for (at, _) in xml.match_indices("><") {
         rows.push(&xml[last..=at]);
         last = at + 1;
     }
-    rows.push(&xml[last..]);
-    rows
+    if last < xml.len() {
+        rows.push(&xml[last..]);
+    }
+}
+
+/// Keep a worksheet cell's address, formula and cached result on one diff line.
+/// Slice the original XML so entity spellings and line endings survive capture.
+fn xml_rows<'a>(name: &str, xml: &'a str) -> Result<Vec<&'a str>> {
+    let mut rows = Vec::new();
+    let mut last = 0;
+    if name.starts_with("xl/worksheets/") && name.ends_with(".xml") {
+        let doc = workbook::xml_part(name, xml.as_bytes())?;
+        let cells = doc
+            .root_element()
+            .children()
+            .filter(|n| n.has_tag_name("sheetData"))
+            .flat_map(|data| data.children().filter(|n| n.has_tag_name("row")))
+            .flat_map(|row| row.children().filter(|n| n.has_tag_name("c")));
+        for cell in cells {
+            let span = cell.range();
+            push_tags(&xml[last..span.start], &mut rows);
+            last = span.end;
+            rows.push(&xml[span]);
+        }
+    }
+    push_tags(&xml[last..], &mut rows);
+    Ok(rows)
 }
 
 fn module_texts(store: &mut Value, src: &Path, capture: bool) -> Result<()> {
@@ -186,32 +208,27 @@ fn capture(workbook: &Path, src: &Path) -> Result<Vec<u8>> {
     if names.len() != parts.len() {
         return Err("duplicate ZIP member".into());
     }
-    let mut store: Value = Value::Null;
-    let mut rows = BTreeMap::new();
-    for (name, data) in &parts {
+    let mut document = json!({"afe": null, "parts": {}});
+    // The text layout has a stable order even when the input ZIP order varies.
+    let sorted: BTreeMap<_, _> = parts.iter().collect();
+    for (name, data) in sorted {
         let mut xml = common::decode(data)?;
         if name == BOOK {
             xml = transform_names(&xml, src, true)?;
         } else if name == AFE {
             let encoded = afe::find_blob(data)?;
             let decoded = afe::base64_decode_strict(encoded)?;
-            store = serde_json::from_str(&afe::utf16le(&decoded)?).map_err(|e| e.to_string())?;
-            module_texts(&mut store, src, true)?;
+            let store = &mut document["afe"];
+            *store = serde_json::from_str(&afe::utf16le(&decoded)?).map_err(|e| e.to_string())?;
+            module_texts(store, src, true)?;
             xml = swap_once(
                 &xml,
                 std::str::from_utf8(encoded).map_err(|e| e.to_string())?,
                 STORE,
             )?;
         }
-        rows.insert(
-            name,
-            xml_rows(&xml)
-                .into_iter()
-                .map(str::to_owned)
-                .collect::<Vec<_>>(),
-        );
+        document["parts"][name] = json!(xml_rows(name, &xml)?);
     }
-    let document = json!({"afe": store, "parts": rows});
     if build(&document, src)? != common::read_bytes(workbook)? {
         return Err("capture did not regenerate the input workbook byte for byte".into());
     }
@@ -290,5 +307,36 @@ pub fn command(args: &[String]) -> Output {
     match run() {
         Ok(()) => Output::ok(vec![format!("Wrote {output}")]),
         Err(error) => Output::stderr(format!("FAIL: {error}")),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn worksheet_cells_keep_their_original_xml_on_one_diff_line() {
+        let formula = r#"<c r="A1"><f>IF(1&lt;2,3,4)</f><v>3</v></c>"#;
+        let inline = "<c r=\"B1\" t=\"inlineStr\"><is><t>λ\r\n&amp;</t></is></c>";
+        let empty = r#"<c r="C1"/>"#;
+        let xml = format!(
+            "<worksheet><sheetData><row>{formula}{inline}{empty}</row></sheetData></worksheet>"
+        );
+        let rows = xml_rows("xl/worksheets/sheet1.xml", &xml).unwrap();
+        assert_eq!(
+            rows,
+            [
+                "<worksheet>",
+                "<sheetData>",
+                "<row>",
+                formula,
+                inline,
+                empty,
+                "</row>",
+                "</sheetData>",
+                "</worksheet>"
+            ]
+        );
+        assert_eq!(rows.concat(), xml);
     }
 }

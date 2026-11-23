@@ -84,7 +84,12 @@ fn stale_formulas_and_invalid_layouts_leave_no_workbook() {
     assert_ne!(original, modified);
     fs::write(changed, modified).unwrap();
     let build = ["build", "layout.json", "src", "changed.xlsx"];
-    assert!(!invoke(dir, &build).status.success());
+    let stale = invoke(dir, &build);
+    assert_eq!(stale.status.code(), Some(1));
+    assert!(
+        String::from_utf8_lossy(&stale.stderr).contains("changed: capture the verified workbook")
+    );
+    assert!(!dir.join("changed.xlsx").exists());
     fs::write(dir.join("layout.json"), r#"{"afe":[],"parts":{}}"#).unwrap();
     let result = invoke(dir, &build);
     assert_eq!(result.status.code(), Some(1));
