@@ -16,7 +16,8 @@ function matchesSpill(actual: (string | number | boolean)[][], expected: number[
   const rows = actual.values();
   return actual.length === expected.length && expected.every(expectedRow => {
     const row = rows.next();
-    if (row.done || row.value.length !== expectedRow.length) return false;
+    if (row.done) return false;
+    if (row.value.length !== expectedRow.length) return false;
     const cells = row.value.values();
     return expectedRow.every(expectedValue => {
       const cell = cells.next();
