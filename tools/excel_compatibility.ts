@@ -12,6 +12,21 @@ interface ProbeResult {
   passed: boolean;
 }
 
+function matchesSpill(actual: (string | number | boolean)[][], expected: number[][]): boolean {
+  const rows = actual.values();
+  return actual.length === expected.length && expected.every(expectedRow => {
+    const row = rows.next();
+    if (row.done || row.value.length !== expectedRow.length) return false;
+    const cells = row.value.values();
+    return expectedRow.every(expectedValue => {
+      const cell = cells.next();
+      return !cell.done && typeof cell.value === "number" &&
+        Math.abs(cell.value - expectedValue) <= 0.000001;
+    });
+  });
+}
+
+// eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars -- Excel calls this Office Scripts entry point.
 function main(workbook: ExcelScript.Workbook, host: string, sourceSha256: string): string {
   if (!host.trim() || !/^[a-f0-9]{64}$/i.test(sourceSha256)) {
     throw new Error("Supply the Excel host and build, and the SHA-256 of the file opened.");
@@ -33,10 +48,7 @@ function main(workbook: ExcelScript.Workbook, host: string, sourceSha256: string
       app.calculate(ExcelScript.CalculationType.fullRebuild);
       const spill = anchor.getSpillingToRange();
       const actual = (spill || anchor).getValues();
-      const passed = !!spill && actual.length === probe.expected.length &&
-        actual.every((row, i) => row.length === probe.expected[i].length &&
-          row.every((value, j) => typeof value === "number" &&
-            Math.abs(value - probe.expected[i][j]) <= 0.000001));
+      const passed = !!spill && matchesSpill(actual, probe.expected);
       results.push({ id: probe.id, formula: probe.formula, actual, passed });
     }
   } finally {
