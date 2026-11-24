@@ -1051,10 +1051,10 @@ mod tests {
     }
 
     #[test]
-    fn name_tokens_skip_literals_and_structured_columns() {
+    fn name_tokens_skip_literals_structured_columns_and_sheets() {
         assert_eq!(
-            name_tokens("Rate*\"Tax\"+Sales[[#This Row],[Tax]]+Model!Fee"),
-            ["rate", "sales", "model", "fee"]
+            name_tokens("Rate*\"Tax\"+Sales[[#This Row],[Tax]]+Model!Fee+'Q1 Rate'!A1"),
+            ["rate", "sales", "fee", "a1"]
         );
     }
 
