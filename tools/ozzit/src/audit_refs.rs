@@ -18,8 +18,9 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 /// rows, then an optional spill `#`. A prefix after `]` (another workbook) or a
 /// reference inside a name or function name does not match.
 const REFERENCE: &str = r"(?<![\p{L}\p{N}_.$\[\]'!])(?:(?:'((?:[^']|'')+)'|([\p{L}_\\][\p{L}\p{N}_.]*(?::[\p{L}_\\][\p{L}\p{N}_.]*)?))!)?(\$?[A-Z]{1,3}\$?[0-9]{1,7}(?::\$?[A-Z]{1,3}\$?[0-9]{1,7})?|\$?[A-Z]{1,3}:\$?[A-Z]{1,3}|\$?[0-9]{1,7}:\$?[0-9]{1,7})(#?)(?![\p{L}\p{N}_.(\[])";
-/// A function whose reference argument is read for its position, not its value.
-const POSITION_ONLY: &str = r"(?<![\p{L}\p{N}_.])(?:ROWS?|COLUMNS?|ISREF|_xlfn\.ISFORMULA|_xlfn\.FORMULATEXT)\(\s*(?:'(?:[^']|'')+'!|[\p{L}_\\][\p{L}\p{N}_.]*!)?\$?[A-Z]{0,3}\$?[0-9]{0,7}(?::\$?[A-Z]{0,3}\$?[0-9]{0,7})?#?\s*\)";
+/// A function whose reference argument is read for its position, not its value,
+/// such as `ROW(A1)` or `CELL("filename", A1)`.
+const POSITION_ONLY: &str = r#"(?<![\p{L}\p{N}_.])(?:(?:ROWS?|COLUMNS?|ISREF|_xlfn\.ISFORMULA|_xlfn\.FORMULATEXT)\(|CELL\(\s*"(?i:filename|address|row|col|width)"\s*,)\s*(?:'(?:[^']|'')+'!|[\p{L}_\\][\p{L}\p{N}_.]*!)?\$?[A-Z]{0,3}\$?[0-9]{0,7}(?::\$?[A-Z]{0,3}\$?[0-9]{0,7})?#?\s*\)"#;
 const DYNAMIC: &str = r"(?<![\p{L}\p{N}_.])(?:INDIRECT|OFFSET)\(";
 const CALL: &str = r"[\p{L}_][\p{L}\p{N}_.]*\(";
 const NAME_TOKEN: &str = r"[\p{L}\p{N}_.\\?]+";
@@ -672,8 +673,11 @@ fn unlinked_rows(book: &Book) -> Vec<String> {
             .label(sheet, (gap.top, gap.left))
             .map(|l| format!(" ('{l}')"))
             .unwrap_or_default();
-        let range = book.place(sheet, &area);
-        let range = range.rsplit_once('!').map_or("", |x| x.1);
+        let range = format!(
+            "{}:{}",
+            a1((area.top, area.left)),
+            a1((area.bottom, area.right))
+        );
         out.push(format!(
             "unlinked row: {}{label} lies between SUM({range}) and its total {}, which leaves it out, and no formula reads it",
             book.place(sheet, &gap),
@@ -951,8 +955,11 @@ mod tests {
     #[test]
     fn position_only_arguments_are_not_dependencies() {
         assert_eq!(
-            re(POSITION_ONLY).replace_all("ROW(A5)+COLUMNS(Model!A1:C1)+A5", "0"),
-            "0+0+A5"
+            re(POSITION_ONLY).replace_all(
+                r#"ROW(A5)+COLUMNS(Model!A1:C1)+CELL("filename",A1)+CELL("contents",A1)+A5"#,
+                "0"
+            ),
+            r#"0+0+0+CELL("contents",A1)+A5"#
         );
     }
 }

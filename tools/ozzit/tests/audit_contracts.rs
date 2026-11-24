@@ -450,30 +450,9 @@ fn a_check_row_that_nothing_reads_is_buried() {
 fn a_row_between_a_sum_and_its_total_that_nothing_reads_is_unlinked() {
     let dir = tempfile::tempdir().unwrap();
     let rows = [
-        row(
-            2,
-            &[
-                label("A2", "Wages"),
-                number("C2"),
-                number("D2"),
-                number("G2"),
-                number("H2"),
-                formula("J2", "SUM(G2:H2)"),
-            ],
-        ),
+        row(2, &[label("A2", "Wages"), number("C2"), number("D2")]),
         row(3, &[label("A3", "Rent"), number("C3"), number("D3")]),
-        row(
-            4,
-            &[
-                label("A4", "Contractors"),
-                number("C4"),
-                number("D4"),
-                number("G4"),
-                number("H4"),
-                number("I4"),
-                formula("J4", "SUM(G4:H4)"),
-            ],
-        ),
+        row(4, &[label("A4", "Contractors"), number("C4"), number("D4")]),
         row(
             5,
             &[
@@ -483,15 +462,17 @@ fn a_row_between_a_sum_and_its_total_that_nothing_reads_is_unlinked() {
             ],
         ),
         // A gap cell another formula reads is linked; a blank gap is empty.
-        row(7, &[number("C7"), number("E7")]),
+        row(7, &[number("C7"), number("E7"), number("G7")]),
         row(8, &[number("C8"), formula("E8", "E7*2")]),
         row(
             9,
-            &[formula("C9", "SUM(C7:C7)"), formula("E9", "SUM(E7:E7)")],
+            &[
+                formula("C9", "SUM(C7:C7)"),
+                formula("E9", "SUM(E7:E7)"),
+                formula("G9", "SUM(G7:G7)"),
+            ],
         ),
         row(10, &[formula("C10", "C8")]),
-        row(11, &[number("G11")]),
-        row(13, &[formula("G13", "SUM(G11:G11)")]),
     ]
     .concat();
     Book::new().sheet("Model", "", &rows).write(dir.path());
@@ -500,9 +481,30 @@ fn a_row_between_a_sum_and_its_total_that_nothing_reads_is_unlinked() {
     assert_eq!(
         findings(&text),
         [
-            "unlinked row: Model!I4 ('Contractors') lies between SUM(G4:H4) and its total J4, which leaves it out, and no formula reads it",
             "unlinked row: Model!C4:D4 ('Contractors') lies between SUM(C2:C3) and its total C5, which leaves it out, and no formula reads it",
             "unlinked row: Model!E8 lies between SUM(E7:E7) and its total E9, which leaves it out, and no formula reads it",
+        ]
+    );
+}
+
+#[test]
+fn a_column_between_a_sum_and_its_total_that_nothing_reads_is_unlinked() {
+    let dir = tempfile::tempdir().unwrap();
+    let cells = |r: usize| {
+        let mut cells = vec![label(&format!("A{r}"), "Contractors")];
+        cells.extend(["G", "H", "I"].map(|c| number(&format!("{c}{r}"))));
+        cells.push(formula(&format!("J{r}"), &format!("SUM(G{r}:H{r})")));
+        row(r, &cells)
+    };
+    // Row 3's I3 is read from another row, so only I2 is unlinked.
+    let rows = [cells(2), cells(3), row(4, &[formula("B4", "I3")])].concat();
+    Book::new().sheet("Model", "", &rows).write(dir.path());
+    let (code, text) = audit(&["book.xlsx"], dir.path());
+    assert_eq!(code, 1, "{text}");
+    assert_eq!(
+        findings(&text),
+        [
+            "unlinked row: Model!I2 ('Contractors') lies between SUM(G2:H2) and its total J2, which leaves it out, and no formula reads it"
         ]
     );
 }
@@ -518,6 +520,7 @@ fn circular_references_and_iterative_calculation_are_reported() {
             formula("D2", "SUM(D:D)"),
             formula("E2", "ROW(E2)+COLUMNS(E2:F2)"),
             formula("F2", "IFERROR(\"F2\",0)"),
+            formula("G2", "CELL(\"filename\",G2)"),
         ],
     );
     let other = row(1, &[formula("A1", "1")]);

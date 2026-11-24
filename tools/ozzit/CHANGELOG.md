@@ -77,7 +77,8 @@ formulas no formula outside the row reads and which read no other check, so no
 summary shows them; a number or formula between a `SUM` of one range in the
 total's own column or row and that total, which the total leaves out and no
 formula outside its row reads; each group of formula cells that read one another,
-the arguments of `ROW`, `COLUMN`, `ROWS`, `COLUMNS` and `ISREF` aside; and
+the arguments of `ROW`, `COLUMN`, `ROWS`, `COLUMNS`, `ISREF` and `CELL`'s
+position forms aside; and
 iterative calculation being on. A workbook whose cells use `INDIRECT` or `OFFSET`
 is not checked for buried checks or unlinked rows, and says so.
 
