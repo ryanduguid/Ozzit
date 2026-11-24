@@ -120,6 +120,10 @@ const COMMANDS: &[(&str, Handler)] = &[
         "index_factor_bullet_loan",
         postbuild::function_pass::index_factor_bullet_loan,
     ),
+    (
+        "valuation_sensitivity",
+        postbuild::function_pass::valuation_sensitivity,
+    ),
 ];
 pub fn dispatch(args: &[String]) -> Output {
     let command = args.first().map(String::as_str);

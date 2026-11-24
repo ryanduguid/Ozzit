@@ -302,3 +302,8 @@ fn depreciation_pools_pass_reproduces_the_published_financial_module() {
 fn index_factor_bullet_loan_pass_reproduces_the_published_financial_module() {
     reproduces_the_financial_module(&SPECS[13]);
 }
+
+#[test]
+fn valuation_sensitivity_pass_reproduces_the_published_financial_module() {
+    reproduces_the_financial_module(&SPECS[14]);
+}

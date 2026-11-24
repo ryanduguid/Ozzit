@@ -62,14 +62,20 @@ pub fn absent() -> Fixture {
 
     let mut parts = read_parts(&f.book).unwrap();
     let mut book = String::from_utf8(parts[BOOK].clone()).unwrap();
-    let mut addition = format!(" &amp; \"{}¶\"", escape(heading));
+    let stored_anchor = escape(anchor);
+    // A pass that rewrites the About name stores Excel's compact join, `"&amp;"`.
+    let join = if book.contains(&format!("{stored_anchor}&amp;")) {
+        "&amp;"
+    } else {
+        " &amp; "
+    };
+    let mut addition = format!("{join}\"{}¶\"", escape(heading));
     for row in &functions {
         addition.push_str(&format!(
-            " &amp; \"{}¶\"",
+            "{join}\"{}¶\"",
             escape(&format!("{:<19}→{}", row[0], row[3]))
         ));
     }
-    let stored_anchor = escape(anchor);
     let inserted = format!("{stored_anchor}{addition}");
     assert_eq!(book.matches(&inserted).count(), 1);
     book = book.replacen(&inserted, &stored_anchor, 1);

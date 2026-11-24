@@ -82,6 +82,9 @@ Same 'help: ROUSchedule${L}' "INDEX(oz.ROUSchedule${L}(),1,1)" 'FUNCTION:'
 Same 'help: Variance${L}' "INDEX(oz.Variance${L}(),1,1)" 'FUNCTION:'
 Same 'help: VariancePct${L}' "INDEX(oz.VariancePct${L}(),1,1)" 'FUNCTION:'
 Same 'help: YearToDate${L}' "INDEX(oz.YearToDate${L}(),1,1)" 'FUNCTION:'
+Same 'help: FCFFBridge${L}' "INDEX(oz.FCFFBridge${L}(),1,1)" 'FUNCTION:'
+Same 'help: WACC${L}' "INDEX(oz.WACC${L}(),1,1)" 'FUNCTION:'
+Same 'help: SensitivityGrid${L}' "INDEX(oz.SensitivityGrid${L}(),1,1)" 'FUNCTION:'
 Same 'help: IndexFactor${L}' "INDEX(oz.IndexFactor${L}(),1,1)" 'FUNCTION:'
 Same 'help: BulletLoan${L}' "INDEX(oz.BulletLoan${L}(),1,1)" 'FUNCTION:'
 Same 'help: LowValuePool${L}' "INDEX(oz.LowValuePool${L}(),1,1)" 'FUNCTION:'
@@ -173,7 +176,7 @@ Same 'help: DebtSculptVariableLRV${L}' "INDEX(oz.DebtSculptVariableLRV${L}(),1,1
 Same 'help: DebtSculptVariable${L}' "INDEX(oz.DebtSculptVariable${L}(),1,1)" 'FUNCTION:'
 Same 'help: InterestLRV${L}' "INDEX(oz.InterestLRV${L}(),1,1)" 'FUNCTION:'
 
-# --- 175 worked examples that stand on their own, as the help prints them
+# --- 177 worked examples that stand on their own, as the help prints them
 Near 'example: CountDOW${L} #1' "oz.CountDOW${L}(`"23/7/2026`", `"11/8/2026`",  1)" '3.0' '0.5'
 Near 'example: IsBetween${L} #1' "N(oz.IsBetween${L}(1, 2, 4))" '0'
 Near 'example: IsBetween${L} #2' "N(oz.IsBetween${L}(Today(), Today(), Today()+1))" '1'
@@ -280,6 +283,9 @@ Near 'example: Variance${L} #1' "SUM(oz.Variance${L}({120;90}, {100;100}, {1;-1}
 Near 'example: VariancePct${L} #1' "oz.VariancePct${L}(-30, -20)" '-0.5' '0.005'
 Near 'example: YearToDate${L} #1' "COUNT(oz.YearToDate${L}({10,20,30,40;1,2,3,4}, DATE(2026,{5,6,7,8},1), DATE(2026,8,31)))" '2'
 Near 'example: YearToDate${L} #1' "SUM(oz.YearToDate${L}({10,20,30,40;1,2,3,4}, DATE(2026,{5,6,7,8},1), DATE(2026,8,31)))" '77.0' '1.0'
+Near 'example: FCFFBridge${L} #1' "COUNT(oz.FCFFBridge${L}({1600,1680}, 0.4, {90,94.5}, {200,210}, {150,17.5}))" '14'
+Near 'example: FCFFBridge${L} #1' "SUM(oz.FCFFBridge${L}({1600,1680}, 0.4, {90,94.5}, {200,210}, {150,17.5}))" '8897.0' '6.1'
+Near 'example: WACC${L} #1' "oz.WACC${L}(600, 400, 0.04, 1.2, 0.06, 0.07, 0.3)" '0.0868' '5e-05'
 Near 'example: IndexFactor${L} #1' "COUNT(oz.IndexFactor${L}(0.03, 3))" '3'
 Near 'example: IndexFactor${L} #1' "SUM(oz.IndexFactor${L}(0.03, 3))" '3.183627' '0.0050505'
 Near 'example: BulletLoan${L} #1' "COUNT(oz.BulletLoan${L}(1000, {0.1,0.1}, 0))" '12'

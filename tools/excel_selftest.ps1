@@ -782,6 +782,74 @@ foreach ($r in @(@('{1,2}, 0.1', $blShape), @('1000, {0.1;0.1}', $blShape), @('1
     Same "BulletLoan refuses ($($r[0]))" "LET(x, $bl($($r[0])), $one)" $r[1]
 }
 
+# --- Valuation and sensitivity. Worked by hand: FCFF is EBIT x (1 - t) plus depreciation, less
+# capital expenditure and the increase in working capital; the first case is the two-year
+# illustration in Damodaran's FCFF valuation notes (EBIT (1 - t) 960 and 1,008, net capital
+# expenditure 110 and 115.50, change in working capital 150 and 17.50, FCFF 700 and 875). WACC is
+# the CAPM cost of equity times equity's weight plus the after-tax cost of debt times debt's.
+$fc = "oz.FCFFBridge$L"
+$wc = "oz.WACC$L"
+$sg = "oz.SensitivityGrid$L"
+foreach ($r in @(@('{1600,1680}, 0.4, {90,94.5}, {200,210}, {150,17.5}', '1600,1680,640,672,960,1008,90,94.5,200,210,150,17.5,700,875'),
+                 @('{1000,1000}, {0.3,0.25}, {50,50}, {80,80}, {10,-10}', '1000,1000,300,250,700,750,50,50,80,80,10,-10,660,730'),
+                 @('-100, 0.3, 20, 30, 0', '-100,-30,-70,20,30,0,-80'),
+                 @('500, 0, 0, 0, 0', '500,0,500,0,0,0,500'))) {
+    Same "FCFFBridge: ($($r[0]))" "LET(x, $fc($($r[0])), $rows6)" $r[1]
+}
+Same 'FCFFBridge: seven rows and a column for each period' "ROWS($fc({1,2,3}, 0.3, {1,1,1}, {1,1,1}, {1,1,1})) & `"x`" & COLUMNS($fc({1,2,3}, 0.3, {1,1,1}, {1,1,1}, {1,1,1}))" '7x3'
+Near 'FCFFBridge: an error EBIT shows' "--ISNA(INDEX($fc(IF({1,0}, 1, NA()), 0.3, {1,1}, {1,1}, {1,1}), 1, 2))" '1'
+Near 'FCFFBridge: an error tax rate shows' "--ISNA(INDEX($fc(100, NA(), 1, 1, 1), 2, 1))" '1'
+Near 'FCFFBridge: beside an error depreciation the other period calculates' "INDEX($fc({1,2}, 0.3, IF({1,0}, 1, NA()), {1,1}, {1,1}), 7, 1)" '-0.3'
+Near 'FCFFBridge: an error depreciation shows in its FCFF' "--ISNA(INDEX($fc({1,2}, 0.3, IF({1,0}, 1, NA()), {1,1}, {1,1}), 7, 2))" '1'
+$fcShape = 'FCFFBridge' + $L + ' needs EBIT as one row with an amount for each period, TaxRate as one rate or one for each period, and Depreciation, CapitalExpenditure and WorkingCapitalChange as rows as wide as EBIT.'
+$fcValue = 'FCFFBridge' + $L + ' needs every amount to be a number above -10,000,000,000,000 and below 10,000,000,000,000, and every tax rate from 0 to under 1.'
+foreach ($r in @(@('{1;2}, 0.3, 1, 1, 1', $fcShape), @('{1,2}, {0.3,0.3,0.3}, {1,1}, {1,1}, {1,1}', $fcShape),
+                 @('{1,2}, 0.3, 1, {1,1}, {1,1}', $fcShape), @('{1,2}, 0.3, {1,1}, {1,1}, {1;1}', $fcShape), @('{1,2}, {0.3;0.3}, {1,1}, {1,1}, {1,1}', $fcShape),
+                 @('"1", 0.3, 1, 1, 1', $fcValue), @('1E13, 0.3, 1, 1, 1', $fcValue), @('-1E13, 0.3, 1, 1, 1', $fcValue), @('Z1, 0.3, 1, 1, 1', $fcValue),
+                 @('1, 1, 1, 1, 1', $fcValue), @('1, -0.1, 1, 1, 1', $fcValue), @('1, "0.3", 1, 1, 1', $fcValue), @('1, Z1, 1, 1, 1', $fcValue),
+                 @('1, 0.3, TRUE, 1, 1', $fcValue), @('1, 0.3, 1, 1E13, 1', $fcValue), @('1, 0.3, 1, 1, Z1', $fcValue),
+                 @('NA(), 0.3, TRUE, 1, 1', $fcValue), @('{1,2}, 0.3, NA(), {1,1E13}, {1,1}', $fcValue), @('IF({1,0}, 1, NA()), 0.3, {1,1}, {1,1}, {TRUE,1}', $fcValue))) {
+    Same "FCFFBridge refuses ($($r[0]))" "LET(x, $fc($($r[0])), $one)" $r[1]
+}
+Near 'WACC: 60% equity at 11.2%, 40% debt at 7% before 30% tax' "$wc(600, 400, 0.04, 1.2, 0.06, 0.07, 0.3)" '0.0868' '0.000000000001'
+Near 'WACC: weights 0.84 and 0.16, as in Damodaran''s discount rate slide 108' "$wc(0.84, 0.16, 0.0429, 1, 0.0641, 0.0929, 0.34)" '0.09969024' '0.000000000001'
+Near 'WACC: no debt is the cost of equity' "$wc(100, 0, 0.04, 1, 0.05, 0.07, 0.3)" '0.09' '0.000000000001'
+Near 'WACC: no equity is the after-tax cost of debt' "$wc(0, 100, 0.04, 1, 0.05, 0.08, 0.25)" '0.06' '0.000000000001'
+Near 'WACC: a negative beta lowers the cost of equity' "$wc(100, 0, 0.04, -0.5, 0.06, 0.07, 0.3)" '0.01' '0.000000000001'
+Near 'WACC: an error input shows' "--ISNA($wc(NA(), 400, 0.04, 1.2, 0.06, 0.07, 0.3))" '1'
+$wcShape = 'WACC' + $L + ' needs one value for each input.'
+$wcValue = 'WACC' + $L + ' needs EquityValue and DebtValue from 0 to under 10,000,000,000,000, rates above -1 and below 2, Beta from -10 to 10 and TaxRate from 0 to under 1.'
+$wcTotal = 'WACC' + $L + ' needs EquityValue or DebtValue to be above 0.'
+foreach ($r in @(@('{1,2}, 400, 0.04, 1.2, 0.06, 0.07, 0.3', $wcShape), @('IF({1,0}, 1, NA()), 400, 0.04, 1.2, 0.06, 0.07, 0.3', $wcShape), @('600, 400, 0.04, {1;1}, 0.06, 0.07, 0.3', $wcShape),
+                 @('-1, 400, 0.04, 1.2, 0.06, 0.07, 0.3', $wcValue), @('600, 1E13, 0.04, 1.2, 0.06, 0.07, 0.3', $wcValue), @('"600", 400, 0.04, 1.2, 0.06, 0.07, 0.3', $wcValue),
+                 @('Z1, 400, 0.04, 1.2, 0.06, 0.07, 0.3', $wcValue), @('600, 400, -1, 1.2, 0.06, 0.07, 0.3', $wcValue), @('600, 400, 0.04, 10.5, 0.06, 0.07, 0.3', $wcValue),
+                 @('600, 400, 0.04, TRUE, 0.06, 0.07, 0.3', $wcValue), @('600, 400, 0.04, 1.2, 2, 0.07, 0.3', $wcValue), @('600, 400, 0.04, 1.2, 0.06, -1, 0.3', $wcValue),
+                 @('600, 400, 0.04, 1.2, 0.06, 0.07, 1', $wcValue), @('600, 400, 0.04, 1.2, 0.06, 0.07, -0.1', $wcValue), @('600, 400, 0.04, 1.2, 0.06, 0.07, Z1', $wcValue),
+                 @('0, 0, 0.04, 1.2, 0.06, 0.07, 0.3', $wcTotal))) {
+    Same "WACC refuses ($($r[0]))" "LET(x, $wc($($r[0])), $one)" $r[1]
+}
+foreach ($r in @(@('LAMBDA(Rate, Growth, 100 / (Rate - Growth)), {0.08;0.1}, {0.02,0.03}', '1666.666667,2000,1250,1428.571429'),
+                 @('LAMBDA(a, b, a * b), {1;2;3}, {10,100}', '10,100,20,200,30,300'),
+                 @('LAMBDA(a, b, a + b), 2, 3', '5'))) {
+    Same "SensitivityGrid: ($($r[0]))" "LET(x, $sg($($r[0])), $rows6)" $r[1]
+}
+Same 'SensitivityGrid: text values pair in order' "TEXTJOIN(`",`", FALSE, $sg(LAMBDA(a, b, a & b), {`"x`";`"y`"}, {`"1`",`"2`"}))" 'x1,x2,y1,y2'
+Same 'SensitivityGrid: a row for each row value and a column for each column value' "ROWS($sg(LAMBDA(a, b, a), SEQUENCE(4), SEQUENCE(1, 3))) & `"x`" & COLUMNS($sg(LAMBDA(a, b, a), SEQUENCE(4), SEQUENCE(1, 3)))" '4x3'
+Near 'SensitivityGrid: an error result shows in its cell' "--ISERROR(INDEX($sg(LAMBDA(a, b, a / b), {1;2}, {0,1}), 1, 1))" '1'
+Near 'SensitivityGrid: an error Calculation shows' "--ISERROR(INDEX($sg(NA(), {1;2}, {3,4}), 2, 2))" '1'
+Near 'SensitivityGrid: a LAMBDA of the wrong arity gives #VALUE!' "ERROR.TYPE(INDEX($sg(LAMBDA(a, a), {1;2}, {3,4}), 2, 2))" '3'
+Near 'SensitivityGrid: the cells beside an error still calculate' "INDEX($sg(LAMBDA(a, b, a / b), {1;2}, {0,1}), 2, 2)" '2'
+Near 'SensitivityGrid: an error row value shows in its row' "--ISNA(INDEX($sg(LAMBDA(a, b, a + b), IF({1;0}, 1, NA()), {1,2}), 2, 1))" '1'
+Near 'SensitivityGrid: rows beside an error row value calculate' "INDEX($sg(LAMBDA(a, b, a + b), IF({1;0}, 1, NA()), {1,2}), 1, 2)" '3'
+$sgShape = 'SensitivityGrid' + $L + ' needs RowValues as one column and ColumnValues as one row, each of at most 1,000 values.'
+$sgCalc = 'SensitivityGrid' + $L + ' needs Calculation to be a LAMBDA of a row value and a column value that returns one value.'
+foreach ($r in @(@('LAMBDA(a, b, a + b), {1,2}, {1,2}', $sgShape), @('LAMBDA(a, b, a + b), {1;2}, {1;2}', $sgShape),
+                 @('LAMBDA(a, b, a + b), SEQUENCE(1001), 1', $sgShape), @('LAMBDA(a, b, a + b), 1, SEQUENCE(1, 1001)', $sgShape),
+                 @('LAMBDA(a, b, SEQUENCE(2)), 1, 1', $sgCalc), @('LAMBDA(a, b, IF({1,0}, a, NA())), 1, 1', $sgCalc), @('LAMBDA(a, b, HSTACK(a, b)), {1;2}, {3,4}', $sgCalc),
+                 @('5, {1;2}, {3,4}', $sgCalc), @('"x", 1, 1', $sgCalc), @('{1,2}, 1, 1', $sgCalc))) {
+    Same "SensitivityGrid refuses ($($r[0]))" "LET(x, $sg($($r[0])), $one)" $r[1]
+}
+
 # --- Movement. Each row's opening is its own: a blank one defaults only that row.
 Near 'Movement, per-row opening'       "INDEX($mv({100;`"`";50},{110,120;5,6;60,70}),1,1)" '10'
 Near 'Movement, blank opening row'     "INDEX($mv({100;`"`";50},{110,120;5,6;60,70}),2,1)" '5'
@@ -2383,6 +2451,18 @@ Fuzz 'fuzz: IndexFactor after 12 periods = (1 + r)^12' `
 Fuzz 'fuzz: BulletLoan payment in kind repays p x (1 + r)^5' `
      'p, RANDBETWEEN(0,10000000)/100, r, RANDBETWEEN(0,2000)/10000' '"p="&p&" r="&r' `
      "INDEX(oz.BulletLoan$L(p, SEQUENCE(1, 5, r, 0), 0), 5, 5)" 'p*(1 + r)^5' '0.0001'
+# FCFF is EBIT x (1 - t) + depreciation - capital expenditure - the increase in working capital.
+Fuzz 'fuzz: FCFFBridge FCFF = e x (1 - t) + d - c - w' `
+     'e, RANDBETWEEN(-1000000,10000000)/100, t, RANDBETWEEN(0,4500)/10000, d, RANDBETWEEN(0,1000000)/100, c, RANDBETWEEN(0,2000000)/100, w, RANDBETWEEN(-500000,500000)/100' '"e="&e&" t="&t&" d="&d&" c="&c&" w="&w' `
+     "INDEX(oz.FCFFBridge$L(e, t, d, c, w), 7, 1)" 'e*(1 - t) + d - c - w' '0.000001'
+# With a 50:50 split, WACC is the mean of the cost of equity and the after-tax cost of debt.
+Fuzz 'fuzz: WACC at equal weights = (rf + b x p + k x (1 - t)) / 2' `
+     'v, RANDBETWEEN(1,1000000), rf, RANDBETWEEN(0,800)/10000, b, RANDBETWEEN(0,250)/100, p, RANDBETWEEN(0,1000)/10000, k, RANDBETWEEN(0,1500)/10000, t, RANDBETWEEN(0,4500)/10000' '"v="&v&" rf="&rf&" b="&b&" p="&p&" k="&k&" t="&t' `
+     "oz.WACC$L(v, v, rf, b, p, k, t)" '(rf + b*p + k*(1 - t))/2' '0.000000001'
+# Each grid cell is the calculation at its row and column value.
+Fuzz 'fuzz: SensitivityGrid cell (i, j) = row value i x column value j' `
+     'i, RANDBETWEEN(1,5), j, RANDBETWEEN(1,4)' '"i="&i&" j="&j' `
+     "INDEX(oz.SensitivityGrid$L(LAMBDA(a, b, a * b), SEQUENCE(5, 1, 3, 2), SEQUENCE(1, 4, 7, 3)), i, j)" '(1 + 2*i)*(4 + 3*j)' '0.000000001'
 # The randomised checks rest on MAP() drawing fresh values for every trial. Prove it.
 Near 'fuzz: MAP draws fresh values per trial' "--(ROWS(UNIQUE(MAP(SEQUENCE(25), LAMBDA(i, RANDBETWEEN(1,1000000))))) > 1)" '1'
 
