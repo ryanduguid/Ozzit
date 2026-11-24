@@ -4,6 +4,7 @@
 pub mod afe;
 pub mod archive;
 pub mod audit;
+mod audit_refs;
 pub mod cache;
 mod check_gates;
 pub mod common;

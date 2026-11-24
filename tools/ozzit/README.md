@@ -216,7 +216,7 @@ repository root to use their usual path defaults.
 | `sync_counts` | Rewrite the registered text statements about `main` and the newest release tag to their counts and version, then check them; the banners and social card are regenerated instead |
 | `verify_help_spills` | Report help caches that differ from the definitions |
 | `verify_workbook` | Check workbook structure, content, add-ins and references |
-| `audit` | Review any workbook, without writing to it, for a plain number between 2 formula cells of one pattern in a row or column, an external link whose file is missing or remote, and hidden sheets and defined names. Exit status 1 when it finds any. It has no Python twin |
+| `audit` | Review any workbook, without writing to it, for a plain number between 2 formula cells of one pattern in a row or column, an external link whose file is missing or remote, hidden sheets and defined names, a defined name for a range or constant that no formula uses, a row labelled as a check that no other formula reads, a number or formula between a `SUM` range and its total that the total leaves out and nothing reads, and formula cells that read one another. Exit status 1 when it finds any. It has no Python twin |
 | `verify_native_evidence` | Check retained comparison and installation records against their inputs |
 | `verify_cache` | Compare the workbook's cached values with native Excel's recalculated values |
 | `refresh_cache` | Recalculate and save the workbook in Excel, then sanitise the saved file |

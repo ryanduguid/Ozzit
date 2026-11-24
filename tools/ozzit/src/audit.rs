@@ -2,8 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! `ozzit audit`: a read-only review of any workbook for hard-coded numbers that
-//! break a formula run, external links whose target is missing, and hidden
-//! defined names and sheets. It reads the archive and writes nothing.
+//! break a formula run, external links whose target is missing, hidden defined
+//! names and sheets, and the reference checks in `audit_refs`. It reads the
+//! archive and writes nothing.
 use crate::archive::{BOOK, Parts, read_selected_inventory};
 use crate::common::{Output, Result, column_number, sub_fn};
 use crate::formula::split_literals;
@@ -15,8 +16,8 @@ use std::path::Path;
 /// An A1 cell, whole-column or whole-row reference outside a name, a function
 /// call or a structured reference: groups 1 to 4, 5 to 8 and 9 to 12.
 const REFERENCE: &str = r"(?<![A-Za-z0-9_.$\[\]])(?:(\$?)([A-Z]{1,3})(\$?)([0-9]{1,7})|(\$?)([A-Z]{1,3}):(\$?)([A-Z]{1,3})|(\$?)([0-9]{1,7}):(\$?)([0-9]{1,7}))(?![A-Za-z0-9_.(\[])";
-const MAX_COLUMN: usize = 16_384;
-const MAX_ROW: usize = 1_048_576;
+pub(crate) const MAX_COLUMN: usize = 16_384;
+pub(crate) const MAX_ROW: usize = 1_048_576;
 
 enum Cell {
     /// A formula's references in relative R1C1 form, equal for cells that
@@ -25,19 +26,22 @@ enum Cell {
     Number(String),
 }
 
-struct Sheet {
-    name: String,
+pub(crate) struct Sheet {
+    pub(crate) name: String,
     state: String,
-    part: Option<String>,
+    pub(crate) part: Option<String>,
 }
 
-fn attr<'a>(node: Node<'a, '_>, name: &str) -> Option<&'a str> {
+pub(crate) fn attr<'a>(node: Node<'a, '_>, name: &str) -> Option<&'a str> {
     node.attributes()
         .find(|a| a.name() == name)
         .map(|a| a.value())
 }
 
-fn children<'a, 'i>(node: Node<'a, 'i>, name: &'a str) -> impl Iterator<Item = Node<'a, 'i>> {
+pub(crate) fn children<'a, 'i>(
+    node: Node<'a, 'i>,
+    name: &'a str,
+) -> impl Iterator<Item = Node<'a, 'i>> {
     node.children().filter(move |n| n.tag_name().name() == name)
 }
 
@@ -52,11 +56,11 @@ fn letters(mut column: usize) -> String {
     String::from_utf8(out).unwrap_or_default()
 }
 
-fn a1((row, column): (usize, usize)) -> String {
+pub(crate) fn a1((row, column): (usize, usize)) -> String {
     format!("{}{row}", letters(column))
 }
 
-fn parse_a1(reference: &str) -> Option<(usize, usize)> {
+pub(crate) fn parse_a1(reference: &str) -> Option<(usize, usize)> {
     let split = reference.find(|c: char| c.is_ascii_digit())?;
     let (column, row) = reference.split_at(split);
     if column.is_empty() || !column.bytes().all(|b| b.is_ascii_uppercase()) {
@@ -171,7 +175,7 @@ fn classify(
     Some(Cell::Number(value.to_owned()))
 }
 
-fn quoted(sheet: &str) -> String {
+pub(crate) fn quoted(sheet: &str) -> String {
     let plain = sheet
         .chars()
         .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '.')
@@ -376,7 +380,8 @@ fn hidden(book: &Document<'_>, sheets: &[Sheet]) -> Vec<String> {
     out
 }
 
-/// Every finding for the workbook at `path`, in sheet, link and name order.
+/// Every finding for the workbook at `path`, in sheet, link, hidden and
+/// reference-check order.
 pub fn audit(path: &Path) -> Result<Vec<String>> {
     let (parts, _) = read_selected_inventory(path, |name| {
         name.ends_with(".xml") || name.ends_with(".rels")
@@ -400,6 +405,7 @@ pub fn audit(path: &Path) -> Result<Vec<String>> {
     let base = path.parent().unwrap_or(Path::new(""));
     out.extend(external_links(&parts, &book, base)?);
     out.extend(hidden(&book, &sheets));
+    out.extend(crate::audit_refs::findings(&parts, &book, &sheets));
     Ok(out)
 }
 

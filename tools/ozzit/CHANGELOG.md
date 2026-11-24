@@ -65,6 +65,18 @@ and hidden or very hidden sheets and hidden defined names. String literals, quot
 sheet names, function names such as `LOG10` and references past `XFD1048576` are not
 read as references. It exits 1 when it finds any.
 
+`audit` also follows the references the file records. It lists a defined name
+for a range or constant that no formula, rule, chart or other part uses
+(built-in and hidden names, and names holding a formula that calls a function,
+are left out); a row whose label contains the word 'check' and whose
+formulas no formula outside the row reads and which read no other check, so no
+summary shows them; a number or formula between a `SUM` of one range in the
+total's own column or row and that total, which the total leaves out and no
+formula outside its row reads; each group of formula cells that read one another,
+the arguments of `ROW`, `COLUMN`, `ROWS`, `COLUMNS` and `ISREF` aside; and
+iterative calculation being on. A workbook whose cells use `INDIRECT` or `OFFSET`
+is not checked for buried checks or unlinked rows, and says so.
+
 `native_checks` writes `docs/native-checks.csv`: for each name in
 `functions.csv`, the generated help and worked-example assertions, the
 hand-written self-test calls and the worksheet formula cells that reach it, read
