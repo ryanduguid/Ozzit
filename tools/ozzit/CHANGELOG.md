@@ -64,6 +64,10 @@ link whose local file does not exist, that Excel marked missing or that is remot
 and hidden or very hidden sheets and hidden defined names. String literals, quoted
 sheet names, function names such as `LOG10` and references past `XFD1048576` are not
 read as references. It exits 1 when it finds any.
+A Mac volume-colon target such as `Macintosh HD:Users:a.xlsx` is checked at
+`/Volumes/Macintosh HD/Users/a.xlsx` and on the startup disk at `/Users/a.xlsx`, not
+as a path relative to the workbook, and is reported as not found on this computer
+when neither exists.
 
 `audit` also follows the references the file records. It lists a defined name
 for a range or constant that no formula, rule, chart or other part uses

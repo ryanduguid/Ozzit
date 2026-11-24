@@ -23,6 +23,15 @@ release; until then v3.8.0 behaves as it did.
   function with `ozzit function_reference` and gets Excel's own result for a formula with the
   existing read-only evaluator, and the Ozzit skill points to it.
 
+### Fixed
+
+- `ozzit audit` reads a Mac volume-colon link target, such as `Macintosh HD:Users:a.xlsx`,
+  as a Mac path instead of a path relative to the workbook, so a target that exists on the
+  Mac is no longer reported missing.
+- The self-test's error-rate cases for `oz.IndexFactorλ` and `oz.BulletLoanλ` now pass a
+  row whose second rate is an error and check that the first period still calculates.
+  `HSTACK(0.1, NA())` gave a single `#N/A`, so they had tested a scalar error.
+
 ## v3.8.0, 24 November 2026, 14 new functions, Apache-2.0 licence and workbook tooling
 
 Cut on 24 November 2026 from the changes on `main` since v3.7.0. It takes the library

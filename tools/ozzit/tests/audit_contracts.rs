@@ -273,6 +273,34 @@ fn external_links_report_a_missing_or_unchecked_target() {
 }
 
 #[test]
+fn mac_volume_paths_are_checked_as_mac_paths() {
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::write(dir.path().join("On Mac.xlsx"), b"").unwrap();
+    // The file's own path in volume-colon form, read from the startup disk.
+    let present = dir.path().join("On Mac.xlsx").display().to_string();
+    let present = present
+        .split_once(':')
+        .map_or(present.as_str(), |(_, rest)| rest)
+        .replace(['/', '\\'], ":");
+    let present = format!("Macintosh%20HD{present}");
+    Book::new()
+        .sheet("Model", "", CLEAN_ROW)
+        .link(LINK_PATH, &present)
+        .link(LINK_PATH, "Macintosh%20HD:Users:nobody-ozzit:Gone.xlsx")
+        .link(LINK_PATH, "file:///Data:Gone.xlsx")
+        .write(dir.path());
+    let (code, text) = audit(&["book.xlsx"], dir.path());
+    assert_eq!(code, 1, "{text}");
+    assert_eq!(
+        findings(&text),
+        [
+            "external link: xl/externalLinks/externalLink2.xml targets Macintosh%20HD:Users:nobody-ozzit:Gone.xlsx, a Mac volume path not found on this computer",
+            "external link: xl/externalLinks/externalLink3.xml targets file:///Data:Gone.xlsx, a Mac volume path not found on this computer",
+        ]
+    );
+}
+
+#[test]
 fn hidden_names_and_sheets_are_reported() {
     let dir = tempfile::tempdir().unwrap();
     let names = concat!(
