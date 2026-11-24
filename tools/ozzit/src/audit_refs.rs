@@ -16,20 +16,29 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 /// An optional sheet or sheet-range prefix, then a cell, a cell range, whole
 /// columns or whole rows, then an optional spill `#`. A reference inside a name
 /// or function name does not match; [`scrub`] has already removed references to
-/// other workbooks and structured references.
-const REFERENCE: &str = r"(?i)(?<![\p{L}\p{N}_.$\[\]'!])(?:(?:'((?:[^']|'')+)'|([\p{L}_\\][\p{L}\p{N}_.]*(?::[\p{L}_\\][\p{L}\p{N}_.]*)?))!)?(\$?[A-Z]{1,3}\$?[0-9]{1,7}(?::\$?[A-Z]{1,3}\$?[0-9]{1,7})?|\$?[A-Z]{1,3}:\$?[A-Z]{1,3}|\$?[0-9]{1,7}:\$?[0-9]{1,7})(#?)(?![\p{L}\p{N}_.(\[])";
+/// other workbooks and structured references. Columns are ASCII letters in
+/// either case: a case-insensitive `[A-Z]` would also match `ſ` and `K`.
+const REFERENCE: &str = r"(?<![\p{L}\p{N}_.$\[\]'!])(?:(?:'((?:[^']|'')+)'|([\p{L}_\\][\p{L}\p{N}_.]*(?::[\p{L}_\\][\p{L}\p{N}_.]*)?))!)?(\$?[A-Za-z]{1,3}\$?[0-9]{1,7}(?::\$?[A-Za-z]{1,3}\$?[0-9]{1,7})?|\$?[A-Za-z]{1,3}:\$?[A-Za-z]{1,3}|\$?[0-9]{1,7}:\$?[0-9]{1,7})(#?)(?![\p{L}\p{N}_.(\[])";
 /// A function whose reference or name argument is read for its position, not
 /// its value, such as `ROW(A1)` or `CELL("filename", A1)`.
 const POSITION_ONLY: &str = r#"(?i)(?<![\p{L}\p{N}_.])(?:(?:ROWS?|COLUMNS?|ISREF|_xlfn\.ISFORMULA|_xlfn\.FORMULATEXT)\(|CELL\(\s*"(?:filename|address|row|col|width)"\s*,)\s*(?:'(?:[^']|'')+'!|[\p{L}_\\][\p{L}\p{N}_.]*!)?(?:\$?[A-Z]{0,3}\$?[0-9]{0,7}(?::\$?[A-Z]{0,3}\$?[0-9]{0,7})?#?|[\p{L}_\\][\p{L}\p{N}_.]*)\s*\)"#;
 const DYNAMIC: &str = r"(?i)(?<![\p{L}\p{N}_.])(?:INDIRECT|OFFSET)\(";
 const CALL: &str = r"[\p{L}_][\p{L}\p{N}_.]*\(";
-const NAME_TOKEN: &str = r"[\p{L}\p{N}_.\\?]+";
+/// A name, with its sheet or sheet-range qualifier if it has one (groups 1 to
+/// 3), or a quoted sheet name alone, or a name alone (group 4).
+const NAME_TOKEN: &str = r"(?:'((?:[^']|'')+)'|([\p{L}\p{N}_.\\?]+(?::[\p{L}\p{N}_.\\?]+)?))!([\p{L}\p{N}_.\\?]+)?|'(?:[^']|'')*'|([\p{L}\p{N}_.\\?]+)";
 const CHECK_LABEL: &str = r"(?i)\bchecks?\b";
-/// A reference to another workbook: `[1]Sheet!A1` or `'C:\[Book.xlsx]Sheet'!A1:B2`.
-const EXTERNAL: &str = r"(?i)(?:'(?:[^']|'')*\[(?:[^']|'')*'|\[[^\]]*\][\p{L}\p{N}_.]*(?::[\p{L}\p{N}_.]+)?)!\$?[A-Z]{0,3}\$?[0-9]{0,7}(?::\$?[A-Z]{0,3}\$?[0-9]{0,7})?";
+/// A reference or name in another workbook: `[1]Sheet!A1`, `[1]!Name` or
+/// `'C:\[Book.xlsx]Sheet'!A1:B2`, taken whole.
+const EXTERNAL: &str = r"(?:'(?:[^']|'')*\[(?:[^']|'')*'|\[[^\]]*\][\p{L}\p{N}_.]*(?::[\p{L}\p{N}_.]+)?)![\p{L}\p{N}_.\\?$]*(?::[\p{L}\p{N}_.$]+)?";
+/// `[0]` names this workbook, so `[0]!Name` is a local name.
+const THIS_BOOK: &str = r"(?<![\p{L}\p{N}_.\\?\]])\[0\]";
 
 /// A name's sheet scope (`None` for the workbook) and its lower-case text.
 type Scoped = (Option<usize>, String);
+/// A name as a formula writes it: its sheet qualifier, if any, and its
+/// lower-case text.
+type NameRef = (Option<String>, String);
 /// A formula cell as (sheet, row, column).
 type Place = (usize, usize, usize);
 /// Unread gap cells by (sheet, vertical, gap line): each with its position
@@ -112,18 +121,16 @@ fn sheet_index(names: &[String], name: &str) -> Option<usize> {
 /// missing for a whole column or row.
 type End = (Option<(usize, bool)>, Option<(usize, bool)>);
 
-fn end(text: &str) -> End {
+fn end(text: &str) -> Option<End> {
     let text = text.to_ascii_uppercase();
     let caps = re(r"^(\$?)([A-Z]*)(\$?)([0-9]*)$");
-    let Ok(Some(m)) = caps.captures(&text) else {
-        return (None, None);
-    };
+    let m = caps.captures(&text).ok()??;
     let group = |i: usize| m.get(i).map_or("", |g| g.as_str());
     let column = (!group(2).is_empty()).then(|| (column_number(group(2)), !group(1).is_empty()));
     // `$3` alone matches its dollar in the first group.
     let absolute = !group(3).is_empty() || (column.is_none() && !group(1).is_empty());
     let row = group(4).parse().ok().map(|r| (r, absolute));
-    (row, column)
+    (row.is_some() || column.is_some()).then_some((row, column))
 }
 
 fn shift((value, absolute): (usize, bool), by: i64, max: usize) -> Option<usize> {
@@ -142,12 +149,25 @@ fn shift((value, absolute): (usize, bool), by: i64, max: usize) -> Option<usize>
 }
 
 /// The formula split into code and string literals. Unlike `split_literals`,
-/// a double quote inside an apostrophe-quoted sheet name stays in the code.
+/// a double quote inside an apostrophe-quoted sheet name stays in the code, and
+/// inside a structured reference's brackets an apostrophe escapes the next
+/// character and a double quote is part of a column name.
 fn split(formula: &str) -> Vec<(bool, String)> {
     let mut out = Vec::new();
     let mut code = String::new();
+    let mut depth = 0usize;
     let mut chars = formula.chars().peekable();
     while let Some(c) = chars.next() {
+        if depth > 0 || c == '[' {
+            code.push(c);
+            match c {
+                '\'' => code.extend(chars.next()),
+                '[' => depth += 1,
+                ']' => depth -= 1,
+                _ => {}
+            }
+            continue;
+        }
         if c != '\'' && c != '"' {
             code.push(c);
             continue;
@@ -175,17 +195,38 @@ fn split(formula: &str) -> Vec<(bool, String)> {
 }
 
 /// Code with references to other workbooks and the bracketed parts of
-/// structured references blanked, so neither is read as a local reference.
-fn scrub(code: &str) -> String {
-    let mut out = re(EXTERNAL).replace_all(code, " ").into_owned();
-    while out.contains('[') {
-        let next = re(r"\[[^\[\]]*\]").replace_all(&out, " ").into_owned();
-        if next == out {
-            break;
+/// structured references blanked, so neither is read as a local reference,
+/// and whether a structured reference names no table. Inside brackets an
+/// apostrophe escapes the next character.
+fn scrub_parts(code: &str) -> (String, bool) {
+    let code = re(THIS_BOOK).replace_all(code, "");
+    let code = re(EXTERNAL).replace_all(&code, " ");
+    let (mut out, mut bare, mut depth, mut quoted) = (String::new(), false, 0usize, false);
+    let mut chars = code.chars();
+    while let Some(c) = chars.next() {
+        match (depth, c) {
+            (0, '[') if !quoted => {
+                bare |= !out.ends_with(|p: char| p.is_alphanumeric() || "_.\\?".contains(p));
+                depth = 1;
+                out.push(' ');
+            }
+            (0, _) => {
+                quoted ^= c == '\'';
+                out.push(c);
+            }
+            (_, '\'') => {
+                chars.next();
+            }
+            (_, '[') => depth += 1,
+            (_, ']') => depth -= 1,
+            _ => {}
         }
-        out = next;
     }
-    out
+    (out, bare)
+}
+
+fn scrub(code: &str) -> String {
+    scrub_parts(code).0
 }
 
 /// The sheets a prefix names: one sheet, or each sheet of a 3-D range in
@@ -223,7 +264,9 @@ fn references(
             };
             let text = &m[3];
             let (first, last) = text.split_once(':').unwrap_or((text, text));
-            let (a, b) = (end(first), end(last));
+            let (Some(a), Some(b)) = (end(first), end(last)) else {
+                continue;
+            };
             let rows = |e: End| {
                 e.0.map_or(Some(None), |r| shift(r, by.0, MAX_ROW).map(Some))
             };
@@ -254,19 +297,23 @@ fn references(
     out
 }
 
-fn name_tokens(formula: &str) -> Vec<String> {
+/// The names a formula may use, each with its sheet qualifier if it has one;
+/// a sheet or 3-D sheet-range qualifier is not itself a name.
+fn name_tokens(formula: &str) -> Vec<NameRef> {
     let mut out = Vec::new();
     for (literal, piece) in split(formula) {
         if literal {
             continue;
         }
-        let piece = scrub(&re(r"'(?:[^']|'')*'").replace_all(&piece, " "));
-        for m in re(NAME_TOKEN).find_iter(&piece).flatten() {
-            // A sheet qualifier is not a name.
-            if piece[m.end()..].starts_with('!') {
-                continue;
+        let piece = scrub(&piece);
+        for m in re(NAME_TOKEN).captures_iter(&piece).flatten() {
+            let qualifier = m
+                .get(1)
+                .map(|q| q.as_str().replace("''", "'"))
+                .or_else(|| m.get(2).map(|q| q.as_str().to_owned()));
+            if let Some(name) = m.get(3).or_else(|| m.get(4)) {
+                out.push((qualifier, name.as_str().to_lowercase()));
             }
-            out.push(m.as_str().to_lowercase());
         }
     }
     out
@@ -503,7 +550,7 @@ fn read_names(out: &mut Book, book: &Document<'_>) {
         let key = attr(name, "name").unwrap_or_default().to_lowercase();
         raw.push(((scope, key), name.text().unwrap_or_default().to_owned()));
     }
-    let direct: HashMap<Scoped, (Vec<Area>, bool, Vec<String>)> = raw
+    let direct: HashMap<Scoped, (Vec<Area>, bool, Vec<NameRef>)> = raw
         .iter()
         .map(|(key, text)| {
             let areas: Vec<Area> = references(text, (1, 1), (1, 1), None, &out.names)
@@ -532,16 +579,34 @@ fn read_names(out: &mut Book, book: &Document<'_>) {
             };
             all.extend(areas);
             for t in tokens {
-                for scope in [k.0, None] {
-                    if direct.contains_key(&(scope, t.clone())) {
-                        queue.push((scope, t.clone()));
-                        break;
-                    }
-                }
+                let key = name_key(&out.names, |x| direct.contains_key(x), k.0, t);
+                queue.extend(key.filter(|x| direct.contains_key(x)));
             }
         }
         out.named.entry(key.clone()).or_default().extend(all);
     }
+}
+
+/// The definition a name used on `sheet` (`None` in a name's own definition
+/// when it is workbook-scoped) refers to: a qualified name's sheet scope, else
+/// `sheet`'s, where a sheet's name shadows the workbook's even when it is no
+/// reference. `None` for an unknown or 3-D qualifier.
+fn name_key(
+    names: &[String],
+    defined: impl Fn(&Scoped) -> bool,
+    sheet: Option<usize>,
+    (qualifier, token): &NameRef,
+) -> Option<Scoped> {
+    let scope = match qualifier {
+        Some(q) => Some(sheet_index(names, q)?),
+        None => sheet,
+    };
+    let local = (scope, token.clone());
+    Some(if defined(&local) {
+        local
+    } else {
+        (None, token.clone())
+    })
 }
 
 fn chart_reads(out: &mut Book, parts: &Parts) {
@@ -577,9 +642,9 @@ fn formula_reads(book: &Book) -> Vec<Read> {
                 areas.extend(book.name_areas(&book.named, sheet, &token));
             }
             // A structured reference without a table name reads its own table.
-            let bare = split(&f.text).into_iter().any(|(literal, piece)| {
-                !literal && re(EXTERNAL).replace_all(&piece, "").contains('[')
-            });
+            let bare = split(&f.text)
+                .into_iter()
+                .any(|(literal, piece)| !literal && scrub_parts(&piece).1);
             if bare {
                 areas.extend(book.tables.iter().filter(|t| t.holds(sheet, at)));
             }
@@ -625,12 +690,21 @@ impl Book {
             .iter()
             .any(|read| read.area.meets(area) && !read.reader.iter().any(|r| r.meets(group)))
     }
-    /// The areas a name or table names, a sheet's own name first.
-    fn name_areas(&self, map: &HashMap<Scoped, Vec<Area>>, sheet: usize, token: &str) -> Vec<Area> {
-        map.get(&(Some(sheet), token.to_owned()))
-            .or_else(|| map.get(&(None, token.to_owned())))
-            .cloned()
-            .unwrap_or_default()
+    /// The areas `map` gives a name or table used on `sheet`.
+    fn name_areas<'a>(
+        &self,
+        map: &'a HashMap<Scoped, Vec<Area>>,
+        sheet: usize,
+        name: &NameRef,
+    ) -> &'a [Area] {
+        name_key(
+            &self.names,
+            |k| self.named.contains_key(k),
+            Some(sheet),
+            name,
+        )
+        .and_then(|k| map.get(&k))
+        .map_or(&[], Vec::as_slice)
     }
     fn label(&self, sheet: usize, (row, column): (usize, usize)) -> Option<&String> {
         self.grids[sheet]
@@ -671,7 +745,11 @@ fn unused_names(parts: &Parts, book: &Document<'_>, sheets: &[Sheet]) -> Vec<Str
                 name,
                 "f" | "formula" | "formula1" | "formula2" | "definedName"
             ) {
-                used.extend(name_tokens(node.text().unwrap_or_default()));
+                used.extend(
+                    name_tokens(node.text().unwrap_or_default())
+                        .into_iter()
+                        .map(|(_, n)| n),
+                );
             } else if other {
                 used.extend(node.attributes().map(|a| a.value().to_lowercase()));
                 used.extend(node.text().map(str::to_lowercase));
@@ -1041,6 +1119,11 @@ mod tests {
             "Gone!A1",
             "A1",
             "oz.Rate1",
+            "ſ1",
+            "\u{212A}1",
+            "[1]!FooA1",
+            "SUM(Sales['#Items])+N(\"A1\")",
+            "SUM(Sales[x']A1])",
         ] {
             let at = if text == "A1" { (1, 2) } else { (2, 2) };
             let found = r(text, at);
@@ -1048,14 +1131,38 @@ mod tests {
         }
         // A1 written at B2, read at A2, would be column 0: off the sheet.
         assert!(r("A1", (2, 1)).is_empty());
+        assert_eq!(r("a1", (2, 2))[0].area, area(0, 1, 1, 1, 1));
     }
 
     #[test]
     fn name_tokens_skip_literals_structured_columns_and_sheets() {
+        let tokens = |f: &str| {
+            name_tokens(f)
+                .into_iter()
+                .map(|(q, n)| format!("{}{n}", q.map(|q| q + "!").unwrap_or_default()))
+                .collect::<Vec<_>>()
+        };
         assert_eq!(
-            name_tokens("Rate*\"Tax\"+Sales[[#This Row],[Tax]]+Model!Fee+'Q1 Rate'!A1"),
-            ["rate", "sales", "fee", "a1"]
+            tokens("Rate*\"Tax\"+Sales[[#This Row],[Tax]]+Model!Fee+'Q1 Rate'!A1"),
+            ["rate", "sales", "Model!fee", "Q1 Rate!a1"]
         );
+        assert_eq!(
+            tokens("SUM(Jan:Feb!A1)+[0]!Self+[1]!Other+Sales['#Items]"),
+            ["sum", "Jan:Feb!a1", "self", "sales"]
+        );
+    }
+
+    #[test]
+    fn structured_references_without_a_table_are_bare() {
+        for (code, bare) in [
+            ("SUM([Amount])", true),
+            ("[@Amount]*2", true),
+            ("SUM(Other[Amount])", false),
+            ("SUM(Other[[#This Row],[x']y]])", false),
+            ("SUM([1]Data!A1)", false),
+        ] {
+            assert_eq!(scrub_parts(code).1, bare, "{code}");
+        }
     }
 
     #[test]
