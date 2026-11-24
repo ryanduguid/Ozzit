@@ -169,7 +169,7 @@ claude plugin marketplace add ryanduguid/Ozzit
 claude plugin install ozzit@ozzit
 ```
 
-The marketplace follows `main`, which is ahead of v3.5.0, so still supply the
+The marketplace follows `main`, which can be ahead of the latest release, so still supply the
 approved bundle revision. Its manifests pass `claude plugin validate`; installing
 it from GitHub has not been tested.
 
@@ -194,22 +194,12 @@ web; this route has not been tested.
 ## Alternatives
 
 Ozzit is a finance-focused LAMBDA library with Australian helpers. As read on 5 November 2026,
-these general-purpose libraries cover nearby ground:
+general-purpose libraries cover nearby ground: a documented library of more than 50 functions
+importable from a gist, a 97-function dynamic-array library in 10 categories and a general
+MIT-licensed library.
 
-- [Vertex42 LAMBDA Library](https://www.vertex42.com/lambda/): more than 50 documented functions,
-  importable from a gist.
-- [BigSpill](https://techcommunity.microsoft.com/discussions/excelgeneral/bigspill-a-97%E2%80%91function-excel-lambda-library-for-dynamic-arrays/4545352):
-  97 functions in 10 categories.
-- [AutoXL](https://github.com/MatrixFun/AutoXL): a general MIT-licensed library.
-
-As read on 13 November 2026, these assistants work on your workbook on request
-rather than supplying a fixed function library:
-
-- [Claude for Excel](https://claude.com/docs/office-agents/excel): an add-in for
-  Pro, Max, Team and Enterprise plans that builds models and applies enabled Skills.
-- [Copilot in Excel](https://techcommunity.microsoft.com/t5/excel-blog/what-s-new-in-excel-october-2026/ba-p/4549758):
-  Microsoft's assistant, whose skill builder (October 2026) turns a described
-  workflow into a reusable skill.
+As read on 13 November 2026, AI assistants built into or added to Excel, including the 2 hosts
+above, work on your workbook on request rather than supplying a fixed function library.
 
 [Similar tools and improvement decisions](docs/practice-improvements.md) compares the companion
 calculators with similar calculators.
