@@ -1080,9 +1080,7 @@ fn defined_names() {
             .collect();
     assert_eq!(
         defined,
-        HashMap::from([
-            ("CashFlowScenarioList", Some("'Assumptions'!$B$15:$B$17")),
-        ])
+        HashMap::from([("CashFlowScenarioList", Some("'Assumptions'!$B$15:$B$17"))])
     );
 }
 
