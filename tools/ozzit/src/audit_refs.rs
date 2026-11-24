@@ -24,15 +24,20 @@ const REFERENCE: &str = r"(?<![\p{L}\p{N}_.$\[\]'!])(?:(?:'((?:[^']|'')+)'|([\p{
 const POSITION_ONLY: &str = r#"(?i)(?<![\p{L}\p{N}_.])(?:(?:ROWS?|COLUMNS?|ISREF|_xlfn\.ISFORMULA|_xlfn\.FORMULATEXT)\(|CELL\(\s*"(?:filename|address|row|col|width)"\s*,)\s*(?:'(?:[^']|'')+'!|[\p{L}_\\][\p{L}\p{N}_.]*!)?(?:\$?[A-Z]{0,3}\$?[0-9]{0,7}(?::\$?[A-Z]{0,3}\$?[0-9]{0,7})?#?|[\p{L}_\\][\p{L}\p{N}_.]*)\s*\)"#;
 const DYNAMIC: &str = r"(?i)(?<![\p{L}\p{N}_.])(?:INDIRECT|OFFSET)\(";
 const CALL: &str = r"[\p{L}_][\p{L}\p{N}_.]*\(";
-/// A name, with its sheet or sheet-range qualifier if it has one (groups 1 to
-/// 3), or a quoted sheet name alone, or a name alone (group 4).
-const NAME_TOKEN: &str = r"(?:'((?:[^']|'')+)'|([\p{L}\p{N}_.\\?]+(?::[\p{L}\p{N}_.\\?]+)?))!([\p{L}\p{N}_.\\?]+)?|'(?:[^']|'')*'|([\p{L}\p{N}_.\\?]+)";
+/// A name, with its sheet, sheet-range or workbook ([`WORKBOOK`]) qualifier if
+/// it has one (groups 1 to 3), or a quoted sheet name alone, or a name alone
+/// (group 4).
+const NAME_TOKEN: &str = r"(?:'((?:[^']|'')+)'|(\x00|[\p{L}\p{N}_.\\?]+(?::[\p{L}\p{N}_.\\?]+)?))!([\p{L}\p{N}_.\\?]+)?|'(?:[^']|'')*'|([\p{L}\p{N}_.\\?]+)";
+/// What [`scrub_parts`] writes for `[0]` before `!`: a workbook-scoped name.
+const WORKBOOK: &str = "\u{0}";
 const CHECK_LABEL: &str = r"(?i)\bchecks?\b";
-/// A reference or name in another workbook: `[1]Sheet!A1`, `[1]!Name` or
-/// `'C:\[Book.xlsx]Sheet'!A1:B2`, taken whole.
-const EXTERNAL: &str = r"(?:'(?:[^']|'')*\[(?:[^']|'')*'|\[[^\]]*\][\p{L}\p{N}_.]*(?::[\p{L}\p{N}_.]+)?)![\p{L}\p{N}_.\\?$]*(?::[\p{L}\p{N}_.$]+)?";
-/// `[0]` names this workbook, so `[0]!Name` is a local name.
-const THIS_BOOK: &str = r"(?<![\p{L}\p{N}_.\\?\]])\[0\]";
+/// A reference, name or table in another workbook: `[1]Sheet!A1`, `[1]!Name`,
+/// `[1]!Table[Column]` or `'C:\[Book.xlsx]Sheet'!A1:B2`, taken whole.
+const EXTERNAL: &str = r"(?:'(?:[^']|'')*\[(?:[^']|'')*'|\[[^\]]*\][\p{L}\p{N}_.]*(?::[\p{L}\p{N}_.]+)?)![\p{L}\p{N}_.\\?$]*(?::[\p{L}\p{N}_.$]+)?(?:\[(?:[^\[\]']|'.|\[(?:[^\[\]']|'.)*\])*\])?";
+/// `[0]` as a workbook qualifier names this workbook: `[0]!Name` is the
+/// workbook's name and `[0]Sheet!A1` a local reference. Elsewhere, as in
+/// `SUM([0])`, it is a structured reference's column.
+const THIS_BOOK: &str = r"(?<![\p{L}\p{N}_.\\?\]])\[0\](?=[\p{L}\p{N}_.]*!)";
 
 /// A name's sheet scope (`None` for the workbook) and its lower-case text.
 type Scoped = (Option<usize>, String);
@@ -199,7 +204,8 @@ fn split(formula: &str) -> Vec<(bool, String)> {
 /// and whether a structured reference names no table. Inside brackets an
 /// apostrophe escapes the next character.
 fn scrub_parts(code: &str) -> (String, bool) {
-    let code = re(THIS_BOOK).replace_all(code, "");
+    let code = re(&format!("{THIS_BOOK}(?=!)")).replace_all(code, WORKBOOK);
+    let code = re(THIS_BOOK).replace_all(&code, "");
     let code = re(EXTERNAL).replace_all(&code, " ");
     let (mut out, mut bare, mut depth, mut quoted) = (String::new(), false, 0usize, false);
     let mut chars = code.chars();
@@ -597,7 +603,8 @@ fn name_key(
     sheet: Option<usize>,
     (qualifier, token): &NameRef,
 ) -> Option<Scoped> {
-    let scope = match qualifier {
+    let scope = match qualifier.as_deref() {
+        Some(WORKBOOK) => None,
         Some(q) => Some(sheet_index(names, q)?),
         None => sheet,
     };
@@ -1158,7 +1165,7 @@ mod tests {
         );
         assert_eq!(
             tokens("SUM(Jan:Feb!A1)+[0]!Self+[1]!Other+Sales['#Items]"),
-            ["sum", "Jan:Feb!a1", "self", "sales"]
+            ["sum", "Jan:Feb!a1", "\u{0}!self", "sales"]
         );
     }
 
@@ -1170,6 +1177,8 @@ mod tests {
             ("SUM(Other[Amount])", false),
             ("SUM(Other[[#This Row],[x']y]])", false),
             ("SUM([1]Data!A1)", false),
+            ("SUM([1]!Other[Amount])", false),
+            ("SUM([0])", true),
         ] {
             assert_eq!(scrub_parts(code).1, bare, "{code}");
         }

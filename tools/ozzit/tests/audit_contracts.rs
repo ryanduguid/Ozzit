@@ -713,10 +713,19 @@ fn only_a_bare_structured_reference_reads_its_own_table() {
     // Inside Local, a reference to Other reads Other alone; inside Bare, a
     // reference without a table reads Bare.
     let rows = [
-        row(2, &[formula("B2", "SUM(Other[Amount])")]),
+        row(
+            2,
+            &[
+                formula("A2", "SUM([1]!Other[Amount])"),
+                formula("B2", "SUM(Other[Amount])"),
+            ],
+        ),
         row(3, &[label("A3", "Unrelated check"), formula("B3", "1")]),
         row(6, &[formula("B6", "SUM([Amount])")]),
         row(7, &[label("A7", "Read check"), formula("B7", "1")]),
+        // [0] here is a column of the containing table, not this workbook.
+        row(10, &[formula("B10", "SUM([0])")]),
+        row(11, &[label("A11", "Zero check"), formula("B11", "1")]),
     ]
     .concat();
     Book::new()
@@ -724,6 +733,7 @@ fn only_a_bare_structured_reference_reads_its_own_table() {
         .table(0, "Local", "A1:B3")
         .table(0, "Other", "D1:E3")
         .table(0, "Bare", "A5:B7")
+        .table(0, "Zero", "A9:B11")
         .write(dir.path());
     let (_, text) = audit(&["book.xlsx"], dir.path());
     assert_eq!(
@@ -731,5 +741,28 @@ fn only_a_bare_structured_reference_reads_its_own_table() {
         [
             "buried check: T!B3 ('Unrelated check') is read by no other formula, so no summary shows it"
         ]
+    );
+}
+
+#[test]
+fn a_this_workbook_qualifier_names_the_workbook_scope() {
+    let dir = tempfile::tempdir().unwrap();
+    // [0]! is the workbook's name, not the sheet's: A1 reads itself, B1 not.
+    let names = concat!(
+        r#"<definedName name="PickA">Model!$A$1</definedName>"#,
+        r#"<definedName name="PickA" localSheetId="1">1</definedName>"#,
+        r#"<definedName name="PickB">1</definedName>"#,
+        r#"<definedName name="PickB" localSheetId="1">Model!$B$1</definedName>"#,
+    );
+    let model = row(1, &[formula("A1", "[0]!PickA"), formula("B1", "[0]!PickB")]);
+    Book::new()
+        .sheet("First", "", "")
+        .sheet("Model", "", &model)
+        .names(names)
+        .write(dir.path());
+    let (_, text) = audit(&["book.xlsx"], dir.path());
+    assert_eq!(
+        findings(&text),
+        ["circular reference: Model!A1 read one another"]
     );
 }
