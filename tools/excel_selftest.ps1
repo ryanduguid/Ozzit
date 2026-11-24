@@ -750,7 +750,8 @@ foreach ($r in @(@('0.03, 3', '1.03,1.0609,1.092727'),
     Same "IndexFactor: ($($r[0]))" "LET(x, $ix($($r[0])), $rows6)" $r[1]
 }
 Near 'IndexFactor: 1% a month for 12 months is 1.01^12' "INDEX($ix(0.01, 12), 1, 12)" '1.12682503013197' '0.0000000001'
-Near 'IndexFactor: an error rate shows' "--ISNA(INDEX($ix(HSTACK(0.1, NA())), 1, 2))" '1'
+Near 'IndexFactor: an error rate shows in its period' "--ISNA(INDEX($ix(IF({1,0}, 0.1, NA())), 1, 2))" '1'
+Near 'IndexFactor: the period before an error rate still calculates' "INDEX($ix(IF({1,0}, 0.1, NA())), 1, 1)" '1.1'
 Near 'IndexFactor: an error rate with Periods shows' "--ISNA(INDEX($ix(NA(), 2), 1, 1))" '1'
 $ixShape = 'IndexFactor' + $L + ' needs Rates to be one row with a rate for each period, or one rate with Periods.'
 $ixPeriods = 'Periods must be a whole number from 1 to 1,000.'
@@ -771,7 +772,8 @@ foreach ($r in @(@('1000, {0.1,0.1}, 0', '1000,1100,100,110,0,0,100,110,0,1210,1
 }
 Same 'BulletLoan: six rows and a column for each period' "ROWS($bl(1, {0.1,0.1,0.1})) & `"x`" & COLUMNS($bl(1, {0.1,0.1,0.1}))" '6x3'
 Near 'BulletLoan: an error principal shows' "--ISNA(INDEX($bl(NA(), {0.1}), 1, 1))" '1'
-Near 'BulletLoan: an error rate shows' "--ISNA(INDEX($bl(1000, HSTACK(0.1, NA())), 2, 1))" '1'
+Near 'BulletLoan: an error rate shows in its period' "--ISNA(INDEX($bl(1000, IF({1,0}, 0.1, NA())), 2, 2))" '1'
+Near 'BulletLoan: the period before an error rate still calculates' "INDEX($bl(1000, IF({1,0}, 0.1, NA())), 2, 1)" '100'
 $blShape = 'BulletLoan' + $L + ' needs one Principal, Rates as one row with a rate for each period, and CashInterest as one share or one for each period.'
 $blValue = 'BulletLoan' + $L + ' needs Principal from 0 to under 10,000,000,000,000, every rate above -1 and below 2, and every CashInterest share from 0 to 1.'
 foreach ($r in @(@('{1,2}, 0.1', $blShape), @('1000, {0.1;0.1}', $blShape), @('1000, {0.1,0.1}, {1,1,1}', $blShape), @('1000, {0.1,0.1}, {1;1}', $blShape),
