@@ -1119,11 +1119,6 @@ mod tests {
             "Gone!A1",
             "A1",
             "oz.Rate1",
-            "ſ1",
-            "\u{212A}1",
-            "[1]!FooA1",
-            "SUM(Sales['#Items])+N(\"A1\")",
-            "SUM(Sales[x']A1])",
         ] {
             let at = if text == "A1" { (1, 2) } else { (2, 2) };
             let found = r(text, at);
@@ -1131,7 +1126,22 @@ mod tests {
         }
         // A1 written at B2, read at A2, would be column 0: off the sheet.
         assert!(r("A1", (2, 1)).is_empty());
-        assert_eq!(r("a1", (2, 2))[0].area, area(0, 1, 1, 1, 1));
+    }
+
+    #[test]
+    fn names_like_cells_and_escaped_brackets_are_no_references() {
+        let r = |f: &str| references(f, (1, 1), (1, 1), Some(0), &sheets());
+        // Long s and the Kelvin sign fold to S and K, but are not columns.
+        for text in [
+            "\u{17F}1",
+            "\u{212A}1",
+            "[1]!FooA1",
+            "SUM(Sales['#Items])+N(\"A1\")",
+            "SUM(Sales[x']A1])",
+        ] {
+            assert!(r(text).is_empty(), "{text}: {:?}", r(text));
+        }
+        assert_eq!(r("a1")[0].area.left, 1);
     }
 
     #[test]

@@ -81,6 +81,26 @@ impl Book {
                     .into_bytes(),
             );
         }
+        self.table_parts(&mut parts);
+        let external = self.link_parts(&mut parts, &mut rels);
+        let names = if self.names.is_empty() {
+            String::new()
+        } else {
+            format!("<definedNames>{}</definedNames>", self.names)
+        };
+        parts.insert(
+            "xl/workbook.xml".into(),
+            format!("<workbook xmlns=\"{MAIN}\" xmlns:r=\"{REL}\"><sheets>{sheets}</sheets>{external}{names}{}</workbook>", self.calc)
+                .into_bytes(),
+        );
+        parts.insert(
+            "xl/_rels/workbook.xml.rels".into(),
+            format!("<Relationships xmlns=\"{PKG}\">{rels}</Relationships>").into_bytes(),
+        );
+        parts
+    }
+    /// Each table's part and its sheet's relationship to it.
+    fn table_parts(&self, parts: &mut Parts) {
         for (i, (sheet, name, range)) in self.tables.iter().enumerate() {
             let n = i + 1;
             parts.insert(
@@ -99,22 +119,6 @@ impl Book {
             );
             parts.insert(rels, body.into_bytes());
         }
-        let external = self.link_parts(&mut parts, &mut rels);
-        let names = if self.names.is_empty() {
-            String::new()
-        } else {
-            format!("<definedNames>{}</definedNames>", self.names)
-        };
-        parts.insert(
-            "xl/workbook.xml".into(),
-            format!("<workbook xmlns=\"{MAIN}\" xmlns:r=\"{REL}\"><sheets>{sheets}</sheets>{external}{names}{}</workbook>", self.calc)
-                .into_bytes(),
-        );
-        parts.insert(
-            "xl/_rels/workbook.xml.rels".into(),
-            format!("<Relationships xmlns=\"{PKG}\">{rels}</Relationships>").into_bytes(),
-        );
-        parts
     }
     /// The external link parts, their workbook relationships and the
     /// `externalReferences` element.
