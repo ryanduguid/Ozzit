@@ -747,8 +747,8 @@ fn only_a_bare_structured_reference_reads_its_own_table() {
 #[test]
 fn a_this_workbook_qualifier_names_the_workbook_scope() {
     // [0]! is the workbook's name, not the sheet's, wherever the sheet is (as
-    // Excel 16 resolves it): A1 reads itself, B1 does not, and C1 reads only
-    // its own position.
+    // Excel 16 resolves it): A1 reads itself, B1 does not, and C1 and D1 read
+    // only their own position.
     for model_first in [true, false] {
         let dir = tempfile::tempdir().unwrap();
         let local = if model_first { "0" } else { "1" };
@@ -766,6 +766,7 @@ fn a_this_workbook_qualifier_names_the_workbook_scope() {
                 formula("A1", "[0]!PickA"),
                 formula("B1", "[0]!PickB"),
                 formula("C1", "ROW([0]!PickC)"),
+                formula("D1", "ROW([0]Model!D1)"),
             ],
         );
         let book = Book::new();
@@ -800,6 +801,50 @@ fn this_workbook_sheet_qualifiers_read_the_local_sheet() {
         .sheet("Feb", "", &check("Month check"))
         .sheet("Cash flow", "", &check("Cash check"))
         .sheet("Summary", "", &summary)
+        .write(dir.path());
+    let (code, text) = audit(&["book.xlsx"], dir.path());
+    assert_eq!((code, findings(&text)), (0, vec![]), "{text}");
+}
+
+#[test]
+fn quoted_this_book_prefix_stays_verbatim_inside_structured_brackets() {
+    let dir = tempfile::tempdir().unwrap();
+    let rows = [
+        row(
+            1,
+            &[
+                formula("A1", "SUM(Sales[[#Data],[x '[0]])+A1"),
+                label("B1", "x [0"),
+            ],
+        ),
+        row(2, &[number("B2")]),
+        row(3, &[number("B3")]),
+    ]
+    .concat();
+    Book::new()
+        .sheet("Model", "", &rows)
+        .table(0, "Sales", "B1:B3")
+        .write(dir.path());
+    let (code, text) = audit(&["book.xlsx"], dir.path());
+    assert_eq!(code, 1, "{text}");
+    assert_eq!(
+        findings(&text),
+        ["circular reference: Model!A1 read one another"]
+    );
+}
+
+#[test]
+fn this_book_prefix_does_not_strip_before_a_range_colon() {
+    let dir = tempfile::tempdir().unwrap();
+    let rows = [
+        row(1, &[label("B1", "0")]),
+        row(2, &[formula("B2", "ROWS([0]:Model!B2)")]),
+        row(3, &[number("B3")]),
+    ]
+    .concat();
+    Book::new()
+        .sheet("Model", "", &rows)
+        .table(0, "Zero", "B1:B3")
         .write(dir.path());
     let (code, text) = audit(&["book.xlsx"], dir.path());
     assert_eq!((code, findings(&text)), (0, vec![]), "{text}");

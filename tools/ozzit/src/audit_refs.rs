@@ -36,10 +36,10 @@ const CHECK_LABEL: &str = r"(?i)\bchecks?\b";
 const EXTERNAL: &str = r"(?:'(?:[^']|'')*\[(?:[^']|'')*'|\[[^\]]*\][\p{L}\p{N}_.]*(?::[\p{L}\p{N}_.]+)?)![\p{L}\p{N}_.\\?$]*(?::[\p{L}\p{N}_.$]+)?(?:\[(?:[^\[\]']|'.|\[(?:[^\[\]']|'.)*\])*\])?";
 /// `[0]` as a workbook qualifier names this workbook: `[0]!Name` is the
 /// workbook's name and `[0]Sheet!A1` or `[0]Jan:Feb!A1` a local reference.
-/// Elsewhere, as in `SUM([0])`, it is a structured reference's column.
-const THIS_BOOK: &str = r"(?<![\p{L}\p{N}_.\\?\]])\[0\](?=[\p{L}\p{N}_.:]*!)";
-/// `[0]` opening a quoted sheet name, as in `'[0]Cash flow'!B3`.
-const QUOTED_THIS_BOOK: &str = r"(?<![\p{L}\p{N}_.\\?\['])'\[0\]";
+/// Elsewhere, as in `SUM([0])` or `ROWS([0]:Model!B2)`, it is a structured
+/// reference's column.
+const THIS_BOOK: &str =
+    r"(?<![\p{L}\p{N}_.\\?\]])\[0\](?=(?:[\p{L}\p{N}_.]+(?::[\p{L}\p{N}_.]+)?)?!)";
 
 /// A name's sheet scope (`None` for the workbook) and its lower-case text.
 type Scoped = (Option<usize>, String);
@@ -155,6 +155,23 @@ fn shift((value, absolute): (usize, bool), by: i64, max: usize) -> Option<usize>
         .filter(|v| (1..=max).contains(v))
 }
 
+/// Consume a quote-delimited token whose opening `quote` was already read,
+/// keeping doubled `quote` escapes until the closing delimiter.
+fn read_quoted(quote: char, chars: &mut std::iter::Peekable<std::str::Chars<'_>>) -> String {
+    let mut quoted = String::from(quote);
+    while let Some(d) = chars.next() {
+        quoted.push(d);
+        if d == quote {
+            if chars.peek() != Some(&quote) {
+                break;
+            }
+            quoted.push(quote);
+            chars.next();
+        }
+    }
+    quoted
+}
+
 /// The formula split into code and string literals. Unlike `split_literals`,
 /// a double quote inside an apostrophe-quoted sheet name stays in the code, and
 /// inside a structured reference's brackets an apostrophe escapes the next
@@ -179,17 +196,7 @@ fn split(formula: &str) -> Vec<(bool, String)> {
             code.push(c);
             continue;
         }
-        let mut quoted = String::from(c);
-        while let Some(d) = chars.next() {
-            quoted.push(d);
-            if d == c {
-                if chars.peek() != Some(&c) {
-                    break;
-                }
-                quoted.push(c);
-                chars.next();
-            }
-        }
+        let quoted = read_quoted(c, &mut chars);
         if c == '"' {
             out.push((false, std::mem::take(&mut code)));
             out.push((true, quoted));
@@ -201,12 +208,44 @@ fn split(formula: &str) -> Vec<(bool, String)> {
     out
 }
 
+/// Strip `[0]` from a quoted sheet qualifier outside structured-reference
+/// brackets, e.g. `'[0]Cash flow'!B3` -> `'Cash flow'!B3`.
+fn strip_quoted_this_book(code: &str) -> String {
+    let mut out = String::with_capacity(code.len());
+    let mut depth = 0usize;
+    let mut chars = code.chars().peekable();
+    while let Some(c) = chars.next() {
+        if depth > 0 || c == '[' {
+            out.push(c);
+            match c {
+                '\'' => out.extend(chars.next()),
+                '[' => depth += 1,
+                ']' => depth -= 1,
+                _ => {}
+            }
+            continue;
+        }
+        if c != '\'' {
+            out.push(c);
+            continue;
+        }
+        let token = read_quoted(c, &mut chars);
+        if chars.peek() == Some(&'!') && token.starts_with("'[0]") && token.len() > 5 {
+            out.push('\'');
+            out.push_str(&token[4..]);
+        } else {
+            out.push_str(&token);
+        }
+    }
+    out
+}
+
 /// Code with references to other workbooks and the bracketed parts of
 /// structured references blanked, so neither is read as a local reference,
 /// and whether a structured reference names no table. Inside brackets an
 /// apostrophe escapes the next character.
 fn scrub_parts(code: &str) -> (String, bool) {
-    let code = re(QUOTED_THIS_BOOK).replace_all(code, "'");
+    let code = strip_quoted_this_book(code);
     let code = re(&format!("{THIS_BOOK}(?=!)")).replace_all(&code, WORKBOOK);
     let code = re(THIS_BOOK).replace_all(&code, "");
     let code = re(EXTERNAL).replace_all(&code, " ");
@@ -1190,6 +1229,26 @@ mod tests {
             scrub_parts("SUM([1]!Other[[#Data],[x']y]])+A1"),
             ("SUM( )+A1".to_owned(), false)
         );
+        assert_eq!(
+            scrub_parts("SUM(Sales[[#Data],[x '[0]])+A1"),
+            ("SUM(Sales )+A1".to_owned(), false)
+        );
+    }
+
+    #[test]
+    fn workbook_qualifiers_respect_brackets_and_sheet_names() {
+        for (input, expected) in [
+            ("'[0]Cash flow'!B3", "'Cash flow'!B3"),
+            ("'[0]O''Brien'!B3", "'O''Brien'!B3"),
+            ("'[0]'!B3", " "),
+            ("'[0]Cash flow'", "'[0]Cash flow'"),
+            ("[0]!Name", "\u{0}!Name"),
+            ("[0]Sheet!A1", "Sheet!A1"),
+            ("[0]Jan:Feb!B3", "Jan:Feb!B3"),
+            ("ROWS([0]:Model!B2)", "ROWS( )"),
+        ] {
+            assert_eq!(scrub_parts(input), (expected.to_owned(), false), "{input}");
+        }
     }
 
     #[test]
