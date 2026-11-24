@@ -286,6 +286,19 @@ fn local_path(target: &str) -> String {
     }
 }
 
+/// The POSIX paths a Mac volume-colon path can name: `Macintosh HD:Users:a.xlsx`
+/// is `/Volumes/Macintosh HD/Users/a.xlsx`, or `/Users/a.xlsx` when that volume
+/// is the startup disk. `None` for any other path, including a drive letter.
+fn mac_volume_paths(path: &str) -> Option<[String; 2]> {
+    let path = path.strip_prefix('/').unwrap_or(path);
+    let (volume, rest) = path.split_once(':')?;
+    let plain = |s: &str| !s.is_empty() && !s.contains(['/', '\\']);
+    (volume.chars().count() > 1 && plain(volume) && plain(rest)).then(|| {
+        let rest = rest.replace(':', "/");
+        [format!("/Volumes/{volume}/{rest}"), format!("/{rest}")]
+    })
+}
+
 /// Why an external link's target is not usable, or `None` when its file exists.
 fn missing_target(kind: &str, target: &str, base: &Path) -> Option<String> {
     if kind.ends_with("/xlPathMissing") {
@@ -295,8 +308,12 @@ fn missing_target(kind: &str, target: &str, base: &Path) -> Option<String> {
     if lower.starts_with("http://") || lower.starts_with("https://") {
         return Some(format!("targets {target}, a remote file not checked"));
     }
-    (!base.join(local_path(&percent_decoded(target))).exists())
-        .then(|| format!("targets {target}, which does not exist"))
+    let path = local_path(&percent_decoded(target));
+    if let Some(paths) = mac_volume_paths(&path) {
+        return (!paths.iter().any(|p| Path::new(p).exists()))
+            .then(|| format!("targets {target}, a Mac volume path not found on this computer"));
+    }
+    (!base.join(path).exists()).then(|| format!("targets {target}, which does not exist"))
 }
 
 fn external_links(parts: &Parts, book: &Document<'_>, base: &Path) -> Result<Vec<String>> {
@@ -489,6 +506,34 @@ mod tests {
             ("../a.xlsx", "../a.xlsx"),
         ] {
             assert_eq!(local_path(url), path, "{url}");
+        }
+    }
+
+    #[test]
+    fn mac_volume_paths_name_the_volume_or_the_startup_disk() {
+        assert_eq!(
+            mac_volume_paths("Macintosh HD:Users:ryan:a b.xlsx"),
+            Some([
+                "/Volumes/Macintosh HD/Users/ryan/a b.xlsx".to_owned(),
+                "/Users/ryan/a b.xlsx".to_owned()
+            ])
+        );
+        assert_eq!(
+            mac_volume_paths(&local_path("file:///Data:Q1.xlsx")),
+            Some(["/Volumes/Data/Q1.xlsx".to_owned(), "/Q1.xlsx".to_owned()])
+        );
+        for path in [
+            "C:/a.xlsx",
+            r"C:\a.xlsx",
+            "/Users/a.xlsx",
+            "//server/share/a.xlsx",
+            "../a.xlsx",
+            "a.xlsx",
+            "Disk:",
+            ":a.xlsx",
+            "Disk:dir/a.xlsx",
+        ] {
+            assert_eq!(mac_volume_paths(path), None, "{path}");
         }
     }
 }
