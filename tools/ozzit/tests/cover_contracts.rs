@@ -11,7 +11,7 @@ use std::{
 
 const LABEL: &str = "Version 1 May 2026 - 3 functions - Excel";
 const CELL: &str = "<c r=\"A3\" t=\"s\"><v>0</v></c>";
-const GOOD: &str = "OK: cover label states 18 November 2026 and 168 functions";
+const GOOD: &str = "OK: cover label states 24 November 2026 and 168 functions";
 fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
@@ -208,9 +208,9 @@ fn stale_function_count_fails() {
 #[test]
 fn current_looking_decoy_does_not_rescue_the_stale_displayed_cell() {
     let f = Fixture::published();
-    let current = "Version 18 November 2026    -    168 functions    -    Microsoft 365 or Excel 2024 and later";
+    let current = "Version 24 November 2026    -    168 functions    -    Microsoft 365 or Excel 2024 and later";
     let stale = current
-        .replace("18 November 2026", "20 August 2026")
+        .replace("24 November 2026", "20 August 2026")
         .replace("168", "133");
     f.rewrite(
         "xl/sharedStrings.xml",
@@ -226,7 +226,7 @@ fn current_looking_decoy_does_not_rescue_the_stale_displayed_cell() {
         f.run(),
         &[
             "FAIL: cover says 133 functions; functions.csv publishes 168",
-            "FAIL: cover is dated 20 August 2026; the changelog's current cut is 18 November 2026",
+            "FAIL: cover is dated 20 August 2026; the changelog's current cut is 24 November 2026",
         ],
     );
 }
@@ -275,15 +275,15 @@ fn missing_function_names_fail_without_a_false_count() {
 fn stale_changelog_date_fails() {
     let f = Fixture::published();
     let text = std::fs::read_to_string(&f.changelog).unwrap();
-    assert!(text.contains("18 November 2026"));
+    assert!(text.contains("24 November 2026"));
     std::fs::write(
         &f.changelog,
-        text.replacen("18 November 2026", "19 November 2026", 1),
+        text.replacen("24 November 2026", "25 November 2026", 1),
     )
     .unwrap();
     failure(
         f.run(),
-        &["FAIL: cover is dated 18 November 2026; the changelog's current cut is 19 November 2026"],
+        &["FAIL: cover is dated 24 November 2026; the changelog's current cut is 25 November 2026"],
     );
 }
 

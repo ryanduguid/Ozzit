@@ -3,13 +3,13 @@
     <source media="(max-width: 600px) and (prefers-color-scheme: light)" srcset=".github/assets/banner-phone-light.svg">
     <source media="(max-width: 600px)" srcset=".github/assets/banner-phone.svg">
     <source media="(prefers-color-scheme: light)" srcset=".github/assets/banner-light.svg">
-    <img src=".github/assets/banner.svg" width="100%" alt="Ozzit. 151 native Excel LAMBDAs. No add-ins, no macros. Pixel art of a lambda in a circle beside the Ozzit wordmark in slab-serif block letters.">
+    <img src=".github/assets/banner.svg" width="100%" alt="Ozzit. 165 native Excel LAMBDAs. No add-ins, no macros. Pixel art of a lambda in a circle beside the Ozzit wordmark in slab-serif block letters.">
   </picture>
 </p>
 
 <div align="center">
 
-[![verify](https://github.com/ryanduguid/Ozzit/actions/workflows/verify.yml/badge.svg?branch=main)](https://github.com/ryanduguid/Ozzit/actions/workflows/verify.yml) [![Codecov](https://codecov.io/gh/ryanduguid/Ozzit/graph/badge.svg)](https://codecov.io/gh/ryanduguid/Ozzit) [![CodeQL](https://github.com/ryanduguid/Ozzit/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/ryanduguid/Ozzit/actions/workflows/codeql.yml) [![SonarCloud](https://sonarcloud.io/api/project_badges/measure?project=ryanduguid_Ozzit&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=ryanduguid_Ozzit) [![Codacy code quality](https://app.codacy.com/project/badge/Grade/ffd3c7d7645541179caea8a353bd3f86)](https://app.codacy.com/gh/ryanduguid/Ozzit/dashboard)<br> [![OpenSSF Scorecard](https://raw.githubusercontent.com/ryanduguid/.github/badges/ryanduguid/Ozzit.svg)](https://scorecard.dev/viewer/?uri=github.com/ryanduguid/Ozzit) [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/15420/badge)](https://www.bestpractices.dev/projects/15420) [![SLSA build provenance](.github/assets/badges/slsa.svg)](https://github.com/ryanduguid/Ozzit/attestations) [![VirusTotal](.github/assets/badges/virustotal.svg)](https://github.com/ryanduguid/Ozzit/releases/latest)<br> [![release](https://badgen.net/github/release/ryanduguid/Ozzit/stable?label=release&color=66023C&labelColor=000000)](https://github.com/ryanduguid/Ozzit/releases/latest) ![Excel: 365 or 2024+](.github/assets/badges/excel.svg) [![licence: Apache-2.0](.github/assets/badges/licence.svg)](LICENSE)
+[![verify](https://img.shields.io/github/actions/workflow/status/ryanduguid/Ozzit/verify.yml?branch=main&label=verify&labelColor=000000&style=flat)](https://github.com/ryanduguid/Ozzit/actions/workflows/verify.yml) [![Codecov](https://img.shields.io/codecov/c/github/ryanduguid/Ozzit?label=Codecov&labelColor=000000&style=flat)](https://codecov.io/gh/ryanduguid/Ozzit) [![CodeQL](https://img.shields.io/github/actions/workflow/status/ryanduguid/Ozzit/codeql.yml?branch=main&label=CodeQL&labelColor=000000&style=flat)](https://github.com/ryanduguid/Ozzit/actions/workflows/codeql.yml) [![SonarCloud](https://img.shields.io/sonar/quality_gate/ryanduguid_Ozzit?server=https%3A%2F%2Fsonarcloud.io&label=SonarCloud&labelColor=000000&style=flat)](https://sonarcloud.io/summary/new_code?id=ryanduguid_Ozzit) [![Codacy code quality](https://img.shields.io/codacy/grade/ffd3c7d7645541179caea8a353bd3f86?label=Codacy&labelColor=000000&style=flat)](https://app.codacy.com/gh/ryanduguid/Ozzit/dashboard)<br> [![OpenSSF Scorecard](https://raw.githubusercontent.com/ryanduguid/.github/badges/ryanduguid/Ozzit.svg)](https://scorecard.dev/viewer/?uri=github.com/ryanduguid/Ozzit) [![OpenSSF Best Practices](https://img.shields.io/cii/level/15420?label=Best%20Practices&labelColor=000000&style=flat)](https://www.bestpractices.dev/projects/15420) [![SLSA build provenance](.github/assets/badges/slsa.svg)](https://github.com/ryanduguid/Ozzit/attestations) [![VirusTotal](.github/assets/badges/virustotal.svg)](https://github.com/ryanduguid/Ozzit/releases/latest)<br> [![release](https://badgen.net/github/release/ryanduguid/Ozzit/stable?label=release&color=66023C&labelColor=000000)](https://github.com/ryanduguid/Ozzit/releases/latest) ![Excel: 365 or 2024+](.github/assets/badges/excel.svg) [![licence: Apache-2.0](.github/assets/badges/licence.svg)](LICENSE)
 
 [Start with a task](#start-with-a-task) · [Use the workbook](docs/workbook-use.md) · [Function guide](docs/function-guide.md) · [Function index](functions.csv) · [Changes](CHANGELOG.md) · [Licence](LICENSE)
 
@@ -17,7 +17,7 @@
 
 Ozzit is one Excel workbook of native LAMBDA functions under the `oz.` prefix, for
 accountants and analysts modelling in Excel, with Australian GST and financial-year
-helpers: 151 functions and 5 named help tables in release v3.7.0.
+helpers: 165 functions and 5 named help tables in release v3.8.0.
 
 Ozzit is not a bookkeeping tool and never touches a ledger. The functions cover amortisation, depreciation, ratios including the ATO's small business
 benchmarks, a checked dated rate lookup and AASB 16 lessee schedules. They need no add-in,
@@ -40,8 +40,12 @@ Each earlier release keeps its own licence.
 
 The [cross-platform recalculation check](docs/workbook-use.md#check-recalculation-on-windows-mac-or-the-web) has 4 cases with expected spill values. All 4 passed on Windows Excel build 20625 on 23 November 2026. The [workbook build instructions](docs/workbook-source.md) reproduce the tracked workbook from text and verify its SHA-256.
 
-**[Latest release](https://github.com/ryanduguid/Ozzit/releases/latest)** on GitHub.
+**[Latest release](https://github.com/ryanduguid/Ozzit/releases/latest)** on GitHub, or install via [Homebrew](https://github.com/ryanduguid/homebrew-tap) (`brew tap ryanduguid/tap && brew install ozzit`, which installs the `ozzit` CLI and places `ozzit.xlsx`, `oz.txt` and `functions.csv` under `$(brew --prefix)/share/ozzit`).
 
+- **[v3.8.0](https://github.com/ryanduguid/Ozzit/releases/tag/v3.8.0)**, published
+  24 November 2026 from the cut dated 24 November 2026, with 165 functions.
+  [Download ozzit.xlsx](https://github.com/ryanduguid/Ozzit/releases/download/v3.8.0/ozzit.xlsx)
+  (553,054 bytes, SHA-256 `6395c321ec12a1c77ae5a62c79cb9784f3bf99a408b8c1f97df278d15b13499a`).
 - **[v3.7.0](https://github.com/ryanduguid/Ozzit/releases/tag/v3.7.0)**, published
   18 November 2026 from the cut dated 18 November 2026, with 151 functions.
   [Download ozzit.xlsx](https://github.com/ryanduguid/Ozzit/releases/download/v3.7.0/ozzit.xlsx)
@@ -98,7 +102,7 @@ check above used a different workbook file.
 
 ## Start with a task
 
-An Ozzit user does not need all 151 functions. Start with the task you need to complete.
+An Ozzit user does not need all 165 functions. Start with the task you need to complete.
 The loan and depreciation guides show the spilled result for a synthetic input
 you can check by hand; the lease guide explains the 4 lessee functions.
 
@@ -109,35 +113,35 @@ you can check by hand; the lease guide explains the 4 lessee functions.
 | AASB 16 lease | `=oz.LeaseScheduleλ(Payments, Rate, [InAdvance])` for the liability, `=oz.ROUScheduleλ(Cost, Periods)` for the right-of-use asset | [Lessee functions and rate conversion](docs/australian-modelling.md#aasb-16-leases) |
 | Practice or business calculator | Open the [standalone companion](templates/practice-calculators.xlsx); select one of its 21 calculators | [Inputs, assumptions and coverage](docs/between-spreadsheets.md) |
 | PAYG withholding, from v3.7.0 | `=oz.PAYGWithholdingλ(Earnings, Coefficients, [Period])` with the payee's coefficients from the ATO's Schedule 1 | [What it applies and leaves out](docs/australian-modelling.md#payg-withholding) |
-| Lease journals, on `main` only | `=oz.LeaseJournalλ(LeaseSchedule, ROUSchedule, [Accounts])` from the 2 lease schedules | [Entries and AASB 16 paragraphs](docs/australian-modelling.md#lease-journals) |
-| Hire purchase or chattel mortgage, on `main` only | `=oz.HPScheduleλ(Financed, AnnualRate, Periods, [PeriodsPerYear], [InAdvance], [Balloon])`, journalled by `=oz.HPJournalλ(HPSchedule, [Accounts])` | [Schedule, rounding and journal](docs/australian-modelling.md#hire-purchase-and-chattel-mortgages) |
-| Lease, hire purchase, loan or cash, on `main` only | `=oz.FinanceCompareλ(CashFlows, DiscountRate, [PeriodsPerYear], [Labels])` | [Pre-tax present values](docs/australian-modelling.md#comparing-a-lease-hire-purchase-loan-or-cash) |
-| Capital gains on shares or units, on `main` only | `=oz.CGTParcelsλ(Parcels, Sales)` first in, first out, then `=oz.NetCapitalGainλ(IncomeYear, Gains, [Discountable], [Losses], [PriorLosses], [Entity])` for 2025-26 or 2026-27 | [Parcels, the 12 months and the discount](docs/australian-modelling.md#capital-gains) |
-| Income tax on taxable income, on `main` only | `=oz.IncomeTaxλ(TaxableIncome, IncomeYear, [Resident])` at the general rates for 2024-25 to 2026-27 | [Rates and what is left out](docs/australian-modelling.md#income-tax) |
-| Division 7A minimum yearly repayment, on `main` only | `=oz.Div7AMinRepaymentλ(OpeningBalance, BenchmarkRate, RemainingTerm)` under ITAA 1936 s 109E(6) | [Formula, term and what is left out](docs/australian-modelling.md#division-7a-minimum-yearly-repayment) |
-| GST under the margin scheme, on `main` only | `=oz.MarginSchemeGSTλ(Consideration, MarginBase)` under GST Act s 75-10 | [Margin, base and what is left out](docs/australian-modelling.md#margin-scheme-gst) |
-| FBT gross-up, on `main` only | `=oz.FBTGrossUpλ(TaxableValues, Type)` under FBTAA s 5B at 47% | [Factors and what is left out](docs/australian-modelling.md#fbt-gross-up) |
-| Low-value and small business pools, on `main` only | `=oz.LowValuePoolλ(OpeningBalance, LowCostAssets)` and `=oz.SmallBusinessPoolλ(OpeningBalance, Additions)`, a year in each column | [Rates, thresholds and what is left out](docs/australian-modelling.md#depreciation-pools) |
+| Lease journals, from v3.8.0 | `=oz.LeaseJournalλ(LeaseSchedule, ROUSchedule, [Accounts])` from the 2 lease schedules | [Entries and AASB 16 paragraphs](docs/australian-modelling.md#lease-journals) |
+| Hire purchase or chattel mortgage, from v3.8.0 | `=oz.HPScheduleλ(Financed, AnnualRate, Periods, [PeriodsPerYear], [InAdvance], [Balloon])`, journalled by `=oz.HPJournalλ(HPSchedule, [Accounts])` | [Schedule, rounding and journal](docs/australian-modelling.md#hire-purchase-and-chattel-mortgages) |
+| Lease, hire purchase, loan or cash, from v3.8.0 | `=oz.FinanceCompareλ(CashFlows, DiscountRate, [PeriodsPerYear], [Labels])` | [Pre-tax present values](docs/australian-modelling.md#comparing-a-lease-hire-purchase-loan-or-cash) |
+| Capital gains on shares or units, from v3.8.0 | `=oz.CGTParcelsλ(Parcels, Sales)` first in, first out, then `=oz.NetCapitalGainλ(IncomeYear, Gains, [Discountable], [Losses], [PriorLosses], [Entity])` for 2025-26 or 2026-27 | [Parcels, the 12 months and the discount](docs/australian-modelling.md#capital-gains) |
+| Income tax on taxable income, from v3.8.0 | `=oz.IncomeTaxλ(TaxableIncome, IncomeYear, [Resident])` at the general rates for 2024-25 to 2026-27 | [Rates and what is left out](docs/australian-modelling.md#income-tax) |
+| Division 7A minimum yearly repayment, from v3.8.0 | `=oz.Div7AMinRepaymentλ(OpeningBalance, BenchmarkRate, RemainingTerm)` under ITAA 1936 s 109E(6) | [Formula, term and what is left out](docs/australian-modelling.md#division-7a-minimum-yearly-repayment) |
+| GST under the margin scheme, from v3.8.0 | `=oz.MarginSchemeGSTλ(Consideration, MarginBase)` under GST Act s 75-10 | [Margin, base and what is left out](docs/australian-modelling.md#margin-scheme-gst) |
+| FBT gross-up, from v3.8.0 | `=oz.FBTGrossUpλ(TaxableValues, Type)` under FBTAA s 5B at 47% | [Factors and what is left out](docs/australian-modelling.md#fbt-gross-up) |
+| Low-value and small business pools, from v3.8.0 | `=oz.LowValuePoolλ(OpeningBalance, LowCostAssets)` and `=oz.SmallBusinessPoolλ(OpeningBalance, Additions)`, a year in each column | [Rates, thresholds and what is left out](docs/australian-modelling.md#depreciation-pools) |
 
 `oz.PAYGWithholdingλ` arrived in v3.7.0. It works out the amount before tax
 offsets and the Medicare levy adjustment and does not apply either, or the extra
 withholding for 53 or 27 pays. It does not choose the scale and does not do scale 4,
 for a payee who has not given a TFN.
 
-`oz.LeaseJournalλ`, `oz.HPScheduleλ`, `oz.HPJournalλ` and `oz.FinanceCompareλ` are not
-yet in a release. They are bookkeeping arithmetic: the comparison is before tax, and none
+`oz.LeaseJournalλ`, `oz.HPScheduleλ`, `oz.HPJournalλ` and `oz.FinanceCompareλ` arrived
+in v3.8.0. They are bookkeeping arithmetic: the comparison is before tax, and none
 works out Division 240 of the Income Tax Assessment Act 1997 or GST input tax credits.
 
-`oz.CGTParcelsλ` and `oz.NetCapitalGainλ` are not yet in a release. They are arithmetic for
+`oz.CGTParcelsλ` and `oz.NetCapitalGainλ` arrived in v3.8.0. They are arithmetic for
 the 2025-26 and 2026-27 income years: they do not decide who can use the CGT discount,
 apportion it for foreign or temporary residents, or apply the small business concessions.
-`oz.IncomeTaxλ`, also unreleased, applies the general rates only: no Medicare levy, tax
-offsets or part-year tax-free threshold. `oz.Div7AMinRepaymentλ`, also unreleased, is the
+`oz.IncomeTaxλ` applies the general rates only: no Medicare levy, tax
+offsets or part-year tax-free threshold. `oz.Div7AMinRepaymentλ` is the
 s 109E(6) arithmetic only: it does not decide whether a loan complies or a shortfall is a
-dividend. `oz.MarginSchemeGSTλ`, also unreleased, does not decide whether the margin scheme
-applies or which base is right. `oz.FBTGrossUpλ`, also unreleased, grosses up taxable values
+dividend. `oz.MarginSchemeGSTλ` does not decide whether the margin scheme
+applies or which base is right. `oz.FBTGrossUpλ` grosses up taxable values
 only: it does not value a benefit or decide its type. `oz.LowValuePoolλ` and
-`oz.SmallBusinessPoolλ`, also unreleased, roll a pool forward; they do not decide which assets
+`oz.SmallBusinessPoolλ` roll a pool forward; they do not decide which assets
 belong in it.
 
 [Open, copy functions and use modern Excel](docs/workbook-use.md) shows how to
@@ -145,13 +149,13 @@ copy a function into your own workbook.
 
 To bring in every function at once, the Advanced Formula Environment in the Excel
 Labs add-in imports a module from a URL. From its Names tab, import
-`https://raw.githubusercontent.com/ryanduguid/Ozzit/v3.7.0/oz.txt` under the module
-name `oz`: that file is the v3.7.0 library as one module, and its 156 names match
+`https://raw.githubusercontent.com/ryanduguid/Ozzit/v3.8.0/oz.txt` under the module
+name `oz`: that file is the v3.8.0 library as one module, and its 170 names match
 that release's workbook. Then type `=oz.` in a cell and pick a function from
 autocomplete. This route has not been tested in Excel. Microsoft's
 [module import page](https://github.com/microsoft/Excel-Labs/blob/main/advanced-formula-environment/documentation/module-import.md),
 last changed 9 February 2023, says the add-in imports only from a GitHub gist URL
-and does not allow tab characters in a module; the v3.7.0 `oz.txt` has none.
+and does not allow tab characters in a module; the v3.8.0 `oz.txt` has none.
 
 For an AI assistant, [the Ozzit skill](skills/ozzit/SKILL.md) routes function
 selection and composition through the existing catalogue and approved workbook.
@@ -165,7 +169,7 @@ claude plugin marketplace add ryanduguid/Ozzit
 claude plugin install ozzit@ozzit
 ```
 
-The marketplace follows `main`, which is ahead of v3.5.0, so still supply the
+The marketplace follows `main`, which can be ahead of the latest release, so still supply the
 approved bundle revision. Its manifests pass `claude plugin validate`; installing
 it from GitHub has not been tested.
 
@@ -190,22 +194,12 @@ web; this route has not been tested.
 ## Alternatives
 
 Ozzit is a finance-focused LAMBDA library with Australian helpers. As read on 5 November 2026,
-these general-purpose libraries cover nearby ground:
+general-purpose libraries cover nearby ground: a documented library of more than 50 functions
+importable from a gist, a 97-function dynamic-array library in 10 categories and a general
+MIT-licensed library.
 
-- [Vertex42 LAMBDA Library](https://www.vertex42.com/lambda/): more than 50 documented functions,
-  importable from a gist.
-- [BigSpill](https://techcommunity.microsoft.com/discussions/excelgeneral/bigspill-a-97%E2%80%91function-excel-lambda-library-for-dynamic-arrays/4545352):
-  97 functions in 10 categories.
-- [AutoXL](https://github.com/MatrixFun/AutoXL): a general MIT-licensed library.
-
-As read on 13 November 2026, these assistants work on your workbook on request
-rather than supplying a fixed function library:
-
-- [Claude for Excel](https://claude.com/docs/office-agents/excel): an add-in for
-  Pro, Max, Team and Enterprise plans that builds models and applies enabled Skills.
-- [Copilot in Excel](https://techcommunity.microsoft.com/t5/excel-blog/what-s-new-in-excel-october-2026/ba-p/4549758):
-  Microsoft's assistant, whose skill builder (October 2026) turns a described
-  workflow into a reusable skill.
+As read on 13 November 2026, AI assistants built into or added to Excel, including the 2 hosts
+above, work on your workbook on request rather than supplying a fixed function library.
 
 [Similar tools and improvement decisions](docs/practice-improvements.md) compares the companion
 calculators with similar calculators.
@@ -264,7 +258,12 @@ Its [citation metadata](CITATION.cff) names the cut. Cite the signed tag `v3.7.0
 `44257fc252afc67e87c3788776d10f67663a3136`; GitHub reports its
 [release page](https://github.com/ryanduguid/Ozzit/releases/tag/v3.7.0) immutable. [The v3.7.0 changes](CHANGELOG.md) describe what it adds and fixes.
 
-v3.7.0 `ozzit.xlsx` SHA-256: `0ed09fc130d30394c97f6a41e40ab72d3f68093b65a5e109adf11bd901f006bd` (492,757 bytes), the same bytes as the release asset. `main` is ahead of that tag, so the file you clone is not the file the release ships: the tracked `ozzit.xlsx` is SHA-256 `b5a26f4828425c8f49a12bae844e8cade885685cfc939987ae2ac915d1a8cd6c` (562,390 bytes), pinned in [release/workbook-base.json](release/workbook-base.json) and checked by the tool tests, and adds the changes listed under Unreleased in the [changelog](CHANGELOG.md). On 24 November 2026, Excel 16.0 build 20625 recalculated 1,129 formulas in the tracked workbook with 0 in error, ran 3,054 self-test assertions with 0 failures and found 19,483 cached values equal to what their formulas produce. The workbook was byte-identical before and after both native gates.
+**v3.8.0**, cut dated 24 November 2026, is under the Apache License, Version 2.0.
+Its [citation metadata](CITATION.cff) names the cut. Cite the signed tag `v3.8.0` on commit
+`4c9daa4b5018653c22412da18cb310850ad30c7b`; GitHub reports its
+[release page](https://github.com/ryanduguid/Ozzit/releases/tag/v3.8.0) immutable. [The v3.8.0 changes](CHANGELOG.md) describe what it adds, fixes and changes.
+
+v3.8.0 `ozzit.xlsx` SHA-256: `6395c321ec12a1c77ae5a62c79cb9784f3bf99a408b8c1f97df278d15b13499a` (553,054 bytes), the same bytes as the release asset, pinned in [release/workbook-base.json](release/workbook-base.json) and checked by the tool tests. On 24 November 2026, Excel 16.0 build 20625 recalculated 1,129 formulas in the tracked workbook with 0 in error, ran 2,974 self-test assertions with 0 failures and found 19,483 cached values equal to what their formulas produce. The workbook was byte-identical before and after both native gates.
 
 - [Repository checks](AGENTS.md) and [release and native verification](RELEASING.md)
 - [Changes](CHANGELOG.md) and [citation](CITATION.cff)

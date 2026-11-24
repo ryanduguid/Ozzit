@@ -2,8 +2,24 @@
 
 ## Unreleased
 
-Changes on `main` since the v3.7.0 cut. They reach the published workbook in the next
-release; until then v3.7.0 behaves as it did.
+Changes on `main` since the v3.8.0 cut. They reach the published workbook in the next
+release; until then v3.8.0 behaves as it did.
+
+### Added
+
+- `oz.FCFFBridgeλ(EBIT, TaxRate, Depreciation, CapitalExpenditure, WorkingCapitalChange)`
+  returns free cash flow to the firm for each period as 7 rows, from EBIT to FCFF;
+  `oz.WACCλ(EquityValue, DebtValue, RiskFreeRate, Beta, EquityRiskPremium, CostOfDebt, TaxRate)`
+  the weighted average cost of capital with a CAPM cost of equity; and
+  `oz.SensitivityGridλ(Calculation, RowValues, ColumnValues)` a two-way sensitivity grid from a
+  `LAMBDA`, without a Data Table. All unrounded. `ozzit valuation_sensitivity` adds them.
+  [The page](docs/valuation-and-sensitivity.md) gives their sources.
+
+## v3.8.0, 24 November 2026, 14 new functions, Apache-2.0 licence and workbook tooling
+
+Cut on 24 November 2026 from the changes on `main` since v3.7.0. It takes the library
+from 151 to 165 functions, moves Ryan Duguid's original work to Apache-2.0 and adds
+the native `workbook_source` and `audit` commands.
 
 ### Added
 
@@ -56,13 +72,6 @@ release; until then v3.7.0 behaves as it did.
   `oz.BulletLoanλ(Principal, Rates, [CashInterest])` a bullet loan schedule with interest paid in
   cash, capitalised (payment in kind) or split, both unrounded. `ozzit index_factor_bullet_loan`
   adds them. [The page](docs/index-factor-and-bullet-loan.md) describes both.
-- `oz.FCFFBridgeλ(EBIT, TaxRate, Depreciation, CapitalExpenditure, WorkingCapitalChange)`
-  returns free cash flow to the firm for each period as 7 rows, from EBIT to FCFF;
-  `oz.WACCλ(EquityValue, DebtValue, RiskFreeRate, Beta, EquityRiskPremium, CostOfDebt, TaxRate)`
-  the weighted average cost of capital with a CAPM cost of equity; and
-  `oz.SensitivityGridλ(Calculation, RowValues, ColumnValues)` a two-way sensitivity grid from a
-  `LAMBDA`, without a Data Table. All unrounded. `ozzit valuation_sensitivity` adds them.
-  [The page](docs/valuation-and-sensitivity.md) gives their sources.
 - `ozzit audit [workbook]` reviews any workbook without changing it and lists a plain number
   sitting between 2 formula cells of one pattern in a row or column (a likely hard-coded
   override), an external link whose file does not exist, that Excel marked missing or that is
