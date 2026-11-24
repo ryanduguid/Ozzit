@@ -14,6 +14,9 @@ release; until then v3.8.0 behaves as it did.
   `oz.SensitivityGridλ(Calculation, RowValues, ColumnValues)` a two-way sensitivity grid from a
   `LAMBDA`, without a Data Table. All unrounded. `ozzit valuation_sensitivity` adds them.
   [The page](docs/valuation-and-sensitivity.md) gives their sources.
+- [Workbook use](docs/workbook-use.md) shows how a script or agent on Windows looks up a
+  function with `ozzit function_reference` and gets Excel's own result for a formula with the
+  existing read-only evaluator, and the Ozzit skill points to it.
 
 ## v3.8.0, 24 November 2026, 14 new functions, Apache-2.0 licence and workbook tooling
 

@@ -124,6 +124,31 @@ Without the Automate tab, enter the same 4 formulas in A1 on a blank sheet in th
 
 On 23 November 2026, all 4 cases passed on the tracked 552,608-byte workbook in Windows Excel 16.0 build 20625 using the existing Windows evaluator. The [Windows record](compatibility-windows-2026-11-23.json) includes the case and workbook digests, runner digests and actual spill grids. Mac and web await native runs. These cases cover recalculation in the open workbook. Copying names between workbooks and importing `oz.txt` require separate tests.
 
+## Evaluate formulas from a script or agent
+
+A script or coding agent on Windows with desktop Excel installed can look up a function and get Excel's own result for a formula without a person at the keyboard. Close Excel first: the evaluator refuses to start while Excel runs. From the repository root, write every function's signature, parameters, notes and worked examples as JSON:
+
+```powershell
+cargo build --locked --release --manifest-path tools/ozzit/Cargo.toml
+if ($LASTEXITCODE) { throw 'Native build failed' }
+$reference = Join-Path ([IO.Path]::GetTempPath()) ("ozzit-reference-" + [guid]::NewGuid() + ".json")
+& .\tools\ozzit\target\release\ozzit function_reference src functions.csv $reference
+if ($LASTEXITCODE) { throw 'Function reference failed' }
+```
+
+Then write the formulas as a UTF-8 JSON array of `id` and `formula` pairs, as in [compatibility-cases.json](../tools/compatibility-cases.json), and evaluate them:
+
+```powershell
+$cases = Join-Path ([IO.Path]::GetTempPath()) ("ozzit-cases-" + [guid]::NewGuid() + ".json")
+$results = Join-Path ([IO.Path]::GetTempPath()) ("ozzit-results-" + [guid]::NewGuid() + ".json")
+[IO.File]::WriteAllText($cases, '[{"id":"rolling","formula":"=oz.RollingSum' + [char]0x03BB + '({1,2,3,4},2)"}]', [Text.UTF8Encoding]::new($false))
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\excel_eval_formulas_verified.ps1 -Cases $cases -Out $results -Path (Resolve-Path ozzit.xlsx)
+if ($LASTEXITCODE) { throw 'Evaluation failed' }
+(Get-Content -Raw $results | ConvertFrom-Json).results.rolling
+```
+
+Excel opens the workbook read-only in a hidden window, enters each formula on a scratch sheet so arrays spill, and closes without saving. The results file holds each spill as rows of values under its `id`, an Excel error as `#ERR:<code>`, the Excel build and the SHA-256 of the workbook and case file. The run fails if the workbook's bytes change. Mac and web Excel use the Office Script above instead.
+
 ## Modern Excel
 
 Excel 365 has gained functions since the earlier workbook of July 2024. Several helpers point to native options in their inline help's `SEE ALSO` line. Native functions can have different inputs and behaviour, so compare their contracts before replacing a helper. The table also includes a newer Beta preview:

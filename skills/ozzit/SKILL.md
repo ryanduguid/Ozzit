@@ -39,6 +39,8 @@ verified, provide a formula proposal with the missing check identified.
 - Reperform the supported arithmetic with a simple independent calculation
   where practical. State whether the proposed formula was evaluated in Excel,
   another engine or only inspected. Never claim recalculation from XML inspection.
+  On Windows with desktop Excel, 'Evaluate formulas from a script or agent' in
+  `docs/workbook-use.md` gets Excel's own result without changing the workbook.
 - Retain input errors, missing evidence and review flags. Use a function's `DV`
   companion where the index supplies one and its argument checks are relevant.
 
