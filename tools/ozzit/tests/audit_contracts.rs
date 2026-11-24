@@ -346,3 +346,17 @@ fn usage_and_unreadable_input_fail() {
         "{text}"
     );
 }
+
+#[test]
+fn the_shipped_workbooks_pass_the_audit() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    for book in [
+        "ozzit.xlsx",
+        "templates/13-week-cash-flow-forecast.xlsx",
+        "templates/practice-calculators.xlsx",
+        "templates/retention-reconciliation.xlsx",
+    ] {
+        let (code, text) = audit(&[book], &root);
+        assert_eq!(code, 0, "{text}");
+    }
+}

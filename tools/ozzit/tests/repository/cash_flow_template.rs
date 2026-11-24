@@ -151,7 +151,11 @@ const FORMULA_ERROR_COUNT_FORMULA: &str = concat!(
     "SUMPRODUCT(--ISERROR('Assumptions'!$B$5:$E$24))",
     "+SUMPRODUCT(--ISERROR('13-Week Forecast'!$B$5:$O$51))",
     "+SUMPRODUCT(--ISERROR('Weekly Review'!$A$4:$O$18))",
-    "+SUMPRODUCT(--ISERROR('Dashboard'!$A$6:$J$36))",
+    // Dashboard!I7 shows this sheet's status (B4), which reads this count: skip it.
+    "+SUMPRODUCT(--ISERROR('Dashboard'!$A$6:$J$6))",
+    "+SUMPRODUCT(--ISERROR('Dashboard'!$A$7:$H$7))",
+    "+SUMPRODUCT(--ISERROR('Dashboard'!$J$7))",
+    "+SUMPRODUCT(--ISERROR('Dashboard'!$A$8:$J$36))",
     "+SUMPRODUCT(--ISERROR('Dashboard'!$P$4:$S$49))",
 );
 const STRING_LITERAL: &str = r#""(?:[^"]|"")*""#;
@@ -1077,8 +1081,6 @@ fn defined_names() {
     assert_eq!(
         defined,
         HashMap::from([
-            ("CashFlowScenario", Some("'Assumptions'!$B$12")),
-            ("CashFlowSelectedScenario", Some("'Assumptions'!$B$12")),
             ("CashFlowScenarioList", Some("'Assumptions'!$B$15:$B$17")),
         ])
     );
