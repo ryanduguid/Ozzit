@@ -9,7 +9,7 @@
 
 <div align="center">
 
-[![verify](https://github.com/ryanduguid/Ozzit/actions/workflows/verify.yml/badge.svg?branch=main)](https://github.com/ryanduguid/Ozzit/actions/workflows/verify.yml) [![Codecov](https://codecov.io/gh/ryanduguid/Ozzit/graph/badge.svg)](https://codecov.io/gh/ryanduguid/Ozzit) [![CodeQL](https://github.com/ryanduguid/Ozzit/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/ryanduguid/Ozzit/actions/workflows/codeql.yml) [![SonarCloud](https://sonarcloud.io/api/project_badges/measure?project=ryanduguid_Ozzit&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=ryanduguid_Ozzit) [![Codacy code quality](https://app.codacy.com/project/badge/Grade/ffd3c7d7645541179caea8a353bd3f86)](https://app.codacy.com/gh/ryanduguid/Ozzit/dashboard)<br> [![OpenSSF Scorecard](https://raw.githubusercontent.com/ryanduguid/.github/badges/ryanduguid/Ozzit.svg)](https://scorecard.dev/viewer/?uri=github.com/ryanduguid/Ozzit) [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/15420/badge)](https://www.bestpractices.dev/projects/15420) [![SLSA build provenance](.github/assets/badges/slsa.svg)](https://github.com/ryanduguid/Ozzit/attestations) [![VirusTotal](.github/assets/badges/virustotal.svg)](https://github.com/ryanduguid/Ozzit/releases/latest)<br> [![release](https://badgen.net/github/release/ryanduguid/Ozzit/stable?label=release&color=66023C&labelColor=000000)](https://github.com/ryanduguid/Ozzit/releases/latest) ![Excel: 365 or 2024+](.github/assets/badges/excel.svg) [![licence: Apache-2.0](.github/assets/badges/licence.svg)](LICENSE)
+[![verify](https://img.shields.io/github/actions/workflow/status/ryanduguid/Ozzit/verify.yml?branch=main&label=verify&labelColor=000000&style=flat)](https://github.com/ryanduguid/Ozzit/actions/workflows/verify.yml) [![Codecov](https://img.shields.io/codecov/c/github/ryanduguid/Ozzit?label=Codecov&labelColor=000000&style=flat)](https://codecov.io/gh/ryanduguid/Ozzit) [![CodeQL](https://img.shields.io/github/actions/workflow/status/ryanduguid/Ozzit/codeql.yml?branch=main&label=CodeQL&labelColor=000000&style=flat)](https://github.com/ryanduguid/Ozzit/actions/workflows/codeql.yml) [![SonarCloud](https://img.shields.io/sonar/quality_gate/ryanduguid_Ozzit?server=https%3A%2F%2Fsonarcloud.io&label=SonarCloud&labelColor=000000&style=flat)](https://sonarcloud.io/summary/new_code?id=ryanduguid_Ozzit) [![Codacy code quality](https://img.shields.io/codacy/grade/ffd3c7d7645541179caea8a353bd3f86?label=Codacy&labelColor=000000&style=flat)](https://app.codacy.com/gh/ryanduguid/Ozzit/dashboard)<br> [![OpenSSF Scorecard](https://raw.githubusercontent.com/ryanduguid/.github/badges/ryanduguid/Ozzit.svg)](https://scorecard.dev/viewer/?uri=github.com/ryanduguid/Ozzit) [![OpenSSF Best Practices](https://img.shields.io/cii/level/15420?label=Best%20Practices&labelColor=000000&style=flat)](https://www.bestpractices.dev/projects/15420) [![SLSA build provenance](.github/assets/badges/slsa.svg)](https://github.com/ryanduguid/Ozzit/attestations) [![VirusTotal](.github/assets/badges/virustotal.svg)](https://github.com/ryanduguid/Ozzit/releases/latest)<br> [![release](https://badgen.net/github/release/ryanduguid/Ozzit/stable?label=release&color=66023C&labelColor=000000)](https://github.com/ryanduguid/Ozzit/releases/latest) ![Excel: 365 or 2024+](.github/assets/badges/excel.svg) [![licence: Apache-2.0](.github/assets/badges/licence.svg)](LICENSE)
 
 [Start with a task](#start-with-a-task) · [Use the workbook](docs/workbook-use.md) · [Function guide](docs/function-guide.md) · [Function index](functions.csv) · [Changes](CHANGELOG.md) · [Licence](LICENSE)
 
@@ -169,7 +169,7 @@ claude plugin marketplace add ryanduguid/Ozzit
 claude plugin install ozzit@ozzit
 ```
 
-The marketplace follows `main`, which is ahead of v3.5.0, so still supply the
+The marketplace follows `main`, which can be ahead of the latest release, so still supply the
 approved bundle revision. Its manifests pass `claude plugin validate`; installing
 it from GitHub has not been tested.
 
@@ -194,22 +194,12 @@ web; this route has not been tested.
 ## Alternatives
 
 Ozzit is a finance-focused LAMBDA library with Australian helpers. As read on 5 November 2026,
-these general-purpose libraries cover nearby ground:
+general-purpose libraries cover nearby ground: a documented library of more than 50 functions
+importable from a gist, a 97-function dynamic-array library in 10 categories and a general
+MIT-licensed library.
 
-- [Vertex42 LAMBDA Library](https://www.vertex42.com/lambda/): more than 50 documented functions,
-  importable from a gist.
-- [BigSpill](https://techcommunity.microsoft.com/discussions/excelgeneral/bigspill-a-97%E2%80%91function-excel-lambda-library-for-dynamic-arrays/4545352):
-  97 functions in 10 categories.
-- [AutoXL](https://github.com/MatrixFun/AutoXL): a general MIT-licensed library.
-
-As read on 13 November 2026, these assistants work on your workbook on request
-rather than supplying a fixed function library:
-
-- [Claude for Excel](https://claude.com/docs/office-agents/excel): an add-in for
-  Pro, Max, Team and Enterprise plans that builds models and applies enabled Skills.
-- [Copilot in Excel](https://techcommunity.microsoft.com/t5/excel-blog/what-s-new-in-excel-october-2026/ba-p/4549758):
-  Microsoft's assistant, whose skill builder (October 2026) turns a described
-  workflow into a reusable skill.
+As read on 13 November 2026, AI assistants built into or added to Excel, including the 2 hosts
+above, work on your workbook on request rather than supplying a fixed function library.
 
 [Similar tools and improvement decisions](docs/practice-improvements.md) compares the companion
 calculators with similar calculators.
