@@ -57,7 +57,8 @@ returns the weighted average cost of capital.
 `ColumnValues` (across).
 
 - `Calculation` is a `LAMBDA` of 2 parameters, the row value then the column value, returning
-  one value.
+  one value. A value that is not a `LAMBDA` is refused. Excel gives a `LAMBDA` with the wrong
+  number of parameters `#VALUE!`, which then shows in every cell.
 - `RowValues` is one column and `ColumnValues` one row, each of at most 1,000 values. Place
   them to the left of and above the grid.
 - The grid recalculates with the workbook like any formula. A What-If Data Table also

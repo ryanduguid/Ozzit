@@ -807,7 +807,8 @@ foreach ($r in @(@('{1;2}, 0.3, 1, 1, 1', $fcShape), @('{1,2}, {0.3,0.3,0.3}, {1
                  @('{1,2}, 0.3, 1, {1,1}, {1,1}', $fcShape), @('{1,2}, 0.3, {1,1}, {1,1}, {1;1}', $fcShape), @('{1,2}, {0.3;0.3}, {1,1}, {1,1}, {1,1}', $fcShape),
                  @('"1", 0.3, 1, 1, 1', $fcValue), @('1E13, 0.3, 1, 1, 1', $fcValue), @('-1E13, 0.3, 1, 1, 1', $fcValue), @('Z1, 0.3, 1, 1, 1', $fcValue),
                  @('1, 1, 1, 1, 1', $fcValue), @('1, -0.1, 1, 1, 1', $fcValue), @('1, "0.3", 1, 1, 1', $fcValue), @('1, Z1, 1, 1, 1', $fcValue),
-                 @('1, 0.3, TRUE, 1, 1', $fcValue), @('1, 0.3, 1, 1E13, 1', $fcValue), @('1, 0.3, 1, 1, Z1', $fcValue))) {
+                 @('1, 0.3, TRUE, 1, 1', $fcValue), @('1, 0.3, 1, 1E13, 1', $fcValue), @('1, 0.3, 1, 1, Z1', $fcValue),
+                 @('NA(), 0.3, TRUE, 1, 1', $fcValue), @('{1,2}, 0.3, NA(), {1,1E13}, {1,1}', $fcValue), @('IF({1,0}, 1, NA()), 0.3, {1,1}, {1,1}, {TRUE,1}', $fcValue))) {
     Same "FCFFBridge refuses ($($r[0]))" "LET(x, $fc($($r[0])), $one)" $r[1]
 }
 Near 'WACC: 60% equity at 11.2%, 40% debt at 7% before 30% tax' "$wc(600, 400, 0.04, 1.2, 0.06, 0.07, 0.3)" '0.0868' '0.000000000001'
@@ -835,6 +836,8 @@ foreach ($r in @(@('LAMBDA(Rate, Growth, 100 / (Rate - Growth)), {0.08;0.1}, {0.
 Same 'SensitivityGrid: text values pair in order' "TEXTJOIN(`",`", FALSE, $sg(LAMBDA(a, b, a & b), {`"x`";`"y`"}, {`"1`",`"2`"}))" 'x1,x2,y1,y2'
 Same 'SensitivityGrid: a row for each row value and a column for each column value' "ROWS($sg(LAMBDA(a, b, a), SEQUENCE(4), SEQUENCE(1, 3))) & `"x`" & COLUMNS($sg(LAMBDA(a, b, a), SEQUENCE(4), SEQUENCE(1, 3)))" '4x3'
 Near 'SensitivityGrid: an error result shows in its cell' "--ISERROR(INDEX($sg(LAMBDA(a, b, a / b), {1;2}, {0,1}), 1, 1))" '1'
+Near 'SensitivityGrid: an error Calculation shows' "--ISERROR(INDEX($sg(NA(), {1;2}, {3,4}), 2, 2))" '1'
+Near 'SensitivityGrid: a LAMBDA of the wrong arity gives #VALUE!' "ERROR.TYPE(INDEX($sg(LAMBDA(a, a), {1;2}, {3,4}), 2, 2))" '3'
 Near 'SensitivityGrid: the cells beside an error still calculate' "INDEX($sg(LAMBDA(a, b, a / b), {1;2}, {0,1}), 2, 2)" '2'
 Near 'SensitivityGrid: an error row value shows in its row' "--ISNA(INDEX($sg(LAMBDA(a, b, a + b), IF({1;0}, 1, NA()), {1,2}), 2, 1))" '1'
 Near 'SensitivityGrid: rows beside an error row value calculate' "INDEX($sg(LAMBDA(a, b, a + b), IF({1;0}, 1, NA()), {1,2}), 1, 2)" '3'
@@ -842,7 +845,8 @@ $sgShape = 'SensitivityGrid' + $L + ' needs RowValues as one column and ColumnVa
 $sgCalc = 'SensitivityGrid' + $L + ' needs Calculation to be a LAMBDA of a row value and a column value that returns one value.'
 foreach ($r in @(@('LAMBDA(a, b, a + b), {1,2}, {1,2}', $sgShape), @('LAMBDA(a, b, a + b), {1;2}, {1;2}', $sgShape),
                  @('LAMBDA(a, b, a + b), SEQUENCE(1001), 1', $sgShape), @('LAMBDA(a, b, a + b), 1, SEQUENCE(1, 1001)', $sgShape),
-                 @('LAMBDA(a, b, SEQUENCE(2)), 1, 1', $sgCalc), @('LAMBDA(a, b, IF({1,0}, a, NA())), 1, 1', $sgCalc), @('LAMBDA(a, b, HSTACK(a, b)), {1;2}, {3,4}', $sgCalc))) {
+                 @('LAMBDA(a, b, SEQUENCE(2)), 1, 1', $sgCalc), @('LAMBDA(a, b, IF({1,0}, a, NA())), 1, 1', $sgCalc), @('LAMBDA(a, b, HSTACK(a, b)), {1;2}, {3,4}', $sgCalc),
+                 @('5, {1;2}, {3,4}', $sgCalc), @('"x", 1, 1', $sgCalc), @('{1,2}, 1, 1', $sgCalc))) {
     Same "SensitivityGrid refuses ($($r[0]))" "LET(x, $sg($($r[0])), $one)" $r[1]
 }
 
