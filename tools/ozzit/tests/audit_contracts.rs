@@ -496,8 +496,9 @@ fn a_column_between_a_sum_and_its_total_that_nothing_reads_is_unlinked() {
         cells.push(formula(&format!("J{r}"), &format!("SUM(G{r}:H{r})")));
         row(r, &cells)
     };
-    // Row 3's I3 is read from another row, so only I2 is unlinked.
-    let rows = [cells(2), cells(3), row(4, &[formula("B4", "I3")])].concat();
+    // Row 3's I3 is read from another row, even in its own column, so only I2
+    // is unlinked.
+    let rows = [cells(2), cells(3), row(4, &[formula("I4", "I3")])].concat();
     Book::new().sheet("Model", "", &rows).write(dir.path());
     let (code, text) = audit(&["book.xlsx"], dir.path());
     assert_eq!(code, 1, "{text}");
@@ -558,6 +559,87 @@ fn indirect_or_offset_leaves_checks_and_rows_unchecked() {
         findings(&text),
         [
             "not checked for buried checks or unlinked rows: Model!C2 uses INDIRECT or OFFSET, so what reads a cell is not known"
+        ]
+    );
+}
+
+#[test]
+fn references_excel_reads_otherwise_make_no_false_cycle() {
+    let dir = tempfile::tempdir().unwrap();
+    let names = concat!(
+        r#"<definedName name="D0">1</definedName>"#,
+        r#"<definedName name="Choice">Model!$F$1</definedName>"#,
+        r#"<definedName name="Choice" localSheetId="3">Model!$G$1</definedName>"#,
+        r#"<definedName name="Inputs">Model!$H$1</definedName>"#,
+        r#"<definedName name="Self">Model!$I$1</definedName>"#,
+        r#"<definedName name="SelfJ">Model!$J$1</definedName>"#,
+    );
+    let model = [
+        // A 3-D range, a structured and an external reference, a shared name.
+        r#"<row r="1"><c r="A1"><f>SUM(Sales[Cost A1])+SUM([1]Data!A1:A1)</f><v>0</v></c><c r="D1"><f>E2</f><v>0</v></c><c r="E1"><f t="shared" ref="E1:E2" si="0">D0</f><v>1</v></c>"#,
+        &formula("F1", "Choice"),
+        &number("G1"),
+        &formula("H1", "Inputs!B1"),
+        &formula("I1", "ROW(Self)"),
+        &formula("J1", "SUM(SelfJ)"),
+        r#"</row><row r="2"><c r="E2"><f t="shared" si="0"/><v>1</v></c></row>"#,
+    ]
+    .concat();
+    Book::new()
+        .sheet("Jan", "", &row(1, &[number("A1")]))
+        .sheet("Feb", "", &row(1, &[number("A1")]))
+        .sheet("Total", "", &row(1, &[formula("A1", "SUM(Jan:Feb!A1)")]))
+        .sheet("Model", "", &model)
+        .sheet("Inputs", "", &row(1, &[number("B1")]))
+        .names(names)
+        .write(dir.path());
+    let (_, text) = audit(&["book.xlsx"], dir.path());
+    assert_eq!(
+        findings(&text),
+        [
+            "unused name: Inputs, which no formula uses",
+            "circular reference: Model!J1 read one another",
+        ]
+    );
+}
+
+#[test]
+fn checks_read_by_any_route_are_not_buried() {
+    let dir = tempfile::tempdir().unwrap();
+    let names = concat!(
+        r#"<definedName name="CheckRange">Checks!$C$11</definedName>"#,
+        r#"<definedName name="CheckAlias">CheckRange</definedName>"#,
+    );
+    let checks = [
+        r#"<row r="10">"#,
+        &label("A10", "Balance check"),
+        r#"<c r="C10"><f t="array" ref="C10:D10">{1,1}</f><v>1</v></c><c r="D10"><v>1</v></c></row>"#,
+        &row(11, &[label("A11", "Alias check"), formula("C11", "1")]),
+        &row(12, &[label("A12", "Lower check"), formula("C12", "1")]),
+        &row(13, &[label("A13", "Lost check"), formula("C13", "1")]),
+    ]
+    .concat();
+    let summary = row(
+        2,
+        &[
+            formula("B2", "Checks!D10+CheckAlias+checks!c12"),
+            formula("B3", "'Cash\"flow'!B2+SUM('Q1 a:Q1 b'!B2)"),
+        ],
+    );
+    let check = |l: &str| row(2, &[label("A2", l), formula("B2", "1")]);
+    Book::new()
+        .sheet("Checks", "", &checks)
+        .sheet("Summary", "", &summary)
+        .sheet("Cash&quot;flow", "", &check("Cash check"))
+        .sheet("Q1 a", "", "")
+        .sheet("Q1 b", "", &check("Q check"))
+        .names(names)
+        .write(dir.path());
+    let (_, text) = audit(&["book.xlsx"], dir.path());
+    assert_eq!(
+        findings(&text),
+        [
+            "buried check: Checks!C13 ('Lost check') is read by no other formula, so no summary shows it"
         ]
     );
 }

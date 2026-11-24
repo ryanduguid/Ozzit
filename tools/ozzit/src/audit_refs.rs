@@ -9,31 +9,34 @@
 use crate::archive::Parts;
 use crate::audit::{MAX_COLUMN, MAX_ROW, Sheet, a1, attr, children, parse_a1, quoted};
 use crate::common::{column_number, re, resolve_target};
-use crate::formula::split_literals;
 use crate::workbook::xml_part;
 use roxmltree::{Document, Node};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
-/// An optional sheet prefix, then a cell, a cell range, whole columns or whole
-/// rows, then an optional spill `#`. A prefix after `]` (another workbook) or a
-/// reference inside a name or function name does not match.
-const REFERENCE: &str = r"(?<![\p{L}\p{N}_.$\[\]'!])(?:(?:'((?:[^']|'')+)'|([\p{L}_\\][\p{L}\p{N}_.]*(?::[\p{L}_\\][\p{L}\p{N}_.]*)?))!)?(\$?[A-Z]{1,3}\$?[0-9]{1,7}(?::\$?[A-Z]{1,3}\$?[0-9]{1,7})?|\$?[A-Z]{1,3}:\$?[A-Z]{1,3}|\$?[0-9]{1,7}:\$?[0-9]{1,7})(#?)(?![\p{L}\p{N}_.(\[])";
-/// A function whose reference argument is read for its position, not its value,
-/// such as `ROW(A1)` or `CELL("filename", A1)`.
-const POSITION_ONLY: &str = r#"(?<![\p{L}\p{N}_.])(?:(?:ROWS?|COLUMNS?|ISREF|_xlfn\.ISFORMULA|_xlfn\.FORMULATEXT)\(|CELL\(\s*"(?i:filename|address|row|col|width)"\s*,)\s*(?:'(?:[^']|'')+'!|[\p{L}_\\][\p{L}\p{N}_.]*!)?\$?[A-Z]{0,3}\$?[0-9]{0,7}(?::\$?[A-Z]{0,3}\$?[0-9]{0,7})?#?\s*\)"#;
-const DYNAMIC: &str = r"(?<![\p{L}\p{N}_.])(?:INDIRECT|OFFSET)\(";
+/// An optional sheet or sheet-range prefix, then a cell, a cell range, whole
+/// columns or whole rows, then an optional spill `#`. A reference inside a name
+/// or function name does not match; [`scrub`] has already removed references to
+/// other workbooks and structured references.
+const REFERENCE: &str = r"(?i)(?<![\p{L}\p{N}_.$\[\]'!])(?:(?:'((?:[^']|'')+)'|([\p{L}_\\][\p{L}\p{N}_.]*(?::[\p{L}_\\][\p{L}\p{N}_.]*)?))!)?(\$?[A-Z]{1,3}\$?[0-9]{1,7}(?::\$?[A-Z]{1,3}\$?[0-9]{1,7})?|\$?[A-Z]{1,3}:\$?[A-Z]{1,3}|\$?[0-9]{1,7}:\$?[0-9]{1,7})(#?)(?![\p{L}\p{N}_.(\[])";
+/// A function whose reference or name argument is read for its position, not
+/// its value, such as `ROW(A1)` or `CELL("filename", A1)`.
+const POSITION_ONLY: &str = r#"(?i)(?<![\p{L}\p{N}_.])(?:(?:ROWS?|COLUMNS?|ISREF|_xlfn\.ISFORMULA|_xlfn\.FORMULATEXT)\(|CELL\(\s*"(?:filename|address|row|col|width)"\s*,)\s*(?:'(?:[^']|'')+'!|[\p{L}_\\][\p{L}\p{N}_.]*!)?(?:\$?[A-Z]{0,3}\$?[0-9]{0,7}(?::\$?[A-Z]{0,3}\$?[0-9]{0,7})?#?|[\p{L}_\\][\p{L}\p{N}_.]*)\s*\)"#;
+const DYNAMIC: &str = r"(?i)(?<![\p{L}\p{N}_.])(?:INDIRECT|OFFSET)\(";
 const CALL: &str = r"[\p{L}_][\p{L}\p{N}_.]*\(";
 const NAME_TOKEN: &str = r"[\p{L}\p{N}_.\\?]+";
 const CHECK_LABEL: &str = r"(?i)\bchecks?\b";
-const ANY_SHEET: usize = usize::MAX;
+/// A reference to another workbook: `[1]Sheet!A1` or `'C:\[Book.xlsx]Sheet'!A1:B2`.
+const EXTERNAL: &str = r"(?i)(?:'(?:[^']|'')*\[(?:[^']|'')*'|\[[^\]]*\][\p{L}\p{N}_.]*(?::[\p{L}\p{N}_.]+)?)!\$?[A-Z]{0,3}\$?[0-9]{0,7}(?::\$?[A-Z]{0,3}\$?[0-9]{0,7})?";
 
+/// A name's sheet scope (`None` for the workbook) and its lower-case text.
+type Scoped = (Option<usize>, String);
 /// A formula cell as (sheet, row, column).
 type Place = (usize, usize, usize);
 /// Unread gap cells by (sheet, vertical, gap line): each with its position
 /// along the line, its total's cell and the summed range.
 type Gaps = BTreeMap<(usize, bool, usize), Vec<(usize, (usize, usize), Area)>>;
 
-/// A block of cells; `sheet` is [`ANY_SHEET`] for a 3-D reference.
+/// A block of cells on one sheet.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 struct Area {
     sheet: usize,
@@ -45,12 +48,12 @@ struct Area {
 
 impl Area {
     fn holds(&self, sheet: usize, (row, column): (usize, usize)) -> bool {
-        (self.sheet == sheet || self.sheet == ANY_SHEET)
+        self.sheet == sheet
             && (self.top..=self.bottom).contains(&row)
             && (self.left..=self.right).contains(&column)
     }
     fn meets(&self, other: &Self) -> bool {
-        (self.sheet == other.sheet || self.sheet == ANY_SHEET || other.sheet == ANY_SHEET)
+        self.sheet == other.sheet
             && self.top <= other.bottom
             && other.top <= self.bottom
             && self.left <= other.right
@@ -92,10 +95,12 @@ struct Book {
     names: Vec<String>,
     grids: Vec<Grid>,
     reads: Vec<Read>,
-    /// Lower-case name or table → the areas it names.
-    named: HashMap<String, Vec<Area>>,
-    /// Lower-case name → its areas, for names that are references alone.
-    plain_names: HashMap<String, Vec<Area>>,
+    /// (scope, lower-case name or table) → the areas it names, aliases
+    /// followed; a workbook name or table has no scope.
+    named: HashMap<Scoped, Vec<Area>>,
+    /// The same, for names that are references alone.
+    plain_names: HashMap<Scoped, Vec<Area>>,
+    tables: Vec<Area>,
     dynamic: Option<String>,
 }
 
@@ -108,8 +113,9 @@ fn sheet_index(names: &[String], name: &str) -> Option<usize> {
 type End = (Option<(usize, bool)>, Option<(usize, bool)>);
 
 fn end(text: &str) -> End {
+    let text = text.to_ascii_uppercase();
     let caps = re(r"^(\$?)([A-Z]*)(\$?)([0-9]*)$");
-    let Ok(Some(m)) = caps.captures(text) else {
+    let Ok(Some(m)) = caps.captures(&text) else {
         return (None, None);
     };
     let group = |i: usize| m.get(i).map_or("", |g| g.as_str());
@@ -121,6 +127,10 @@ fn end(text: &str) -> End {
 }
 
 fn shift((value, absolute): (usize, bool), by: i64, max: usize) -> Option<usize> {
+    // A coordinate off the sheet as written, such as the name `A0`, is no reference.
+    if !(1..=max).contains(&value) {
+        return None;
+    }
     let value = if absolute {
         value as i64
     } else {
@@ -131,8 +141,65 @@ fn shift((value, absolute): (usize, bool), by: i64, max: usize) -> Option<usize>
         .filter(|v| (1..=max).contains(v))
 }
 
-/// The references in a formula written at `origin`, read as if at `at`, with
-/// `own` the sheet an unprefixed reference points to (`None` ignores them).
+/// The formula split into code and string literals. Unlike `split_literals`,
+/// a double quote inside an apostrophe-quoted sheet name stays in the code.
+fn split(formula: &str) -> Vec<(bool, String)> {
+    let mut out = Vec::new();
+    let mut code = String::new();
+    let mut chars = formula.chars().peekable();
+    while let Some(c) = chars.next() {
+        if c != '\'' && c != '"' {
+            code.push(c);
+            continue;
+        }
+        let mut quoted = String::from(c);
+        while let Some(d) = chars.next() {
+            quoted.push(d);
+            if d == c {
+                if chars.peek() != Some(&c) {
+                    break;
+                }
+                quoted.push(c);
+                chars.next();
+            }
+        }
+        if c == '"' {
+            out.push((false, std::mem::take(&mut code)));
+            out.push((true, quoted));
+        } else {
+            code.push_str(&quoted);
+        }
+    }
+    out.push((false, code));
+    out
+}
+
+/// Code with references to other workbooks and the bracketed parts of
+/// structured references blanked, so neither is read as a local reference.
+fn scrub(code: &str) -> String {
+    let mut out = re(EXTERNAL).replace_all(code, " ").into_owned();
+    while out.contains('[') {
+        let next = re(r"\[[^\[\]]*\]").replace_all(&out, " ").into_owned();
+        if next == out {
+            break;
+        }
+        out = next;
+    }
+    out
+}
+
+/// The sheets a prefix names: one sheet, or each sheet of a 3-D range in
+/// workbook order. Empty for an unknown sheet.
+fn prefix_sheets(prefix: &str, sheets: &[String]) -> Vec<usize> {
+    match prefix.split_once(':') {
+        Some((a, b)) => match (sheet_index(sheets, a), sheet_index(sheets, b)) {
+            (Some(a), Some(b)) => (a.min(b)..=a.max(b)).collect(),
+            _ => Vec::new(),
+        },
+        None => sheet_index(sheets, prefix).into_iter().collect(),
+    }
+}
+
 fn references(
     formula: &str,
     origin: (usize, usize),
@@ -143,19 +210,17 @@ fn references(
     let by = (at.0 as i64 - origin.0 as i64, at.1 as i64 - origin.1 as i64);
     let pattern = re(REFERENCE);
     let mut out = Vec::new();
-    for (literal, piece) in split_literals(formula) {
+    for (literal, piece) in split(formula) {
         if literal {
             continue;
         }
-        for m in pattern.captures_iter(piece).flatten() {
-            let sheet = match (m.get(1), m.get(2)) {
-                (Some(q), _) if q.as_str().contains('[') => None,
-                (Some(q), _) => sheet_index(sheets, &q.as_str().replace("''", "'")),
-                (None, Some(p)) if p.as_str().contains(':') => Some(ANY_SHEET),
-                (None, Some(p)) => sheet_index(sheets, p.as_str()),
-                (None, None) => own,
+        let piece = scrub(&piece);
+        for m in pattern.captures_iter(piece.as_str()).flatten() {
+            let targets = match (m.get(1), m.get(2)) {
+                (Some(q), _) => prefix_sheets(&q.as_str().replace("''", "'"), sheets),
+                (None, Some(p)) => prefix_sheets(p.as_str(), sheets),
+                (None, None) => own.into_iter().collect(),
             };
-            let Some(sheet) = sheet else { continue };
             let text = &m[3];
             let (first, last) = text.split_once(':').unwrap_or((text, text));
             let (a, b) = (end(first), end(last));
@@ -172,38 +237,35 @@ fn references(
             };
             let (top, bottom) = (r1.unwrap_or(1), r2.unwrap_or(MAX_ROW));
             let (left, right) = (c1.unwrap_or(1), c2.unwrap_or(MAX_COLUMN));
-            out.push(Ref {
-                area: Area {
-                    sheet,
-                    top: top.min(bottom),
-                    left: left.min(right),
-                    bottom: top.max(bottom),
-                    right: left.max(right),
-                },
-                spill: !m[4].is_empty(),
-            });
+            for sheet in targets {
+                out.push(Ref {
+                    area: line(
+                        sheet,
+                        top.min(bottom),
+                        left.min(right),
+                        top.max(bottom),
+                        left.max(right),
+                    ),
+                    spill: !m[4].is_empty(),
+                });
+            }
         }
     }
     out
 }
 
-/// The lower-case names a formula mentions, outside string literals and the
-/// column part of structured references.
 fn name_tokens(formula: &str) -> Vec<String> {
     let mut out = Vec::new();
-    for (literal, piece) in split_literals(formula) {
+    for (literal, piece) in split(formula) {
         if literal {
             continue;
         }
-        let mut piece = piece.to_owned();
-        while piece.contains('[') {
-            let next = re(r"\[[^\[\]]*\]").replace_all(&piece, " ").into_owned();
-            if next == piece {
-                break;
-            }
-            piece = next;
-        }
+        let piece = scrub(&re(r"'(?:[^']|'')*'").replace_all(&piece, " "));
         for m in re(NAME_TOKEN).find_iter(&piece).flatten() {
+            // A sheet qualifier is not a name.
+            if piece[m.end()..].starts_with('!') {
+                continue;
+            }
             out.push(m.as_str().to_lowercase());
         }
     }
@@ -362,7 +424,7 @@ fn rule_reads(doc: &Document<'_>, sheet: usize, sheets: &[String], out: &mut Vec
     }
 }
 
-fn tables(parts: &Parts, sheet: usize, part: &str, named: &mut HashMap<String, Vec<Area>>) {
+fn tables(parts: &Parts, sheet: usize, part: &str, out: &mut Book) {
     let (dir, file) = part.rsplit_once('/').unwrap_or(("", part));
     let rels = format!("{dir}/_rels/{file}.rels");
     let Some(doc) = parts.get(&rels).and_then(|b| xml_part(&rels, b).ok()) else {
@@ -379,8 +441,12 @@ fn tables(parts: &Parts, sheet: usize, part: &str, named: &mut HashMap<String, V
         };
         let root = table.root_element();
         let area = attr(root, "ref").and_then(|r| parse_area(sheet, r));
+        out.tables.extend(area);
         for key in ["name", "displayName"].iter().filter_map(|k| attr(root, k)) {
-            named.entry(key.to_lowercase()).or_default().extend(area);
+            out.named
+                .entry((None, key.to_lowercase()))
+                .or_default()
+                .extend(area);
         }
     }
 }
@@ -394,6 +460,7 @@ fn read_book(parts: &Parts, book: &Document<'_>, sheets: &[Sheet]) -> Book {
         reads: Vec::new(),
         named: HashMap::new(),
         plain_names: HashMap::new(),
+        tables: Vec::new(),
         dynamic: None,
     };
     for (i, sheet) in sheets.iter().enumerate() {
@@ -415,7 +482,7 @@ fn read_book(parts: &Parts, book: &Document<'_>, sheets: &[Sheet]) -> Book {
         }
         rule_reads(&doc, i, &names, &mut out.reads);
         if let Some(part) = &sheet.part {
-            tables(parts, i, part, &mut out.named);
+            tables(parts, i, part, &mut out);
         }
         out.grids.push(grid);
     }
@@ -427,27 +494,53 @@ fn read_book(parts: &Parts, book: &Document<'_>, sheets: &[Sheet]) -> Book {
 }
 
 fn read_names(out: &mut Book, book: &Document<'_>) {
+    let mut raw: Vec<(Scoped, String)> = Vec::new();
     for name in book
         .descendants()
         .filter(|n| n.tag_name().name() == "definedName")
     {
+        let scope = attr(name, "localSheetId").and_then(|i| i.parse::<usize>().ok());
         let key = attr(name, "name").unwrap_or_default().to_lowercase();
-        let text = name.text().unwrap_or_default();
-        let areas: Vec<Area> = references(text, (1, 1), (1, 1), None, &out.names)
-            .iter()
-            .map(|r| r.area)
-            .collect();
-        let plain = re(REFERENCE)
-            .replace_all(text, "")
-            .trim_matches([',', ' '])
-            .is_empty();
-        if plain && !areas.is_empty() {
-            out.plain_names
-                .entry(key.clone())
-                .or_default()
-                .extend(&areas);
+        raw.push(((scope, key), name.text().unwrap_or_default().to_owned()));
+    }
+    let direct: HashMap<Scoped, (Vec<Area>, bool, Vec<String>)> = raw
+        .iter()
+        .map(|(key, text)| {
+            let areas: Vec<Area> = references(text, (1, 1), (1, 1), None, &out.names)
+                .iter()
+                .map(|r| r.area)
+                .collect();
+            let rest = re(REFERENCE).replace_all(text, "");
+            let plain = !areas.is_empty() && rest.trim_matches([',', ' ']).is_empty();
+            (key.clone(), (areas, plain, name_tokens(text)))
+        })
+        .collect();
+    for (key, (areas, plain, _)) in &direct {
+        if *plain {
+            out.plain_names.insert(key.clone(), areas.clone());
         }
-        out.named.entry(key).or_default().extend(&areas);
+        let mut all: Vec<Area> = Vec::new();
+        let mut seen = BTreeSet::new();
+        let mut queue = vec![key.clone()];
+        // Follow aliases, a name whose definition names another, once each.
+        while let Some(k) = queue.pop() {
+            if !seen.insert(k.clone()) {
+                continue;
+            }
+            let Some((areas, _, tokens)) = direct.get(&k) else {
+                continue;
+            };
+            all.extend(areas);
+            for t in tokens {
+                for scope in [k.0, None] {
+                    if direct.contains_key(&(scope, t.clone())) {
+                        queue.push((scope, t.clone()));
+                        break;
+                    }
+                }
+            }
+        }
+        out.named.entry(key.clone()).or_default().extend(all);
     }
 }
 
@@ -471,8 +564,6 @@ fn chart_reads(out: &mut Book, parts: &Parts) {
     }
 }
 
-/// What each formula cell reads: its references and the areas of the names
-/// and tables it mentions.
 fn formula_reads(book: &Book) -> Vec<Read> {
     let mut reads = Vec::new();
     for (sheet, grid) in book.grids.iter().enumerate() {
@@ -483,7 +574,14 @@ fn formula_reads(book: &Book) -> Vec<Read> {
                 .map(|r| book.resolve(r))
                 .collect();
             for token in name_tokens(&f.text) {
-                areas.extend(book.named.get(&token).into_iter().flatten());
+                areas.extend(book.name_areas(&book.named, sheet, &token));
+            }
+            // A structured reference without a table name reads its own table.
+            let bare = split(&f.text).into_iter().any(|(literal, piece)| {
+                !literal && re(EXTERNAL).replace_all(&piece, "").contains('[')
+            });
+            if bare {
+                areas.extend(book.tables.iter().filter(|t| t.holds(sheet, at)));
             }
             reads.extend(areas.into_iter().map(|area| Read {
                 area,
@@ -495,9 +593,9 @@ fn formula_reads(book: &Book) -> Vec<Read> {
 }
 
 fn has_dynamic(formula: &str) -> bool {
-    split_literals(formula)
+    split(formula)
         .into_iter()
-        .any(|(literal, piece)| !literal && re(DYNAMIC).is_match(piece).unwrap_or(false))
+        .any(|(literal, piece)| !literal && re(DYNAMIC).is_match(&piece).unwrap_or(false))
 }
 
 impl Book {
@@ -515,20 +613,24 @@ impl Book {
     /// A spill reference reads the whole array its anchor fills.
     fn resolve(&self, r: Ref) -> Area {
         let anchor = (r.area.top, r.area.left);
-        if r.spill
-            && r.area.sheet != ANY_SHEET
-            && self.grids[r.area.sheet].formulas.contains_key(&anchor)
-        {
+        if r.spill && self.grids[r.area.sheet].formulas.contains_key(&anchor) {
             self.formula_area(r.area.sheet, anchor)
         } else {
             r.area
         }
     }
-    /// Whether anything outside `group` reads the cell.
-    fn is_read(&self, sheet: usize, at: (usize, usize), group: &Area) -> bool {
+    /// Whether anything outside `group` reads part of `area`.
+    fn is_read(&self, area: &Area, group: &Area) -> bool {
         self.reads
             .iter()
-            .any(|read| read.area.holds(sheet, at) && !read.reader.iter().any(|r| r.meets(group)))
+            .any(|read| read.area.meets(area) && !read.reader.iter().any(|r| r.meets(group)))
+    }
+    /// The areas a name or table names, a sheet's own name first.
+    fn name_areas(&self, map: &HashMap<Scoped, Vec<Area>>, sheet: usize, token: &str) -> Vec<Area> {
+        map.get(&(Some(sheet), token.to_owned()))
+            .or_else(|| map.get(&(None, token.to_owned())))
+            .cloned()
+            .unwrap_or_default()
     }
     fn label(&self, sheet: usize, (row, column): (usize, usize)) -> Option<&String> {
         self.grids[sheet]
@@ -585,9 +687,9 @@ fn unused_names(parts: &Parts, book: &Document<'_>, sheets: &[Sheet]) -> Vec<Str
         let text = name.text().unwrap_or_default().trim_start_matches('=');
         let skip = key.to_lowercase().starts_with("_xl")
             || matches!(attr(name, "hidden"), Some("1" | "true"))
-            || split_literals(text)
+            || split(text)
                 .into_iter()
-                .any(|(literal, piece)| !literal && re(CALL).is_match(piece).unwrap_or(false));
+                .any(|(literal, piece)| !literal && re(CALL).is_match(&piece).unwrap_or(false));
         if skip || used.contains(&key.to_lowercase()) {
             continue;
         }
@@ -621,7 +723,9 @@ fn buried_checks(book: &Book) -> Vec<String> {
         .collect();
     let mut out = Vec::new();
     for ((&(sheet, _), cells), group) in rows.iter().zip(&checks) {
-        let read = cells.iter().any(|&at| book.is_read(sheet, at, group));
+        let read = cells
+            .iter()
+            .any(|&at| book.is_read(&book.formula_area(sheet, at), group));
         let rolls_up = book.reads.iter().any(|r| {
             r.reader.iter().any(|x| x.meets(group))
                 && checks.iter().any(|c| c != group && r.area.meets(c))
@@ -715,18 +819,16 @@ fn gaps(book: &Book) -> Gaps {
                 (false, _, false) => (at.1 + 1, area.left),
             };
             for step in from..to {
-                let (gap, own) = if vertical {
-                    ((step, at.1), line(sheet, step, 1, step, MAX_COLUMN))
-                } else {
-                    ((at.0, step), line(sheet, 1, step, MAX_ROW, step))
-                };
+                let gap = if vertical { (step, at.1) } else { (at.0, step) };
+                // Reads from the gap's own row do not link it.
+                let own = line(sheet, gap.0, 1, gap.0, MAX_COLUMN);
                 let in_spill = grid
                     .spills
                     .iter()
                     .any(|s| s.holds(sheet, gap) && (s.top, s.left) != gap);
                 let holds = grid.numbers.contains(&gap) || grid.formulas.contains_key(&gap);
-                // Reads from the gap's own row (or column) do not link it.
-                if holds && !in_spill && !book.is_read(sheet, gap, &own) {
+                let cell = line(sheet, gap.0, gap.1, gap.0, gap.1);
+                if holds && !in_spill && !book.is_read(&cell, &own) {
                     let along = if vertical { gap.1 } else { gap.0 };
                     found
                         .entry((sheet, vertical, step))
@@ -749,7 +851,7 @@ fn edges(book: &Book) -> BTreeMap<Place, Vec<Place>> {
                 .map(|r| book.resolve(r))
                 .collect();
             for token in name_tokens(&text) {
-                areas.extend(book.plain_names.get(&token).into_iter().flatten());
+                areas.extend(book.name_areas(&book.plain_names, sheet, &token));
             }
             let mut to = BTreeSet::new();
             for area in areas {
@@ -761,24 +863,16 @@ fn edges(book: &Book) -> BTreeMap<Place, Vec<Place>> {
     out
 }
 
-/// The formula cells, spill anchors included, inside an area.
 fn read_cells(book: &Book, area: Area, to: &mut BTreeSet<Place>) {
-    let sheets: Vec<usize> = if area.sheet == ANY_SHEET {
-        (0..book.grids.len()).collect()
-    } else {
-        vec![area.sheet]
-    };
-    for s in sheets {
-        let g = &book.grids[s];
-        for (&cell, _) in g.formulas.range((area.top, 0)..=(area.bottom, MAX_COLUMN)) {
-            if (area.left..=area.right).contains(&cell.1) {
-                to.insert((s, cell.0, cell.1));
-            }
+    let s = area.sheet;
+    let g = &book.grids[s];
+    for (&cell, _) in g.formulas.range((area.top, 0)..=(area.bottom, MAX_COLUMN)) {
+        if (area.left..=area.right).contains(&cell.1) {
+            to.insert((s, cell.0, cell.1));
         }
-        let area = Area { sheet: s, ..area };
-        for spill in g.spills.iter().filter(|x| x.meets(&area)) {
-            to.insert((s, spill.top, spill.left));
-        }
+    }
+    for spill in g.spills.iter().filter(|x| x.meets(&area)) {
+        to.insert((s, spill.top, spill.left));
     }
 }
 
@@ -925,7 +1019,19 @@ mod tests {
         assert_eq!(r("oz.Dλ!$A$1", (2, 2))[0].area, area(2, 1, 1, 1, 1));
         assert_eq!(r("SUM(C:C)", (2, 2))[0].area, area(0, 1, 3, MAX_ROW, 3));
         assert_eq!(r("SUM(3:4)", (2, 2))[0].area, area(0, 3, 1, 4, MAX_COLUMN));
-        assert_eq!(r("Model:Cash!A1", (2, 2))[0].area.sheet, ANY_SHEET);
+        let sheets3 = |f: &str| {
+            r(f, (2, 2))
+                .iter()
+                .map(|x| x.area.sheet)
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(sheets3("Model:oz.Dλ!A1"), [0, 1, 2]);
+        assert_eq!(sheets3("'Model:Cash flow'!a1"), [0, 1]);
+        assert_eq!(
+            sheets3("SUM([1]Model!A1:A2)+Sales[Cost A1]"),
+            Vec::<usize>::new()
+        );
+        assert!(r("A0", (3, 3)).is_empty());
         assert!(r("A1#", (2, 2))[0].spill);
         for text in [
             "[1]Model!A1",
