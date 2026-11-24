@@ -179,6 +179,20 @@ fn a_workbook_without_findings_passes() {
 }
 
 #[test]
+fn the_shipped_workbooks_pass_the_audit() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    for book in [
+        "ozzit.xlsx",
+        "templates/13-week-cash-flow-forecast.xlsx",
+        "templates/practice-calculators.xlsx",
+        "templates/retention-reconciliation.xlsx",
+    ] {
+        let (code, text) = audit(&[book], &root);
+        assert_eq!(code, 0, "{text}");
+    }
+}
+
+#[test]
 fn a_number_between_formulas_of_one_pattern_in_a_row_is_reported() {
     let dir = tempfile::tempdir().unwrap();
     let rows = r#"<row r="2"><c r="A2"><v>1</v></c><c r="B2"><f>A2*2</f><v>2</v></c><c r="C2"><v>5</v></c><c r="D2"><f>C2*2</f><v>10</v></c></row>"#;

@@ -31,6 +31,10 @@ release; until then v3.8.0 behaves as it did.
 - The self-test's error-rate cases for `oz.IndexFactorλ` and `oz.BulletLoanλ` now pass a
   row whose second rate is an error and check that the first period still calculates.
   `HSTACK(0.1, NA())` gave a single `#N/A`, so they had tested a scalar error.
+- The 13-week cash-flow template no longer has a circular reference: the formula-error count
+  on `Checks & Sources` leaves out `Dashboard!I7`, which shows the checks' own status. Its 2
+  unused names, `CashFlowScenario` and `CashFlowSelectedScenario`, are gone. A test runs
+  `ozzit audit` over the shipped workbooks.
 
 ## v3.8.0, 24 November 2026, 14 new functions, Apache-2.0 licence and workbook tooling
 
