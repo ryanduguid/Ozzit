@@ -21,7 +21,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 const REFERENCE: &str = r"(?<![\p{L}\p{N}_.$\[\]'!])(?:(?:'((?:[^']|'')+)'|([\p{L}_\\][\p{L}\p{N}_.]*(?::[\p{L}_\\][\p{L}\p{N}_.]*)?))!)?(\$?[A-Za-z]{1,3}\$?[0-9]{1,7}(?::\$?[A-Za-z]{1,3}\$?[0-9]{1,7})?|\$?[A-Za-z]{1,3}:\$?[A-Za-z]{1,3}|\$?[0-9]{1,7}:\$?[0-9]{1,7})(#?)(?![\p{L}\p{N}_.(\[])";
 /// A function whose reference or name argument is read for its position, not
 /// its value, such as `ROW(A1)` or `CELL("filename", A1)`.
-const POSITION_ONLY: &str = r#"(?i)(?<![\p{L}\p{N}_.])(?:(?:ROWS?|COLUMNS?|ISREF|_xlfn\.ISFORMULA|_xlfn\.FORMULATEXT)\(|CELL\(\s*"(?:filename|address|row|col|width)"\s*,)\s*(?:'(?:[^']|'')+'!|[\p{L}_\\][\p{L}\p{N}_.]*!)?(?:\$?[A-Z]{0,3}\$?[0-9]{0,7}(?::\$?[A-Z]{0,3}\$?[0-9]{0,7})?#?|[\p{L}_\\][\p{L}\p{N}_.]*)\s*\)"#;
+const POSITION_ONLY: &str = r#"(?i)(?<![\p{L}\p{N}_.])(?:(?:ROWS?|COLUMNS?|ISREF|_xlfn\.ISFORMULA|_xlfn\.FORMULATEXT)\(|CELL\(\s*"(?:filename|address|row|col|width)"\s*,)\s*(?:\[0\]!|'(?:[^']|'')+'!|(?:\[0\])?[\p{L}_\\][\p{L}\p{N}_.]*!)?(?:\$?[A-Z]{0,3}\$?[0-9]{0,7}(?::\$?[A-Z]{0,3}\$?[0-9]{0,7})?#?|[\p{L}_\\][\p{L}\p{N}_.]*)\s*\)"#;
 const DYNAMIC: &str = r"(?i)(?<![\p{L}\p{N}_.])(?:INDIRECT|OFFSET)\(";
 const CALL: &str = r"[\p{L}_][\p{L}\p{N}_.]*\(";
 /// A name, with its sheet, sheet-range or workbook ([`WORKBOOK`]) qualifier if
@@ -35,9 +35,11 @@ const CHECK_LABEL: &str = r"(?i)\bchecks?\b";
 /// `[1]!Table[Column]` or `'C:\[Book.xlsx]Sheet'!A1:B2`, taken whole.
 const EXTERNAL: &str = r"(?:'(?:[^']|'')*\[(?:[^']|'')*'|\[[^\]]*\][\p{L}\p{N}_.]*(?::[\p{L}\p{N}_.]+)?)![\p{L}\p{N}_.\\?$]*(?::[\p{L}\p{N}_.$]+)?(?:\[(?:[^\[\]']|'.|\[(?:[^\[\]']|'.)*\])*\])?";
 /// `[0]` as a workbook qualifier names this workbook: `[0]!Name` is the
-/// workbook's name and `[0]Sheet!A1` a local reference. Elsewhere, as in
-/// `SUM([0])`, it is a structured reference's column.
-const THIS_BOOK: &str = r"(?<![\p{L}\p{N}_.\\?\]])\[0\](?=[\p{L}\p{N}_.]*!)";
+/// workbook's name and `[0]Sheet!A1` or `[0]Jan:Feb!A1` a local reference.
+/// Elsewhere, as in `SUM([0])`, it is a structured reference's column.
+const THIS_BOOK: &str = r"(?<![\p{L}\p{N}_.\\?\]])\[0\](?=[\p{L}\p{N}_.:]*!)";
+/// `[0]` opening a quoted sheet name, as in `'[0]Cash flow'!B3`.
+const QUOTED_THIS_BOOK: &str = r"(?<![\p{L}\p{N}_.\\?\['])'\[0\]";
 
 /// A name's sheet scope (`None` for the workbook) and its lower-case text.
 type Scoped = (Option<usize>, String);
@@ -204,7 +206,8 @@ fn split(formula: &str) -> Vec<(bool, String)> {
 /// and whether a structured reference names no table. Inside brackets an
 /// apostrophe escapes the next character.
 fn scrub_parts(code: &str) -> (String, bool) {
-    let code = re(&format!("{THIS_BOOK}(?=!)")).replace_all(code, WORKBOOK);
+    let code = re(QUOTED_THIS_BOOK).replace_all(code, "'");
+    let code = re(&format!("{THIS_BOOK}(?=!)")).replace_all(&code, WORKBOOK);
     let code = re(THIS_BOOK).replace_all(&code, "");
     let code = re(EXTERNAL).replace_all(&code, " ");
     let (mut out, mut bare, mut depth, mut quoted) = (String::new(), false, 0usize, false);
@@ -1182,6 +1185,11 @@ mod tests {
         ] {
             assert_eq!(scrub_parts(code).1, bare, "{code}");
         }
+        // An external table operand ends at its own closing bracket.
+        assert_eq!(
+            scrub_parts("SUM([1]!Other[[#Data],[x']y]])+A1"),
+            ("SUM( )+A1".to_owned(), false)
+        );
     }
 
     #[test]

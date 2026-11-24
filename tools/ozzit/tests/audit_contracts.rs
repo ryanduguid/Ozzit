@@ -746,23 +746,61 @@ fn only_a_bare_structured_reference_reads_its_own_table() {
 
 #[test]
 fn a_this_workbook_qualifier_names_the_workbook_scope() {
+    // [0]! is the workbook's name, not the sheet's, wherever the sheet is (as
+    // Excel 16 resolves it): A1 reads itself, B1 does not, and C1 reads only
+    // its own position.
+    for model_first in [true, false] {
+        let dir = tempfile::tempdir().unwrap();
+        let local = if model_first { "0" } else { "1" };
+        let names = [
+            r#"<definedName name="PickA">Model!$A$1</definedName>"#.to_owned(),
+            format!(r#"<definedName name="PickA" localSheetId="{local}">1</definedName>"#),
+            r#"<definedName name="PickB">1</definedName>"#.to_owned(),
+            format!(r#"<definedName name="PickB" localSheetId="{local}">Model!$B$1</definedName>"#),
+            r#"<definedName name="PickC">Model!$C$1</definedName>"#.to_owned(),
+        ]
+        .concat();
+        let model = row(
+            1,
+            &[
+                formula("A1", "[0]!PickA"),
+                formula("B1", "[0]!PickB"),
+                formula("C1", "ROW([0]!PickC)"),
+            ],
+        );
+        let book = Book::new();
+        let book = if model_first {
+            book.sheet("Model", "", &model).sheet("Other", "", "")
+        } else {
+            book.sheet("Other", "", "").sheet("Model", "", &model)
+        };
+        book.names(&names).write(dir.path());
+        let (_, text) = audit(&["book.xlsx"], dir.path());
+        assert_eq!(
+            findings(&text),
+            ["circular reference: Model!A1 read one another"],
+            "Model first: {model_first}"
+        );
+    }
+}
+
+#[test]
+fn this_workbook_sheet_qualifiers_read_the_local_sheet() {
     let dir = tempfile::tempdir().unwrap();
-    // [0]! is the workbook's name, not the sheet's: A1 reads itself, B1 not.
-    let names = concat!(
-        r#"<definedName name="PickA">Model!$A$1</definedName>"#,
-        r#"<definedName name="PickA" localSheetId="1">1</definedName>"#,
-        r#"<definedName name="PickB">1</definedName>"#,
-        r#"<definedName name="PickB" localSheetId="1">Model!$B$1</definedName>"#,
+    let check = |l: &str| row(3, &[label("A3", l), formula("B3", "1")]);
+    let summary = row(
+        1,
+        &[
+            formula("A1", "'[0]Cash flow'!B3"),
+            formula("B1", "SUM([0]Jan:Feb!B3)"),
+        ],
     );
-    let model = row(1, &[formula("A1", "[0]!PickA"), formula("B1", "[0]!PickB")]);
     Book::new()
-        .sheet("First", "", "")
-        .sheet("Model", "", &model)
-        .names(names)
+        .sheet("Jan", "", &check("Month check"))
+        .sheet("Feb", "", &check("Month check"))
+        .sheet("Cash flow", "", &check("Cash check"))
+        .sheet("Summary", "", &summary)
         .write(dir.path());
-    let (_, text) = audit(&["book.xlsx"], dir.path());
-    assert_eq!(
-        findings(&text),
-        ["circular reference: Model!A1 read one another"]
-    );
+    let (code, text) = audit(&["book.xlsx"], dir.path());
+    assert_eq!((code, findings(&text)), (0, vec![]), "{text}");
 }
