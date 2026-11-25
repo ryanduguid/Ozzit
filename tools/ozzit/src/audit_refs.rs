@@ -674,74 +674,86 @@ fn plain_name_deps(
     Some(deps)
 }
 
+struct Defined {
+    areas: Vec<Area>,
+    tokens: Vec<NameRef>,
+    deps: Option<Vec<Scoped>>,
+}
+
+fn plain_keys(direct: &HashMap<Scoped, Defined>) -> BTreeSet<Scoped> {
+    let mut plain: BTreeSet<Scoped> = direct
+        .iter()
+        .filter(|(_, d)| d.deps.is_some())
+        .map(|(k, _)| k.clone())
+        .collect();
+    loop {
+        let snapshot = plain.clone();
+        plain.retain(|k| {
+            direct[k]
+                .deps
+                .as_ref()
+                .is_some_and(|list| list.iter().all(|d| snapshot.contains(d)))
+        });
+        if plain.len() == snapshot.len() {
+            return plain;
+        }
+    }
+}
+
+fn follow_aliases(start: &Scoped, direct: &HashMap<Scoped, Defined>, sheets: &[String]) -> Vec<Area> {
+    let mut all = Vec::new();
+    let mut seen = BTreeSet::new();
+    let mut queue = vec![start.clone()];
+    // Follow aliases, a name whose definition names another, once each.
+    while let Some(k) = queue.pop() {
+        if !seen.insert(k.clone()) {
+            continue;
+        }
+        let Some(entry) = direct.get(&k) else {
+            continue;
+        };
+        all.extend(&entry.areas);
+        for t in &entry.tokens {
+            let target = name_key(sheets, |x| direct.contains_key(x), k.0, t);
+            queue.extend(target.filter(|x| direct.contains_key(x)));
+        }
+    }
+    all
+}
+
 fn read_names(out: &mut Book, book: &Document<'_>) {
     let raw: Vec<(Scoped, String)> = book
         .descendants()
         .filter(|n| n.tag_name().name() == "definedName")
         .map(|name| {
-            let scope = defined_scope(name);
             let key = attr(name, "name").unwrap_or_default().to_lowercase();
-            (
-                (scope, key),
-                name.text()
-                    .unwrap_or_default()
-                    .trim_start_matches('=')
-                    .to_owned(),
-            )
+            let text = name.text().unwrap_or_default().trim_start_matches('=');
+            ((defined_scope(name), key), text.to_owned())
         })
         .collect();
     let defined: BTreeSet<Scoped> = raw.iter().map(|(k, _)| k.clone()).collect();
-    let direct: HashMap<Scoped, (Vec<Area>, Vec<NameRef>, Option<Vec<Scoped>>)> = raw
+    let direct: HashMap<Scoped, Defined> = raw
         .into_iter()
         .map(|(key, text)| {
-            let areas: Vec<Area> = references(&text, (1, 1), (1, 1), None, &out.names)
-                .iter()
+            let areas = references(&text, (1, 1), (1, 1), None, &out.names)
+                .into_iter()
                 .map(|r| r.area)
                 .collect();
             let deps = plain_name_deps(&text, key.0, &out.names, &defined);
-            let tokens = name_tokens(&text);
-            (key, (areas, tokens, deps))
+            (
+                key,
+                Defined {
+                    areas,
+                    tokens: name_tokens(&text),
+                    deps,
+                },
+            )
         })
         .collect();
-    let mut plain: HashMap<Scoped, bool> = direct
-        .iter()
-        .map(|(k, (_, _, deps))| (k.clone(), deps.is_some()))
-        .collect();
-    loop {
-        let mut changed = false;
-        for (key, (_, _, deps)) in &direct {
-            if plain.get(key) == Some(&true)
-                && deps
-                    .as_ref()
-                    .is_some_and(|list| list.iter().any(|d| plain.get(d) != Some(&true)))
-            {
-                plain.insert(key.clone(), false);
-                changed = true;
-            }
-        }
-        if !changed {
-            break;
-        }
-    }
+    let plain = plain_keys(&direct);
     for key in direct.keys() {
-        let mut all: Vec<Area> = Vec::new();
-        let mut seen = BTreeSet::new();
-        let mut queue = vec![key.clone()];
-        // Follow aliases, a name whose definition names another, once each.
-        while let Some(k) = queue.pop() {
-            if !seen.insert(k.clone()) {
-                continue;
-            }
-            let Some((areas, tokens, _)) = direct.get(&k) else {
-                continue;
-            };
-            all.extend(areas);
-            for t in tokens {
-                let target = name_key(&out.names, |x| direct.contains_key(x), k.0, t);
-                queue.extend(target.filter(|x| direct.contains_key(x)));
-            }
-        }
-        if plain.get(key) == Some(&true) && !all.is_empty() {
+        let all = follow_aliases(key, &direct, &out.names);
+        if plain.contains(key) && !all.is_empty() {
             out.plain_names.insert(key.clone(), all.clone());
         }
         out.named.entry(key.clone()).or_default().extend(all);
@@ -892,20 +904,14 @@ impl Book {
 /// `LAMBDA` included, which a user may call. A name that is the whole value
 /// of an attribute or element in a part other than the workbook, a sheet or the
 /// shared strings, such as a slicer's cache name, counts as used.
-fn unused_names(parts: &Parts, book: &Document<'_>, sheets: &[Sheet]) -> Vec<String> {
-    let sheet_names: Vec<String> = sheets.iter().map(|s| s.name.clone()).collect();
-    let defined: BTreeSet<Scoped> = book
-        .descendants()
-        .filter(|n| n.tag_name().name() == "definedName")
-        .map(|n| {
-            (
-                defined_scope(n),
-                attr(n, "name").unwrap_or_default().to_lowercase(),
-            )
-        })
-        .collect();
-    let mut used_scoped: BTreeSet<Scoped> = BTreeSet::new();
-    let mut used_unscoped: BTreeSet<String> = BTreeSet::new();
+fn collect_used_names(
+    parts: &Parts,
+    sheets: &[Sheet],
+    sheet_names: &[String],
+    defined: &BTreeSet<Scoped>,
+) -> (BTreeSet<Scoped>, BTreeSet<String>) {
+    let mut used_scoped = BTreeSet::new();
+    let mut used_unscoped = BTreeSet::new();
     for (part, bytes) in parts {
         let Ok(doc) = xml_part(part, bytes) else {
             continue;
@@ -928,11 +934,12 @@ fn unused_names(parts: &Parts, book: &Document<'_>, sheets: &[Sheet]) -> Vec<Str
                     part_sheet
                 };
                 for token in name_tokens(node.text().unwrap_or_default()) {
-                    if let Some(key) =
-                        name_key(&sheet_names, |k| defined.contains(k), context, &token)
-                    {
-                        used_scoped.insert(key);
-                    }
+                    used_scoped.extend(name_key(
+                        sheet_names,
+                        |k| defined.contains(k),
+                        context,
+                        &token,
+                    ));
                 }
             } else if other {
                 used_unscoped.extend(node.attributes().map(|a| a.value().to_lowercase()));
@@ -940,6 +947,22 @@ fn unused_names(parts: &Parts, book: &Document<'_>, sheets: &[Sheet]) -> Vec<Str
             }
         }
     }
+    (used_scoped, used_unscoped)
+}
+
+fn unused_names(parts: &Parts, book: &Document<'_>, sheets: &[Sheet]) -> Vec<String> {
+    let sheet_names: Vec<String> = sheets.iter().map(|s| s.name.clone()).collect();
+    let defined: BTreeSet<Scoped> = book
+        .descendants()
+        .filter(|n| n.tag_name().name() == "definedName")
+        .map(|n| {
+            (
+                defined_scope(n),
+                attr(n, "name").unwrap_or_default().to_lowercase(),
+            )
+        })
+        .collect();
+    let (used_scoped, used_unscoped) = collect_used_names(parts, sheets, &sheet_names, &defined);
     let mut out = Vec::new();
     for name in book
         .descendants()
@@ -952,11 +975,10 @@ fn unused_names(parts: &Parts, book: &Document<'_>, sheets: &[Sheet]) -> Vec<Str
         let skip = lower.starts_with("_xl")
             || matches!(attr(name, "hidden"), Some("1" | "true"))
             || split(text).into_iter().any(|(literal, piece)| {
-                if literal {
-                    return false;
-                }
-                let code = sub(r"'(?:[^']|'')*'", &scrub(&piece), " ");
-                re(CALL).is_match(&code).unwrap_or(false)
+                !literal
+                    && re(CALL)
+                        .is_match(&sub(r"'(?:[^']|'')*'", &scrub(&piece), " "))
+                        .unwrap_or(false)
             });
         if skip || used_scoped.contains(&scoped) || used_unscoped.contains(&lower) {
             continue;
@@ -1108,44 +1130,44 @@ fn gaps(book: &Book) -> Gaps {
     found
 }
 
+/// Byte index immediately after the balanced `[...]` span starting at `j`,
+/// skipping apostrophe-escaped characters inside structured reference brackets.
+fn bracket_span(text: &str, mut j: usize) -> usize {
+    let mut depth = 0usize;
+    while let Some(ch) = text[j..].chars().next() {
+        j += ch.len_utf8();
+        match ch {
+            '\'' => j += text[j..].chars().next().map_or(0, char::len_utf8),
+            '[' => depth += 1,
+            ']' => {
+                depth -= 1;
+                if depth == 0 {
+                    break;
+                }
+            }
+            _ => {}
+        }
+    }
+    j
+}
+
 /// Replace position-only function calls (`ROW(A1)`, `_xlfn.ISFORMULA(A1)`,
 /// ...) with `0`, skipping string literals, quoted sheet names and structured
 /// reference brackets so names like `'ROW(A1)'!B1` stay intact.
 fn strip_position_only(formula: &str) -> String {
     let mut out = String::with_capacity(formula.len());
     let pattern = re(POSITION_ONLY);
-    let mut i = 0;
-    let mut prev = None;
+    let (mut i, mut prev) = (0, None);
     while let Some(c) = formula[i..].chars().next() {
-        let rest = &formula[i..];
         if c == '[' {
-            let mut depth = 0usize;
-            let mut j = i;
-            while let Some(ch) = formula[j..].chars().next() {
-                j += ch.len_utf8();
-                match ch {
-                    '\'' => {
-                        if let Some(esc) = formula[j..].chars().next() {
-                            j += esc.len_utf8();
-                        }
-                    }
-                    '[' => depth += 1,
-                    ']' => {
-                        depth -= 1;
-                        if depth == 0 {
-                            break;
-                        }
-                    }
-                    _ => {}
-                }
-            }
+            let j = bracket_span(formula, i);
             out.push_str(&formula[i..j]);
             prev = formula[..j].chars().next_back();
             i = j;
             continue;
         }
         if c == '"' || c == '\'' {
-            let mut chars = rest[c.len_utf8()..].chars().peekable();
+            let mut chars = formula[i + c.len_utf8()..].chars().peekable();
             let token = read_quoted(c, &mut chars);
             out.push_str(&token);
             i += token.len();
@@ -1153,7 +1175,7 @@ fn strip_position_only(formula: &str) -> String {
             continue;
         }
         let word_prev = prev.is_some_and(|p| p.is_alphanumeric() || p == '_' || p == '.');
-        if !word_prev && let Some(m) = pattern.find(rest).ok().flatten() {
+        if !word_prev && let Some(m) = pattern.find(&formula[i..]).ok().flatten() {
             out.push('0');
             i += m.end();
             prev = formula[..i].chars().next_back();
@@ -1464,7 +1486,7 @@ mod tests {
             ),
             "0+0+0+0+0"
         );
-        let unchanged = r#"'ROW(A1)'!B1+"ROW(A1)"+Sales[ROW(A1)]+MyROW(A1)"#;
+        let unchanged = r#"'ROW(A1)'!B1+"ROW(A1)"+Sales[ROW(A1)]+Sales[x']ROW(A1)]+Sales[[#This Row],[ROW(A1)]]+MyROW(A1)"#;
         assert_eq!(strip_position_only(unchanged), unchanged);
     }
 }

@@ -780,7 +780,11 @@ fn a_this_workbook_qualifier_names_the_workbook_scope() {
         let (_, text) = audit(&["book.xlsx"], dir.path());
         assert_eq!(
             findings(&text),
-            ["circular reference: Model!A1 read one another"],
+            [
+                "unused name: PickA (sheet Model), which no formula uses",
+                "unused name: PickB (sheet Model), which no formula uses",
+                "circular reference: Model!A1 read one another",
+            ],
             "Model first: {model_first}"
         );
     }
