@@ -852,6 +852,39 @@ foreach ($r in @(@('LAMBDA(a, b, a + b), {1,2}, {1,2}', $sgShape), @('LAMBDA(a, 
     Same "SensitivityGrid refuses ($($r[0]))" "LET(x, $sg($($r[0])), $one)" $r[1]
 }
 
+# --- Check roll-up. TRUE passes and FALSE fails; a number is a difference that passes within
+# the tolerance; an error or text fails; a blank cell or empty text is not a check. The first
+# failure is the first in reading order, across each row in turn.
+$cr = "oz.CheckRollUp$L"
+foreach ($r in @(@('{TRUE,0,0.004}, {"Balance","Cash","GST"}, 0.005', 'OK: 3 checks pass'),
+                 @('{TRUE,FALSE,12.5}, {"Balance","Cash","GST"}', 'FAIL: 2 of 3 checks fail, first: Cash'),
+                 @('TRUE', 'OK: 1 check passes'),
+                 @('{0,0.001}', 'FAIL: 1 of 2 checks fail, first: check 2'),
+                 @('-0.004, , 0.005', 'OK: 1 check passes'),
+                 @('{0.5,-0.5}, , 0.5', 'OK: 2 checks pass'),
+                 @('{0.5,-0.75}, {"a","b"}, 0.5', 'FAIL: 1 of 2 checks fail, first: b'),
+                 @('IF({1,0}, TRUE, NA()), {"A","B"}', 'FAIL: 1 of 2 checks fail, first: B'),
+                 @('{TRUE,"OK"}', 'FAIL: 1 of 2 checks fail, first: check 2'),
+                 @('{"",TRUE}', 'OK: 1 check passes'),
+                 @('{"",""}', 'FAIL: no check results'),
+                 @('{TRUE,TRUE;FALSE,TRUE;TRUE,FALSE}, {"a","b";"c","d";"e","f"}', 'FAIL: 2 of 6 checks fail, first: c'),
+                 @('{TRUE,FALSE}, {"a",""}', 'FAIL: 1 of 2 checks fail, first: check 2'),
+                 @('{TRUE,FALSE}, IF({1,0}, "a", NA())', 'FAIL: 1 of 2 checks fail, first: check 2'),
+                 @('{TRUE,FALSE}, {2026,2027}', 'FAIL: 1 of 2 checks fail, first: 2027'),
+                 @('AR1:AU1, AR2:AU2', 'FAIL: 1 of 3 checks fail, first: GST'),
+                 @('AR1:AT1, AR2:AT2', 'OK: 2 checks pass'),
+                 @('Z1:Z3', 'FAIL: no check results'))) {
+    Same "CheckRollUp: ($($r[0]))" "$cr($($r[0]))" $r[1]
+}
+Same 'CheckRollUp: one text value' "LET(x, $cr({TRUE,FALSE;FALSE,TRUE}), $one)" 'FAIL: 2 of 4 checks fail, first: check 2'
+$crShape = 'CheckRollUp' + $L + ' needs Labels the same shape as Checks.'
+$crTol = 'CheckRollUp' + $L + ' needs Tolerance to be one number, 0 or more.'
+foreach ($r in @(@('{TRUE,TRUE}, {"a";"b"}', $crShape), @('{TRUE,TRUE}, "a"', $crShape), @('AR1:AU1, AR2:AT2', $crShape),
+                 @('TRUE, , -0.01', $crTol), @('TRUE, , "0.1"', $crTol), @('TRUE, , {0,1}', $crTol),
+                 @('TRUE, , Z1', $crTol), @('TRUE, , NA()', $crTol), @('TRUE, , TRUE', $crTol))) {
+    Same "CheckRollUp refuses ($($r[0]))" "LET(x, $cr($($r[0])), $one)" $r[1]
+}
+
 # --- Movement. Each row's opening is its own: a blank one defaults only that row.
 Near 'Movement, per-row opening'       "INDEX($mv({100;`"`";50},{110,120;5,6;60,70}),1,1)" '10'
 Near 'Movement, blank opening row'     "INDEX($mv({100;`"`";50},{110,120;5,6;60,70}),2,1)" '5'
@@ -2560,6 +2593,9 @@ try {
     Set-Block 'AN1:AN3' @(@(1), @(2), @(3))
     Set-Block 'AP1:AP3' @(@(& $d 2026 6 30), @(& $d 2027 1 31), @(& $d 2028 2 29))
     Set-Block 'AL1:AL1' @(, @('TBA'))
+    # Check results with a real blank cell, and their labels.
+    Set-Block 'AR1:AU1' @(, @($true, $null, 0, $false))
+    Set-Block 'AR2:AU2' @(, @('Balance', 'Blank', 'Cash', 'GST'))
 
     $grid = New-Object 'object[,]' $checks.Count, 1
     for ($i = 0; $i -lt $checks.Count; $i++) { $grid[$i, 0] = $checks[$i].f }

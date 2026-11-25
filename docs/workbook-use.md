@@ -167,6 +167,25 @@ Excel opens the workbook read-only in a hidden window, enters each formula on a 
 
 A reference built whilst Excel calculates, through `INDIRECT` or `OFFSET`, cannot be followed from the file. A workbook whose cells use either is not checked for buried checks or unlinked rows, and the audit names the first such cell.
 
+## Roll checks up into one status
+
+`oz.CheckRollUpλ(Checks, [Labels], [Tolerance])` turns a model's check cells into one text value for a banner or summary cell. In each cell of `Checks`, TRUE passes and FALSE fails. A number is a difference: it passes when its size is at most `Tolerance` (0 when omitted) and fails above it. An error or any other text fails. Blank cells and empty text are not checks. The result names the first failure in reading order, across each row in turn, by its label from `Labels` (the same shape as `Checks`), or by its position when there is no label. A range with no check result fails, so an empty roll-up never reads as OK.
+
+| Checks | Formula | Result |
+|---|---|---|
+| All pass within the tolerance | `=oz.CheckRollUpλ({TRUE,0,0.004},{"Balance","Cash","GST"},0.005)` | OK: 3 checks pass |
+| 2 fail | `=oz.CheckRollUpλ({TRUE,FALSE,12.5},{"Balance","Cash","GST"})` | FAIL: 2 of 3 checks fail, first: Cash |
+| No labels | `=oz.CheckRollUpλ({0,0.001})` | FAIL: 1 of 2 checks fail, first: check 2 |
+| Nothing to check | `=oz.CheckRollUpλ({"",""})` | FAIL: no check results |
+
+For a banner, put the roll-up in a cell near the top of the cover or summary sheet, here named `ModelStatus`, over the check column and its labels:
+
+```text
+=oz.CheckRollUpλ(Checks!C5:C20, Checks!A5:A20, 0.005)
+```
+
+Then add a conditional formatting rule to that cell with the formula `=LEFT(ModelStatus,3)<>"OK:"` and a fill that stands out. The rule also catches the refusal messages, which do not start with `OK:`. Because the roll-up reads every check in its range, `ozzit audit` does not report those rows as buried checks.
+
 ## Modern Excel
 
 Excel 365 has gained functions since the earlier workbook of July 2024. Several helpers point to native options in their inline help's `SEE ALSO` line. Native functions can have different inputs and behaviour, so compare their contracts before replacing a helper. The table also includes a newer Beta preview:

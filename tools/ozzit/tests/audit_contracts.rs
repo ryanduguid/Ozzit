@@ -491,6 +491,39 @@ fn a_check_row_that_nothing_reads_is_buried() {
 }
 
 #[test]
+fn a_check_roll_up_over_a_range_clears_every_check_it_reads() {
+    let dir = tempfile::tempdir().unwrap();
+    let bs = [
+        row(5, &[label("A5", "Assets"), number("C5")]),
+        row(8, &[label("A8", "Liabilities"), number("C8")]),
+        row(
+            10,
+            &[label("A10", "Balance check"), formula("C10", "C5-C8")],
+        ),
+        row(11, &[label("A11", "Cash check"), formula("C11", "C5-1")]),
+        row(12, &[label("A12", "Tax check"), formula("C12", "C8-1")]),
+    ]
+    .concat();
+    let summary = row(
+        2,
+        &[
+            label("A2", "Model status"),
+            formula("B2", "oz.CheckRollUpλ(BS!C10:C12,BS!A10:A12,0.005)"),
+        ],
+    );
+    Book::new()
+        .sheet("BS", "", &bs)
+        .sheet("Summary", "", &summary)
+        .write(dir.path());
+    let (code, text) = audit(&["book.xlsx"], dir.path());
+    assert!(
+        !text.contains("buried check"),
+        "the roll-up reads every check: {text}"
+    );
+    assert_eq!(code, 0, "{text}");
+}
+
+#[test]
 fn a_row_between_a_sum_and_its_total_that_nothing_reads_is_unlinked() {
     let dir = tempfile::tempdir().unwrap();
     let rows = [

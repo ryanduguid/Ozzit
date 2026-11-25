@@ -107,9 +107,9 @@ fn calling(pattern: &str) -> BTreeSet<String> {
 #[test]
 fn the_function_and_help_table_counts() {
     let page = page();
-    assert_eq!(function_bodies().len(), 168);
-    page_says(&page, "a library of 168 LAMBDA functions and 5 help tables");
-    page_says(&page, "Ozzit's 168 functions exist to be called from cells");
+    assert_eq!(function_bodies().len(), 169);
+    page_says(&page, "a library of 169 LAMBDA functions and 5 help tables");
+    page_says(&page, "Ozzit's 169 functions exist to be called from cells");
     let tables: BTreeSet<String> = modules()
         .iter()
         .flat_map(|(_, text)| findall(r"(?m)^(About\w+λ)\s*=", text))
@@ -171,7 +171,7 @@ fn if_and_nested_if() {
         })
         .count();
     assert!(nested >= 22, "{nested} functions nest IF");
-    page_says(&page, "99 functions call `IF`");
+    page_says(&page, "100 functions call `IF`");
     page_says(&page, "At least 22 functions nest one `IF` inside another");
 }
 

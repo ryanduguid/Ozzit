@@ -222,9 +222,13 @@ fn payg_withholding_pass_reproduces_the_published_financial_module() {
 /// Removing a Financial pass's About rows and blocks, then applying it, gives the
 /// published module back.
 fn reproduces_the_financial_module(spec: &Spec) {
+    reproduces_the_module(spec, "Financial");
+}
+
+fn reproduces_the_module(spec: &Spec, module: &str) {
     let t = tables(spec);
-    let current = std::fs::read_to_string(root().join("src/Financial.txt")).unwrap();
-    let about = lookup_about(&t.about, "Financial");
+    let current = std::fs::read_to_string(root().join(format!("src/{module}.txt"))).unwrap();
+    let about = lookup_about(&t.about, module);
     let at = current.find(&about.anchor).unwrap();
     let indent = &current[current[..at].rfind('\n').unwrap() + 1..at];
     // A pass without a heading adds its rows straight after the anchor.
@@ -235,7 +239,7 @@ fn reproduces_the_financial_module(spec: &Spec) {
             vec!["\"→¶\"".to_string(), format!("\"{h}¶\"")]
         })
         .into_iter()
-        .chain(t.functions.iter().map(|f| t.about_row("Financial", f)))
+        .chain(t.functions.iter().map(|f| t.about_row(module, f)))
         .map(|line| format!("\n{indent}{line} &"))
         .collect::<String>();
     let mut absent = current.replacen(
@@ -260,7 +264,7 @@ fn reproduces_the_financial_module(spec: &Spec) {
             f.name
         );
     }
-    assert_eq!(add_to_src(spec, &t, "Financial", &absent).unwrap(), current);
+    assert_eq!(add_to_src(spec, &t, module, &absent).unwrap(), current);
 }
 
 #[test]
@@ -306,4 +310,9 @@ fn index_factor_bullet_loan_pass_reproduces_the_published_financial_module() {
 #[test]
 fn valuation_sensitivity_pass_reproduces_the_published_financial_module() {
     reproduces_the_financial_module(&SPECS[14]);
+}
+
+#[test]
+fn check_rollup_pass_reproduces_the_published_essentials_module() {
+    reproduces_the_module(&SPECS[15], "Essentials");
 }

@@ -14,6 +14,11 @@ release; until then v3.8.0 behaves as it did.
   `oz.SensitivityGridλ(Calculation, RowValues, ColumnValues)` a two-way sensitivity grid from a
   `LAMBDA`, without a Data Table. All unrounded. `ozzit valuation_sensitivity` adds them.
   [The page](docs/valuation-and-sensitivity.md) gives their sources.
+- `oz.CheckRollUpλ(Checks, [Labels], [Tolerance])` rolls a model's check cells up into one
+  status for a banner: OK with the number checked, or FAIL with the number failing and the
+  first failing label. TRUE passes, a difference passes within the tolerance, and FALSE, an
+  error or text fails. `ozzit check_rollup` adds it.
+  [Workbook use](docs/workbook-use.md#roll-checks-up-into-one-status) gives a banner recipe.
 - `ozzit audit` also reports a defined name for a range or constant that no formula
   uses, a check row that no other formula reads, a number or formula between a `SUM`
   range and its total that the total leaves out, formula cells that read one another,
