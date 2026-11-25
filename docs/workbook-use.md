@@ -163,9 +163,9 @@ Excel opens the workbook read-only in a hidden window, enters each formula on a 
 - **Unused name:** a defined name for a range or constant that no formula, formatting or validation rule, chart or other part uses. Built-in and hidden names, and names holding a formula that calls a function, `LAMBDA` included, are not reported.
 - **Buried check:** a row whose label, the nearest text to its left, contains the word 'check', whose formulas no formula outside that row reads, and which reads no other check. A roll-up that reads the check, on any sheet, clears it; a formatting rule over the check itself does not.
 - **Unlinked row:** a number or formula between a `SUM` of one range and its total, in the total's own column or row, which the total leaves out and no formula outside that row reads. This is the row added just below a range and above its total.
-- **Circular reference:** formula cells that read one another, directly or through a reference-only name; a reference that only `ROW`, `COLUMN`, `ROWS`, `COLUMNS`, `ISREF` or `CELL` with `"filename"`, `"address"`, `"row"`, `"col"` or `"width"` reads does not count. Iterative calculation being on is reported too, because Excel then gives no warning.
+- **Circular reference:** formula cells that read one another, directly or through a reference-only name; a reference that only `ROW`, `COLUMN`, `ROWS`, `COLUMNS`, `ISREF`, `ISFORMULA`, `FORMULATEXT` (including `_xlfn.` XML forms) or `CELL` with `"filename"`, `"address"`, `"row"`, `"col"` or `"width"` reads does not count. Iterative calculation being on is reported too, because Excel then gives no warning.
 
-A reference built while Excel calculates, through `INDIRECT` or `OFFSET`, cannot be followed from the file. A workbook whose cells use either is not checked for buried checks or unlinked rows, and the audit names the first such cell.
+A reference built whilst Excel calculates, through `INDIRECT` or `OFFSET`, cannot be followed from the file. A workbook whose cells use either is not checked for buried checks or unlinked rows, and the audit names the first such cell.
 
 ## Modern Excel
 

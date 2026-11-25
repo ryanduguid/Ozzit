@@ -654,6 +654,7 @@ fn references_excel_reads_otherwise_make_no_false_cycle() {
     assert_eq!(
         findings(&text),
         [
+            "unused name: Choice, which no formula uses",
             "unused name: Inputs, which no formula uses",
             "unused name: Jan, which no formula uses",
             "circular reference: Model!J1 read one another",
@@ -848,4 +849,124 @@ fn this_book_prefix_does_not_strip_before_a_range_colon() {
         .write(dir.path());
     let (code, text) = audit(&["book.xlsx"], dir.path());
     assert_eq!((code, findings(&text)), (0, vec![]), "{text}");
+}
+
+#[test]
+fn dollar_references_do_not_hide_unused_names_or_drop_identifiers() {
+    let dir = tempfile::tempdir().unwrap();
+    let names = concat!(
+        r#"<definedName name="X">Model!$D$1</definedName>"#,
+        r#"<definedName name="Tax">Model!$E$1</definedName>"#,
+        r#"<definedName name="A">Model!$F$1</definedName>"#,
+        r#"<definedName name="XFE1">99</definedName>"#,
+    );
+    let model = row(
+        1,
+        &[
+            number("A1"),
+            formula("B1", "$X$1+X$1+Model!$Tax$1+SUM($A:$A)"),
+            formula("C1", "XFE1"),
+            number("D1"),
+            number("E1"),
+            number("F1"),
+        ],
+    );
+    Book::new()
+        .sheet("Model", "", &model)
+        .names(names)
+        .write(dir.path());
+    let (_, text) = audit(&["book.xlsx"], dir.path());
+    assert_eq!(
+        findings(&text),
+        [
+            "unused name: X, which no formula uses",
+            "unused name: Tax, which no formula uses",
+            "unused name: A, which no formula uses",
+        ]
+    );
+}
+
+#[test]
+fn alias_chains_and_this_book_names_follow_reference_only_cycles() {
+    let dir = tempfile::tempdir().unwrap();
+    let names = concat!(
+        r#"<definedName name="Target">[0]Model!$A$1</definedName>"#,
+        r#"<definedName name="Alias">Target</definedName>"#,
+        r#"<definedName name="Bad">ROW(Model!$C$1)</definedName>"#,
+        r#"<definedName name="BadAlias">Bad</definedName>"#,
+    );
+    let model = row(
+        1,
+        &[
+            formula("A1", "B1"),
+            formula("B1", "Alias"),
+            formula("C1", "BadAlias"),
+        ],
+    );
+    Book::new()
+        .sheet("Model", "", &model)
+        .names(names)
+        .write(dir.path());
+    let (_, text) = audit(&["book.xlsx"], dir.path());
+    assert_eq!(
+        findings(&text),
+        ["circular reference: Model!A1, Model!B1 read one another"]
+    );
+}
+
+#[test]
+fn unused_names_respect_sheet_scope_and_parens_outside_calls() {
+    let dir = tempfile::tempdir().unwrap();
+    let names = concat!(
+        r#"<definedName name="Choice">'Note(1)'!$A$1</definedName>"#,
+        r#"<definedName name="Choice" localSheetId="1">1</definedName>"#,
+        r#"<definedName name="NoteRef">'Note(1)'!$A$1</definedName>"#,
+        r#"<definedName name="ColRef">Sales[Total(USD)]</definedName>"#,
+        r#"<definedName name="Helper">LAMBDA(x,x+1)</definedName>"#,
+    );
+    Book::new()
+        .sheet("Note(1)", "", &row(1, &[number("A1")]))
+        .sheet(
+            "Model",
+            "",
+            &row(1, &[formula("A1", "Choice"), number("B1")]),
+        )
+        .table(1, "Sales", "A1:B2")
+        .names(names)
+        .write(dir.path());
+    let (_, text) = audit(&["book.xlsx"], dir.path());
+    assert_eq!(
+        findings(&text),
+        [
+            "unused name: Choice, which no formula uses",
+            "unused name: NoteRef, which no formula uses",
+            "unused name: ColRef, which no formula uses",
+        ]
+    );
+}
+
+#[test]
+fn position_only_preserves_quoted_sheet_cycles_and_skips_3d_and_xlfn() {
+    let dir = tempfile::tempdir().unwrap();
+    let model = row(
+        1,
+        &[
+            formula(
+                "A1",
+                "ROWS(Jan:Feb!A1)+_xlfn.ISFORMULA(Jan!A1)+_xlfn.FORMULATEXT(Feb!A1)",
+            ),
+            formula("B1", "'ROW(A1)'!B1"),
+        ],
+    );
+    Book::new()
+        .sheet("Jan", "", &row(1, &[formula("A1", "Model!A1")]))
+        .sheet("Feb", "", &row(1, &[formula("A1", "Model!A1")]))
+        .sheet("ROW(A1)", "", &row(1, &[formula("B1", "Model!B1")]))
+        .sheet("Model", "", &model)
+        .write(dir.path());
+    let (_, text) = audit(&["book.xlsx"], dir.path());
+    assert_eq!(
+        findings(&text),
+        ["circular reference: 'ROW(A1)'!B1, Model!B1 read one another"]
+    );
 }

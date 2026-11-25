@@ -8,7 +8,7 @@
 //! cells use either is not checked for buried checks or unlinked rows.
 use crate::archive::Parts;
 use crate::audit::{MAX_COLUMN, MAX_ROW, Sheet, a1, attr, children, parse_a1, quoted};
-use crate::common::{column_number, re, resolve_target};
+use crate::common::{column_number, re, resolve_target, sub, sub_fn};
 use crate::workbook::xml_part;
 use roxmltree::{Document, Node};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -20,8 +20,9 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 /// either case: a case-insensitive `[A-Z]` would also match `ſ` and `K`.
 const REFERENCE: &str = r"(?<![\p{L}\p{N}_.$\[\]'!])(?:(?:'((?:[^']|'')+)'|([\p{L}_\\][\p{L}\p{N}_.]*(?::[\p{L}_\\][\p{L}\p{N}_.]*)?))!)?(\$?[A-Za-z]{1,3}\$?[0-9]{1,7}(?::\$?[A-Za-z]{1,3}\$?[0-9]{1,7})?|\$?[A-Za-z]{1,3}:\$?[A-Za-z]{1,3}|\$?[0-9]{1,7}:\$?[0-9]{1,7})(#?)(?![\p{L}\p{N}_.(\[])";
 /// A function whose reference or name argument is read for its position, not
-/// its value, such as `ROW(A1)` or `CELL("filename", A1)`.
-const POSITION_ONLY: &str = r#"(?i)(?<![\p{L}\p{N}_.])(?:(?:ROWS?|COLUMNS?|ISREF|_xlfn\.ISFORMULA|_xlfn\.FORMULATEXT)\(|CELL\(\s*"(?:filename|address|row|col|width)"\s*,)\s*(?:\[0\]!|'(?:[^']|'')+'!|(?:\[0\])?[\p{L}_\\][\p{L}\p{N}_.]*!)?(?:\$?[A-Z]{0,3}\$?[0-9]{0,7}(?::\$?[A-Z]{0,3}\$?[0-9]{0,7})?#?|[\p{L}_\\][\p{L}\p{N}_.]*)\s*\)"#;
+/// its value, such as `ROW(A1)` or `CELL("filename", A1)`. Anchored at the
+/// start of a non-quoted slice; [`strip_position_only`] guards word boundaries.
+const POSITION_ONLY: &str = r#"^(?i)(?:(?:ROWS?|COLUMNS?|ISREF|(?:_xlfn\.)?(?:ISFORMULA|FORMULATEXT))\(|CELL\(\s*"(?:filename|address|row|col|width)"\s*,)\s*(?:\[0\]!|'(?:[^']|'')+'!|(?:\[0\])?[\p{L}_\\][\p{L}\p{N}_.]*(?::[\p{L}_\\][\p{L}\p{N}_.]*)?!)?(?:\$?[A-Z]{0,3}\$?[0-9]{0,7}(?::\$?[A-Z]{0,3}\$?[0-9]{0,7})?#?|[\p{L}_\\][\p{L}\p{N}_.\\?]*#?)\s*\)"#;
 const DYNAMIC: &str = r"(?i)(?<![\p{L}\p{N}_.])(?:INDIRECT|OFFSET)\(";
 const CALL: &str = r"[\p{L}_][\p{L}\p{N}_.]*\(";
 /// A name, with its sheet, sheet-range or workbook ([`WORKBOOK`]) qualifier if
@@ -240,15 +241,19 @@ fn strip_quoted_this_book(code: &str) -> String {
     out
 }
 
+fn strip_this_book(code: &str) -> String {
+    let code = strip_quoted_this_book(code);
+    let code = sub(&format!("{THIS_BOOK}(?=!)"), &code, WORKBOOK);
+    sub(THIS_BOOK, &code, "")
+}
+
 /// Code with references to other workbooks and the bracketed parts of
 /// structured references blanked, so neither is read as a local reference,
 /// and whether a structured reference names no table. Inside brackets an
 /// apostrophe escapes the next character.
 fn scrub_parts(code: &str) -> (String, bool) {
-    let code = strip_quoted_this_book(code);
-    let code = re(&format!("{THIS_BOOK}(?=!)")).replace_all(&code, WORKBOOK);
-    let code = re(THIS_BOOK).replace_all(&code, "");
-    let code = re(EXTERNAL).replace_all(&code, " ");
+    let code = strip_this_book(code);
+    let code = sub(EXTERNAL, &code, " ");
     let (mut out, mut bare, mut depth, mut quoted) = (String::new(), false, 0usize, false);
     let mut chars = code.chars();
     while let Some(c) = chars.next() {
@@ -345,6 +350,18 @@ fn references(
     out
 }
 
+/// Blank A1, column or row references containing `$`, which cannot be defined
+/// names, whilst leaving bare identifiers like `XFE1` untouched.
+fn strip_dollar_refs(code: &str) -> String {
+    sub_fn(REFERENCE, code, |m| {
+        if m[3].contains('$') {
+            " ".into()
+        } else {
+            m[0].to_owned()
+        }
+    })
+}
+
 /// The names a formula may use, each with its sheet qualifier if it has one;
 /// a sheet or 3-D sheet-range qualifier is not itself a name.
 fn name_tokens(formula: &str) -> Vec<NameRef> {
@@ -353,7 +370,7 @@ fn name_tokens(formula: &str) -> Vec<NameRef> {
         if literal {
             continue;
         }
-        let piece = scrub(&piece);
+        let piece = strip_dollar_refs(&scrub(&piece));
         for m in re(NAME_TOKEN).captures_iter(&piece).flatten() {
             let qualifier = m
                 .get(1)
@@ -588,32 +605,125 @@ fn read_book(parts: &Parts, book: &Document<'_>, sheets: &[Sheet]) -> Book {
     out
 }
 
+fn defined_scope(node: Node<'_, '_>) -> Option<usize> {
+    attr(node, "localSheetId").and_then(|i| i.parse::<usize>().ok())
+}
+
+/// Whether a [`REFERENCE`] match points to an in-bounds range on a known sheet.
+fn valid_ref_target(m: &fancy_regex::Captures<'_, str>, sheets: &[String]) -> bool {
+    let has_sheet = match (m.get(1), m.get(2)) {
+        (Some(q), _) => !prefix_sheets(&q.as_str().replace("''", "'"), sheets).is_empty(),
+        (None, Some(p)) => !prefix_sheets(p.as_str(), sheets).is_empty(),
+        (None, None) => false,
+    };
+    if !has_sheet {
+        return false;
+    }
+    let (first, last) = m[3].split_once(':').unwrap_or((&m[3], &m[3]));
+    let in_bounds = |e: End| {
+        e.0.is_none_or(|(r, _)| (1..=MAX_ROW).contains(&r))
+            && e.1.is_none_or(|(c, _)| (1..=MAX_COLUMN).contains(&c))
+    };
+    end(first).is_some_and(in_bounds) && end(last).is_some_and(in_bounds)
+}
+
+/// Defined-name dependencies when `text` is only sheet references or name
+/// aliases joined by commas; `None` if it computes, calls or names anything else.
+fn plain_name_deps(
+    text: &str,
+    scope: Option<usize>,
+    sheets: &[String],
+    defined: &BTreeSet<Scoped>,
+) -> Option<Vec<Scoped>> {
+    let text = text.trim_start_matches('=');
+    let mut deps = Vec::new();
+    for (literal, piece) in split(text) {
+        if literal {
+            return None;
+        }
+        let code = strip_this_book(&piece);
+        let rest = sub_fn(REFERENCE, &code, |m| {
+            if valid_ref_target(m, sheets) {
+                " ".into()
+            } else {
+                m[0].to_owned()
+            }
+        });
+        let rest = sub_fn(NAME_TOKEN, &rest, |m| {
+            let qualifier = m
+                .get(1)
+                .map(|q| q.as_str().replace("''", "'"))
+                .or_else(|| m.get(2).map(|q| q.as_str().to_owned()));
+            let Some(name) = m.get(3).or_else(|| m.get(4)) else {
+                return m[0].to_owned();
+            };
+            let ref_token = (qualifier, name.as_str().to_lowercase());
+            if let Some(target) = name_key(sheets, |k| defined.contains(k), scope, &ref_token)
+                .filter(|k| defined.contains(k))
+            {
+                deps.push(target);
+                " ".into()
+            } else {
+                m[0].to_owned()
+            }
+        });
+        if !rest.trim_matches([',', ' ']).is_empty() {
+            return None;
+        }
+    }
+    Some(deps)
+}
+
 fn read_names(out: &mut Book, book: &Document<'_>) {
-    let mut raw: Vec<(Scoped, String)> = Vec::new();
-    for name in book
+    let raw: Vec<(Scoped, String)> = book
         .descendants()
         .filter(|n| n.tag_name().name() == "definedName")
-    {
-        let scope = attr(name, "localSheetId").and_then(|i| i.parse::<usize>().ok());
-        let key = attr(name, "name").unwrap_or_default().to_lowercase();
-        raw.push(((scope, key), name.text().unwrap_or_default().to_owned()));
-    }
-    let direct: HashMap<Scoped, (Vec<Area>, bool, Vec<NameRef>)> = raw
-        .iter()
+        .map(|name| {
+            let scope = defined_scope(name);
+            let key = attr(name, "name").unwrap_or_default().to_lowercase();
+            (
+                (scope, key),
+                name.text()
+                    .unwrap_or_default()
+                    .trim_start_matches('=')
+                    .to_owned(),
+            )
+        })
+        .collect();
+    let defined: BTreeSet<Scoped> = raw.iter().map(|(k, _)| k.clone()).collect();
+    let direct: HashMap<Scoped, (Vec<Area>, Vec<NameRef>, Option<Vec<Scoped>>)> = raw
+        .into_iter()
         .map(|(key, text)| {
-            let areas: Vec<Area> = references(text, (1, 1), (1, 1), None, &out.names)
+            let areas: Vec<Area> = references(&text, (1, 1), (1, 1), None, &out.names)
                 .iter()
                 .map(|r| r.area)
                 .collect();
-            let rest = re(REFERENCE).replace_all(text, "");
-            let plain = !areas.is_empty() && rest.trim_matches([',', ' ']).is_empty();
-            (key.clone(), (areas, plain, name_tokens(text)))
+            let deps = plain_name_deps(&text, key.0, &out.names, &defined);
+            let tokens = name_tokens(&text);
+            (key, (areas, tokens, deps))
         })
         .collect();
-    for (key, (areas, plain, _)) in &direct {
-        if *plain {
-            out.plain_names.insert(key.clone(), areas.clone());
+    let mut plain: HashMap<Scoped, bool> = direct
+        .iter()
+        .map(|(k, (_, _, deps))| (k.clone(), deps.is_some()))
+        .collect();
+    loop {
+        let mut changed = false;
+        for (key, (_, _, deps)) in &direct {
+            if plain.get(key) == Some(&true)
+                && deps
+                    .as_ref()
+                    .is_some_and(|list| list.iter().any(|d| plain.get(d) != Some(&true)))
+            {
+                plain.insert(key.clone(), false);
+                changed = true;
+            }
         }
+        if !changed {
+            break;
+        }
+    }
+    for key in direct.keys() {
         let mut all: Vec<Area> = Vec::new();
         let mut seen = BTreeSet::new();
         let mut queue = vec![key.clone()];
@@ -622,14 +732,17 @@ fn read_names(out: &mut Book, book: &Document<'_>) {
             if !seen.insert(k.clone()) {
                 continue;
             }
-            let Some((areas, _, tokens)) = direct.get(&k) else {
+            let Some((areas, tokens, _)) = direct.get(&k) else {
                 continue;
             };
             all.extend(areas);
             for t in tokens {
-                let key = name_key(&out.names, |x| direct.contains_key(x), k.0, t);
-                queue.extend(key.filter(|x| direct.contains_key(x)));
+                let target = name_key(&out.names, |x| direct.contains_key(x), k.0, t);
+                queue.extend(target.filter(|x| direct.contains_key(x)));
             }
+        }
+        if plain.get(key) == Some(&true) && !all.is_empty() {
+            out.plain_names.insert(key.clone(), all.clone());
         }
         out.named.entry(key.clone()).or_default().extend(all);
     }
@@ -780,7 +893,19 @@ impl Book {
 /// of an attribute or element in a part other than the workbook, a sheet or the
 /// shared strings, such as a slicer's cache name, counts as used.
 fn unused_names(parts: &Parts, book: &Document<'_>, sheets: &[Sheet]) -> Vec<String> {
-    let mut used: BTreeSet<String> = BTreeSet::new();
+    let sheet_names: Vec<String> = sheets.iter().map(|s| s.name.clone()).collect();
+    let defined: BTreeSet<Scoped> = book
+        .descendants()
+        .filter(|n| n.tag_name().name() == "definedName")
+        .map(|n| {
+            (
+                defined_scope(n),
+                attr(n, "name").unwrap_or_default().to_lowercase(),
+            )
+        })
+        .collect();
+    let mut used_scoped: BTreeSet<Scoped> = BTreeSet::new();
+    let mut used_unscoped: BTreeSet<String> = BTreeSet::new();
     for (part, bytes) in parts {
         let Ok(doc) = xml_part(part, bytes) else {
             continue;
@@ -788,20 +913,30 @@ fn unused_names(parts: &Parts, book: &Document<'_>, sheets: &[Sheet]) -> Vec<Str
         let other = part != crate::archive::BOOK
             && !part.starts_with("xl/worksheets/")
             && part != "xl/sharedStrings.xml";
+        let part_sheet = sheets
+            .iter()
+            .position(|s| s.part.as_deref() == Some(part.as_str()));
         for node in doc.descendants().filter(|n| n.is_element()) {
             let name = node.tag_name().name();
             if matches!(
                 name,
                 "f" | "formula" | "formula1" | "formula2" | "definedName"
             ) {
-                used.extend(
-                    name_tokens(node.text().unwrap_or_default())
-                        .into_iter()
-                        .map(|(_, n)| n),
-                );
+                let context = if name == "definedName" {
+                    defined_scope(node)
+                } else {
+                    part_sheet
+                };
+                for token in name_tokens(node.text().unwrap_or_default()) {
+                    if let Some(key) =
+                        name_key(&sheet_names, |k| defined.contains(k), context, &token)
+                    {
+                        used_scoped.insert(key);
+                    }
+                }
             } else if other {
-                used.extend(node.attributes().map(|a| a.value().to_lowercase()));
-                used.extend(node.text().map(str::to_lowercase));
+                used_unscoped.extend(node.attributes().map(|a| a.value().to_lowercase()));
+                used_unscoped.extend(node.text().map(str::to_lowercase));
             }
         }
     }
@@ -811,17 +946,22 @@ fn unused_names(parts: &Parts, book: &Document<'_>, sheets: &[Sheet]) -> Vec<Str
         .filter(|n| n.tag_name().name() == "definedName")
     {
         let key = attr(name, "name").unwrap_or_default();
+        let lower = key.to_lowercase();
+        let scoped = (defined_scope(name), lower.clone());
         let text = name.text().unwrap_or_default().trim_start_matches('=');
-        let skip = key.to_lowercase().starts_with("_xl")
+        let skip = lower.starts_with("_xl")
             || matches!(attr(name, "hidden"), Some("1" | "true"))
-            || split(text)
-                .into_iter()
-                .any(|(literal, piece)| !literal && re(CALL).is_match(&piece).unwrap_or(false));
-        if skip || used.contains(&key.to_lowercase()) {
+            || split(text).into_iter().any(|(literal, piece)| {
+                if literal {
+                    return false;
+                }
+                let code = sub(r"'(?:[^']|'')*'", &scrub(&piece), " ");
+                re(CALL).is_match(&code).unwrap_or(false)
+            });
+        if skip || used_scoped.contains(&scoped) || used_unscoped.contains(&lower) {
             continue;
         }
-        let scope = attr(name, "localSheetId")
-            .and_then(|i| i.parse::<usize>().ok())
+        let scope = defined_scope(name)
             .and_then(|i| sheets.get(i))
             .map(|s| format!(" (sheet {})", s.name))
             .unwrap_or_default();
@@ -968,11 +1108,69 @@ fn gaps(book: &Book) -> Gaps {
     found
 }
 
+/// Replace position-only function calls (`ROW(A1)`, `_xlfn.ISFORMULA(A1)`,
+/// ...) with `0`, skipping string literals, quoted sheet names and structured
+/// reference brackets so names like `'ROW(A1)'!B1` stay intact.
+fn strip_position_only(formula: &str) -> String {
+    let mut out = String::with_capacity(formula.len());
+    let pattern = re(POSITION_ONLY);
+    let mut i = 0;
+    let mut prev = None;
+    while let Some(c) = formula[i..].chars().next() {
+        let rest = &formula[i..];
+        if c == '[' {
+            let mut depth = 0usize;
+            let mut j = i;
+            while let Some(ch) = formula[j..].chars().next() {
+                j += ch.len_utf8();
+                match ch {
+                    '\'' => {
+                        if let Some(esc) = formula[j..].chars().next() {
+                            j += esc.len_utf8();
+                        }
+                    }
+                    '[' => depth += 1,
+                    ']' => {
+                        depth -= 1;
+                        if depth == 0 {
+                            break;
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            out.push_str(&formula[i..j]);
+            prev = formula[..j].chars().next_back();
+            i = j;
+            continue;
+        }
+        if c == '"' || c == '\'' {
+            let mut chars = rest[c.len_utf8()..].chars().peekable();
+            let token = read_quoted(c, &mut chars);
+            out.push_str(&token);
+            i += token.len();
+            prev = Some(c);
+            continue;
+        }
+        let word_prev = prev.is_some_and(|p| p.is_alphanumeric() || p == '_' || p == '.');
+        if !word_prev && let Some(m) = pattern.find(rest).ok().flatten() {
+            out.push('0');
+            i += m.end();
+            prev = formula[..i].chars().next_back();
+            continue;
+        }
+        out.push(c);
+        prev = Some(c);
+        i += c.len_utf8();
+    }
+    out
+}
+
 fn edges(book: &Book) -> BTreeMap<Place, Vec<Place>> {
     let mut out = BTreeMap::new();
     for (sheet, grid) in book.grids.iter().enumerate() {
         for (&at, f) in &grid.formulas {
-            let text = re(POSITION_ONLY).replace_all(&f.text, "0").into_owned();
+            let text = strip_position_only(&f.text);
             let mut areas: Vec<Area> = references(&text, f.origin, at, Some(sheet), &book.names)
                 .into_iter()
                 .map(|r| book.resolve(r))
@@ -1209,6 +1407,7 @@ mod tests {
             tokens("SUM(Jan:Feb!A1)+[0]!Self+[1]!Other+Sales['#Items]"),
             ["sum", "Jan:Feb!a1", "\u{0}!self", "sales"]
         );
+        assert_eq!(tokens("$X$1+X$1+$A:$A+Model!$Tax$1+XFE1"), ["xfe1"]);
     }
 
     #[test]
@@ -1254,11 +1453,18 @@ mod tests {
     #[test]
     fn position_only_arguments_are_not_dependencies() {
         assert_eq!(
-            re(POSITION_ONLY).replace_all(
+            strip_position_only(
                 r#"ROW(A5)+COLUMNS(Model!A1:C1)+CELL("filename",A1)+CELL("contents",A1)+A5"#,
-                "0"
             ),
             r#"0+0+0+CELL("contents",A1)+A5"#
         );
+        assert_eq!(
+            strip_position_only(
+                r#"ROWS(Jan:Feb!A1)+_xlfn.ISFORMULA(A1)+ISFORMULA(B1)+_xlfn.FORMULATEXT(C1)+FORMULATEXT(D1)"#,
+            ),
+            "0+0+0+0+0"
+        );
+        let unchanged = r#"'ROW(A1)'!B1+"ROW(A1)"+Sales[ROW(A1)]+MyROW(A1)"#;
+        assert_eq!(strip_position_only(unchanged), unchanged);
     }
 }
