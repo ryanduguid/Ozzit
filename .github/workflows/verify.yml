@@ -244,15 +244,17 @@ jobs:
           persist-credentials: false
       - name: Install the pinned Rust toolchain
         run: rustup toolchain install
-      - uses: taiki-e/install-action@ab49d3c64680143e184118bed66a46419fc15519 # v2.90.5
+      - uses: taiki-e/install-action@fe3acb53a98b62c772db35de75ce0e4595e7ca8c # v2.90.8
         with:
-          tool: cargo-audit@0.22.2
+          tool: cargo-audit@0.22.2,cargo-deny@0.22.0
           fallback: none
       - name: Audit the native tools' locked dependencies
         working-directory: tools/ozzit
         run: |
           cargo audit ${{ github.event_name == 'schedule' && '--deny warnings' || '--deny unsound --deny yanked' }}
           cargo audit ${{ github.event_name == 'schedule' && '--deny warnings' || '--deny unsound --deny yanked' }} --file fuzz/Cargo.lock
+          cargo deny --locked --config "$GITHUB_WORKSPACE/deny.toml" check licenses sources
+          cargo deny --locked --config "$GITHUB_WORKSPACE/deny.toml" --manifest-path fuzz/Cargo.toml check licenses sources
 
   # Holds the native tools' tests to their measured line coverage. It sits with
   # the CI-only jobs because it needs cargo-llvm-cov, which the contributor
