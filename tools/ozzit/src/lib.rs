@@ -20,6 +20,7 @@ pub mod native_evidence;
 mod output;
 pub mod polish;
 pub mod postbuild;
+pub mod practice_calculators;
 pub mod py;
 pub mod pyjson;
 mod pyunicode;
