@@ -14,6 +14,11 @@ release; until then v3.8.0 behaves as it did.
   `oz.SensitivityGridλ(Calculation, RowValues, ColumnValues)` a two-way sensitivity grid from a
   `LAMBDA`, without a Data Table. All unrounded. `ozzit valuation_sensitivity` adds them.
   [The page](docs/valuation-and-sensitivity.md) gives their sources.
+- `ozzit audit` also reports a defined name for a range or constant that no formula
+  uses, a check row that no other formula reads, a number or formula between a `SUM`
+  range and its total that the total leaves out, formula cells that read one another,
+  and iterative calculation being on.
+  [Workbook use](docs/workbook-use.md#audit-a-workbook) gives the rules.
 - [Workbook use](docs/workbook-use.md) shows how a script or agent on Windows looks up a
   function with `ozzit function_reference` and gets Excel's own result for a formula with the
   existing read-only evaluator, and the Ozzit skill points to it.

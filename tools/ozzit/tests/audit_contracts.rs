@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! `ozzit audit` reports hard-coded numbers inside formula runs, external links
-//! whose target is missing, and hidden names and sheets, without writing.
+//! whose target is missing, hidden names and sheets, unused names, buried checks,
+//! rows a SUM total leaves out and circular references, without writing.
 use ozzit::archive::{Parts, deterministic_bytes};
 use std::path::Path;
 use std::process::Command;
@@ -18,7 +19,10 @@ const PATH_MISSING: &str =
 struct Book {
     sheets: Vec<(&'static str, &'static str, String)>,
     names: String,
+    calc: String,
     links: Vec<(&'static str, String)>,
+    /// (sheet index, table name, range).
+    tables: Vec<(usize, &'static str, &'static str)>,
 }
 
 impl Book {
@@ -26,7 +30,9 @@ impl Book {
         Self {
             sheets: vec![],
             names: String::new(),
+            calc: String::new(),
             links: vec![],
+            tables: vec![],
         }
     }
     /// A sheet: its name, its `state` attribute (empty for visible) and its rows.
@@ -38,9 +44,18 @@ impl Book {
         self.names = names.to_owned();
         self
     }
+    fn calc(mut self, calc: &str) -> Self {
+        self.calc = calc.to_owned();
+        self
+    }
     /// An external link part with one relationship of `kind` to `target`.
     fn link(mut self, kind: &'static str, target: &str) -> Self {
         self.links.push((kind, target.to_owned()));
+        self
+    }
+    /// A table on the sheet at `sheet` (from 0) over `range`.
+    fn table(mut self, sheet: usize, name: &'static str, range: &'static str) -> Self {
+        self.tables.push((sheet, name, range));
         self
     }
     fn parts(&self) -> Parts {
@@ -66,6 +81,7 @@ impl Book {
                     .into_bytes(),
             );
         }
+        self.table_parts(&mut parts);
         let external = self.link_parts(&mut parts, &mut rels);
         let names = if self.names.is_empty() {
             String::new()
@@ -74,7 +90,7 @@ impl Book {
         };
         parts.insert(
             "xl/workbook.xml".into(),
-            format!("<workbook xmlns=\"{MAIN}\" xmlns:r=\"{REL}\"><sheets>{sheets}</sheets>{external}{names}</workbook>")
+            format!("<workbook xmlns=\"{MAIN}\" xmlns:r=\"{REL}\"><sheets>{sheets}</sheets>{external}{names}{}</workbook>", self.calc)
                 .into_bytes(),
         );
         parts.insert(
@@ -82,6 +98,27 @@ impl Book {
             format!("<Relationships xmlns=\"{PKG}\">{rels}</Relationships>").into_bytes(),
         );
         parts
+    }
+    /// Each table's part and its sheet's relationship to it.
+    fn table_parts(&self, parts: &mut Parts) {
+        for (i, (sheet, name, range)) in self.tables.iter().enumerate() {
+            let n = i + 1;
+            parts.insert(
+                format!("xl/tables/table{n}.xml"),
+                format!("<table xmlns=\"{MAIN}\" id=\"{n}\" name=\"{name}\" displayName=\"{name}\" ref=\"{range}\"/>")
+                    .into_bytes(),
+            );
+            let rels = format!("xl/worksheets/_rels/sheet{}.xml.rels", sheet + 1);
+            let mut body = parts
+                .get(&rels)
+                .map(|b| String::from_utf8(b.clone()).unwrap())
+                .unwrap_or_else(|| format!("<Relationships xmlns=\"{PKG}\"></Relationships>"));
+            body = body.replace(
+                "</Relationships>",
+                &format!("<Relationship Id=\"rT{n}\" Type=\"{REL}/table\" Target=\"../tables/table{n}.xml\"/></Relationships>"),
+            );
+            parts.insert(rels, body.into_bytes());
+        }
     }
     /// The external link parts, their workbook relationships and the
     /// `externalReferences` element.
@@ -330,6 +367,7 @@ fn hidden_names_and_sheets_are_reported() {
             "very hidden sheet: Keys",
             "hidden name: Secret",
             "hidden name: _xlnm._FilterDatabase (sheet Calc)",
+            "unused name: Shown, which no formula uses",
         ]
     );
 }
@@ -358,5 +396,581 @@ fn usage_and_unreadable_input_fail() {
     assert!(
         text.starts_with("FAIL: cannot read missing.xlsx: "),
         "{text}"
+    );
+}
+
+/// A cell holding inline text.
+fn label(at: &str, text: &str) -> String {
+    format!(r#"<c r="{at}" t="inlineStr"><is><t>{text}</t></is></c>"#)
+}
+
+/// A formula cell.
+fn formula(at: &str, text: &str) -> String {
+    format!(r#"<c r="{at}"><f>{text}</f><v>0</v></c>"#)
+}
+
+fn number(at: &str) -> String {
+    format!(r#"<c r="{at}"><v>1</v></c>"#)
+}
+
+fn row(r: usize, cells: &[String]) -> String {
+    format!(r#"<row r="{r}">{}</row>"#, cells.concat())
+}
+
+#[test]
+fn names_that_nothing_uses_are_reported() {
+    let dir = tempfile::tempdir().unwrap();
+    let names = concat!(
+        r#"<definedName name="Rate">Model!$A$1</definedName>"#,
+        r#"<definedName name="Unused">Model!$A$2</definedName>"#,
+        r#"<definedName name="Local" localSheetId="0">Model!$A$3</definedName>"#,
+        r#"<definedName name="Twice">Rate*2</definedName>"#,
+        r#"<definedName name="Fn">_xlfn.LAMBDA(_xlpm.x, _xlpm.x)</definedName>"#,
+        r#"<definedName name="_xlnm.Print_Area" localSheetId="0">Model!$A$1:$B$2</definedName>"#,
+    );
+    let rows = row(2, &[number("A2"), formula("B2", "twice+1")]);
+    Book::new()
+        .sheet("Model", "", &rows)
+        .names(names)
+        .write(dir.path());
+    let (code, text) = audit(&["book.xlsx"], dir.path());
+    assert_eq!(code, 1, "{text}");
+    assert_eq!(
+        findings(&text),
+        [
+            "unused name: Unused, which no formula uses",
+            "unused name: Local (sheet Model), which no formula uses",
+        ]
+    );
+}
+
+#[test]
+fn a_check_row_that_nothing_reads_is_buried() {
+    let dir = tempfile::tempdir().unwrap();
+    let bs = [
+        row(5, &[label("A5", "Assets"), number("C5"), number("D5")]),
+        row(8, &[label("A8", "Liabilities"), number("C8"), number("D8")]),
+        // Read only by its own row: still buried.
+        row(
+            10,
+            &[
+                label("A10", "Balance check"),
+                formula("C10", "C5-C8"),
+                formula("D10", "C10+D5-D8"),
+            ],
+        ),
+        row(11, &[label("A11", "Cash check"), formula("C11", "C5-1")]),
+        row(12, &[label("A12", "Tax Check:"), formula("C12", "C8-1")]),
+    ]
+    .concat();
+    let summary = [
+        // A roll-up reads a check, so it is not buried itself.
+        row(
+            2,
+            &[label("A2", "All checks"), formula("B2", "AND(BS!C11=0)")],
+        ),
+        row(3, &[label("A3", "Checklist"), formula("B3", "1")]),
+    ]
+    .concat();
+    // A formatting rule over its own cell does not show it in a summary.
+    let rule = r#"<conditionalFormatting sqref="C12"><cfRule type="expression" priority="1"><formula>C12&lt;&gt;0</formula></cfRule></conditionalFormatting>"#;
+    let bs = format!("{bs}</sheetData>{rule}<sheetData>");
+    Book::new()
+        .sheet("BS", "", &bs)
+        .sheet("Summary", "", &summary)
+        .write(dir.path());
+    let (code, text) = audit(&["book.xlsx"], dir.path());
+    assert_eq!(code, 1, "{text}");
+    assert_eq!(
+        findings(&text),
+        [
+            "buried check: BS!C10:D10 ('Balance check') is read by no other formula, so no summary shows it",
+            "buried check: BS!C12 ('Tax Check:') is read by no other formula, so no summary shows it",
+        ]
+    );
+}
+
+#[test]
+fn a_row_between_a_sum_and_its_total_that_nothing_reads_is_unlinked() {
+    let dir = tempfile::tempdir().unwrap();
+    let rows = [
+        row(2, &[label("A2", "Wages"), number("C2"), number("D2")]),
+        row(3, &[label("A3", "Rent"), number("C3"), number("D3")]),
+        row(4, &[label("A4", "Contractors"), number("C4"), number("D4")]),
+        row(
+            5,
+            &[
+                label("A5", "Total"),
+                formula("C5", "SUM(C2:C3)"),
+                formula("D5", "SUM(D2:D3)"),
+            ],
+        ),
+        // A gap cell another formula reads is linked; a blank gap is empty.
+        row(7, &[number("C7"), number("E7"), number("G7")]),
+        row(8, &[number("C8"), formula("E8", "E7*2")]),
+        row(
+            9,
+            &[
+                formula("C9", "SUM(C7:C7)"),
+                formula("E9", "SUM(E7:E7)"),
+                formula("G9", "SUM(G7:G7)"),
+            ],
+        ),
+        row(10, &[formula("C10", "C8")]),
+    ]
+    .concat();
+    Book::new().sheet("Model", "", &rows).write(dir.path());
+    let (code, text) = audit(&["book.xlsx"], dir.path());
+    assert_eq!(code, 1, "{text}");
+    assert_eq!(
+        findings(&text),
+        [
+            "unlinked row: Model!C4:D4 ('Contractors') lies between SUM(C2:C3) and its total C5, which leaves it out, and no formula reads it",
+            "unlinked row: Model!E8 lies between SUM(E7:E7) and its total E9, which leaves it out, and no formula reads it",
+        ]
+    );
+}
+
+#[test]
+fn a_column_between_a_sum_and_its_total_that_nothing_reads_is_unlinked() {
+    let dir = tempfile::tempdir().unwrap();
+    let cells = |r: usize| {
+        let mut cells = vec![label(&format!("A{r}"), "Contractors")];
+        cells.extend(["G", "H", "I"].map(|c| number(&format!("{c}{r}"))));
+        cells.push(formula(&format!("J{r}"), &format!("SUM(G{r}:H{r})")));
+        row(r, &cells)
+    };
+    // Row 3's I3 is read from another row, even in its own column, so only I2
+    // is unlinked.
+    let rows = [cells(2), cells(3), row(4, &[formula("I4", "I3")])].concat();
+    Book::new().sheet("Model", "", &rows).write(dir.path());
+    let (code, text) = audit(&["book.xlsx"], dir.path());
+    assert_eq!(code, 1, "{text}");
+    assert_eq!(
+        findings(&text),
+        [
+            "unlinked row: Model!I2 ('Contractors') lies between SUM(G2:H2) and its total J2, which leaves it out, and no formula reads it"
+        ]
+    );
+}
+
+#[test]
+fn circular_references_and_iterative_calculation_are_reported() {
+    let dir = tempfile::tempdir().unwrap();
+    let rows = row(
+        2,
+        &[
+            formula("B2", "C2+1"),
+            formula("C2", "Other!A1*B2"),
+            formula("D2", "SUM(D:D)"),
+            formula("E2", "ROW(E2)+COLUMNS(E2:F2)"),
+            formula("F2", "IFERROR(\"F2\",0)"),
+            formula("G2", "CELL(\"filename\",G2)"),
+        ],
+    );
+    let other = row(1, &[formula("A1", "1")]);
+    Book::new()
+        .sheet("Model", "", &rows)
+        .sheet("Other", "", &other)
+        .calc(r#"<calcPr calcId="191029" iterate="1"/>"#)
+        .write(dir.path());
+    let (code, text) = audit(&["book.xlsx"], dir.path());
+    assert_eq!(code, 1, "{text}");
+    assert_eq!(
+        findings(&text),
+        [
+            "circular reference: Model!B2, Model!C2 read one another",
+            "circular reference: Model!D2 read one another",
+            "iterative calculation is on, so Excel does not warn of a circular reference",
+        ]
+    );
+}
+
+#[test]
+fn indirect_or_offset_leaves_checks_and_rows_unchecked() {
+    let dir = tempfile::tempdir().unwrap();
+    let rows = row(
+        2,
+        &[
+            label("A2", "Balance check"),
+            formula("C2", "INDIRECT(\"B1\")"),
+        ],
+    );
+    Book::new().sheet("Model", "", &rows).write(dir.path());
+    let (code, text) = audit(&["book.xlsx"], dir.path());
+    assert_eq!(code, 1, "{text}");
+    assert_eq!(
+        findings(&text),
+        [
+            "not checked for buried checks or unlinked rows: Model!C2 uses INDIRECT or OFFSET, so what reads a cell is not known"
+        ]
+    );
+}
+
+#[test]
+fn references_excel_reads_otherwise_make_no_false_cycle() {
+    let dir = tempfile::tempdir().unwrap();
+    let names = concat!(
+        r#"<definedName name="D0">1</definedName>"#,
+        r#"<definedName name="Choice">Model!$F$1</definedName>"#,
+        // A sheet's constant shadows the workbook's reference.
+        r#"<definedName name="Choice" localSheetId="3">1</definedName>"#,
+        r#"<definedName name="Inputs">Model!$H$1</definedName>"#,
+        r#"<definedName name="Self">Model!$I$1</definedName>"#,
+        r#"<definedName name="SelfJ">Model!$J$1</definedName>"#,
+        // A 3-D qualifier is no use of the name Jan.
+        r#"<definedName name="Jan">Total!$A$1</definedName>"#,
+        r#"<definedName name="SelfL">Model!$L$1</definedName>"#,
+        r#"<definedName name="ſ1">1</definedName>"#,
+        r#"<definedName name="K1">2</definedName>"#,
+    );
+    let model = [
+        // A 3-D range, a structured and an external reference, a shared name.
+        r#"<row r="1"><c r="A1"><f>SUM(Sales[Cost A1])+SUM([1]Data!A1:A1)</f><v>0</v></c><c r="D1"><f>E2</f><v>0</v></c><c r="E1"><f t="shared" ref="E1:E2" si="0">D0</f><v>1</v></c>"#,
+        &formula("F1", "Choice"),
+        &number("G1"),
+        &formula("H1", "Inputs!B1"),
+        &formula("I1", "ROW(Self)"),
+        &formula("J1", "SUM(SelfJ)"),
+        // Another workbook's name, and this workbook's ([0]) name of L1.
+        &formula("K1", "[1]!FooK1"),
+        &formula("L1", "[0]!SelfL"),
+        // Names that only look like cells: long s and the Kelvin sign.
+        &formula("M1", "ſ1+K1"),
+        // Escapes inside a structured reference hide no cell reference.
+        &formula("N1", "SUM(Sales['#Items])+N(\"N1\")+SUM(Sales[x']N1])"),
+        r#"</row><row r="2"><c r="E2"><f t="shared" si="0"/><v>1</v></c></row>"#,
+    ]
+    .concat();
+    Book::new()
+        .sheet("Jan", "", &row(1, &[number("A1")]))
+        .sheet("Feb", "", &row(1, &[number("A1")]))
+        .sheet("Total", "", &row(1, &[formula("A1", "SUM(Jan:Feb!A1)")]))
+        .sheet("Model", "", &model)
+        .sheet("Inputs", "", &row(1, &[number("B1")]))
+        .names(names)
+        .write(dir.path());
+    let (_, text) = audit(&["book.xlsx"], dir.path());
+    assert_eq!(
+        findings(&text),
+        [
+            "unused name: Choice, which no formula uses",
+            "unused name: Inputs, which no formula uses",
+            "unused name: Jan, which no formula uses",
+            "circular reference: Model!J1 read one another",
+            "circular reference: Model!L1 read one another",
+        ]
+    );
+}
+
+#[test]
+fn checks_read_by_any_route_are_not_buried() {
+    let dir = tempfile::tempdir().unwrap();
+    let names = concat!(
+        r#"<definedName name="CheckRange">Checks!$C$11</definedName>"#,
+        r#"<definedName name="CheckAlias">CheckRange</definedName>"#,
+        // Read from Summary as Checks!Flag: the name in Checks's scope.
+        r#"<definedName name="Flag" localSheetId="0">Checks!$C$14</definedName>"#,
+    );
+    let checks = [
+        r#"<row r="10">"#,
+        &label("A10", "Balance check"),
+        r#"<c r="C10"><f t="array" ref="C10:D10">{1,1}</f><v>1</v></c><c r="D10"><v>1</v></c></row>"#,
+        &row(11, &[label("A11", "Alias check"), formula("C11", "1")]),
+        &row(12, &[label("A12", "Lower check"), formula("C12", "1")]),
+        &row(13, &[label("A13", "Lost check"), formula("C13", "1")]),
+        &row(14, &[label("A14", "Check"), formula("C14", "1")]),
+    ]
+    .concat();
+    let summary = row(
+        2,
+        &[
+            formula("B2", "Checks!D10+CheckAlias+checks!c12"),
+            formula("B3", "'Cash\"flow'!B2+SUM('Q1 a:Q1 b'!B2)"),
+            formula("B4", "Checks!Flag"),
+        ],
+    );
+    let check = |l: &str| row(2, &[label("A2", l), formula("B2", "1")]);
+    Book::new()
+        .sheet("Checks", "", &checks)
+        .sheet("Summary", "", &summary)
+        .sheet("Cash&quot;flow", "", &check("Cash check"))
+        .sheet("Q1 a", "", "")
+        .sheet("Q1 b", "", &check("Q check"))
+        .names(names)
+        .write(dir.path());
+    let (_, text) = audit(&["book.xlsx"], dir.path());
+    assert_eq!(
+        findings(&text),
+        [
+            "buried check: Checks!C13 ('Lost check') is read by no other formula, so no summary shows it"
+        ]
+    );
+}
+
+#[test]
+fn only_a_bare_structured_reference_reads_its_own_table() {
+    let dir = tempfile::tempdir().unwrap();
+    // Inside Local, a reference to Other reads Other alone; inside Bare, a
+    // reference without a table reads Bare.
+    let rows = [
+        row(
+            2,
+            &[
+                formula("A2", "SUM([1]!Other[Amount])"),
+                formula("B2", "SUM(Other[Amount])"),
+            ],
+        ),
+        row(3, &[label("A3", "Unrelated check"), formula("B3", "1")]),
+        row(6, &[formula("B6", "SUM([Amount])")]),
+        row(7, &[label("A7", "Read check"), formula("B7", "1")]),
+        // [0] here is a column of the containing table, not this workbook.
+        row(10, &[formula("B10", "SUM([0])")]),
+        row(11, &[label("A11", "Zero check"), formula("B11", "1")]),
+    ]
+    .concat();
+    Book::new()
+        .sheet("T", "", &rows)
+        .table(0, "Local", "A1:B3")
+        .table(0, "Other", "D1:E3")
+        .table(0, "Bare", "A5:B7")
+        .table(0, "Zero", "A9:B11")
+        .write(dir.path());
+    let (_, text) = audit(&["book.xlsx"], dir.path());
+    assert_eq!(
+        findings(&text),
+        [
+            "buried check: T!B3 ('Unrelated check') is read by no other formula, so no summary shows it"
+        ]
+    );
+}
+
+#[test]
+fn a_this_workbook_qualifier_names_the_workbook_scope() {
+    // [0]! is the workbook's name, not the sheet's, wherever the sheet is (as
+    // Excel 16 resolves it): A1 reads itself, B1 does not, and C1 and D1 read
+    // only their own position.
+    for model_first in [true, false] {
+        let dir = tempfile::tempdir().unwrap();
+        let local = if model_first { "0" } else { "1" };
+        let names = [
+            r#"<definedName name="PickA">Model!$A$1</definedName>"#.to_owned(),
+            format!(r#"<definedName name="PickA" localSheetId="{local}">1</definedName>"#),
+            r#"<definedName name="PickB">1</definedName>"#.to_owned(),
+            format!(r#"<definedName name="PickB" localSheetId="{local}">Model!$B$1</definedName>"#),
+            r#"<definedName name="PickC">Model!$C$1</definedName>"#.to_owned(),
+        ]
+        .concat();
+        let model = row(
+            1,
+            &[
+                formula("A1", "[0]!PickA"),
+                formula("B1", "[0]!PickB"),
+                formula("C1", "ROW([0]!PickC)"),
+                formula("D1", "ROW([0]Model!D1)"),
+            ],
+        );
+        let book = Book::new();
+        let book = if model_first {
+            book.sheet("Model", "", &model).sheet("Other", "", "")
+        } else {
+            book.sheet("Other", "", "").sheet("Model", "", &model)
+        };
+        book.names(&names).write(dir.path());
+        let (_, text) = audit(&["book.xlsx"], dir.path());
+        assert_eq!(
+            findings(&text),
+            [
+                "unused name: PickA (sheet Model), which no formula uses",
+                "unused name: PickB (sheet Model), which no formula uses",
+                "circular reference: Model!A1 read one another",
+            ],
+            "Model first: {model_first}"
+        );
+    }
+}
+
+#[test]
+fn this_workbook_sheet_qualifiers_read_the_local_sheet() {
+    let dir = tempfile::tempdir().unwrap();
+    let check = |l: &str| row(3, &[label("A3", l), formula("B3", "1")]);
+    let summary = row(
+        1,
+        &[
+            formula("A1", "'[0]Cash flow'!B3"),
+            formula("B1", "SUM([0]Jan:Feb!B3)"),
+        ],
+    );
+    Book::new()
+        .sheet("Jan", "", &check("Month check"))
+        .sheet("Feb", "", &check("Month check"))
+        .sheet("Cash flow", "", &check("Cash check"))
+        .sheet("Summary", "", &summary)
+        .write(dir.path());
+    let (code, text) = audit(&["book.xlsx"], dir.path());
+    assert_eq!((code, findings(&text)), (0, vec![]), "{text}");
+}
+
+#[test]
+fn quoted_this_book_prefix_stays_verbatim_inside_structured_brackets() {
+    let dir = tempfile::tempdir().unwrap();
+    let rows = [
+        row(
+            1,
+            &[
+                formula("A1", "SUM(Sales[[#Data],[x '[0]])+A1"),
+                label("B1", "x [0"),
+            ],
+        ),
+        row(2, &[number("B2")]),
+        row(3, &[number("B3")]),
+    ]
+    .concat();
+    Book::new()
+        .sheet("Model", "", &rows)
+        .table(0, "Sales", "B1:B3")
+        .write(dir.path());
+    let (code, text) = audit(&["book.xlsx"], dir.path());
+    assert_eq!(code, 1, "{text}");
+    assert_eq!(
+        findings(&text),
+        ["circular reference: Model!A1 read one another"]
+    );
+}
+
+#[test]
+fn this_book_prefix_does_not_strip_before_a_range_colon() {
+    let dir = tempfile::tempdir().unwrap();
+    let rows = [
+        row(1, &[label("B1", "0")]),
+        row(2, &[formula("B2", "ROWS([0]:Model!B2)")]),
+        row(3, &[number("B3")]),
+    ]
+    .concat();
+    Book::new()
+        .sheet("Model", "", &rows)
+        .table(0, "Zero", "B1:B3")
+        .write(dir.path());
+    let (code, text) = audit(&["book.xlsx"], dir.path());
+    assert_eq!((code, findings(&text)), (0, vec![]), "{text}");
+}
+
+#[test]
+fn dollar_references_do_not_hide_unused_names_or_drop_identifiers() {
+    let dir = tempfile::tempdir().unwrap();
+    let names = concat!(
+        r#"<definedName name="X">Model!$D$1</definedName>"#,
+        r#"<definedName name="Tax">Model!$E$1</definedName>"#,
+        r#"<definedName name="A">Model!$F$1</definedName>"#,
+        r#"<definedName name="XFE1">99</definedName>"#,
+    );
+    let model = row(
+        1,
+        &[
+            number("A1"),
+            formula("B1", "$X$1+X$1+Model!$Tax$1+SUM($A:$A)"),
+            formula("C1", "XFE1"),
+            number("D1"),
+            number("E1"),
+            number("F1"),
+        ],
+    );
+    Book::new()
+        .sheet("Model", "", &model)
+        .names(names)
+        .write(dir.path());
+    let (_, text) = audit(&["book.xlsx"], dir.path());
+    assert_eq!(
+        findings(&text),
+        [
+            "unused name: X, which no formula uses",
+            "unused name: Tax, which no formula uses",
+            "unused name: A, which no formula uses",
+        ]
+    );
+}
+
+#[test]
+fn alias_chains_and_this_book_names_follow_reference_only_cycles() {
+    let dir = tempfile::tempdir().unwrap();
+    let names = concat!(
+        r#"<definedName name="Target">[0]Model!$A$1</definedName>"#,
+        r#"<definedName name="Alias">Target</definedName>"#,
+        r#"<definedName name="Bad">ROW(Model!$C$1)</definedName>"#,
+        r#"<definedName name="BadAlias">Bad</definedName>"#,
+    );
+    let model = row(
+        1,
+        &[
+            formula("A1", "B1"),
+            formula("B1", "Alias"),
+            formula("C1", "BadAlias"),
+        ],
+    );
+    Book::new()
+        .sheet("Model", "", &model)
+        .names(names)
+        .write(dir.path());
+    let (_, text) = audit(&["book.xlsx"], dir.path());
+    assert_eq!(
+        findings(&text),
+        ["circular reference: Model!A1, Model!B1 read one another"]
+    );
+}
+
+#[test]
+fn unused_names_respect_sheet_scope_and_parens_outside_calls() {
+    let dir = tempfile::tempdir().unwrap();
+    let names = concat!(
+        r#"<definedName name="Choice">'Note(1)'!$A$1</definedName>"#,
+        r#"<definedName name="Choice" localSheetId="1">1</definedName>"#,
+        r#"<definedName name="NoteRef">'Note(1)'!$A$1</definedName>"#,
+        r#"<definedName name="ColRef">Sales[Total(USD)]</definedName>"#,
+        r#"<definedName name="Helper">LAMBDA(x,x+1)</definedName>"#,
+    );
+    Book::new()
+        .sheet("Note(1)", "", &row(1, &[number("A1")]))
+        .sheet(
+            "Model",
+            "",
+            &row(1, &[formula("A1", "Choice"), number("B1")]),
+        )
+        .table(1, "Sales", "A1:B2")
+        .names(names)
+        .write(dir.path());
+    let (_, text) = audit(&["book.xlsx"], dir.path());
+    assert_eq!(
+        findings(&text),
+        [
+            "unused name: Choice, which no formula uses",
+            "unused name: NoteRef, which no formula uses",
+            "unused name: ColRef, which no formula uses",
+        ]
+    );
+}
+
+#[test]
+fn position_only_preserves_quoted_sheet_cycles_and_skips_3d_and_xlfn() {
+    let dir = tempfile::tempdir().unwrap();
+    let model = row(
+        1,
+        &[
+            formula(
+                "A1",
+                "ROWS(Jan:Feb!A1)+_xlfn.ISFORMULA(Jan!A1)+_xlfn.FORMULATEXT(Feb!A1)",
+            ),
+            formula("B1", "'ROW(A1)'!B1"),
+        ],
+    );
+    Book::new()
+        .sheet("Jan", "", &row(1, &[formula("A1", "Model!A1")]))
+        .sheet("Feb", "", &row(1, &[formula("A1", "Model!A1")]))
+        .sheet("ROW(A1)", "", &row(1, &[formula("B1", "Model!B1")]))
+        .sheet("Model", "", &model)
+        .write(dir.path());
+    let (_, text) = audit(&["book.xlsx"], dir.path());
+    assert_eq!(
+        findings(&text),
+        ["circular reference: 'ROW(A1)'!B1, Model!B1 read one another"]
     );
 }

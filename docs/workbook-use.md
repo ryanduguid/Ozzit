@@ -149,6 +149,24 @@ if ($LASTEXITCODE) { throw 'Evaluation failed' }
 
 Excel opens the workbook read-only in a hidden window, enters each formula on a scratch sheet so arrays spill, and closes without saving. The results file holds each spill as rows of values under its `id`, an Excel error as `#ERR:<code>`, the Excel build and the SHA-256 of the workbook and case file. The run fails if the workbook's bytes change. Mac and web Excel use the Office Script above instead.
 
+## Audit a workbook
+
+`ozzit audit <workbook>` reads any `.xlsx` file without changing it and lists what it finds, one line each; it exits 1 when it finds anything. It reads the formulas the file records, so it needs neither Excel nor a recalculation:
+
+```powershell
+& .\tools\ozzit\target\release\ozzit audit .\model.xlsx
+```
+
+- **Hard-coded number:** a plain number between 2 formula cells of one pattern in a row or column.
+- **External link:** a linked workbook that does not exist, that Excel marked missing or that is remote. A Mac volume-colon path is checked as a Mac path.
+- **Hidden sheet or name.**
+- **Unused name:** a defined name for a range or constant that no formula, formatting or validation rule, chart or other part uses. Built-in and hidden names, and names holding a formula that calls a function, `LAMBDA` included, are not reported.
+- **Buried check:** a row whose label, the nearest text to its left, contains the word 'check', whose formulas no formula outside that row reads, and which reads no other check. A roll-up that reads the check, on any sheet, clears it; a formatting rule over the check itself does not.
+- **Unlinked row:** a number or formula between a `SUM` of one range and its total, in the total's own column or row, which the total leaves out and no formula outside that row reads. This is the row added just below a range and above its total.
+- **Circular reference:** formula cells that read one another, directly or through a reference-only name; a reference that only `ROW`, `COLUMN`, `ROWS`, `COLUMNS`, `ISREF`, `ISFORMULA`, `FORMULATEXT` (including `_xlfn.` XML forms) or `CELL` with `"filename"`, `"address"`, `"row"`, `"col"` or `"width"` reads does not count. Iterative calculation being on is reported too, because Excel then gives no warning.
+
+A reference built whilst Excel calculates, through `INDIRECT` or `OFFSET`, cannot be followed from the file. A workbook whose cells use either is not checked for buried checks or unlinked rows, and the audit names the first such cell.
+
 ## Modern Excel
 
 Excel 365 has gained functions since the earlier workbook of July 2024. Several helpers point to native options in their inline help's `SEE ALSO` line. Native functions can have different inputs and behaviour, so compare their contracts before replacing a helper. The table also includes a newer Beta preview:
