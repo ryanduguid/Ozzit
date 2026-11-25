@@ -100,10 +100,10 @@ pub fn write_workbook(path: &Path) -> Result<usize> {
 }
 
 pub fn run(args: &[OsString]) -> std::result::Result<String, (u8, String)> {
-    const USAGE: &str = "usage: build_practice_calculators [--out <path> | <path>]";
+    const USAGE: &str = "usage: build_practice_calculators (--out <path> | <path> | --force)";
     let target: PathBuf = match args {
-        [] => "templates/practice-calculators.xlsx".into(),
         [flag] if flag == "--help" || flag == "-h" => return Ok(USAGE.to_owned()),
+        [flag] if flag == "--force" => "templates/practice-calculators.xlsx".into(),
         [flag, path] if flag == "--out" || flag == "-o" => path.into(),
         [path] if !path.as_encoded_bytes().starts_with(b"-") => path.into(),
         _ => return Err((2, USAGE.to_owned())),

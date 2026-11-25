@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! In-memory worksheet model and fluent helpers for the practice workbook.
-use crate::common::column_number;
+use crate::common::{column_letters, column_number};
 use jiff::civil::Date;
 use std::collections::BTreeMap;
 
@@ -170,15 +170,8 @@ pub struct Sheet {
     pub hyperlinks: Vec<Hyperlink>,
 }
 
-pub fn col_name(mut n: u16) -> String {
-    let mut bytes = Vec::new();
-    while n > 0 {
-        n -= 1;
-        bytes.push(b'A' + (n % 26) as u8);
-        n /= 26;
-    }
-    bytes.reverse();
-    String::from_utf8(bytes).expect("ASCII letters")
+pub fn col_name(n: u16) -> String {
+    column_letters(usize::from(n))
 }
 
 pub fn parse_cell_ref(addr: &str) -> (u16, u16) {

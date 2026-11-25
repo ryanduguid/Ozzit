@@ -4,7 +4,7 @@
 //! Gate A semantic OOXML parity, structural invariants, contrast and CLI tests
 //! for `build_practice_calculators`.
 use ozzit::archive::{Parts, read_parts};
-use ozzit::common::{column_number, sub_fn};
+use ozzit::common::{column_letters, column_number, sub_fn};
 use ozzit::formula::split_literals;
 use ozzit::practice_calculators::{SHEET_NAMES, build_bytes, build_parts, write_workbook};
 use ozzit::py;
@@ -39,17 +39,6 @@ fn child<'a, 'i>(node: Node<'a, 'i>, ns: &str, name: &str) -> Option<Node<'a, 'i
 
 fn elements<'a, 'i>(node: Node<'a, 'i>) -> impl Iterator<Item = Node<'a, 'i>> {
     node.children().filter(Node::is_element)
-}
-
-fn col_letters(mut n: usize) -> String {
-    let mut out = Vec::new();
-    while n > 0 {
-        n -= 1;
-        out.push(b'A' + (n % 26) as u8);
-        n /= 26;
-    }
-    out.reverse();
-    String::from_utf8(out).expect("ascii")
 }
 
 fn parse_a1(addr: &str) -> (usize, usize) {
@@ -91,7 +80,7 @@ fn shift_formula(formula: &str, dr: isize, dc: isize) -> String {
             let r_abs = &m[3];
             let col = column_number(&m[2]) as isize + if c_abs.is_empty() { dc } else { 0 };
             let row = m[4].parse::<isize>().expect("row") + if r_abs.is_empty() { dr } else { 0 };
-            format!("{c_abs}{}{r_abs}{row}", col_letters(col as usize))
+            format!("{c_abs}{}{r_abs}{row}", column_letters(col as usize))
         }));
     }
     out
@@ -738,7 +727,15 @@ fn cli_handles_flags_default_path_and_errors() {
         }
         cmd.output().unwrap()
     };
-    assert!(run_exe(&["--help"], None).status.success());
+    let help = run_exe(&["--help"], None);
+    assert!(help.status.success());
+    assert!(String::from_utf8_lossy(&help.stdout).contains("--force"));
+    assert!(run_exe(&["-h"], None).status.success());
+    let empty = run_exe(&[], Some(dir.path()));
+    assert_eq!(empty.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&empty.stderr).contains("--force"));
+    let def_path = dir.path().join("templates/practice-calculators.xlsx");
+    assert!(!def_path.exists());
     assert_eq!(run_exe(&["--unknown"], None).status.code(), Some(2));
     assert!(
         run_exe(&["--out", out.to_str().unwrap()], None)
@@ -746,9 +743,18 @@ fn cli_handles_flags_default_path_and_errors() {
             .success()
     );
     assert_eq!(std::fs::read(&out).unwrap(), a);
-    assert!(run_exe(&[], Some(dir.path())).status.success());
-    let def_path = dir.path().join("templates/practice-calculators.xlsx");
-    assert_eq!(std::fs::read(def_path).unwrap(), a);
+    let short_out = dir.path().join("short.xlsx");
+    assert!(
+        run_exe(&["-o", short_out.to_str().unwrap()], None)
+            .status
+            .success()
+    );
+    assert_eq!(std::fs::read(&short_out).unwrap(), a);
+    let pos_out = dir.path().join("positional.xlsx");
+    assert!(run_exe(&[pos_out.to_str().unwrap()], None).status.success());
+    assert_eq!(std::fs::read(&pos_out).unwrap(), a);
+    assert!(run_exe(&["--force"], Some(dir.path())).status.success());
+    assert_eq!(std::fs::read(&def_path).unwrap(), a);
     assert_eq!(
         run_exe(&[dir.path().to_str().unwrap()], None).status.code(),
         Some(1)
