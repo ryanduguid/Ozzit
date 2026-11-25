@@ -700,7 +700,11 @@ fn plain_keys(direct: &HashMap<Scoped, Defined>) -> BTreeSet<Scoped> {
     }
 }
 
-fn follow_aliases(start: &Scoped, direct: &HashMap<Scoped, Defined>, sheets: &[String]) -> Vec<Area> {
+fn follow_aliases(
+    start: &Scoped,
+    direct: &HashMap<Scoped, Defined>,
+    sheets: &[String],
+) -> Vec<Area> {
     let mut all = Vec::new();
     let mut seen = BTreeSet::new();
     let mut queue = vec![start.clone()];
