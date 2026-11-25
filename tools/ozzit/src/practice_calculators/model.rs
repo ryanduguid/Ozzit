@@ -57,6 +57,26 @@ pub struct CellStyle {
 }
 
 impl CellStyle {
+    pub fn normal() -> Self {
+        Self {
+            font: FontSpec {
+                name: "Carlito",
+                size: 11,
+                bold: false,
+                italic: false,
+                underline: false,
+                color: None,
+            },
+            fill: None,
+            border_bottom: None,
+            num_fmt: None,
+            h_align: None,
+            v_align: None,
+            wrap: false,
+            xf_id: 0,
+        }
+    }
+
     pub fn base_sheet() -> Self {
         Self {
             font: FontSpec {
@@ -165,7 +185,12 @@ pub fn parse_cell_ref(addr: &str) -> (u16, u16) {
     let split = addr
         .find(|c: char| c.is_ascii_digit())
         .expect("cell row digits");
-    let col = column_number(&addr[..split]) as u16;
+    let letters = &addr[..split];
+    assert!(
+        !letters.is_empty() && letters.bytes().all(|b| b.is_ascii_uppercase()),
+        "invalid cell column in {addr}"
+    );
+    let col = column_number(letters) as u16;
     let row = addr[split..].parse::<u16>().expect("row number");
     (row, col)
 }

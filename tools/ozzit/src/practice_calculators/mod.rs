@@ -9,9 +9,10 @@ mod sheets_late;
 mod sheets_mid;
 
 use crate::archive::{Parts, deterministic_bytes};
-use crate::common::{Result, replace_atomically};
+use crate::common::{Result, io_error, replace_atomically};
 use model::{CellStyle, Sheet, WHITE};
-use std::path::Path;
+use std::ffi::OsString;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 pub const SHEET_NAMES: [&str; 22] = [
@@ -39,7 +40,7 @@ pub const SHEET_NAMES: [&str; 22] = [
     "Benefit totals",
 ];
 
-pub fn build_sheets() -> Vec<Sheet> {
+fn build_sheets() -> Vec<Sheet> {
     let mut sheets = vec![
         sheets_early::read_me(&SHEET_NAMES),
         sheets_early::allocation(),
@@ -79,39 +80,39 @@ fn add_navigation(sheets: &mut [Sheet]) {
     }
 }
 
-pub fn build_parts() -> Parts {
+pub fn build_parts() -> Result<Parts> {
     let sheets = build_sheets();
     ooxml::serialize_workbook(&sheets)
 }
 
 pub fn build_bytes() -> Result<Vec<u8>> {
-    deterministic_bytes(&build_parts())
+    deterministic_bytes(&build_parts()?)
 }
 
 pub fn write_workbook(path: &Path) -> Result<usize> {
     let bytes = build_bytes()?;
     if let Some(parent) = path.parent().filter(|p| !p.as_os_str().is_empty()) {
-        std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+        std::fs::create_dir_all(parent).map_err(|e| io_error(&e, parent))?;
     }
     let len = bytes.len();
     replace_atomically(path, &bytes)?;
     Ok(len)
 }
 
-pub fn run(args: &[String]) -> std::result::Result<String, (u8, String)> {
+pub fn run(args: &[OsString]) -> std::result::Result<String, (u8, String)> {
     const USAGE: &str = "usage: build_practice_calculators [--out <path> | <path>]";
-    let target = match args {
-        [] => "templates/practice-calculators.xlsx".to_owned(),
+    let target: PathBuf = match args {
+        [] => "templates/practice-calculators.xlsx".into(),
         [flag] if flag == "--help" || flag == "-h" => return Ok(USAGE.to_owned()),
-        [flag, path] if flag == "--out" || flag == "-o" => path.clone(),
-        [path] if !path.starts_with('-') => path.clone(),
+        [flag, path] if flag == "--out" || flag == "-o" => path.into(),
+        [path] if !path.as_encoded_bytes().starts_with(b"-") => path.into(),
         _ => return Err((2, USAGE.to_owned())),
     };
-    let len = write_workbook(Path::new(&target)).map_err(|e| (1, format!("FAIL: {e}")))?;
-    Ok(format!("Saved {target} ({len} bytes)"))
+    let len = write_workbook(&target).map_err(|e| (1, format!("FAIL: {e}")))?;
+    Ok(format!("Saved {} ({len} bytes)", target.display()))
 }
 
-pub fn cli(args: &[String]) -> ExitCode {
+pub fn cli(args: &[OsString]) -> ExitCode {
     match run(args) {
         Ok(msg) => {
             println!("{msg}");

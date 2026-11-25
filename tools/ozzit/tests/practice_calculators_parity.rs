@@ -571,7 +571,7 @@ fn assert_sheet_parity(name: &str, cand: &ParsedSheet, ship: &ParsedSheet) {
 
 #[test]
 fn candidate_matches_shipped_practice_template_semantically() {
-    let cand_parts = build_parts();
+    let cand_parts = build_parts().unwrap();
     let ship_parts = read_parts(&root().join("templates/practice-calculators.xlsx")).unwrap();
     assert_eq!(theme_scheme(&cand_parts), theme_scheme(&ship_parts));
     let (cand_sheets, ship_sheets) = (sheet_paths(&cand_parts), sheet_paths(&ship_parts));
@@ -632,7 +632,7 @@ fn contrast(fg: &str, bg: &str) -> f64 {
 
 #[test]
 fn candidate_passes_structural_navigation_and_contrast_gates() {
-    let parts = build_parts();
+    let parts = build_parts().unwrap();
     assert!(
         !parts
             .keys()
@@ -640,6 +640,11 @@ fn candidate_passes_structural_navigation_and_contrast_gates() {
     );
     assert!(!parts.keys().any(|p| p.starts_with("xl/externalLinks/")));
     assert!(!part_text(&parts, "[Content_Types].xml").contains("macroEnabled"));
+    assert!(
+        part_text(&parts, "xl/workbook.xml")
+            .contains(r#"<calcPr calcId="191029" fullCalcOnLoad="1"/>"#)
+    );
+    assert!(part_text(&parts, "xl/styles.xml").contains(r#"<cellStyles count="2"><cellStyle name="Hyperlink" xfId="1" builtinId="8"/><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>"#));
     for name in parts.keys().filter(|n| n.ends_with(".rels")) {
         let rels_xml = part_text(&parts, name);
         let doc = parse_xml(&rels_xml);

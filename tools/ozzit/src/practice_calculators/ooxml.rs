@@ -7,7 +7,7 @@ use super::model::{
     FMT_MMM_YY, FMT_MONEY, FMT_PCT, FMT_TEXT, FontSpec, Sheet, col_name,
 };
 use crate::archive::Parts;
-use crate::common::{escape, escape_attr};
+use crate::common::{Result, escape, escape_attr};
 use indexmap::IndexMap;
 use std::collections::{BTreeMap, HashMap};
 use std::fmt::Write as _;
@@ -79,13 +79,15 @@ impl StyleTable {
             dxfs: Vec::new(),
             dxf_ids: HashMap::new(),
         };
+        let normal = CellStyle::normal();
+        table.xf_ids.insert(normal.clone(), 0);
         table.xfs.push(XfRecord {
             num_fmt_id: 0,
             font_id: 0,
             fill_id: 0,
             border_id: 0,
             xf_id: 0,
-            style: CellStyle::base_sheet(),
+            style: normal,
         });
         table
     }
@@ -179,6 +181,9 @@ impl StyleTable {
             r#"<cellStyleXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" applyNumberFormat="0" applyFill="0" applyBorder="0" applyAlignment="0" applyProtection="0"/></cellStyleXfs>"#,
         );
         self.write_xfs(&mut out);
+        out.push_str(
+            r#"<cellStyles count="2"><cellStyle name="Hyperlink" xfId="1" builtinId="8"/><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>"#,
+        );
         self.write_dxfs(&mut out);
         out.push_str("</styleSheet>");
         out
@@ -360,19 +365,27 @@ impl SharedStrings {
             self.strings.len()
         );
         for text in &self.strings {
-            let _ = write!(out, "<si><t>{}</t></si>", escape(text));
+            if text != text.trim() {
+                let _ = write!(
+                    out,
+                    r#"<si><t xml:space="preserve">{}</t></si>"#,
+                    escape(text)
+                );
+            } else {
+                let _ = write!(out, "<si><t>{}</t></si>", escape(text));
+            }
         }
         out.push_str("</sst>");
         out
     }
 }
 
-pub fn serialize_workbook(sheets: &[Sheet]) -> Parts {
+pub fn serialize_workbook(sheets: &[Sheet]) -> Result<Parts> {
     let mut styles = StyleTable::new();
     let mut sst = SharedStrings::new();
     let mut parts = IndexMap::new();
     for (idx, sheet) in sheets.iter().enumerate() {
-        let xml = serialize_sheet(sheet, &mut styles, &mut sst);
+        let xml = serialize_sheet(sheet, &mut styles, &mut sst)?;
         parts.insert(
             format!("xl/worksheets/sheet{}.xml", idx + 1),
             xml.into_bytes(),
@@ -393,10 +406,14 @@ pub fn serialize_workbook(sheets: &[Sheet]) -> Parts {
     parts.insert("xl/theme/theme1.xml".into(), THEME_XML.as_bytes().to_vec());
     parts.insert("xl/styles.xml".into(), styles.to_xml().into_bytes());
     parts.insert("xl/sharedStrings.xml".into(), sst.to_xml().into_bytes());
-    parts
+    Ok(parts)
 }
 
-fn serialize_sheet(sheet: &Sheet, styles: &mut StyleTable, sst: &mut SharedStrings) -> String {
+fn serialize_sheet(
+    sheet: &Sheet,
+    styles: &mut StyleTable,
+    sst: &mut SharedStrings,
+) -> Result<String> {
     let first_row = if sheet.cells.keys().any(|(r, _)| *r == 1) {
         1
     } else {
@@ -420,12 +437,12 @@ fn serialize_sheet(sheet: &Sheet, styles: &mut StyleTable, sst: &mut SharedStrin
     write_sheet_views(&mut out, sheet);
     out.push_str(r#"<sheetFormatPr defaultRowHeight="15" x14ac:dyDescent="0.25"/>"#);
     write_cols(&mut out, sheet);
-    write_sheet_data(&mut out, sheet, styles, sst);
+    write_sheet_data(&mut out, sheet, styles, sst)?;
     write_cf_rules(&mut out, &sheet.cf_rules, styles);
     write_validations(&mut out, sheet);
     write_hyperlinks(&mut out, sheet);
     out.push_str(r#"<pageMargins left="0.7" right="0.7" top="0.75" bottom="0.75" header="0.3" footer="0.3"/></worksheet>"#);
-    out
+    Ok(out)
 }
 
 fn write_sheet_views(out: &mut String, sheet: &Sheet) {
@@ -479,7 +496,7 @@ fn write_sheet_data(
     sheet: &Sheet,
     styles: &mut StyleTable,
     sst: &mut SharedStrings,
-) {
+) -> Result<()> {
     out.push_str("<sheetData>");
     let spans = format!("2:{}", sheet.last_col);
     let mut rows: BTreeMap<u16, Vec<(u16, &super::model::Cell)>> = BTreeMap::new();
@@ -499,11 +516,12 @@ fn write_sheet_data(
             );
         }
         for (c, cell) in cells {
-            write_cell(out, r, c, cell, styles, sst);
+            write_cell(out, r, c, cell, styles, sst)?;
         }
         out.push_str("</row>");
     }
     out.push_str("</sheetData>");
+    Ok(())
 }
 
 fn write_cell(
@@ -513,7 +531,7 @@ fn write_cell(
     cell: &super::model::Cell,
     styles: &mut StyleTable,
     sst: &mut SharedStrings,
-) {
+) -> Result<()> {
     let addr = format!("{}{row}", col_name(col));
     let s = styles.intern_xf(&cell.style);
     if let Some(formula) = &cell.formula {
@@ -522,7 +540,7 @@ fn write_cell(
             r#"<c r="{addr}" s="{s}"><f>{}</f></c>"#,
             escape(formula)
         );
-        return;
+        return Ok(());
     }
     match &cell.value {
         CellValue::Empty => {
@@ -533,9 +551,14 @@ fn write_cell(
             let _ = write!(out, r#"<c r="{addr}" s="{s}" t="s"><v>{idx}</v></c>"#);
         }
         CellValue::Number(num) => {
-            let _ = write!(out, r#"<c r="{addr}" s="{s}"><v>{num}</v></c>"#);
+            if !num.is_finite() {
+                return Err(format!("non-finite numeric cell value at {addr}: {num}"));
+            }
+            let clean = if *num == 0.0 { 0.0 } else { *num };
+            let _ = write!(out, r#"<c r="{addr}" s="{s}"><v>{clean}</v></c>"#);
         }
     }
+    Ok(())
 }
 
 fn write_cf_rules(out: &mut String, rules: &[ConditionalFormat], styles: &mut StyleTable) {
@@ -544,16 +567,20 @@ fn write_cf_rules(out: &mut String, rules: &[ConditionalFormat], styles: &mut St
         grouped.entry(rule.sqref.as_str()).or_default().push(rule);
     }
     for (sqref, group) in grouped {
-        let _ = write!(out, r#"<conditionalFormatting sqref="{sqref}">"#);
+        let _ = write!(
+            out,
+            r#"<conditionalFormatting sqref="{}">"#,
+            escape_attr(sqref)
+        );
         for r in group {
             let dxf_id = styles.intern_dxf(&r.dxf);
-            let op = r
-                .operator
-                .map_or(String::new(), |o| format!(r#" operator="{o}""#));
+            let op = r.operator.map_or(String::new(), |o| {
+                format!(r#" operator="{}""#, escape_attr(o))
+            });
             let _ = write!(
                 out,
                 r#"<cfRule type="{}" dxfId="{dxf_id}" priority="{}"{op}><formula>{}</formula></cfRule>"#,
-                r.kind,
+                escape_attr(r.kind),
                 r.priority,
                 escape(&r.formula)
             );
@@ -575,7 +602,7 @@ fn write_validations(out: &mut String, sheet: &Sheet) {
         let _ = write!(
             out,
             r#"<dataValidation type="list" sqref="{}"><formula1>{}</formula1></dataValidation>"#,
-            dv.sqref,
+            escape_attr(&dv.sqref),
             escape(&dv.list_formula)
         );
     }
@@ -653,7 +680,7 @@ fn workbook_xml(sheets: &[Sheet]) -> String {
     }
     format!(
         r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<workbook xmlns="{MAIN_NS}" xmlns:r="{REL_NS}"><fileVersion appName="xl" lastEdited="7" lowestEdited="7"/><workbookPr/><bookViews><workbookView xWindow="0" yWindow="0" windowWidth="28800" windowHeight="16000"/></bookViews><sheets>{entries}</sheets><calcPr calcId="191029"/></workbook>"#
+<workbook xmlns="{MAIN_NS}" xmlns:r="{REL_NS}"><fileVersion appName="xl" lastEdited="7" lowestEdited="7"/><workbookPr/><bookViews><workbookView xWindow="0" yWindow="0" windowWidth="28800" windowHeight="16000"/></bookViews><sheets>{entries}</sheets><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>"#
     )
 }
 
@@ -676,4 +703,26 @@ fn workbook_rels_xml(sheet_count: usize) -> String {
         r#"<Relationship Id="rId{theme_id}" Type="{REL_NS}/theme" Target="theme/theme1.xml"/><Relationship Id="rId{styles_id}" Type="{REL_NS}/styles" Target="styles.xml"/><Relationship Id="rId{sst_id}" Type="{REL_NS}/sharedStrings" Target="sharedStrings.xml"/></Relationships>"#
     );
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn shared_strings_preserve_whitespace_and_numbers_reject_non_finite() {
+        let mut sheet = Sheet::new("Test", "Title", "C", 5);
+        sheet.cell_text("B4", " padded ");
+        sheet.cell_num("C4", -0.0);
+        let parts = serialize_workbook(&[sheet]).expect("finite book");
+        let sst = std::str::from_utf8(&parts["xl/sharedStrings.xml"]).unwrap();
+        assert!(sst.contains(r#"<t xml:space="preserve"> padded </t>"#));
+        let xml = std::str::from_utf8(&parts["xl/worksheets/sheet1.xml"]).unwrap();
+        assert!(xml.contains("<v>0</v>") && !xml.contains("<v>-0</v>"));
+
+        let mut bad = Sheet::new("Bad", "Title", "C", 5);
+        bad.cell_num("B4", f64::NAN);
+        let err = serialize_workbook(&[bad]).unwrap_err();
+        assert!(err.contains("non-finite numeric cell value at B4"));
+    }
 }
