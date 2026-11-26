@@ -7,10 +7,10 @@ part of the name.
 | Group | Named formulas | Covers |
 |---|---|---|
 | Dates | 17 | Dates and timelines: periods, schedules, overlaps, occurrence tests, financial-year labels, dated rate lookup |
-| Essentials | 17 | Array essentials: row and column totals, averages, counts, range conversion |
-| Financial | 51 | Financial building blocks: amortisation, depreciation, corkscrews, IRR, rolling sums, GST, AASB 16 leases |
+| Essentials | 18 | Array essentials: row and column totals, averages, counts, range conversion, check roll-up |
+| Financial | 69 | Financial building blocks: amortisation, depreciation and pools, corkscrews, IRR, rolling sums, GST, AASB 16 leases, hire purchase, income tax, CGT, Division 7A, FBT, PAYG withholding, valuation and sensitivity |
 | Ratios | 48 | Financial ratios: liquidity, leverage, margins, returns, market multiples, working-capital days, ATO benchmark ratios |
-| Utilities | 17 | Standalone copies of the Essentials functions, each carrying a `U` suffix |
+| Utilities | 18 | Standalone copies of the Essentials functions, each carrying a `U` suffix |
 | Debt | 5 | Debt sculpting: amortisation schedule, fixed and variable DSCR sculpting, sculpting interest |
 
 Where 2 groups shipped a function of the same name, the fuller implementation keeps

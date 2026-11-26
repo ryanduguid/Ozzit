@@ -12,7 +12,7 @@ use crate::archive::{Parts, deterministic_bytes};
 use crate::common::{Result, io_error, replace_atomically};
 use model::{CellStyle, Sheet, WHITE};
 use std::ffi::OsString;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use std::process::ExitCode;
 
 pub const SHEET_NAMES: [&str; 22] = [
@@ -110,12 +110,7 @@ pub fn run(args: &[OsString]) -> std::result::Result<String, (u8, String)> {
         _ => return Err((2, USAGE.to_owned())),
     };
     // Only --force may write the template --force writes (under the working folder) or this
-    // checkout's own, however the path is spelled, whether or not the file exists yet. The
-    // target's folder is created first, as the writer would, so it resolves like the rest.
-    if let Some(parent) = target.parent().filter(|p| !p.as_os_str().is_empty()) {
-        std::fs::create_dir_all(parent)
-            .map_err(|e| (1, format!("FAIL: {}", io_error(&e, parent))))?;
-    }
+    // checkout's own, however the path is spelled, whether or not the file exists yet.
     let checkout = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../..")
         .join(TEMPLATE);
@@ -129,13 +124,25 @@ pub fn run(args: &[OsString]) -> std::result::Result<String, (u8, String)> {
     write_to(&target)
 }
 
-/// The file's canonical path, or for a file not yet written, its folder's canonical path
-/// joined to its name.
+/// The path as the writer would reach it: its deepest existing ancestor's canonical path,
+/// then the rest as the writer's folder creation makes it (`..` steps back, `.` is dropped),
+/// so a refusal leaves no folder behind.
 fn resolved(path: &Path) -> Option<PathBuf> {
-    path.canonicalize().ok().or_else(|| {
-        let parent = path.parent().filter(|p| !p.as_os_str().is_empty());
-        let folder = parent.unwrap_or(Path::new(".")).canonicalize().ok()?;
-        Some(folder.join(path.file_name()?))
+    let parts: Vec<Component> = path.components().collect();
+    (0..=parts.len()).rev().find_map(|n| {
+        let head: PathBuf = parts[..n].iter().collect();
+        let head = if n == 0 { PathBuf::from(".") } else { head };
+        let mut out = head.canonicalize().ok()?;
+        for part in &parts[n..] {
+            match part {
+                Component::ParentDir => {
+                    out.pop();
+                }
+                Component::Normal(name) => out.push(name),
+                _ => {}
+            }
+        }
+        Some(out)
     })
 }
 

@@ -984,16 +984,6 @@ impl Date {
         }
         Date::from_ordinal(monday + (week - 1) * 7 + weekday - 1)
     }
-
-    /// `date.today()`, in the machine's local time zone.
-    pub fn today() -> Date {
-        let now = jiff::ZonedDateTime::now().date();
-        Date {
-            year: now.year().into(),
-            month: now.month().unsigned_abs().into(),
-            day: now.day().unsigned_abs().into(),
-        }
-    }
 }
 
 #[cfg(test)]
