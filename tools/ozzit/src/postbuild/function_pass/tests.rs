@@ -239,7 +239,7 @@ fn reproduces_the_module(spec: &Spec, module: &str) {
             vec!["\"→¶\"".to_string(), format!("\"{h}¶\"")]
         })
         .into_iter()
-        .chain(t.functions.iter().map(|f| t.about_row(module, f)))
+        .chain(t.of(module).into_iter().map(|f| t.about_row(module, f)))
         .map(|line| format!("\n{indent}{line} &"))
         .collect::<String>();
     let mut absent = current.replacen(
@@ -248,7 +248,7 @@ fn reproduces_the_module(spec: &Spec, module: &str) {
         1,
     );
     let joined = t
-        .functions
+        .of(module)
         .iter()
         .map(|f| f.block.as_str())
         .collect::<Vec<_>>()
@@ -257,7 +257,7 @@ fn reproduces_the_module(spec: &Spec, module: &str) {
     let follower = absent.find(about.follower.as_deref().unwrap()).unwrap();
     assert!(absent[start + joined.len()..follower].trim().is_empty());
     absent.replace_range(start..follower, "");
-    for f in &t.functions {
+    for f in t.of(module) {
         assert!(
             !absent.contains(&f.name),
             "{} is still in the module",
@@ -313,6 +313,7 @@ fn valuation_sensitivity_pass_reproduces_the_published_financial_module() {
 }
 
 #[test]
-fn check_rollup_pass_reproduces_the_published_essentials_module() {
+fn check_rollup_pass_reproduces_the_published_essentials_and_utilities_modules() {
     reproduces_the_module(&SPECS[15], "Essentials");
+    reproduces_the_module(&SPECS[15], "Utilities");
 }

@@ -33,7 +33,7 @@ const OLD_LABELS: [&str; 19] = [
     "Version 24 November 2026    -    168 functions    -    Microsoft 365 or Excel 2024 and later",
 ];
 const LABEL: &str =
-    "Version 24 November 2026    -    169 functions    -    Microsoft 365 or Excel 2024 and later";
+    "Version 24 November 2026    -    170 functions    -    Microsoft 365 or Excel 2024 and later";
 const OLD_CREATOR: &str = "<dc:creator>Ryan Duguid; Ozzit project</dc:creator>";
 const CREATOR: &str = "<dc:creator>Ozzit project</dc:creator>";
 
@@ -145,7 +145,7 @@ fn ambiguous_and_unrecognised_cover_labels_are_refused_without_writing() {
     let f = Fixture::new();
     for text in [
         format!("{LABEL}</t><t>{}", OLD_LABELS[1]),
-        LABEL.replace("169", "999"),
+        LABEL.replace("170", "999"),
     ] {
         f.write(&strings(&text));
         let before = std::fs::read(f.book()).unwrap();

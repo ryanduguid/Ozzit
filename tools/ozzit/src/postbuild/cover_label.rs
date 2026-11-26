@@ -28,7 +28,7 @@ const OLD: [&str; 19] = [
     "Version 24 November 2026    -    168 functions    -    Microsoft 365 or Excel 2024 and later",
 ];
 const NEW: &str =
-    "Version 24 November 2026    -    169 functions    -    Microsoft 365 or Excel 2024 and later";
+    "Version 24 November 2026    -    170 functions    -    Microsoft 365 or Excel 2024 and later";
 
 pub fn run(workbook: &Path) -> Result<Vec<String>> {
     let mut parts = read_parts(workbook)?;

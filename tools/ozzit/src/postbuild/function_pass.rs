@@ -136,7 +136,7 @@ const SPECS: [Spec; 16] = [
         "valuation and sensitivity functions",
         "valuation and sensitivity"
     ),
-    added!("check_rollup", "check roll-up function", "check roll-up"),
+    added!("check_rollup", "check roll-up functions", "check roll-up"),
 ];
 
 struct Function {

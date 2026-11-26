@@ -169,7 +169,7 @@ A reference built whilst Excel calculates, through `INDIRECT` or `OFFSET`, canno
 
 ## Roll checks up into one status
 
-`oz.CheckRollUpλ(Checks, [Labels], [Tolerance])` turns a model's check cells into one text value for a banner or summary cell. In each cell of `Checks`, TRUE passes and FALSE fails. A number is a difference: it passes when its size is at most `Tolerance` (0 when omitted) and fails above it. An error or any other text fails. Blank cells and empty text are not checks. The result names the first failure in reading order, across each row in turn, by its label from `Labels` (the same shape as `Checks`), or by its position when there is no label. A range with no check result fails, so an empty roll-up never reads as OK.
+`oz.CheckRollUpλ(Checks, [Labels], [Tolerance])` turns a model's check cells into one text value for a banner or summary cell; the Utilities module has the same function as `oz.CheckRollUpUλ`. In each cell of `Checks`, TRUE passes and FALSE fails. A number is a difference: it passes when its size is at most `Tolerance` (0 when omitted) and fails above it. An error or any other text fails. Blank cells and empty text are not checks. The result names the first failure in reading order, across each row in turn, by its label from `Labels` (the same shape as `Checks`), or by its position when there is no label. A range with no check result fails, so an empty roll-up never reads as OK.
 
 | Checks | Formula | Result |
 |---|---|---|

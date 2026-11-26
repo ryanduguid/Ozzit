@@ -17,7 +17,8 @@ release; until then v3.8.0 behaves as it did.
 - `oz.CheckRollUpλ(Checks, [Labels], [Tolerance])` rolls a model's check cells up into one
   status for a banner: OK with the number checked, or FAIL with the number failing and the
   first failing label. TRUE passes, a difference passes within the tolerance, and FALSE, an
-  error or text fails. `ozzit check_rollup` adds it.
+  error or text fails. Utilities has the same function as `oz.CheckRollUpUλ`.
+  `ozzit check_rollup` adds both.
   [Workbook use](docs/workbook-use.md#roll-checks-up-into-one-status) gives a banner recipe.
 - `ozzit audit` also reports a defined name for a range or constant that no formula
   uses, a check row that no other formula reads, a number or formula between a `SUM`
