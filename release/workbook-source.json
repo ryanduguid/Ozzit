@@ -200,7 +200,8 @@
       "oz.DebtSculptFixedλ",
       "oz.DebtSculptVariableLRVλ",
       "oz.DebtSculptVariableλ",
-      "oz.InterestLRVλ"
+      "oz.InterestLRVλ",
+      "oz.AboutDebtλ"
     ],
     "locale": {
       "listSeparator": ",",
@@ -14187,8 +14188,9 @@
       "</sheets>",
       "<definedNames>",
       "<definedName name=\"oz.AboutDatesλ\" comment=\"Displays this module's repository URL and function list\">27055ca5ed4e8820003a303b262d3a203fb753aded40a36f705cd770d14181ca:5 16 99 1 40 1 68 1 7 1 41 1 55 1 94 1 86 1 103 1 78 1 92 1 82 1 88 1 112 1 109 1 63 1 86 1 93 1 96 1 96 1 97 1 97 1 6 6 4 1 1</definedName>",
+      "<definedName name=\"oz.AboutDebtλ\" comment=\"Displays this module's repository URL and function list\">97be0dbd99a88b61c5d81f1b2e002eeaf415ebc8f8147687bf6eeb6f3f129c64:21 109 1 41 1 66 1 7 1 41 1 50 1 104 1 109 1 107 1 153 1 140 10 1 1</definedName>",
       "<definedName name=\"oz.AboutEssentialsλ\" comment=\"Displays this module's repository URL and function list\">a739e197f04cb8500eead3c327f4e90d832b2f942b55ff218ee44eea947f4e0d:21 108 1 45 1 72 1 7 1 45 1 64 1 96 1 63 1 60 1 65 1 62 1 65 1 62 1 65 1 62 1 74 1 71 1 77 1 74 1 92 1 82 1 109 1 89 10 1 1</definedName>",
-      "<definedName name=\"oz.AboutFinancialλ\" comment=\"Displays this module's repository URL and function list\">7a7e07bdfcd9328124a2f4aa623128bee6ebf054533e5469c5148bc073b105a6:8546</definedName>",
+      "<definedName name=\"oz.AboutFinancialλ\" comment=\"Displays this module's repository URL and function list\">ab339c3fadb474e17e36cd61fee56d3b6744ac00a296c00f088ecb7f973d8988:21 84 1 36 1 64 1 62 1 7 1 37 1 55 1 132 1 124 1 98 1 125 1 110 1 76 1 86 1 129 1 133 1 133 1 127 1 134 1 125 1 7 1 25 1 69 1 66 1 112 1 7 1 25 1 119 1 68 1 127 1 84 1 90 1 97 1 100 1 101 1 103 1 194 1 153 1 7 1 26 1 73 1 121 1 90 1 26 1 105 1 101 1 111 1 98 1 7 1 26 1 94 1 82 1 94 1 7 1 26 1 95 1 88 1 96 1 7 1 26 1 86 1 95 1 7 1 26 1 96 1 7 1 26 1 107 1 116 1 98 1 117 1 7 1 26 1 120 1 109 1 7 1 26 1 127 1 7 1 26 1 122 1 7 1 26 1 107 1 7 1 26 1 131 1 137 1 7 1 26 1 80 1 78 1 7 1 26 1 123 1 86 1 100 1 7 1 89 1 87 1 69 1 100 1 92 1 88 1 76 10 1 1</definedName>",
       "<definedName name=\"oz.AboutRatiosλ\" comment=\"Displays this module's repository URL and function list\">697dcb0ccefd7b2298108fd893d024e0d5a41b1edc15c160ff24dfa02bcc8990:5 16 63 1 45 1 72 1 109 1 41 1 7 1 45 1 60 1 7 1 23 1 81 1 82 1 107 1 129 1 142 1 127 1 158 1 7 1 22 1 78 1 138 1 168 1 131 1 7 1 22 1 138 1 129 1 107 1 139 1 7 1 24 1 123 1 172 1 114 1 86 1 84 1 96 1 110 1 7 1 37 1 112 1 103 1 210 1 82 1 125 1 142 1 122 1 91 1 148 1 144 1 7 1 26 1 124 1 183 1 173 1 195 1 113 1 229 1 121 1 102 1 154 1 127 1 7 1 42 1 90 1 113 1 102 1 82 1 116 1 7 1 67 1 6 6 4 1 1</definedName>",
       "<definedName name=\"oz.AboutUtilitiesλ\" comment=\"Displays this module's repository URL and function list\">b5c6f959343d6589479fe73b24ce95f41110854215b44426916e71329453b48e:21 108 1 45 1 72 1 7 1 45 1 63 1 97 1 64 1 61 1 66 1 63 1 66 1 63 1 66 1 63 1 75 1 72 1 78 1 75 1 92 1 83 1 110 1 89 10 1 1</definedName>",
       "<definedName name=\"oz.Allocateλ\" comment=\"→Divide one or more amounts equally across smaller periods\">a9fa84f0b07ef719a002cb93a4145ef32eb0ddca68f765eb8574c700265d3acf:63 10 11 21 71 1 79 1 97 1 33 1 22 1 76 1 87 1 99 1 22 1 91 1 60 1 22 1 54 1 51 1 13 1 40 6 4 1 2 12 16 15 19 3 16 20 4 20 17 3 16 18 4 18 11 32 4 2 4 3 9 30 4 2 4 3 4 4 16 6 15 14 8 1 11 13 16 2 15 1 14 29 10 17 6 14 9 7 1 2 14 1 3 15 6 16 1 10 1 9 3 12 4 7 1 2 14 1 1 1 14 3 4 12 13 1 3 16 1 4 13 15 2 4 13 1 2 3 17 15 1 1 2 7 11 1 2 13 11 1 1</definedName>",
@@ -14243,7 +14245,7 @@
       "<definedName name=\"oz.DebtToAssetRatioλ\" comment=\"Analysts can compare one company's gearing with that of other _x000a_companies in the same industry. (Total Debt/Total Assets)\">901a6b16c84a063034e5f0202cf79ad90dd2c99fb8f88a33e397025427de65d1:47 21 21 69 1 90 1 63 1 90 1 37 1 26 1 84 1 50 1 85 1 73 1 64 6 4 1 2 12 3 16 17 16 18 2 13 15 19 18 1 2 13 11 1 1</definedName>",
       "<definedName name=\"oz.DebtToCapitalRatioλ\" comment=\"Gives analysts and investors a better idea of a company's financial structure_x000a_and whether or not the company is a suitable investment (Debt/(Debt + Shareholders' equity)\">6f8cf934fb35d8a123290327e6e142f67b6d3914f537dd7b41a3790dba661f8c:49 21 94 1 103 1 63 1 42 1 88 1 37 1 18 1 67 1 20 1 20 1 28 1 93 1 73 1 64 6 7 12 31 43 13 10 1 11 1 26 18 1 2 13 13</definedName>",
       "<definedName name=\"oz.DebtToEquityRatioλ\" comment=\"Measures the degree to which a company is financing operations_x000a_with debt rather than its own resources. (Total Liabilities/Shareholders' Equity)\">10377d65420b854f33a6d5dba3ef87ef2688c8747c383d5249ba0ffe50173a19:61 21 21 84 1 88 1 88 1 83 1 36 1 26 1 54 1 93 1 73 1 62 6 4 1 2 12 3 16 24 16 25 2 13 48 18 1 2 13 11 1 1</definedName>",
-      "<definedName name=\"oz.Depreciateλ\" comment=\"Create a block of CAPEX, Opening Balance, Depreciation Values, and Book Value for each asset\">7bb9c9adcb4faac7a36381b0be2b58c554cddf6ca547003bf188ab21aa7a3958:8285</definedName>",
+      "<definedName name=\"oz.Depreciateλ\" comment=\"Create a block of CAPEX, Opening Balance, Depreciation Values, and Book Value for each asset\">78da3d01a72a1c58805fa44c570d0d70ffddc33ff102431243bd6deb8eb7f273:7679</definedName>",
       "<definedName name=\"oz.DepreciateλDV\" comment=\"Provides extended data validation of arguments for Depreciateλ\">951b211748f4ead5cadd27d8ce2c60d47c5ae0707a7dc34c0800e4b87a88b546:175 10 19 13 3 8 22 3 8 23 3 8 20 3 8 17 3 8 22 3 8 22 3 8 22 3 8 16 3 8 15 2 13 3 3 30 6 3 8 26 1 2 8 13 3 3 8 22 8 17 6 3 8 27 1 4 16 8 13 3 3 8 20 6 10 12 8 6 19 4 3 4 12 2 2 4 12 1 4 11 3 4 12 2 2 3 1 5 13 3 3 8 17 6 7 15 1 3 14 3 3 23 14 6 10 12 12 16 4 11 12 1 2 1 11 12 1 4 1 4 13 3 3 16 21 34 6 3 8 26 1 2 8 13 3 3 16 21 24 6 3 19 1 23 13 3 3 16 21 34 6 3 8 26 1 2 8 13 3 3 16 15 8 16 6 8 13 14 41 6 13 3 3 16 15 8 16 6 11 6 14 2 2 4 4 15 13 13 13 13 13 14 13 13 13 13 12 2 17 22 16 18 13 19 16 14 1166 15 33 18 4 13 3 3 19 2 3 17 2 4 20 5 15 8 1 1</definedName>",
       "<definedName name=\"oz.DiminishingValueλ\" comment=\"Diminishing-balance depreciation schedule at 200% of the straight-line rate, writing the residual off in the final period. A modelling schedule, not a tax calculation.\">e1ab37fe587b8ded2d6ec49204c807c81079a49bd43ae512215e09b90eeddcd9:35 10 11 21 52 1 189 1 99 1 33 1 22 1 46 1 65 1 22 1 54 1 38 1 13 1 39 6 4 3 12 31 29 13 25 10 1 3 11 17 3 12 6 19 4 14 16 13 10 10 1 10 1 16 1 2 2 34 13 16 9 1 14 1 12 1 11 1 16 50 7 11 1 2 13 11 1 1</definedName>",
       "<definedName name=\"oz.Div7AMinRepaymentλ\" comment=\"Minimum yearly repayment of a Division 7A amalgamated loan under ITAA 1936 s 109E(6), unrounded\">956b58df468c15082971e01769c1546e8f1ebe9eda7cb5f30c958110d2a16591:13 21 20 20 10 11 21 87 1 1046 1 96 1 33 1 22 1 170 1 103 1 234 1 22 1 54 1 60 1 13 1 15 1 14 6 4 3 12 3 16 22 16 21 16 22 17 8 3 5 20 1 8 20 1 2 3 8 21 5 4 9 21 19 1 2 19 1 4 7 8 22 18 79 15 4 5 20 1 2 8 20 1 3 18 3 15 4 5 20 1 5 22 8 20 1 8 24 19 88 20 4 3 8 22 5 3 9 22 1 20 2 2 1 1 20 1 6 20 1 2 1 6 21 110 12 3 15 3 15 5 22 8 23 21 21 17 8 4 3 8 22 5 3 20 1 2 1 3 5 3 8 13 5 3 9 13 1 11 1 2 1 1 11 2 4 11 7 18 83 13 10 21 12 13 14 11 3 13 1 2 1 3 3 4 20 8 11 3 16 3 13 3 12 2 3 4 18 2 3 4 19 2 3 4 21 2 3 4 18 2 7 7 13 13 11 18 19 21 18 1 1</definedName>",
@@ -19987,7 +19989,7 @@
       "</row>",
       "<row r=\"8\" spans=\"1:18\" x14ac:dyDescent=\"0.25\">",
       "<c r=\"A8\" t=\"str\"><v>VERSION:</v></c>",
-      "<c r=\"B8\" t=\"str\"><v>1 Nov 2026</v></c>",
+      "<c r=\"B8\" t=\"str\"><v>27 Nov 2026</v></c>",
       "<c r=\"K8\" s=\"218\"/>",
       "<c r=\"L8\" s=\"218\"/>",
       "<c r=\"M8\" s=\"218\"/>",
