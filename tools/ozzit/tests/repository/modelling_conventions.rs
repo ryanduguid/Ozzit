@@ -171,7 +171,7 @@ fn if_and_nested_if() {
         })
         .count();
     assert!(nested >= 22, "{nested} functions nest IF");
-    page_says(&page, "100 functions call `IF`");
+    page_says(&page, "101 functions call `IF`");
     page_says(&page, "At least 22 functions nest one `IF` inside another");
 }
 
