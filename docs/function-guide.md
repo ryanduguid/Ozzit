@@ -11,13 +11,13 @@ part of the name.
 | Financial | 69 | Financial building blocks: amortisation, depreciation and pools, corkscrews, IRR, rolling sums, GST, AASB 16 leases, hire purchase, income tax, CGT, Division 7A, FBT, PAYG withholding, valuation and sensitivity |
 | Ratios | 48 | Financial ratios: liquidity, leverage, margins, returns, market multiples, working-capital days, ATO benchmark ratios |
 | Utilities | 18 | Standalone copies of the Essentials functions, each carrying a `U` suffix |
-| Debt | 5 | Debt sculpting: amortisation schedule, fixed and variable DSCR sculpting, sculpting interest |
+| Debt | 6 | Debt sculpting: amortisation schedule, fixed and variable DSCR sculpting, sculpting interest |
 
 Where 2 groups shipped a function of the same name, the fuller implementation keeps
 the plain name and the other takes a one-letter tag: `B` for debt, `E` for essentials,
 `U` for utilities. So `oz.Amortiseλ` is the financial amortisation schedule and
 `oz.AmortiseBλ` the debt one; `oz.SumRowsλ` and `oz.SumRowsUλ` are the essentials and
-utilities copies. The 5 About tables take words instead: `oz.AboutFinancialλ`,
+utilities copies. The 6 About tables take words instead: `oz.AboutFinancialλ`,
 `oz.AboutRatiosλ`, and so on.
 
 ## Worksheet catalogue
@@ -70,11 +70,11 @@ utilities copies. The 5 About tables take words instead: `oz.AboutFinancialλ`,
 | `oz.RangeToDAEλ` | Convert a static range into a dynamic array |
 | `oz.FinancialRatios` | Three dozen financial Ratios |
 
-The other 131 named formulas have no dedicated worksheet: 127 LAMBDA functions
-and 4 About tables. They include all of Ratios, Utilities, Debt, the AASB 16
+The other 132 named formulas have no dedicated worksheet: 127 LAMBDA functions
+and 5 About tables. They include all of Ratios, Utilities, Debt, the AASB 16
 lease helpers and the journal and hire purchase helpers. Call a LAMBDA with no arguments for inline help; reference an About
 table by name without parentheses. `oz.FinancialRatios` demonstrates the ratio
-suite on one worksheet, and [functions.csv](../functions.csv) indexes all 175 names.
+suite on one worksheet, and [functions.csv](../functions.csv) indexes all 176 names.
 
 ## Dynamic-array formula walkthrough
 

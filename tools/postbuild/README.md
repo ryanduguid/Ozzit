@@ -83,7 +83,11 @@ After `ozzit refresh_cache` has saved the workbook through Excel, run
 `ozzit remove_residue` again and then `ozzit sanitise_workbook`:
 an Excel save leaves named cell styles unused, renumbers the worksheet parts and
 splits long string literals, and those 2 passes put the file back into the
-state every gate expects.
+state every gate expects. The save can also rewrite number literals in defined
+names (on 27 November 2026 it wrote `1E13` as `10000000000000` in 12 of them),
+which `ozzit workbook_source capture` refuses with 'formula layout exceeds
+source'. Run `ozzit compile_sources` before those 2 passes: it writes the
+source form back over each changed name and leaves cached values alone.
 
 All postbuild passes are idempotent: on a current workbook each reports
 `already applied` and writes nothing. A workbook whose anchors do not match the recorded counts

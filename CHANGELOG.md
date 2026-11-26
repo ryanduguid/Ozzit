@@ -28,8 +28,17 @@ release; until then v3.8.0 behaves as it did.
 - [Workbook use](docs/workbook-use.md) shows how a script or agent on Windows looks up a
   function with `ozzit function_reference` and gets Excel's own result for a formula with the
   existing read-only evaluator, and the Ozzit skill points to it.
+- `oz.AboutDebtλ` lists the Debt module's 5 functions, which `oz.AboutFinancialλ` listed
+  under DEBT MODULE until now, so each of the 6 modules has its own About table.
 
 ### Fixed
+
+- `oz.AboutFinancialλ` stored 8,133 characters and `oz.Depreciateλ` 8,180, so a few more
+  words in either would have passed Excel's limit of 8,192 for a defined name and left a
+  workbook Excel refuses to open. With the Debt rows moved to `oz.AboutDebtλ` and shorter
+  internal names in `oz.Depreciateλ`, they now store 7,732 and 7,574. `oz.Depreciateλ`'s
+  parameters and results are unchanged; its help changes only its VERSION date. `compile_sources` and `verify_workbook` now refuse any name
+  over 8,000 characters, and `verify_counts` checks the function guide's module table.
 
 - `ozzit audit` reads a Mac volume-colon link target, such as `Macintosh HD:Users:a.xlsx`,
   as a Mac path instead of a path relative to the workbook, so a target that exists on the

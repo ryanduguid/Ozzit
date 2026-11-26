@@ -357,6 +357,43 @@ fn sync_counts_moves_the_worksheet_counts() {
     assert_eq!(after, [names + 1, functions + 1, help]);
 }
 
+const DEBT_ROW: &str = "| Debt | 6 |";
+
+#[test]
+fn a_stale_module_count_fails_and_sync_counts_corrects_it() {
+    let f = Fixture::new();
+    let line = f.rewrite(counts::MODULE_TABLE.0, DEBT_ROW, "| Debt | 9 |");
+    fails_with(
+        &f.check(),
+        &[&format!(
+            "FAIL: docs/function-guide.md:{line}: the module table says 9 named formulas in Debt; functions.csv has 6"
+        )],
+    );
+    let output = counts::sync_with(f.path(), &Overlay::default());
+    passes(&output);
+    changed(&output, "docs/function-guide.md:", "9 to 6");
+    let guide = std::fs::read_to_string(f.path().join(counts::MODULE_TABLE.0)).unwrap();
+    assert!(guide.contains(DEBT_ROW));
+}
+
+#[test]
+fn a_missing_or_repeated_module_row_fails() {
+    let f = Fixture::new();
+    f.rewrite(counts::MODULE_TABLE.0, DEBT_ROW, "| Loans | 6 |");
+    fails_with(
+        &f.check(),
+        &["FAIL: docs/function-guide.md: the module table has no row for Debt"],
+    );
+    let f = Fixture::new();
+    let line = f.append(counts::MODULE_TABLE.0, &format!("{DEBT_ROW} again |"));
+    fails_with(
+        &f.check(),
+        &[&format!(
+            "FAIL: docs/function-guide.md:{line}: the module table lists Debt twice"
+        )],
+    );
+}
+
 #[test]
 fn a_count_that_is_not_a_number_fails() {
     let (_, h) = main_index();

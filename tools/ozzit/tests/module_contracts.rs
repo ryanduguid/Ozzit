@@ -243,6 +243,7 @@ fn joined_names_match_workbook_and_index_including_all_five_help_tables() {
         help,
         [
             "AboutDatesλ",
+            "AboutDebtλ",
             "AboutEssentialsλ",
             "AboutFinancialλ",
             "AboutRatiosλ",

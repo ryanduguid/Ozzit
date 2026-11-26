@@ -1680,14 +1680,6 @@ AboutFinancialλ = TRIM(TEXTSPLIT(
                                            "FCFFBridgeλ        →Free cash flow to the firm from EBIT, tax, depreciation, capital expenditure and working capital¶" &
                                            "WACCλ              →Weighted average cost of capital with a CAPM cost of equity¶" &
                                            "SensitivityGridλ   →Two-way sensitivity grid from a calculation and its row and column values¶" & 
-                                           "→¶" &
-                                           "DEBT MODULE        →¶" &
-                                           "AmortiseBλ         →Creates an amortisation schedule for a debt/loan across a model's periods¶" &
-                                           "DebtSculptFixedλ   →Creates a debt sculpting schedule where APR and DSCR are fixed for all periods¶" &
-                                           "DebtSculptVariableλ →Creates a debt sculpting schedule where APR and DSCR are set for each period¶" &
-                                           "DebtSculptVariableLRVλ →Creates a debt sculpting schedule where APR and DSCR are set for each period, with interest charged on the average balance¶" &
-                                           "InterestLRVλ       →Calculates debt sculpting interest on the average balance over the period, the method presented by Lance Rubin¶" &
-                                           
     "→¶" &
     "SUBROUTINES        →Functions used by other functions or general purpose functions.¶" & 
     "FilterContainsλ    →Filter an array by another array that contains specific text¶" & 
@@ -2649,7 +2641,7 @@ Depreciateλ = LAMBDA(
                                            "→[SalvageValues], [DisposalDates], [DisposalCosts], [Methods], [Factors])¶" &
                             "DESCRIPTION:→Creates an array of CAPEX, depreciation, and book values for a model's timeline¶" &
                             "WEBPAGE:→https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
-                            "VERSION:→1 Nov 2026¶" &
+                            "VERSION:→27 Nov 2026¶" &
                             "NOTES:→DB and DDB differ from Excel's in the final year; see the DBλ and DDBλ help.¶" &
                                            "→Revenue from Sale is salvage value, not sale proceeds; 0 for DV and PC.¶" &
                             "PARAMETERS:→¶" &
@@ -2685,14 +2677,14 @@ Depreciateλ = LAMBDA(
                             ISOMITTED( Timeline)
                         ),
     //  Set Constants
-        MethodArray,    {"SLN","SYD","DB","DDB","VDB","DV","PC"},
+        Codes,          {"SLN","SYD","DB","DDB","VDB","DV","PC"},
         Mpy,            12, //Months Per Year
     //  Check inputs - a life in years must be a life, not a date
         LifeGiven,      IF( ISOMITTED( LifeInYears), 1, LifeInYears),
         LifeNums,       IFERROR( VALUE( LifeGiven), -1),
         BadLife?,       OR( MIN( LifeNums) <= 0, MAX( LifeNums) > 100,
                             SUMPRODUCT( --( MOD( LifeNums, 1) <> 0)) > 0),
-        LifeMessage,    "LifeInYears must be a whole number of years greater than 0 and no more than 100. "
+        LifeMsg,        "LifeInYears must be a whole number of years greater than 0 and no more than 100. "
                         & "Check the argument order: InitialValues, InServiceDates, LifeInYears, Timeline.",
     //  Set defaults and apply convenience conversions
     //  A blank salvage cell is 0. Text that is not a number used to become 0 as well, which
@@ -2703,18 +2695,18 @@ Depreciateλ = LAMBDA(
         SalvageValues,  IF( ISOMITTED( SalvageValues),
                             MAP( InitialValues, LAMBDA( Ele, 0)),
                             MAP( SalvageValues, LAMBDA(v, IFERROR( IF( ISNUMBER( v), v, IF( v = "", 0, NA())), NA())))),
-        BadSalvage?,    SUMPRODUCT( --ISNA( SalvageValues)) > 0,
-        SalvageMessage, "SalvageValues must be numbers or blank.",
-        CvtSrvDates,    IF( NOT( ISOMITTED( InServiceDates)), 
+        BadSalv?,       SUMPRODUCT( --ISNA( SalvageValues)) > 0,
+        SalvMsg,        "SalvageValues must be numbers or blank.",
+        Starts,         IF( NOT( ISOMITTED( InServiceDates)), 
                             IF( ISNUMBER( InServiceDates), 
                                 InServiceDates, 
                                 DATEVALUE( InServiceDates))),
         DisposalDates,  IF( ISOMITTED( DisposalDates), 
-                            EDATE( +CvtSrvDates, LifeinYears * 12), 
+                            EDATE( +Starts, LifeinYears * 12), 
                             MAKEARRAY( ROWS( DisposalDates), 1, 
                                 LAMBDA(R, C, 
                                     IF( INDEX( DisposalDates, R)  = "", 
-                                        EDATE( INDEX( CvtSrvDates, R), INDEX(LifeinYears, R) * 12), 
+                                        EDATE( INDEX( Starts, R), INDEX(LifeinYears, R) * 12), 
                                         INDEX( DisposalDates, R)
                                     )
                                 )
@@ -2730,11 +2722,9 @@ Depreciateλ = LAMBDA(
                             MAP( InitialValues, LAMBDA( Ele, 2)), 
                             MAP( Factors, LAMBDA(v, IF( TRIM( v) = "", 2, v)))),
     //  Create individual Values from timeline array
-        TimelineCols,   COLUMNS( TImeline),
-        FirstPeriod,    INDEX( Timeline, 1),
-        SecondPeriod,   INDEX( TImeline, 2),
-        DpP,            SecondPeriod - FirstPeriod,                      //Days Per Period
-        SubMonthly?,    DpP < 28,                                        //No month is shorter
+        Cols,           COLUMNS( TImeline),
+        DpP,            INDEX( Timeline, 2) - INDEX( Timeline, 1),       //Days Per Period
+        Sub?,           DpP < 28,                                        //No month is shorter
         MpP,            MAX( @ROUND( DpP / 30.5, 0), 1),                 //Months Per Period, never nought
     //  The last period has no successor to take its end date from, so it ends one period
     //  on from its own start: a whole number of months where the timeline is monthly or
@@ -2742,14 +2732,14 @@ Depreciateλ = LAMBDA(
     //  A month-end start steps forward through EOMONTH, because EDATE(28 Feb, 1) is
     //  28 Mar, not 31 Mar, and the three days between fall out of the schedule. This is
     //  the step DayCountRateλ() already takes for its own last period.
-        LastGap,        MAX( Timeline) - INDEX( Timeline, TimelineCols - 1),
+        LastGap,        MAX( Timeline) - INDEX( Timeline, Cols - 1),
         LastDate,       MAX( Timeline),
-        LastEnd,        IF( SubMonthly?,
+        LastEnd,        IF( Sub?,
                             LastDate + LastGap,
                             IF( DAY( LastDate + 1) = 1,
                                 EOMONTH( LastDate, MpP),
                                 EDATE( LastDate, MpP))) - 1,
-        EndDates,       HSTACK( MAP(  SEQUENCE(, TimelineCols - 1), LAMBDA( n, INDEX( Timeline, n + 1) - 1)), LastEnd),
+        EndDates,       HSTACK( MAP(  SEQUENCE(, Cols - 1), LAMBDA( n, INDEX( Timeline, n + 1) - 1)), LastEnd),
     //  Process each asset
         Result,         REDUCE( 0, SEQUENCE( ROWS( InitialValues)), 
                             LAMBDA(Block, Asset, 
@@ -2757,67 +2747,67 @@ Depreciateλ = LAMBDA(
                                 //  Create individual values from arguments
                                     Method,         @INDEX( Methods, Asset),
                                     Years,          IF( BadLife?, 1, @INDEX( LifeInYears, Asset)),
-                                    InitialValue,   @INDEX( InitialValues, Asset), 
-                                    SalvageValue,   IF( OR( Method = "DV", Method = "PC"), 0, @INDEX( SalvageValues, Asset)), 
-                                    InServiceDate,  @INDEX( CvtSrvDates, Asset), 
-                                    DisposalDate,   @INDEX( DisposalDates, Asset), 
-                                    DisposalCost,   @INDEX( DisposalCosts, Asset), 
+                                    Cost,           @INDEX( InitialValues, Asset), 
+                                    Salv,           IF( OR( Method = "DV", Method = "PC"), 0, @INDEX( SalvageValues, Asset)), 
+                                    Start,          @INDEX( Starts, Asset), 
+                                    Disp,           @INDEX( DisposalDates, Asset), 
+                                    DCost,          @INDEX( DisposalCosts, Asset), 
                                     Factor,         @INDEX( Factors, Asset),
-                                    LifeInMonths,   PeriodDiffλ( InserviceDate, DisposalDate, "M"),
+                                    Life,           PeriodDiffλ( Start, Disp, "M"),
                                 //  Procedure
                                 //  Depreciation is calculated annually then allocated equally over the next 12 months
-                                    Depreciate,     CHOOSE( MATCH( @Method, MethodArray, 0), //CHOOSE is more efficient than SWITCH
+                                    Annual,         CHOOSE( MATCH( @Method, Codes, 0), //CHOOSE is more efficient than SWITCH
                                                     //  1. Straight line 
-                                                        SLNλ( InitialValue, SalvageValue, Years), 
+                                                        SLNλ( Cost, Salv, Years), 
                                                     //  2. Sum-of-years' digits
-                                                        SYDλ( InitialValue, SalvageValue, Years),
+                                                        SYDλ( Cost, Salv, Years),
                                                     //  3. Declining balance
-                                                        DBλ( InitialValue, SalvageValue, Years),
+                                                        DBλ( Cost, Salv, Years),
                                                     //  4. Double declining balance 
-                                                        DDBλ( InitialValue, SalvageValue, Years, Factor),
+                                                        DDBλ( Cost, Salv, Years, Factor),
                                                     //  5. Variable declining balance 
-                                                        VDBλ( InitialValue, SalvageValue, Years, Factor), 
+                                                        VDBλ( Cost, Salv, Years, Factor), 
                                                     //  6. Diminishing balance at 200% of straight line
-                                                        DiminishingValueλ( InitialValue, Years),
+                                                        DiminishingValueλ( Cost, Years),
                                                     //  7. Straight line, whole years
-                                                        PrimeCostλ( InitialValue, Years),
+                                                        PrimeCostλ( Cost, Years),
                                                     ),
                                 //  Allocating annual values to months. The asset's months run to its disposal:
                                 //  a disposal after the end of life pads the tail with nought and writes the
                                 //  salvage value off in the last month; a disposal before the end of life stops
                                 //  the schedule there and writes the remaining book value off instead.
-                                    Monthly,        Allocateλ( Depreciate, "Y", "M"),
-                                    Months,         LifeInMonths - 1,
+                                    Monthly,        Allocateλ( Annual, "Y", "M"),
+                                    Months,         Life - 1,
                                     Allocate,       IF( Months < 1,
-                                                        InitialValue,
+                                                        Cost,
                                                         IF( Months >= COLUMNS( Monthly),
-                                                            HSTACK( EXPAND( Monthly, 1, Months, 0), SalvageValue),
-                                                            HSTACK( TAKE( Monthly, , Months), InitialValue - SUM( TAKE( Monthly, , Months))))),
-                                    Opening,        DROP( HSTACK( InitialValue, SCAN( InitialValue, Allocate, LAMBDA( Acc, Val, Acc - Val))), 0, -1),
+                                                            HSTACK( EXPAND( Monthly, 1, Months, 0), Salv),
+                                                            HSTACK( TAKE( Monthly, , Months), Cost - SUM( TAKE( Monthly, , Months))))),
+                                    Opening,        DROP( HSTACK( Cost, SCAN( Cost, Allocate, LAMBDA( Acc, Val, Acc - Val))), 0, -1),
                                 //  Create a monthly timeline for the asset
-                                    AssetTimeline,  EDATE( InServiceDate, SEQUENCE( , LifeInMonths, 0)), 
+                                    Dates,          EDATE( Start, SEQUENCE( , Life, 0)), 
                                 //  The period each asset month falls in is the last period start on or before it;
                                 //  a month after the last period ends belongs to no period. One matrix product
                                 //  then aggregates the months into the model's periods.
-                                    Buckets,        IFERROR( MATCH( AssetTimeline, Timeline, 1), 0) * ( AssetTimeline <= LastEnd),
-                                    InPeriod,       ( TOCOL( Buckets) = SEQUENCE( 1, TimelineCols)) * 1,
-                                    Depreciation,   MMULT( Allocate, InPeriod),
-                                    CAPEX,          InitialValue * (Timeline <= InServiceDate) * (EndDates >= InServiceDate), 
+                                    Buckets,        IFERROR( MATCH( Dates, Timeline, 1), 0) * ( Dates <= LastEnd),
+                                    InPeriod,       ( TOCOL( Buckets) = SEQUENCE( 1, Cols)) * 1,
+                                    Dep,            MMULT( Allocate, InPeriod),
+                                    CAPEX,          Cost * (Timeline <= Start) * (EndDates >= Start), 
                                 //  The opening balance a period shows is the one its first asset month carries
-                                    Earlier,        IF( LifeInMonths = 1, 0, HSTACK( 0, DROP( Buckets, , -1))),
-                                    FirstInPeriod,  ( Buckets <> Earlier) * ( Buckets > 0),
-                                    OpeningAmount,  MMULT( Opening * FirstInPeriod, InPeriod),
-                                    BookValue,      OpeningAmount - Depreciation,
-                                    SalesRevenue,   SalvageValue * (Timeline <= DisposalDate) * (EndDates >= DisposalDate), 
-                                    DisposalExp,    DisposalCost * (Timeline <= DisposalDate) * (EndDates >= DisposalDate), 
+                                    Earlier,        IF( Life = 1, 0, HSTACK( 0, DROP( Buckets, , -1))),
+                                    First,          ( Buckets <> Earlier) * ( Buckets > 0),
+                                    OpenAmt,        MMULT( Opening * First, InPeriod),
+                                    BookValue,      OpenAmt - Dep,
+                                    Sale,           Salv * (Timeline <= Disp) * (EndDates >= Disp), 
+                                    DispExp,        DCost * (Timeline <= Disp) * (EndDates >= Disp), 
                                 //  Assemble this assets rows into a block
-                                    NewBlock,       VSTACK( CAPEX, OpeningAmount, Depreciation, BookValue, SalesRevenue, DisposalExp),
+                                    NewBlock,       VSTACK( CAPEX, OpenAmt, Dep, BookValue, Sale, DispExp),
                                 //  Add this block to prior blocks (if any)
                                     Result,         IF( Asset = 1, 
                                                         NewBlock, 
                                                         VSTACK(
                                                             Block,
-                                                            EXPAND("", 1, TimelineCols, ""),
+                                                            EXPAND("", 1, Cols, ""),
                                                             NewBlock
                                                             )
                                                     ),
@@ -2826,8 +2816,8 @@ Depreciateλ = LAMBDA(
                             )
                         ),
     //  Return Result, Help, or the message
-        Return,         IF( Help?, 2, IF( BadLife?, 3, IF( BadSalvage?, 4, 1))),
-        CHOOSE( Return, Result, Help, LifeMessage, SalvageMessage)
+        Return,         IF( Help?, 2, IF( BadLife?, 3, IF( BadSalv?, 4, 1))),
+        CHOOSE( Return, Result, Help, LifeMsg, SalvMsg)
     ) 
 );
 
@@ -8491,6 +8481,25 @@ RangeToDAUλ = LAMBDA(
     Every schedule solves its closing balances with SCAN, one period after another, so
     nothing here recurses and the module is held in the Advanced Formula Environment
     store with the other five. */
+
+/*  FUNCTION NAME:  AboutDebtλ
+    DESCRIPTION:*//**Displays this module's repository URL and function list*/
+
+AboutDebtλ = TRIM(TEXTSPLIT(
+    "ABOUT:                 →Ozzit's Debt module: debt sculpting and amortisation. Suggested module name: oz¶" &
+    "VERSION:               →27 Nov 2026¶" &
+    "REPOSITORY:            →https://github.com/ryanduguid/Ozzit ¶" &
+    "→¶" &
+    "FUNCTION               →DESCRIPTION¶" &
+    "AboutDebtλ             →Produces this table¶" &
+    "AmortiseBλ             →Creates an amortisation schedule for a debt/loan across a model's periods¶" &
+    "DebtSculptFixedλ       →Creates a debt sculpting schedule where APR and DSCR are fixed for all periods¶" &
+    "DebtSculptVariableλ    →Creates a debt sculpting schedule where APR and DSCR are set for each period¶" &
+    "DebtSculptVariableLRVλ →Creates a debt sculpting schedule where APR and DSCR are set for each period, with interest charged on the average balance¶" &
+    "InterestLRVλ           →Calculates debt sculpting interest on the average balance over the period, the method presented by Lance Rubin",
+    "→","¶"
+    )
+);
 
 /*  FUNCTION NAME:  AmortiseBλ
     DESCRIPTION:*//**Creates an amortisation schedule for a debt/loan across a model's periods*/

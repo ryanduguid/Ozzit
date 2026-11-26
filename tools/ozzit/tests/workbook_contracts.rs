@@ -341,6 +341,24 @@ fn the_current_workbook_refuses_the_original_8195_character_name() {
 }
 
 #[test]
+fn a_name_over_the_library_limit_is_refused_below_excels_cap() {
+    let f = Fixture::published();
+    let mut parts = f.parts();
+    let book = text(&parts, BOOK).unwrap();
+    let start = book.find("<definedName name=\"oz.GSTExtractλ\"").unwrap();
+    let open_end = start + book[start..].find('>').unwrap() + 1;
+    let close = open_end + book[open_end..].find("</definedName>").unwrap();
+    let padded = format!("\"{}\"", "1".repeat(7999));
+    assert_eq!(padded.chars().count(), 8001);
+    parts.insert(
+        BOOK.into(),
+        format!("{}{padded}{}", &book[..open_end], &book[close..]).into_bytes(),
+    );
+    f.write(&parts);
+    f.refuses("oz.GSTExtractλ is 8001 characters, over the library's limit of 8000");
+}
+
+#[test]
 fn all_seven_original_forbidden_parts_are_refused() {
     for part in [
         "xl/vbaProject.bin",
@@ -399,7 +417,7 @@ fn physical_defaults_and_explicit_arguments_force_utf8_and_preserve_inputs() {
             let name = args.first().map_or("ozzit.xlsx", String::as_str);
             assert_eq!(
                 result.stdout,
-                format!("OK: {name}, 175 functions, 169 parts{}", newline()).into_bytes()
+                format!("OK: {name}, 176 functions, 169 parts{}", newline()).into_bytes()
             );
         }
     }

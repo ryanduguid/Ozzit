@@ -36,7 +36,7 @@ The workbook tracked in this repository is the candidate the gates below run aga
    `ozzit build_module` writes it from `src/`, and the native module tests in
    `tools/ozzit/tests/module_contracts.rs` hold the tracked file to the current
    `src/`, to every `oz.` name the workbook
-   ships (the 5 help tables included) and to `functions.csv`. Those checks bind the
+   ships (the 6 help tables included) and to `functions.csv`. Those checks bind the
    file to the workbook commit it ships with; they do not exercise the add-in's
    import route, which has not yet been run against `oz.txt` as a native gate, so
    import into a disposable workbook first and check the names it creates against

@@ -32,9 +32,9 @@ fn compile_one(
     }
     .map_err(|e| format!("{bare}: {e}"))?;
     let length = stored.chars().count();
-    if length > 8192 {
+    if length > NAME_LIMIT {
         return Err(format!(
-            "{bare}: the stored definition is {length} characters and Excel refuses to open a workbook with a defined name over 8192"
+            "{bare}: the stored definition is {length} characters, over the library's limit of {NAME_LIMIT}; Excel refuses to open a workbook with a defined name over 8192"
         ));
     }
     let want = canonical(&qualify(&body, "oz", library));

@@ -10,7 +10,7 @@ the rules against the source at the commit that adds this page, not a claim that
 Ozzit complies with either guide, and neither body has reviewed it.
 
 Both guides were written for models: workbooks with inputs, a time axis,
-calculations and outputs. Ozzit is a library of 170 LAMBDA functions and 5 help
+calculations and outputs. Ozzit is a library of 170 LAMBDA functions and 6 help
 tables that models call. FAST 02c mentions neither LAMBDA nor dynamic arrays, and
 the ICAEW Code does not mention LAMBDA, so each rule is read for its purpose.
 Rules about workbook and worksheet layout still apply to any model built with
@@ -72,7 +72,7 @@ The Code's text is reserved, so this page quotes its section headings only.
 | Section | Ozzit | Reason |
 |---|---|---|
 | Model definition and purpose; layout and structure | Does not apply | They govern a model's scope, goals, layout and navigation. |
-| Include user guidance | Follows | Every function except the three `λDV` validators has a help table, and 5 About tables list each module's functions. |
+| Include user guidance | Follows | Every function except the three `λDV` validators has a help table, and 6 About tables list each module's functions. |
 | Avoid duplication | Departs | Utilities repeats the 17 Essentials functions with a `U` suffix, with its own About table, so that it can be installed alone; see the [function guide](function-guide.md). |
 | Don't hide things | Departs, with copies | The logic sits in Name Manager, not on a sheet; `src/`, `oz.txt` and the help tables are the visible copies, and CI checks them against the workbook. |
 | Use consistent formulas | Depends on the calling model | As FAST 3.02-01. |

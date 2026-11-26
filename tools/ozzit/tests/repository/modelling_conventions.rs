@@ -108,14 +108,14 @@ fn calling(pattern: &str) -> BTreeSet<String> {
 fn the_function_and_help_table_counts() {
     let page = page();
     assert_eq!(function_bodies().len(), 170);
-    page_says(&page, "a library of 170 LAMBDA functions and 5 help tables");
+    page_says(&page, "a library of 170 LAMBDA functions and 6 help tables");
     page_says(&page, "Ozzit's 170 functions exist to be called from cells");
     let tables: BTreeSet<String> = modules()
         .iter()
         .flat_map(|(_, text)| findall(r"(?m)^(About\w+λ)\s*=", text))
         .collect();
-    assert_eq!(tables.len(), 5);
-    page_says(&page, "5 About tables list each module's functions");
+    assert_eq!(tables.len(), 6);
+    page_says(&page, "6 About tables list each module's functions");
 }
 
 #[test]
