@@ -565,8 +565,8 @@ fn assert_sheet_parity(name: &str, cand: &ParsedSheet, ship: &ParsedSheet) {
     assert_eq!(cand.pane, ship.pane, "{name} pane");
     assert_eq!(cand.col_widths, ship.col_widths, "{name} col_widths");
     assert_eq!(
-        cand.row_heights.len(),
-        ship.row_heights.len(),
+        cand.row_heights.keys().collect::<Vec<_>>(),
+        ship.row_heights.keys().collect::<Vec<_>>(),
         "{name} rows"
     );
     for (r, h) in &cand.row_heights {
@@ -840,9 +840,13 @@ fn the_template_path_is_refused_before_the_file_exists() {
     ] {
         assert_eq!(run(arg), Some(2), "{arg}");
         assert!(!template.exists(), "{arg}");
+        for folder in ["templates", "missing"] {
+            assert!(!dir.path().join(folder).exists(), "{arg} left {folder}");
+        }
     }
     #[cfg(unix)]
     {
+        std::fs::create_dir(dir.path().join("templates")).unwrap();
         std::os::unix::fs::symlink(dir.path().join("templates"), dir.path().join("link")).unwrap();
         assert_eq!(run("link/practice-calculators.xlsx"), Some(2));
         assert!(!template.exists());
