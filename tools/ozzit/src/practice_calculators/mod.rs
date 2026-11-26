@@ -101,14 +101,25 @@ pub fn write_workbook(path: &Path) -> Result<usize> {
 
 pub fn run(args: &[OsString]) -> std::result::Result<String, (u8, String)> {
     const USAGE: &str = "usage: build_practice_calculators (--out <path> | <path> | --force)";
+    const TEMPLATE: &str = "templates/practice-calculators.xlsx";
     let target: PathBuf = match args {
         [flag] if flag == "--help" || flag == "-h" => return Ok(USAGE.to_owned()),
-        [flag] if flag == "--force" => "templates/practice-calculators.xlsx".into(),
+        [flag] if flag == "--force" => return write_to(Path::new(TEMPLATE)),
         [flag, path] if flag == "--out" || flag == "-o" => path.into(),
         [path] if !path.as_encoded_bytes().starts_with(b"-") => path.into(),
         _ => return Err((2, USAGE.to_owned())),
     };
-    let len = write_workbook(&target).map_err(|e| (1, format!("FAIL: {e}")))?;
+    // Only --force may replace the shipped template, however its path is spelled.
+    if let (Ok(a), Ok(b)) = (target.canonicalize(), Path::new(TEMPLATE).canonicalize())
+        && a == b
+    {
+        return Err((2, format!("FAIL: {TEMPLATE} is replaced only with --force")));
+    }
+    write_to(&target)
+}
+
+fn write_to(target: &Path) -> std::result::Result<String, (u8, String)> {
+    let len = write_workbook(target).map_err(|e| (1, format!("FAIL: {e}")))?;
     Ok(format!("Saved {} ({len} bytes)", target.display()))
 }
 

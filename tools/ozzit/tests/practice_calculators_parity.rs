@@ -1,7 +1,7 @@
 // Copyright 2026 Ryan Duguid
 // SPDX-License-Identifier: Apache-2.0
 
-//! Gate A semantic OOXML parity, structural invariants, contrast and CLI tests
+//! Semantic OOXML parity, structural invariants, contrast and CLI tests
 //! for `build_practice_calculators`.
 use ozzit::archive::{Parts, read_parts};
 use ozzit::common::{column_letters, column_number, sub_fn};
@@ -759,4 +759,25 @@ fn cli_handles_flags_default_path_and_errors() {
         run_exe(&[dir.path().to_str().unwrap()], None).status.code(),
         Some(1)
     );
+}
+
+#[test]
+fn only_force_replaces_the_shipped_template() {
+    let dir = tempfile::tempdir().unwrap();
+    let template = dir.path().join("templates/practice-calculators.xlsx");
+    std::fs::create_dir_all(template.parent().unwrap()).unwrap();
+    std::fs::write(&template, b"kept").unwrap();
+    for args in [
+        vec!["templates/practice-calculators.xlsx"],
+        vec!["--out", "templates/../templates/practice-calculators.xlsx"],
+    ] {
+        let refused = Command::new(env!("CARGO_BIN_EXE_build_practice_calculators"))
+            .args(&args)
+            .current_dir(dir.path())
+            .output()
+            .unwrap();
+        assert_eq!(refused.status.code(), Some(2), "{args:?}");
+        assert!(String::from_utf8_lossy(&refused.stderr).contains("--force"));
+    }
+    assert_eq!(std::fs::read(&template).unwrap(), b"kept");
 }

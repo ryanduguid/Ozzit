@@ -4,92 +4,29 @@
 //! Worksheets 1-6: Read me, Allocation, Contractor, Vendor finance, Mixed loan, Rental.
 use super::model::{FMT_DEC2, FMT_INT, FMT_MONEY, FMT_PCT, FMT_TEXT, PLATINUM, Sheet, col_name};
 
-const README_ROWS: [(&str, &str); 21] = [
-    (
-        "Allocation",
-        "Allocate one budget across 20 people or jobs equally, by salary, or by eight weighted factors.",
-    ),
-    (
-        "Contractor",
-        "Compare employer cost with contractor revenue per billable week and hour.",
-    ),
-    (
-        "Vendor finance",
-        "Roll annual vendor debt forward using dividends, a cash reserve and own funds.",
-    ),
-    (
-        "Mixed loan",
-        "Allocate interest, fees and repayments across six uses and 36 dated events.",
-    ),
-    (
-        "Rental",
-        "Reconcile rent, operating costs, capital spending, three loans and up to five owners.",
-    ),
-    (
-        "Packaging",
-        "Compare employee cash pay and employer cost for up to five benefits, using supplied tax amounts.",
-    ),
-    (
-        "Amortisation",
-        "Allocate 11 cost cohorts across 11 annual periods with a supplied early write-off year.",
-    ),
-    (
-        "Timeline",
-        "Show 12 dated intervals across 24 months and measure overlap with a reporting window.",
-    ),
-    (
-        "Deed register",
-        "Record deed evidence for 20 trusts and flag vesting dates within five calendar years.",
-    ),
-    (
-        "Carry forward",
-        "Consume supplied annual capacity and five expiring buckets, oldest first.",
-    ),
-    (
-        "Loan offers",
-        "Compare eight fixed-rate offers including balloons, fees and a supplied rate shock.",
-    ),
-    (
-        "Break even",
-        "Calculate contribution, break-even units, target profit and capacity constraints.",
-    ),
-    (
-        "Working capital",
-        "Estimate cash released by changes in receivable, inventory and payable days.",
-    ),
-    (
-        "Construction WIP",
-        "Reconcile approved project progress, forecast costs, billings and collections.",
-    ),
-    (
-        "KPI awards",
-        "Calculate individual target bonuses using supplied scores, thresholds and caps.",
-    ),
-    (
-        "Asset disposal",
-        "Bridge supplied sale, book-value, replacement and GST amounts to profit and cash.",
-    ),
-    (
-        "Exit pay",
-        "Calculate gross and net pay from approved leave, notice and other entitlement inputs.",
-    ),
-    (
-        "Tax cash",
-        "Track assessed liabilities, payments, refunds and credits across twelve entities.",
-    ),
-    (
-        "Investment",
-        "Project ten annual periods of investment value, debt and after-tax cash flows.",
-    ),
-    (
-        "Action register",
-        "Track owners, supplied deadlines, evidence and completion of review actions.",
-    ),
-    (
-        "Benefit totals",
-        "Gross up reviewer-classified type 1 and type 2 taxable values using supplied FBT rates.",
-    ),
-];
+/// One line for each calculator: its sheet name, a bar, then what it calculates.
+const README_ROWS: &str = "\
+Allocation|Allocate one budget across 20 people or jobs equally, by salary, or by eight weighted factors.
+Contractor|Compare employer cost with contractor revenue per billable week and hour.
+Vendor finance|Roll annual vendor debt forward using dividends, a cash reserve and own funds.
+Mixed loan|Allocate interest, fees and repayments across six uses and 36 dated events.
+Rental|Reconcile rent, operating costs, capital spending, three loans and up to five owners.
+Packaging|Compare employee cash pay and employer cost for up to five benefits, using supplied tax amounts.
+Amortisation|Allocate 11 cost cohorts across 11 annual periods with a supplied early write-off year.
+Timeline|Show 12 dated intervals across 24 months and measure overlap with a reporting window.
+Deed register|Record deed evidence for 20 trusts and flag vesting dates within five calendar years.
+Carry forward|Consume supplied annual capacity and five expiring buckets, oldest first.
+Loan offers|Compare eight fixed-rate offers including balloons, fees and a supplied rate shock.
+Break even|Calculate contribution, break-even units, target profit and capacity constraints.
+Working capital|Estimate cash released by changes in receivable, inventory and payable days.
+Construction WIP|Reconcile approved project progress, forecast costs, billings and collections.
+KPI awards|Calculate individual target bonuses using supplied scores, thresholds and caps.
+Asset disposal|Bridge supplied sale, book-value, replacement and GST amounts to profit and cash.
+Exit pay|Calculate gross and net pay from approved leave, notice and other entitlement inputs.
+Tax cash|Track assessed liabilities, payments, refunds and credits across twelve entities.
+Investment|Project ten annual periods of investment value, debt and after-tax cash flows.
+Action register|Track owners, supplied deadlines, evidence and completion of review actions.
+Benefit totals|Gross up reviewer-classified type 1 and type 2 taxable values using supplied FBT rates.";
 
 pub fn read_me(sheet_names: &[&'static str]) -> Sheet {
     let mut s = Sheet::new("Read me", "Ozzit practice calculators", "N", 48);
@@ -113,9 +50,13 @@ pub fn read_me(sheet_names: &[&'static str]) -> Sheet {
     );
     s.header(13, &["Calculator", "What it calculates"], 2);
     s.set_col_width_range(3, 3, 100);
-    for (i, (name, desc)) in README_ROWS.iter().enumerate() {
+    for (i, (name, desc)) in README_ROWS
+        .lines()
+        .map(|line| line.split_once('|').expect("name|description"))
+        .enumerate()
+    {
         let row = 14 + i as u16;
-        debug_assert_eq!(sheet_names[i + 1], *name);
+        debug_assert_eq!(sheet_names[i + 1], name);
         s.cell_text(&format!("B{row}"), name);
         s.cell_text(&format!("C{row}"), desc);
     }

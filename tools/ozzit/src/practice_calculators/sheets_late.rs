@@ -74,23 +74,9 @@ pub fn construction_wip() -> Sheet {
 }
 
 fn wip_row(s: &mut Sheet, r: u16) {
-    s.input_text(
-        &format!("B{r}"),
-        if r == 14 { "Example project" } else { "" },
-        FMT_TEXT,
-    );
-    for c in 3..=9u16 {
-        let fmt = if c == 6 { FMT_PCT } else { FMT_MONEY };
-        if r == 14 {
-            s.input_num(
-                &format!("{}{r}", col_name(c)),
-                WIP_VALUES[usize::from(c - 3)],
-                fmt,
-            );
-        } else {
-            s.input_empty(&format!("{}{r}", col_name(c)), fmt);
-        }
-    }
+    sample_row(s, r, "Example project", &WIP_VALUES, |c| {
+        if c == 6 { FMT_PCT } else { FMT_MONEY }
+    });
     s.row_status(
         r,
         "I",
@@ -108,12 +94,7 @@ fn wip_row(s: &mut Sheet, r: u16) {
         ("O", format!("MAX(0,H{r}-L{r})")),
         ("P", format!("H{r}-I{r}")),
     ];
-    for (c, f) in exprs {
-        s.formula(
-            &format!("{c}{r}"),
-            &format!("=IF(B{r}=\"\",\"\",IF(Q{r}=\"Ready\",{f},NA()))"),
-        );
-    }
+    ready_formulas(s, r, "Q", &exprs);
 }
 
 const KPI_HEADERS: [&str; 11] = [
@@ -264,22 +245,7 @@ pub fn asset_disposal() -> Sheet {
 }
 
 fn disposal_row(s: &mut Sheet, r: u16) {
-    s.input_text(
-        &format!("B{r}"),
-        if r == 14 { "Example asset" } else { "" },
-        FMT_TEXT,
-    );
-    for c in 3..=10u16 {
-        if r == 14 {
-            s.input_num(
-                &format!("{}{r}", col_name(c)),
-                DISPOSAL_VALUES[usize::from(c - 3)],
-                FMT_MONEY,
-            );
-        } else {
-            s.input_empty(&format!("{}{r}", col_name(c)), FMT_MONEY);
-        }
-    }
+    sample_row(s, r, "Example asset", &DISPOSAL_VALUES, |_| FMT_MONEY);
     s.row_status(
         r,
         "J",
@@ -295,12 +261,7 @@ fn disposal_row(s: &mut Sheet, r: u16) {
         ("N", format!("F{r}-H{r}-J{r}")),
         ("O", format!("M{r}-N{r}")),
     ];
-    for (c, f) in exprs {
-        s.formula(
-            &format!("{c}{r}"),
-            &format!("=IF(B{r}=\"\",\"\",IF(P{r}=\"Ready\",{f},NA()))"),
-        );
-    }
+    ready_formulas(s, r, "P", &exprs);
 }
 
 const EXIT_HEADERS: [&str; 19] = [
@@ -361,23 +322,9 @@ pub fn exit_pay() -> Sheet {
 }
 
 fn exit_pay_row(s: &mut Sheet, r: u16) {
-    s.input_text(
-        &format!("B{r}"),
-        if r == 14 { "Example employee" } else { "" },
-        FMT_TEXT,
-    );
-    for c in 3..=13u16 {
-        let fmt = if c == 5 { FMT_PCT } else { FMT_MONEY };
-        if r == 14 {
-            s.input_num(
-                &format!("{}{r}", col_name(c)),
-                EXIT_VALUES[usize::from(c - 3)],
-                fmt,
-            );
-        } else {
-            s.input_empty(&format!("{}{r}", col_name(c)), fmt);
-        }
-    }
+    sample_row(s, r, "Example employee", &EXIT_VALUES, |c| {
+        if c == 5 { FMT_PCT } else { FMT_MONEY }
+    });
     s.row_status(
         r,
         "M",
@@ -394,12 +341,7 @@ fn exit_pay_row(s: &mut Sheet, r: u16) {
         ("R", format!("Q{r}-L{r}")),
         ("S", format!("Q{r}+M{r}")),
     ];
-    for (c, f) in exprs {
-        s.formula(
-            &format!("{c}{r}"),
-            &format!("=IF(B{r}=\"\",\"\",IF(T{r}=\"Ready\",{f},NA()))"),
-        );
-    }
+    ready_formulas(s, r, "T", &exprs);
 }
 
 const TAX_HEADERS: [&str; 11] = [
@@ -451,34 +393,14 @@ pub fn tax_cash() -> Sheet {
 }
 
 fn tax_cash_row(s: &mut Sheet, r: u16) {
-    s.input_text(
-        &format!("B{r}"),
-        if r == 14 { "Example entity" } else { "" },
-        FMT_TEXT,
-    );
-    for c in 3..=8u16 {
-        if r == 14 {
-            s.input_num(
-                &format!("{}{r}", col_name(c)),
-                TAX_VALUES[usize::from(c - 3)],
-                FMT_MONEY,
-            );
-        } else {
-            s.input_empty(&format!("{}{r}", col_name(c)), FMT_MONEY);
-        }
-    }
+    sample_row(s, r, "Example entity", &TAX_VALUES, |_| FMT_MONEY);
     s.row_status(r, "H", "L", 6, &format!("MIN(F{r}:H{r})>=0"), 25);
     let exprs = [
         ("I", format!("SUM(C{r}:E{r})-F{r}+G{r}-H{r}")),
         ("J", format!("MAX(0,I{r})")),
         ("K", format!("MAX(0,-I{r})")),
     ];
-    for (c, f) in exprs {
-        s.formula(
-            &format!("{c}{r}"),
-            &format!("=IF(B{r}=\"\",\"\",IF(L{r}=\"Ready\",{f},NA()))"),
-        );
-    }
+    ready_formulas(s, r, "L", &exprs);
 }
 
 const INVESTMENT_HEADERS: [&str; 17] = [
@@ -776,5 +698,39 @@ fn benefit_rows(s: &mut Sheet) {
                 &format!("=IF(B{r}=\"\",\"\",IF(AND(I{r}=\"Ready\",$D$9=\"Ready\"),{f},NA()))"),
             );
         }
+    }
+}
+
+/// Row `r`'s name in column B, then one input from column C for each value: the example row
+/// (14) holds the values and the rest stay empty, each in the format `fmt` gives its column.
+fn sample_row(
+    s: &mut Sheet,
+    r: u16,
+    example: &str,
+    values: &[f64],
+    fmt: impl Fn(u16) -> &'static str,
+) {
+    s.input_text(
+        &format!("B{r}"),
+        if r == 14 { example } else { "" },
+        FMT_TEXT,
+    );
+    for (c, value) in (3u16..).zip(values) {
+        let addr = format!("{}{r}", col_name(c));
+        if r == 14 {
+            s.input_num(&addr, *value, fmt(c));
+        } else {
+            s.input_empty(&addr, fmt(c));
+        }
+    }
+}
+
+/// Formulas that stay blank until the row is named and show #N/A until its status reads Ready.
+fn ready_formulas(s: &mut Sheet, r: u16, status: &str, exprs: &[(&str, String)]) {
+    for (c, f) in exprs {
+        s.formula(
+            &format!("{c}{r}"),
+            &format!("=IF(B{r}=\"\",\"\",IF({status}{r}=\"Ready\",{f},NA()))"),
+        );
     }
 }
