@@ -124,6 +124,16 @@ pub fn count(text: &str, needle: &str) -> usize {
 pub fn column_number(letters: &str) -> usize {
     letters.bytes().fold(0, |n, c| n * 26 + usize::from(c) - 64)
 }
+pub fn column_letters(mut n: usize) -> String {
+    let mut out = Vec::new();
+    while n > 0 {
+        n -= 1;
+        out.push(b'A' + (n % 26) as u8);
+        n /= 26;
+    }
+    out.reverse();
+    String::from_utf8(out).expect("ASCII letters")
+}
 pub fn escape(text: &str) -> String {
     text.replace('&', "&amp;")
         .replace('<', "&lt;")
@@ -426,4 +436,30 @@ pub fn sha256_hex(bytes: &[u8]) -> String {
         .iter()
         .map(|b| format!("{b:02x}"))
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn column_letters_and_numbers_round_trip() {
+        assert_eq!(column_letters(0), "");
+        for (col, expected) in [
+            (1, "A"),
+            (26, "Z"),
+            (27, "AA"),
+            (52, "AZ"),
+            (53, "BA"),
+            (702, "ZZ"),
+            (703, "AAA"),
+            (16384, "XFD"),
+        ] {
+            assert_eq!(column_letters(col), expected);
+            assert_eq!(column_number(expected), col);
+        }
+        for col in 1..=16384 {
+            assert_eq!(column_number(&column_letters(col)), col);
+        }
+    }
 }
