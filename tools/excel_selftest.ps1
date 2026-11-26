@@ -875,6 +875,7 @@ foreach ($c in @(@("oz.CheckRollUp$L", 'CheckRollUp'), @("oz.CheckRollUpU$L", 'C
                      @('{TRUE,FALSE}, {2026,2027}', 'FAIL: 1 of 2 checks fail, first: 2027'),
                      @('AR1:AU1, AR2:AU2', 'FAIL: 1 of 3 checks fail, first: GST'),
                      @('AR1:AT1, AR2:AT2', 'OK: 2 checks pass'),
+                     @('AW1:AW4, AX1:AX4', 'FAIL: 2 of 3 checks fail, first: Cash'),
                      @('Z1:Z3', 'FAIL: no check results'))) {
         Same "$($c[1]): ($($r[0]))" "$cr($($r[0]))" $r[1]
     }
@@ -2599,6 +2600,10 @@ try {
     # Check results with a real blank cell, and their labels.
     Set-Block 'AR1:AU1' @(, @($true, $null, 0, $false))
     Set-Block 'AR2:AU2' @(, @('Balance', 'Blank', 'Cash', 'GST'))
+    # The same down a column, with an error in place of the 0.
+    Set-Block 'AW1:AW4' @(@($true), @($null), @($null), @($false))
+    Invoke-Excel { $tmp.Range('AW3').Formula = '=NA()' }
+    Set-Block 'AX1:AX4' @(@('Balance'), @('Blank'), @('Cash'), @('GST'))
 
     $grid = New-Object 'object[,]' $checks.Count, 1
     for ($i = 0; $i -lt $checks.Count; $i++) { $grid[$i, 0] = $checks[$i].f }
