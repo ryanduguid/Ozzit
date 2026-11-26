@@ -365,11 +365,11 @@ fn source_and_help_checks_read_the_whole_shipped_library() {
     let fixture = Fixture::new();
     let result = sources::verify(&fixture.args());
     assert_eq!(result.code, 0, "{result:?}");
-    assert!(result.out[0].contains("all 173 functions"));
+    assert!(result.out[0].contains("all 175 functions"));
     let result = help::verify(&[display(&fixture.src)]);
     assert_eq!(result.code, 0, "{result:?}");
     assert!(result.out[0].starts_with(
-        "173 declarations read: 165 signatures, 165 parameter tables and 165 example blocks"
+        "175 declarations read: 167 signatures, 167 parameter tables and 167 example blocks"
     ));
 }
 #[test]

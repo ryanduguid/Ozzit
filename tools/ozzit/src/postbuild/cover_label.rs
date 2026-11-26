@@ -6,7 +6,7 @@ use super::*;
 
 const STRINGS: &str = "xl/sharedStrings.xml";
 /// Earlier labels, oldest first; any one of them is swapped for [`NEW`].
-const OLD: [&str; 18] = [
+const OLD: [&str; 19] = [
     "Version 20 August 2026    -    130 functions    -    Microsoft 365 or Excel 2024 and later",
     "Version 16 September 2026    -    133 functions    -    Microsoft 365 or Excel 2024 and later",
     "Version 16 September 2026    -    137 functions    -    Microsoft 365 or Excel 2024 and later",
@@ -25,9 +25,10 @@ const OLD: [&str; 18] = [
     "Version 18 November 2026    -    163 functions    -    Microsoft 365 or Excel 2024 and later",
     "Version 18 November 2026    -    165 functions    -    Microsoft 365 or Excel 2024 and later",
     "Version 24 November 2026    -    165 functions    -    Microsoft 365 or Excel 2024 and later",
+    "Version 24 November 2026    -    168 functions    -    Microsoft 365 or Excel 2024 and later",
 ];
 const NEW: &str =
-    "Version 24 November 2026    -    168 functions    -    Microsoft 365 or Excel 2024 and later";
+    "Version 24 November 2026    -    170 functions    -    Microsoft 365 or Excel 2024 and later";
 
 pub fn run(workbook: &Path) -> Result<Vec<String>> {
     let mut parts = read_parts(workbook)?;
