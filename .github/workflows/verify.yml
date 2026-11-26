@@ -109,31 +109,31 @@ jobs:
           # many commits it carries; a pull request uses the merge commit's base.
           VERSION_BASE: ${{ github.event_name == 'push' && github.event.before || '' }}
         run: cargo test --locked --manifest-path tools/ozzit/Cargo.toml
-      - name: Build the native tools
-        run: cargo build --locked --release --manifest-path tools/ozzit/Cargo.toml
+      # The checks below run the debug tools cargo test has just built: an LTO
+      # release build here took longer than all of them together.
       - name: Check workbook integrity
-        run: tools/ozzit/target/release/ozzit verify_workbook ozzit.xlsx
+        run: tools/ozzit/target/debug/ozzit verify_workbook ozzit.xlsx
       - name: Check src/ reproduces the shipped functions
-        run: tools/ozzit/target/release/ozzit verify_sources ozzit.xlsx src
+        run: tools/ozzit/target/debug/ozzit verify_sources ozzit.xlsx src
       - name: Check each function's help describes its own parameters
-        run: tools/ozzit/target/release/ozzit verify_signatures src
+        run: tools/ozzit/target/debug/ozzit verify_signatures src
       - name: Check the published index records what each function replaced
-        run: tools/ozzit/target/release/ozzit verify_previous_names functions.csv
+        run: tools/ozzit/target/debug/ozzit verify_previous_names functions.csv
       - name: Check the published index matches the current artefacts
-        run: tools/ozzit/target/release/ozzit verify_index ozzit.xlsx src functions.csv
+        run: tools/ozzit/target/debug/ozzit verify_index ozzit.xlsx src functions.csv
       - name: Check the cover label states the current cut and function count
-        run: tools/ozzit/target/release/ozzit verify_cover ozzit.xlsx functions.csv CHANGELOG.md
+        run: tools/ozzit/target/debug/ozzit verify_cover ozzit.xlsx functions.csv CHANGELOG.md
       - name: Check every statement of the function count agrees with the index
         env:
           # Read-only: lets the gate read the repository's About description.
           GH_TOKEN: ${{ github.token }}
-        run: tools/ozzit/target/release/ozzit verify_counts
+        run: tools/ozzit/target/debug/ozzit verify_counts
       - name: Check the Advanced Formula Environment store matches src/
-        run: tools/ozzit/target/release/ozzit verify_afe ozzit.xlsx src
+        run: tools/ozzit/target/debug/ozzit verify_afe ozzit.xlsx src
       - name: Check each cached help spill matches its definition
-        run: tools/ozzit/target/release/ozzit verify_help_spills ozzit.xlsx
+        run: tools/ozzit/target/debug/ozzit verify_help_spills ozzit.xlsx
       - name: Check retained native evidence and its provenance
-        run: tools/ozzit/target/release/ozzit verify_native_evidence
+        run: tools/ozzit/target/debug/ozzit verify_native_evidence
 
   verify-gates:
     # The one context branch protection requires from this workflow. It fails

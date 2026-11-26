@@ -13,7 +13,7 @@ use ozzit::{common, py};
 
 const VERIFY_WORKFLOW: &str = ".github/workflows/verify.yml";
 
-const EXPECTED_VERIFY_COMMANDS: [&str; 25] = [
+const EXPECTED_VERIFY_COMMANDS: [&str; 24] = [
     "python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-ruff.txt",
     "python -m ruff check .",
     "python -m pip install --only-binary ':all:' --require-hashes --requirement requirements-mypy.txt",
@@ -28,17 +28,16 @@ const EXPECTED_VERIFY_COMMANDS: [&str; 25] = [
     "cargo clippy --locked --manifest-path tools/ozzit/Cargo.toml --all-targets -- -D warnings",
     "cargo fetch --locked --manifest-path tools/ozzit/fuzz/Cargo.toml",
     "cargo test --locked --manifest-path tools/ozzit/Cargo.toml",
-    "cargo build --locked --release --manifest-path tools/ozzit/Cargo.toml",
-    "tools/ozzit/target/release/ozzit verify_workbook ozzit.xlsx",
-    "tools/ozzit/target/release/ozzit verify_sources ozzit.xlsx src",
-    "tools/ozzit/target/release/ozzit verify_signatures src",
-    "tools/ozzit/target/release/ozzit verify_previous_names functions.csv",
-    "tools/ozzit/target/release/ozzit verify_index ozzit.xlsx src functions.csv",
-    "tools/ozzit/target/release/ozzit verify_cover ozzit.xlsx functions.csv CHANGELOG.md",
-    "tools/ozzit/target/release/ozzit verify_counts",
-    "tools/ozzit/target/release/ozzit verify_afe ozzit.xlsx src",
-    "tools/ozzit/target/release/ozzit verify_help_spills ozzit.xlsx",
-    "tools/ozzit/target/release/ozzit verify_native_evidence",
+    "tools/ozzit/target/debug/ozzit verify_workbook ozzit.xlsx",
+    "tools/ozzit/target/debug/ozzit verify_sources ozzit.xlsx src",
+    "tools/ozzit/target/debug/ozzit verify_signatures src",
+    "tools/ozzit/target/debug/ozzit verify_previous_names functions.csv",
+    "tools/ozzit/target/debug/ozzit verify_index ozzit.xlsx src functions.csv",
+    "tools/ozzit/target/debug/ozzit verify_cover ozzit.xlsx functions.csv CHANGELOG.md",
+    "tools/ozzit/target/debug/ozzit verify_counts",
+    "tools/ozzit/target/debug/ozzit verify_afe ozzit.xlsx src",
+    "tools/ozzit/target/debug/ozzit verify_help_spills ozzit.xlsx",
+    "tools/ozzit/target/debug/ozzit verify_native_evidence",
 ];
 
 const DEPENDABOT_CANONICAL: &str = r#"version: 2
@@ -237,8 +236,8 @@ fn the_contributor_guidance_names_every_verify_command() {
     let commands = workflow_commands(&workflow);
     assert_eq!(commands, EXPECTED_VERIFY_COMMANDS);
     let mutated = workflow.replacen(
-        "tools/ozzit/target/release/ozzit verify_afe ozzit.xlsx src",
-        "tools/ozzit/target/release/ozzit verify_afe ozzit.xlsx changed-src",
+        "tools/ozzit/target/debug/ozzit verify_afe ozzit.xlsx src",
+        "tools/ozzit/target/debug/ozzit verify_afe ozzit.xlsx changed-src",
         1,
     );
     assert_ne!(commands, workflow_commands(&mutated));
@@ -256,7 +255,7 @@ fn the_contributor_guidance_names_every_verify_command() {
 #[test]
 fn workflow_command_parser_detects_non_python_and_multiline_gates() {
     let workflow = read_raw(VERIFY_WORKFLOW);
-    let marker = "        run: tools/ozzit/target/release/ozzit verify_native_evidence";
+    let marker = "        run: tools/ozzit/target/debug/ozzit verify_native_evidence";
     let added = concat!(
         "\n      - name: Check PowerShell policy\n",
         "        run: pwsh -File tools/check_policy.ps1\n",
@@ -302,8 +301,8 @@ fn workflow_and_dependabot_match_reviewed_controls() {
     for control in [
         "persist-credentials: false",
         "fetch-depth: 0",
-        "tools/ozzit/target/release/ozzit verify_workbook ozzit.xlsx",
-        "tools/ozzit/target/release/ozzit verify_sources ozzit.xlsx src",
+        "tools/ozzit/target/debug/ozzit verify_workbook ozzit.xlsx",
+        "tools/ozzit/target/debug/ozzit verify_sources ozzit.xlsx src",
         "python -m unittest discover -s tools/tests -v",
     ] {
         assert!(workflow.contains(control), "{control}");
