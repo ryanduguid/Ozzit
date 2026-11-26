@@ -820,3 +820,39 @@ fn the_checkout_template_is_refused_from_another_folder() {
     assert_eq!(refused.status.code(), Some(2));
     assert_eq!(std::fs::read(&template).unwrap(), before);
 }
+
+#[test]
+fn the_template_path_is_refused_before_the_file_exists() {
+    let dir = tempfile::tempdir().unwrap();
+    let run = |arg: &str| {
+        Command::new(env!("CARGO_BIN_EXE_build_practice_calculators"))
+            .arg(arg)
+            .current_dir(dir.path())
+            .output()
+            .unwrap()
+            .status
+            .code()
+    };
+    let template = dir.path().join("templates/practice-calculators.xlsx");
+    for arg in [
+        "templates/practice-calculators.xlsx",
+        "missing/../templates/practice-calculators.xlsx",
+    ] {
+        assert_eq!(run(arg), Some(2), "{arg}");
+        assert!(!template.exists(), "{arg}");
+    }
+    #[cfg(unix)]
+    {
+        std::os::unix::fs::symlink(dir.path().join("templates"), dir.path().join("link")).unwrap();
+        assert_eq!(run("link/practice-calculators.xlsx"), Some(2));
+        assert!(!template.exists());
+        std::fs::write(&template, b"kept").unwrap();
+        assert_eq!(run("link/practice-calculators.xlsx"), Some(2));
+        assert_eq!(
+            run("missing/../templates/practice-calculators.xlsx"),
+            Some(2)
+        );
+        assert_eq!(std::fs::read(&template).unwrap(), b"kept");
+    }
+    assert_eq!(run("templates/other.xlsx"), Some(0));
+}

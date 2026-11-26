@@ -109,19 +109,34 @@ pub fn run(args: &[OsString]) -> std::result::Result<String, (u8, String)> {
         [path] if !path.as_encoded_bytes().starts_with(b"-") => path.into(),
         _ => return Err((2, USAGE.to_owned())),
     };
-    // Only --force may replace the shipped template, however its path is spelled and from
-    // whichever folder: the one under the working folder, or this checkout's own.
+    // Only --force may write the template --force writes (under the working folder) or this
+    // checkout's own, however the path is spelled, whether or not the file exists yet. The
+    // target's folder is created first, as the writer would, so it resolves like the rest.
+    if let Some(parent) = target.parent().filter(|p| !p.as_os_str().is_empty()) {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| (1, format!("FAIL: {}", io_error(&e, parent))))?;
+    }
     let checkout = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../..")
         .join(TEMPLATE);
-    if let Ok(a) = target.canonicalize()
+    if let Some(a) = resolved(&target)
         && [Path::new(TEMPLATE), checkout.as_path()]
             .iter()
-            .any(|t| t.canonicalize().is_ok_and(|b| a == b))
+            .any(|t| resolved(t).is_some_and(|b| a == b))
     {
         return Err((2, format!("FAIL: {TEMPLATE} is replaced only with --force")));
     }
     write_to(&target)
+}
+
+/// The file's canonical path, or for a file not yet written, its folder's canonical path
+/// joined to its name.
+fn resolved(path: &Path) -> Option<PathBuf> {
+    path.canonicalize().ok().or_else(|| {
+        let parent = path.parent().filter(|p| !p.as_os_str().is_empty());
+        let folder = parent.unwrap_or(Path::new(".")).canonicalize().ok()?;
+        Some(folder.join(path.file_name()?))
+    })
 }
 
 fn write_to(target: &Path) -> std::result::Result<String, (u8, String)> {
