@@ -31,17 +31,16 @@ cargo fmt --manifest-path tools/ozzit/Cargo.toml --check
 cargo clippy --locked --manifest-path tools/ozzit/Cargo.toml --all-targets -- -D warnings
 cargo fetch --locked --manifest-path tools/ozzit/fuzz/Cargo.toml
 cargo test --locked --manifest-path tools/ozzit/Cargo.toml
-cargo build --locked --release --manifest-path tools/ozzit/Cargo.toml
-tools/ozzit/target/release/ozzit verify_workbook ozzit.xlsx
-tools/ozzit/target/release/ozzit verify_sources ozzit.xlsx src
-tools/ozzit/target/release/ozzit verify_signatures src
-tools/ozzit/target/release/ozzit verify_previous_names functions.csv
-tools/ozzit/target/release/ozzit verify_index ozzit.xlsx src functions.csv
-tools/ozzit/target/release/ozzit verify_cover ozzit.xlsx functions.csv CHANGELOG.md
-tools/ozzit/target/release/ozzit verify_counts
-tools/ozzit/target/release/ozzit verify_afe ozzit.xlsx src
-tools/ozzit/target/release/ozzit verify_help_spills ozzit.xlsx
-tools/ozzit/target/release/ozzit verify_native_evidence
+tools/ozzit/target/debug/ozzit verify_workbook ozzit.xlsx
+tools/ozzit/target/debug/ozzit verify_sources ozzit.xlsx src
+tools/ozzit/target/debug/ozzit verify_signatures src
+tools/ozzit/target/debug/ozzit verify_previous_names functions.csv
+tools/ozzit/target/debug/ozzit verify_index ozzit.xlsx src functions.csv
+tools/ozzit/target/debug/ozzit verify_cover ozzit.xlsx functions.csv CHANGELOG.md
+tools/ozzit/target/debug/ozzit verify_counts
+tools/ozzit/target/debug/ozzit verify_afe ozzit.xlsx src
+tools/ozzit/target/debug/ozzit verify_help_spills ozzit.xlsx
+tools/ozzit/target/debug/ozzit verify_native_evidence
 ```
 
 `cargo test` and `ozzit verify_counts` read the release tags; in a clone without
