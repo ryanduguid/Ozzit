@@ -124,10 +124,42 @@ fn an_oversized_definition_reports_its_exact_length_and_excel_limit() {
     assert_eq!(
         compiler::compile_sources(&sources.path).unwrap_err(),
         format!(
-            "Datesλ: the stored definition is {} characters and Excel refuses to open a workbook with a defined name over 8192",
+            "Datesλ: the stored definition is {} characters, over the library's limit of 8000; Excel refuses to open a workbook with a defined name over 8192",
             stored.chars().count()
         )
     );
+}
+
+#[test]
+fn a_definition_under_excels_cap_but_over_the_library_limit_is_refused() {
+    let sources = Sources::new();
+    let stored = |n: usize| format!("_xlfn.LAMBDA(_xlop.x,\"{}\")", "a".repeat(n));
+    let overhead = stored(0).chars().count();
+    let over = 8001 - overhead;
+    sources.dates(
+        &(header("Datesλ", "d")
+            + &format!(
+                "Datesλ = LAMBDA([x], \"{}\");
+",
+                "a".repeat(over)
+            )),
+    );
+    let error = compiler::compile_sources(&sources.path).unwrap_err();
+    assert!(
+        error.starts_with(
+            "Datesλ: the stored definition is 8001 characters, over the library's limit of 8000"
+        ),
+        "{error}"
+    );
+    sources.dates(
+        &(header("Datesλ", "d")
+            + &format!(
+                "Datesλ = LAMBDA([x], \"{}\");
+",
+                "a".repeat(over - 1)
+            )),
+    );
+    assert!(compiler::compile_sources(&sources.path).is_ok());
 }
 
 #[test]

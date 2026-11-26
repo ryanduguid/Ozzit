@@ -627,7 +627,7 @@ pub fn render(body: &str, library: &BTreeSet<String>) -> Result<String> {
         pieces = pieces.replace(&format!("\0{old}\0"), new);
     }
     let stored = py::strip(&pieces);
-    Ok(if stored.chars().count() > 8192 {
+    Ok(if stored.chars().count() > NAME_LIMIT {
         tight(stored)
     } else {
         stored.into()

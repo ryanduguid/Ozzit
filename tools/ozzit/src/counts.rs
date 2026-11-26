@@ -16,7 +16,8 @@
 //! space, as inside a class, writes `\x20`.
 //!
 //! The function guide also counts the names without a worksheet of their own in
-//! `ozzit.xlsx`, which `main`'s index and workbook give.
+//! `ozzit.xlsx`, which `main`'s index and workbook give, and each module's
+//! named formulas in its module table, which `main`'s index gives.
 //!
 //! A new place that states the size fails too: tracked prose, text and images are
 //! swept for a function or name count the library has had, or any help-table
@@ -39,6 +40,11 @@ const TIMEOUT: Duration = Duration::from_secs(30);
 const REGISTER: &str = "tools/ozzit/src/counts.rs";
 const BANNER: &str = r#"<title id="t">Ozzit: (?P<functions>\d+) native Excel LAMBDAs\."#;
 const ABOUT: &str = r"^(?P<functions>\d+) Excel LAMBDA functions and (?P<help>\w+) help tables";
+/// The function guide's module table: one row for each module and its named formulas.
+pub const MODULE_TABLE: (&str, &str) = (
+    "docs/function-guide.md",
+    r"(?m)^\| (?P<module>\w+) \| (?P<count>\d+) \|",
+);
 /// Help-table counts written as words, as 'five help tables'.
 const WORDS: [&str; 10] = [
     "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
@@ -517,6 +523,49 @@ impl Checker<'_> {
         }
     }
 
+    /// Compare each module's row in the function guide's module table with `main`'s
+    /// index; a module without a row, or a row for no module, fails.
+    fn modules(&mut self, root: &Path, sizes: &BTreeMap<String, usize>) -> Result<()> {
+        let (place, pattern) = MODULE_TABLE;
+        let text = read_text(&root.join(place))?;
+        let statement = Statement {
+            place,
+            numbered: true,
+            what: "module table",
+            basis: Basis::Main,
+            text: &text,
+        };
+        let mut seen = BTreeSet::new();
+        for matched in re(pattern).captures_iter(&text) {
+            let matched = matched.map_err(|e| format!("{place}: the module table: {e}"))?;
+            let module = matched.name("module").expect("module").as_str();
+            let found = matched.name("count").expect("count");
+            let at = statement.at(found.start());
+            let Some(&count) = sizes.get(module) else {
+                continue;
+            };
+            if !seen.insert(module.to_owned()) {
+                self.failures
+                    .push(format!("FAIL: {at}: the module table lists {module} twice"));
+                continue;
+            }
+            self.checked += 1;
+            let stated = found.as_str();
+            if stated.parse::<usize>().ok() != Some(count) {
+                self.failures.push(format!(
+                    "FAIL: {at}: the module table says {stated} named formulas in {module}; functions.csv has {count}"
+                ));
+                self.edit(&statement, &found, count.to_string());
+            }
+        }
+        for module in sizes.keys().filter(|m| !seen.contains(*m)) {
+            self.failures.push(format!(
+                "FAIL: {place}: the module table has no row for {module}; restore it or update the register in {REGISTER}"
+            ));
+        }
+        Ok(())
+    }
+
     /// Check the About description if it was read, or report why not.
     fn about(&mut self, about: &About, out: &mut Vec<String>) {
         match about {
@@ -678,6 +727,18 @@ fn groups(index: Inventory, sheetless: Inventory) -> [(&'static str, &'static st
     ]
 }
 
+/// The named formulas in each module of `index`.
+fn module_sizes(index: &Path) -> Result<BTreeMap<String, usize>> {
+    let csv = Csv::read(index)?;
+    let mut sizes = BTreeMap::new();
+    for row in &csv.rows {
+        if let Some(module) = csv.get(row, "module") {
+            *sizes.entry(module.to_owned()).or_insert(0) += 1;
+        }
+    }
+    Ok(sizes)
+}
+
 /// `value` in the form `stated` used: a word for a count written as one.
 fn render(stated: &str, value: usize) -> String {
     match WORDS.get(value) {
@@ -806,6 +867,7 @@ fn run_checks<'a>(
         };
         checker.statement(&statement, pattern);
     }
+    checker.modules(root, &module_sizes(&root.join("functions.csv"))?)?;
     checker.about(about, &mut out);
     checker.sweep(root, strict, &mut out);
     Ok((checker, out))

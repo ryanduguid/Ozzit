@@ -3,6 +3,25 @@
     nothing here recurses and the module is held in the Advanced Formula Environment
     store with the other five. */
 
+/*  FUNCTION NAME:  AboutDebtλ
+    DESCRIPTION:*//**Displays this module's repository URL and function list*/
+
+AboutDebtλ = TRIM(TEXTSPLIT(
+    "ABOUT:                 →Ozzit's Debt module: debt sculpting and amortisation. Suggested module name: oz¶" &
+    "VERSION:               →27 Nov 2026¶" &
+    "REPOSITORY:            →https://github.com/ryanduguid/Ozzit ¶" &
+    "→¶" &
+    "FUNCTION               →DESCRIPTION¶" &
+    "AboutDebtλ             →Produces this table¶" &
+    "AmortiseBλ             →Creates an amortisation schedule for a debt/loan across a model's periods¶" &
+    "DebtSculptFixedλ       →Creates a debt sculpting schedule where APR and DSCR are fixed for all periods¶" &
+    "DebtSculptVariableλ    →Creates a debt sculpting schedule where APR and DSCR are set for each period¶" &
+    "DebtSculptVariableLRVλ →Creates a debt sculpting schedule where APR and DSCR are set for each period, with interest charged on the average balance¶" &
+    "InterestLRVλ           →Calculates debt sculpting interest on the average balance over the period, the method presented by Lance Rubin",
+    "→","¶"
+    )
+);
+
 /*  FUNCTION NAME:  AmortiseBλ
     DESCRIPTION:*//**Creates an amortisation schedule for a debt/loan across a model's periods*/
 AmortiseBλ = LAMBDA(

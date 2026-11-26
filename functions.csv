@@ -5,6 +5,7 @@ oz.ATOLabourRatioλ,Ratios,,"ATOLabourRatioλ(SalaryWages, Contractors, Turnover
 oz.ATOTotalExpensesRatioλ,Ratios,,"ATOTotalExpensesRatioλ(TotalExpenses, Turnover, [AssociatePayments])","ATO total expenses to turnover: total expenses less payments to associated persons, over turnover"
 oz.ATOTurnoverλ,Ratios,,"ATOTurnoverλ(OtherSales, TotalBusinessIncome)",Turnover as the ATO small business benchmarks measure it: other sales unless under half of total business income
 oz.AboutDatesλ,Dates,nabla.d.Aboutλ,AboutDatesλ,Displays this module's repository URL and function list
+oz.AboutDebtλ,Debt,,AboutDebtλ,Displays this module's repository URL and function list
 oz.AboutEssentialsλ,Essentials,nabla.e.Aboutλ,AboutEssentialsλ,Displays this module's repository URL and function list
 oz.AboutFinancialλ,Financial,nabla.f.Aboutλ,AboutFinancialλ,Displays this module's repository URL and function list
 oz.AboutRatiosλ,Ratios,nabla.r.Aboutλ,AboutRatiosλ,Displays this module's repository URL and function list

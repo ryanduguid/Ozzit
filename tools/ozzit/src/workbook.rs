@@ -335,9 +335,9 @@ fn check_defined_name(
     known: &BTreeSet<String>,
     failures: &mut Vec<String>,
 ) {
-    if source.chars().count() > 8192 {
+    if source.chars().count() > NAME_LIMIT {
         failures.push(format!(
-            "{name} is {} characters; Excel refuses a defined name over 8192",
+            "{name} is {} characters, over the library's limit of {NAME_LIMIT}; Excel refuses a defined name over 8192",
             source.chars().count()
         ));
     }

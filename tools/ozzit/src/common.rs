@@ -9,6 +9,10 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, LazyLock, Mutex};
 
 pub type Result<T> = std::result::Result<T, String>;
+
+/// The longest stored definition a library name may have. Excel refuses a workbook
+/// with a defined name over 8,192 characters; the gap leaves room to grow.
+pub const NAME_LIMIT: usize = 8000;
 static REGEXES: LazyLock<Mutex<HashMap<String, Arc<Regex>>>> = LazyLock::new(Default::default);
 
 pub fn re(pattern: &str) -> Arc<Regex> {
