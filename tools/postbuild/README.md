@@ -60,6 +60,7 @@ tools/ozzit/target/release/ozzit fbt_gross_up ozzit.xlsx src functions.csv
 tools/ozzit/target/release/ozzit depreciation_pools ozzit.xlsx src functions.csv
 tools/ozzit/target/release/ozzit index_factor_bullet_loan ozzit.xlsx src functions.csv
 tools/ozzit/target/release/ozzit valuation_sensitivity ozzit.xlsx src functions.csv
+tools/ozzit/target/release/ozzit check_rollup ozzit.xlsx src functions.csv
 tools/ozzit/target/release/ozzit cover_label ozzit.xlsx
 tools/ozzit/target/release/ozzit compile_sources ozzit.xlsx src --index=functions.csv
 tools/ozzit/target/release/ozzit build_module src oz.txt
@@ -179,7 +180,10 @@ it adds `oz.IndexFactorλ` and `oz.BulletLoanλ` under a new INDEXING AND DEBT h
 DEPRECIATION POOLS rows, with their blocks before the pools pass's. The valuation and sensitivity
 pass is the native `ozzit valuation_sensitivity`: it adds `oz.FCFFBridgeλ`, `oz.WACCλ` and
 `oz.SensitivityGridλ` under a new VALUATION heading after the INDEXING AND DEBT rows, with their
-blocks before the index factor pass's. The cover-label pass is
+blocks before the index factor pass's. The check roll-up pass is the native
+`ozzit check_rollup`: it adds `oz.CheckRollUpλ` to Essentials and its copy
+`oz.CheckRollUpUλ` to Utilities, each after the module's `IsInList` row and with its block
+before the module's `RangeToDA` block. The cover-label pass is
 one swap in `xl/sharedStrings.xml`:
 Cover!A3 kept reading 20 August 2026 and 130 functions after 3 cuts, and
 `ozzit verify_cover` now keeps that label equal to `functions.csv` and the
@@ -190,7 +194,7 @@ and financial-year period functions, to 150 for the level payment and rate corks
 to the v3.6.0 cut date of 14 November 2026, to 151 for PAYG withholding, to the
 v3.7.0 cut date of 18 November 2026, to 155 for the finance contract functions, to 157
 for the capital gains functions, to 158 for income tax, to 159 for the Division 7A
-minimum yearly repayment, to 160 for margin scheme GST, to 161 for the FBT gross-up, to 163 for the depreciation pools, to 165 for the index factor and bullet loan, to the v3.8.0 cut date of 24 November 2026, and to 168 for the valuation and sensitivity functions.
+minimum yearly repayment, to 160 for margin scheme GST, to 161 for the FBT gross-up, to 163 for the depreciation pools, to 165 for the index factor and bullet loan, to the v3.8.0 cut date of 24 November 2026, to 168 for the valuation and sensitivity functions, and to 170 for the check roll-up.
 
 ## What is intentionally not here
 

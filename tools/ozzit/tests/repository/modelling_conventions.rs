@@ -107,9 +107,9 @@ fn calling(pattern: &str) -> BTreeSet<String> {
 #[test]
 fn the_function_and_help_table_counts() {
     let page = page();
-    assert_eq!(function_bodies().len(), 168);
-    page_says(&page, "a library of 168 LAMBDA functions and 5 help tables");
-    page_says(&page, "Ozzit's 168 functions exist to be called from cells");
+    assert_eq!(function_bodies().len(), 170);
+    page_says(&page, "a library of 170 LAMBDA functions and 5 help tables");
+    page_says(&page, "Ozzit's 170 functions exist to be called from cells");
     let tables: BTreeSet<String> = modules()
         .iter()
         .flat_map(|(_, text)| findall(r"(?m)^(About\w+λ)\s*=", text))
@@ -143,7 +143,7 @@ fn utilities_repeats_the_essentials_functions() {
             .collect()
     };
     let (essentials, utilities) = (defined("Essentials"), defined("Utilities"));
-    assert_eq!(essentials.len(), 16);
+    assert_eq!(essentials.len(), 17);
     // Each Essentials name reappears in Utilities with a U before the λ; the
     // E-tagged range function is Essentials' own copy of RangeToDAλ.
     let renamed: BTreeSet<String> = essentials
@@ -153,14 +153,14 @@ fn utilities_repeats_the_essentials_functions() {
     assert_eq!(renamed, utilities);
     page_says(
         &page(),
-        "Utilities repeats the 16 Essentials functions with a `U` suffix",
+        "Utilities repeats the 17 Essentials functions with a `U` suffix",
     );
 }
 
 #[test]
 fn if_and_nested_if() {
     let page = page();
-    assert_eq!(calling(r"\bIF\(").len(), 99);
+    assert_eq!(calling(r"\bIF\(").len(), 101);
     let nested_if = bounded(r"\bIF\(");
     let nested = function_bodies()
         .into_values()
@@ -171,7 +171,7 @@ fn if_and_nested_if() {
         })
         .count();
     assert!(nested >= 22, "{nested} functions nest IF");
-    page_says(&page, "99 functions call `IF`");
+    page_says(&page, "101 functions call `IF`");
     page_says(&page, "At least 22 functions nest one `IF` inside another");
 }
 
@@ -206,8 +206,8 @@ fn help_tables_and_the_closing_choose() {
             }
         }
     }
-    assert_eq!(calling(r"\bINDEX\(").len(), 25);
-    page_says(&page(), "use `INDEX` (25 functions)");
+    assert_eq!(calling(r"\bINDEX\(").len(), 27);
+    page_says(&page(), "use `INDEX` (27 functions)");
 }
 
 #[test]

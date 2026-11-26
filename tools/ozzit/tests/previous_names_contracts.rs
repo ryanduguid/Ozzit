@@ -11,7 +11,7 @@ use std::{
 fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
-const GOOD: &str = "OK: 173 functions, 130 of them replacing a name from released-names-v1.2.6.txt, 43 new since it";
+const GOOD: &str = "OK: 175 functions, 130 of them replacing a name from released-names-v1.2.6.txt, 45 new since it";
 const FIELDS: &[&str] = &[
     "function",
     "module",
@@ -34,7 +34,7 @@ impl Fixture {
         let dir = tempfile::tempdir().unwrap();
         let index = dir.path().join("functions.csv");
         let csv = Csv::read(&root().join("functions.csv")).unwrap();
-        assert_eq!(csv.rows.len(), 173);
+        assert_eq!(csv.rows.len(), 175);
         Self { dir, index, csv }
     }
     fn write(

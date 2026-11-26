@@ -125,6 +125,7 @@ const COMMANDS: &[(&str, Handler)] = &[
         "valuation_sensitivity",
         postbuild::function_pass::valuation_sensitivity,
     ),
+    ("check_rollup", postbuild::function_pass::check_rollup),
 ];
 pub fn dispatch(args: &[String]) -> Output {
     let command = args.first().map(String::as_str);
