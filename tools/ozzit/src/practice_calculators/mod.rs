@@ -109,9 +109,15 @@ pub fn run(args: &[OsString]) -> std::result::Result<String, (u8, String)> {
         [path] if !path.as_encoded_bytes().starts_with(b"-") => path.into(),
         _ => return Err((2, USAGE.to_owned())),
     };
-    // Only --force may replace the shipped template, however its path is spelled.
-    if let (Ok(a), Ok(b)) = (target.canonicalize(), Path::new(TEMPLATE).canonicalize())
-        && a == b
+    // Only --force may replace the shipped template, however its path is spelled and from
+    // whichever folder: the one under the working folder, or this checkout's own.
+    let checkout = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .join(TEMPLATE);
+    if let Ok(a) = target.canonicalize()
+        && [Path::new(TEMPLATE), checkout.as_path()]
+            .iter()
+            .any(|t| t.canonicalize().is_ok_and(|b| a == b))
     {
         return Err((2, format!("FAIL: {TEMPLATE} is replaced only with --force")));
     }

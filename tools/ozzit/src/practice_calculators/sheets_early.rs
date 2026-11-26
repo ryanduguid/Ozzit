@@ -56,7 +56,7 @@ pub fn read_me(sheet_names: &[&'static str]) -> Sheet {
         .enumerate()
     {
         let row = 14 + i as u16;
-        debug_assert_eq!(sheet_names[i + 1], name);
+        assert_eq!(sheet_names[i + 1], name);
         s.cell_text(&format!("B{row}"), name);
         s.cell_text(&format!("C{row}"), desc);
     }

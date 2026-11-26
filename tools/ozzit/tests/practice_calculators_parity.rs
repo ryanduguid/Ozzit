@@ -304,7 +304,8 @@ enum CellContent {
     Number(f64),
 }
 
-type CfRule = (String, String, String, ResolvedDxf);
+/// Rank by priority, then type, operator, formula shifted to the cell, stopIfTrue and resolved format.
+type CfRule = (usize, String, String, String, bool, ResolvedDxf);
 type CfMap = BTreeMap<(usize, usize), Vec<CfRule>>;
 
 struct ParsedSheet {
@@ -316,7 +317,7 @@ struct ParsedSheet {
     row_heights: BTreeMap<usize, f64>,
     cells: BTreeMap<(usize, usize), (ResolvedStyle, CellContent)>,
     cfs: CfMap,
-    dvs: BTreeMap<(usize, usize), (String, String)>,
+    dvs: BTreeMap<(usize, usize), DvRule>,
     hyperlinks: BTreeSet<(String, String, String)>,
 }
 
@@ -448,6 +449,8 @@ fn read_cfs(root: Node<'_, '_>, styles: &StylesContext) -> CfMap {
             let kind = rule.attribute("type").unwrap_or("").to_owned();
             let op = rule.attribute("operator").unwrap_or("").to_owned();
             let dxf_id: usize = rule.attribute("dxfId").unwrap().parse().unwrap();
+            let priority: usize = rule.attribute("priority").unwrap().parse().unwrap();
+            let stop = matches!(rule.attribute("stopIfTrue"), Some("1" | "true"));
             let base = child(rule, MAIN, "formula")
                 .and_then(|f| f.text())
                 .unwrap_or("");
@@ -458,28 +461,50 @@ fn read_cfs(root: Node<'_, '_>, styles: &StylesContext) -> CfMap {
                     at.1 as isize - anchor.1 as isize,
                 );
                 map.entry(*at).or_default().push((
+                    priority,
                     kind.clone(),
                     op.clone(),
                     norm,
+                    stop,
                     styles.dxfs[dxf_id].clone(),
                 ));
             }
         }
     }
+    // Priority sets which rule wins on a cell: compare the rules in that order, by rank,
+    // since Excel may number the priorities differently.
+    for rules in map.values_mut() {
+        rules.sort_by_key(|rule| rule.0);
+        for (rank, rule) in rules.iter_mut().enumerate() {
+            rule.0 = rank;
+        }
+    }
     map
 }
 
-fn read_dvs(root: Node<'_, '_>) -> BTreeMap<(usize, usize), (String, String)> {
+/// Every unqualified attribute but the range (type, operator, blanks, dropdown, messages and
+/// their titles, error style) and both formulas, for each cell a validation covers.
+type DvRule = (BTreeMap<String, String>, String, String);
+
+fn read_dvs(root: Node<'_, '_>) -> BTreeMap<(usize, usize), DvRule> {
     let mut map = BTreeMap::new();
     if let Some(dvs) = child(root, MAIN, "dataValidations") {
         for dv in elements(dvs) {
-            let kind = dv.attribute("type").unwrap_or("").to_owned();
-            let f1 = child(dv, MAIN, "formula1")
-                .and_then(|f| f.text())
-                .unwrap_or("")
-                .to_owned();
+            let attributes = dv
+                .attributes()
+                // Excel's own revision ids (xr:uid) carry no setting.
+                .filter(|a| a.name() != "sqref" && a.namespace().is_none())
+                .map(|a| (a.name().to_owned(), a.value().to_owned()))
+                .collect::<BTreeMap<_, _>>();
+            let formula = |name| {
+                child(dv, MAIN, name)
+                    .and_then(|f| f.text())
+                    .unwrap_or("")
+                    .to_owned()
+            };
+            let rule = (attributes, formula("formula1"), formula("formula2"));
             for at in expand_range(dv.attribute("sqref").expect("sqref")) {
-                map.insert(at, (kind.clone(), f1.clone()));
+                map.insert(at, rule.clone());
             }
         }
     }
@@ -780,4 +805,18 @@ fn only_force_replaces_the_shipped_template() {
         assert!(String::from_utf8_lossy(&refused.stderr).contains("--force"));
     }
     assert_eq!(std::fs::read(&template).unwrap(), b"kept");
+}
+
+#[test]
+fn the_checkout_template_is_refused_from_another_folder() {
+    let template = root().join("templates/practice-calculators.xlsx");
+    let before = std::fs::read(&template).unwrap();
+    let dir = tempfile::tempdir().unwrap();
+    let refused = Command::new(env!("CARGO_BIN_EXE_build_practice_calculators"))
+        .args(["--out", template.to_str().unwrap()])
+        .current_dir(dir.path())
+        .output()
+        .unwrap();
+    assert_eq!(refused.status.code(), Some(2));
+    assert_eq!(std::fs::read(&template).unwrap(), before);
 }
