@@ -19,3 +19,12 @@ The repository's tooling is ported to Rust in this crate wherever the host and t
 | `tools/pyxirr_comparison.py` | Imports the pinned `pyxirr==0.10.8` wheel as the independent reference and calls `tools/excel_eval_formulas.ps1` in desktop Excel. |
 | `tools/tests/postbuild/generate_quantlib_day_count_fixture.py` | Unpacks the pinned Linux `QuantLib==1.43` wheel (`_QuantLib.abi3.so`) to generate the external day-count reference. |
 | `tools/tests/test_repository_policy.py`, `tools/tests/test_pyxirr_comparison.py`, `tools/tests/test_compile_and_compare_paths.py`, `tools/tests/test_excel_eval_formulas.py` | Test the Python scripts above: `ruamel.yaml` citation checks, signature checks on `tools/**/*.py`, `pyxirr_comparison.py` with mocks and the PowerShell COM filter. |
+
+## Parity decisions
+
+`reference_npv` in `tools/ozzit/src/native_evidence.rs` refuses a recorded reference
+rate whose 731-day discount factor overflows with the text Python's float power gave,
+`(34, 'Numerical result out of range')` on Linux and `(34, 'Result too large')`
+elsewhere. The text stays: the gate refuses the record either way, no test or
+retained record compares the message, and rewording it would change nothing a
+reader of the evidence relies on.
