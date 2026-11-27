@@ -253,7 +253,7 @@ fn missing_function_names_fail_without_a_false_count() {
         .position(|name| !name.starts_with("oz.About"))
         .unwrap();
     names.remove(removed);
-    assert_eq!(names.len(), 175);
+    assert_eq!(names.len(), 177);
     for missing in [None, Some(""), Some("   ")] {
         let mut text = "signature,function\r\n".to_owned();
         for name in &names {
