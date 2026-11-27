@@ -148,14 +148,22 @@ belong in it.
 copy a function into your own workbook.
 
 To bring in every function at once, the Advanced Formula Environment in the Excel
-Labs add-in imports a module from a URL. From its Names tab, import
-`https://raw.githubusercontent.com/ryanduguid/Ozzit/v3.8.0/oz.txt` under the module
-name `oz`: that file is the v3.8.0 library as one module, and its 170 names match
-that release's workbook. Then type `=oz.` in a cell and pick a function from
-autocomplete. This route has not been tested in Excel. Microsoft's
+Labs add-in imports a module from a GitHub gist. Microsoft's
 [module import page](https://github.com/microsoft/Excel-Labs/blob/main/advanced-formula-environment/documentation/module-import.md),
-last changed 9 February 2023, says the add-in imports only from a GitHub gist URL
-and does not allow tab characters in a module; the v3.8.0 `oz.txt` has none.
+last changed 9 February 2023 and read on 27 November 2026, says the add-in imports
+only from a gist URL, reads the gist's single file, and does not allow tab or
+carriage return characters in a module; the v3.8.0 `oz.txt` has neither.
+
+1. Download `https://raw.githubusercontent.com/ryanduguid/Ozzit/v3.8.0/oz.txt`;
+   that file is the v3.8.0 library as one module, and its 170 names match that
+   release's workbook.
+2. Signed in to GitHub, create a gist at <https://gist.github.com/> holding that
+   file alone, unchanged. A secret gist works too, and anyone with its URL can read it.
+3. In Excel, open the Advanced Formula Environment's Names tab, choose import, give
+   the gist's URL and the module name `oz`.
+
+Then type `=oz.` in a cell and pick a function from autocomplete. This route has
+not been tested in Excel.
 
 For an AI assistant, [the Ozzit skill](skills/ozzit/SKILL.md) routes function
 selection and composition through the existing catalogue and approved workbook.
