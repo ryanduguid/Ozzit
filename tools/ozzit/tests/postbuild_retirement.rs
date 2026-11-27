@@ -5,6 +5,7 @@
 use ozzit::{
     archive::{Parts, read_parts, write_deterministic},
     common::display,
+    cover,
     formula::MODULES,
     postbuild::{cover_label, sheet_names, strip_revision_history},
 };
@@ -33,8 +34,15 @@ const OLD_LABELS: [&str; 20] = [
     "Version 24 November 2026    -    168 functions    -    Microsoft 365 or Excel 2024 and later",
     "Version 24 November 2026    -    170 functions    -    Microsoft 365 or Excel 2024 and later",
 ];
-const LABEL: &str =
-    "Version 24 November 2026    -    172 functions    -    Microsoft 365 or Excel 2024 and later";
+fn label(functions: usize) -> String {
+    format!(
+        "Version 24 November 2026    -    {functions} functions    -    Microsoft 365 or Excel 2024 and later"
+    )
+}
+/// The current cover label, counting the functions `functions.csv` publishes.
+fn current() -> String {
+    label(cover::published_functions(&root().join("functions.csv")).unwrap())
+}
 const OLD_CREATOR: &str = "<dc:creator>Ryan Duguid; Ozzit project</dc:creator>";
 const CREATOR: &str = "<dc:creator>Ozzit project</dc:creator>";
 
@@ -126,7 +134,7 @@ fn every_earlier_cover_label_moves_to_the_current_wording() {
         f.write(&strings(old));
         assert_eq!(cover_label::run(&f.book()).unwrap(), ["workbook"]);
         let parts = read_parts(&f.book()).unwrap();
-        assert_eq!(parts, strings(LABEL));
+        assert_eq!(parts, strings(&current()));
         let text = std::str::from_utf8(&parts[STRINGS]).unwrap();
         assert!(OLD_LABELS.iter().all(|old| !text.contains(old)));
     }
@@ -135,7 +143,7 @@ fn every_earlier_cover_label_moves_to_the_current_wording() {
 #[test]
 fn the_current_cover_label_is_a_byte_noop() {
     let f = Fixture::new();
-    f.write(&strings(LABEL));
+    f.write(&strings(&current()));
     let before = std::fs::read(f.book()).unwrap();
     assert!(cover_label::run(&f.book()).unwrap().is_empty());
     assert_eq!(std::fs::read(f.book()).unwrap(), before);
@@ -144,10 +152,7 @@ fn the_current_cover_label_is_a_byte_noop() {
 #[test]
 fn ambiguous_and_unrecognised_cover_labels_are_refused_without_writing() {
     let f = Fixture::new();
-    for text in [
-        format!("{LABEL}</t><t>{}", OLD_LABELS[1]),
-        LABEL.replace("172", "999"),
-    ] {
+    for text in [format!("{}</t><t>{}", current(), OLD_LABELS[1]), label(999)] {
         f.write(&strings(&text));
         let before = std::fs::read(f.book()).unwrap();
         assert!(
@@ -172,7 +177,7 @@ fn cover_label_cli_reports_the_write_and_subsequent_noop() {
             String::new()
         )
     );
-    assert_eq!(read_parts(&f.book()).unwrap(), strings(LABEL));
+    assert_eq!(read_parts(&f.book()).unwrap(), strings(&current()));
     assert_eq!(
         f.run("cover_label", &args),
         (

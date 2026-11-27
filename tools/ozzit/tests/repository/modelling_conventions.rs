@@ -107,15 +107,26 @@ fn calling(pattern: &str) -> BTreeSet<String> {
 #[test]
 fn the_function_and_help_table_counts() {
     let page = page();
-    assert_eq!(function_bodies().len(), 172);
-    page_says(&page, "a library of 172 LAMBDA functions and 6 help tables");
-    page_says(&page, "Ozzit's 172 functions exist to be called from cells");
+    let (functions, help_tables) =
+        ozzit::cover::inventory(&super::root().join("functions.csv")).unwrap();
+    assert_eq!(function_bodies().len(), functions);
+    page_says(
+        &page,
+        &format!("a library of {functions} LAMBDA functions and {help_tables} help tables"),
+    );
+    page_says(
+        &page,
+        &format!("Ozzit's {functions} functions exist to be called from cells"),
+    );
     let tables: BTreeSet<String> = modules()
         .iter()
         .flat_map(|(_, text)| findall(r"(?m)^(About\w+λ)\s*=", text))
         .collect();
-    assert_eq!(tables.len(), 6);
-    page_says(&page, "6 About tables list each module's functions");
+    assert_eq!(tables.len(), help_tables);
+    page_says(
+        &page,
+        &format!("{help_tables} About tables list each module's functions"),
+    );
 }
 
 #[test]

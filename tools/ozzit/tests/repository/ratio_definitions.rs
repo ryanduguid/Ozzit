@@ -80,8 +80,17 @@ fn the_page_lists_every_ratio_function_with_its_source_arithmetic() {
 #[test]
 fn the_page_states_the_count_it_documents() {
     let text = read(DOCUMENT);
-    assert!(flat(&text).contains("Each of the 47 ratio functions"));
-    assert!(text.contains("### The 47 functions"));
+    let csv = common::Csv::read(&super::root().join("functions.csv")).unwrap();
+    let ratios = csv
+        .rows
+        .iter()
+        .filter(|row| {
+            csv.get(row, "module") == Some("Ratios")
+                && !ozzit::cover::is_help(csv.get(row, "function").unwrap())
+        })
+        .count();
+    assert!(flat(&text).contains(&format!("Each of the {ratios} ratio functions")));
+    assert!(text.contains(&format!("### The {ratios} functions")));
 }
 
 // The helper on input that takes its other paths, from test_test_helper_paths.py.

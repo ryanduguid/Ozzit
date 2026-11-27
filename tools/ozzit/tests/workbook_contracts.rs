@@ -406,6 +406,7 @@ fn both_original_malformed_parts_are_skipped_after_reporting() {
 #[test]
 fn physical_defaults_and_explicit_arguments_force_utf8_and_preserve_inputs() {
     let mut f = Fixture::published();
+    let rows = Csv::read(&root().join("functions.csv")).unwrap().rows.len();
     let unicode = f.dir.path().join("workbook-λ→.xlsx");
     std::fs::copy(&f.book, &unicode).unwrap();
     f.book = unicode;
@@ -417,7 +418,7 @@ fn physical_defaults_and_explicit_arguments_force_utf8_and_preserve_inputs() {
             let name = args.first().map_or("ozzit.xlsx", String::as_str);
             assert_eq!(
                 result.stdout,
-                format!("OK: {name}, 178 functions, 169 parts{}", newline()).into_bytes()
+                format!("OK: {name}, {rows} functions, 169 parts{}", newline()).into_bytes()
             );
         }
     }
