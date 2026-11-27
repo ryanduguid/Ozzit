@@ -170,6 +170,14 @@ selection and composition through the existing catalogue and approved workbook.
 Copy `skills/ozzit` into the host's skill directory and supply the approved bundle
 location and revision. Installing the skill does not install the Excel names.
 
+Copilot in Excel's skill builder turns 'your preferred workflow, instructions,
+previous prompts, or examples of completed work' into a reusable skill. Give it
+the text of `skills/ozzit/SKILL.md` as the instructions, and supply `functions.csv`
+and `oz.txt` from the approved bundle revision. Microsoft's
+[What's New in Excel (October 2026)](https://techcommunity.microsoft.com/t5/excel-blog/what-s-new-in-excel-october-2026/ba-p/4549758)
+post of 29 October 2026 says skill builder is rolling out on Windows, Mac and the
+web; this route has not been tested.
+
 In Claude Code the repository is also a plugin marketplace that installs the skill:
 
 ```text
@@ -190,14 +198,6 @@ and `oz.txt` from the same release tag, or open its `ozzit.xlsx`, for the skill 
 read. Steps as Anthropic's [Claude for Excel](https://claude.com/docs/office-agents/excel)
 and [Skills](https://support.claude.com/en/articles/12512180-use-skills-in-claude)
 pages gave them on 12 November 2026; this route has not been tested end to end.
-
-Copilot in Excel's skill builder turns 'your preferred workflow, instructions,
-previous prompts, or examples of completed work' into a reusable skill. Give it
-the text of `skills/ozzit/SKILL.md` as the instructions, and supply `functions.csv`
-and `oz.txt` from the same release tag as above. Microsoft's
-[What's New in Excel (October 2026)](https://techcommunity.microsoft.com/t5/excel-blog/what-s-new-in-excel-october-2026/ba-p/4549758)
-post of 29 October 2026 says skill builder is rolling out on Windows, Mac and the
-web; this route has not been tested.
 
 ## Alternatives
 
