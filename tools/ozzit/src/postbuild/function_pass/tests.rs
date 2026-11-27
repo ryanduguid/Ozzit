@@ -317,3 +317,8 @@ fn check_rollup_pass_reproduces_the_published_essentials_and_utilities_modules()
     reproduces_the_module(&SPECS[15], "Essentials");
     reproduces_the_module(&SPECS[15], "Utilities");
 }
+
+#[test]
+fn ageing_difference_pass_reproduces_the_published_financial_module() {
+    reproduces_the_financial_module(&SPECS[16]);
+}

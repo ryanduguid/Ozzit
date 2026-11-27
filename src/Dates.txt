@@ -790,7 +790,7 @@ FinancialMonthλ = LAMBDA(
                             "FUNCTION:      →FinancialMonthλ(Dates, [StartMonth])¶" &
                             "DESCRIPTION:   →Numbers each date's month within its financial year, from 1 to 12.¶" &
                             "NOTES!         →With the default 1 July start, July is month 1 and June is month 12.¶               →Dates may be one date or a range, and the result takes their shape.¶               →FinancialYearλ() labels the year and FinancialQuarterλ() the quarter.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
                             "VERSION:       →20 Oct 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Dates          →(Required) One or more dates, numeric or text. A blank cell returns a blank.¶" &
@@ -835,7 +835,7 @@ FinancialQuarterλ = LAMBDA(
                             "FUNCTION:      →FinancialQuarterλ(Dates, [StartMonth])¶" &
                             "DESCRIPTION:   →Numbers each date's quarter within its financial year, from 1 to 4.¶" &
                             "NOTES!         →Each quarter is 3 months counted from StartMonth. With the default 1 July¶               →start, July to September is quarter 1 and April to June is quarter 4.¶               →Dates may be one date or a range, and the result takes their shape.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
                             "VERSION:       →20 Oct 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Dates          →(Required) One or more dates, numeric or text. A blank cell returns a blank.¶" &
@@ -881,7 +881,7 @@ RateAtDateλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →RateAtDateλ(EffectiveDates, Rates, Dates)¶" &
                             "DESCRIPTION:   →Returns the rate in effect on each date from your table of effective dates and rates.¶NOTES!         →Each rate applies from its effective date until the next one. Dates may¶               →be one date or a row or column of them, and the result takes their shape.¶               →A date before the first effective date has no rate in effect and returns¶               →#N/A. The table must be complete and in order, so instead of a result it¶               →returns a message when EffectiveDates and Rates differ in length or hold¶               →a blank or text entry, when the dates are not in ascending order, or when¶               →a date repeats. A text or blank date in Dates returns #VALUE!. The¶               →library ships no rate table: supply your own, with its source and the¶               →date you checked it. ScheduleRatesλ() lays rates across a timeline¶               →without these checks.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →19 Oct 2026¶" &
                             "PARAMETERS:    →¶" &
                             "EffectiveDates →(Required) A row or column of dates from which each rate applies, in ascending order.¶" &
@@ -936,7 +936,7 @@ DateDifλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →DateDifλ(StartDate, EndDate, [Unit])¶" &
                             "DESCRIPTION:   →Whole years, months or days between two dates, and the remainders.¶NOTES!         →Excel documents DATEDIF as a legacy compatibility function and warns¶               →its MD unit can return a negative or wrong day count. This counts a¶               →month as complete when EDATE() of the start date has arrived, so a¶               →month after 31 January is the last day of February, and takes every¶               →remainder from there. A reversed range or an unknown unit returns #NUM!.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →28 Sep 2026¶" &
                             "PARAMETERS:    →¶" &
                             "StartDate      →(Required) The earlier date, numeric or text.¶" &

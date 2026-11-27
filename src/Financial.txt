@@ -196,7 +196,7 @@ CorkScrewReversalλ=LAMBDA(
     LET(Help,           TRIM(TEXTSPLIT(
                         "FUNCTION:      →CorkScrewReversalλ( Opening, ReversalFlags, Flow1, [Flow2], [Flow3], [Flow4])¶" & 
                         "DESCRIPTION:   →Create a corkscrew where the opening balance is reversed in the next period based on a timing parameter¶" & 
-                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/level-payment-and-corkscrew-rate.md¶" &
                         "VERSION:       →16 Nov 2026¶" &
                         "PARAMETERS:→¶" &
                         "Opening        →(Required) First periods opening balance: a single number or a blank cell.¶" &
@@ -476,7 +476,7 @@ RollingAvgλ = LAMBDA(
                             "FUNCTION:      →RollingAvgλ( Values, Size)¶" &
                             "DESCRIPTION:   →Creates averages for preceding values of a set size moving¶" &
                                            "→from beginning to end over a row of values¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Values         →(Required) A row of values to be averaged.¶" & 
@@ -522,7 +522,7 @@ RollingMaxλ = LAMBDA(
                             "FUNCTION:      →RollingMaxλ( Values, Size)¶" &
                             "DESCRIPTION:   →Creates the maximum for preceding values of a set size moving¶" &
                                            "→from beginning to end over a row of values¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Values         →(Required) A row of values to be maxed.¶" & 
@@ -568,7 +568,7 @@ RollingMinλ = LAMBDA(
                             "FUNCTION:      →RollingMinλ( Values, Size)¶" &
                             "DESCRIPTION:   →Creates the minimum for preceding values of a set size moving¶" &
                                            "→from beginning to end over a row of values¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Values         →(Required) A row of values to take the minimum of.¶" & 
@@ -1407,7 +1407,7 @@ PeriodDiffλ = LAMBDA(
                             "FUNCTION:      →PeriodDiffλ(StartDate, EndDate, Interval)¶" &
                             "DESCRIPTION:   →Determine the number of periods between two dates.¶" &
                             "NOTES!         →This improves on, and corrects problems w/Excel's deprecated DATEDIF() function.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
                             "VERSION:       →16 Sep 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "StartDate      →(Required) Start Date.¶" &                   
@@ -1457,7 +1457,7 @@ SLNλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →SLNλ(Cost, Salvage, Life)¶" &
                             "DESCRIPTION:   →Straight Line Depreciation Method for one asset or asset class.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
                             "VERSION:       →13 Sep 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Cost           →(Required) Asset's initial cost.¶" &                   
@@ -1501,7 +1501,7 @@ SYDλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →SYDλ(Cost, Salvage, Life)¶" &
                             "DESCRIPTION:   →Sum-of-years' digits depreciation method for one asset or asset class.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Cost           →(Required) Asset's initial cost.¶" &                   
@@ -1542,7 +1542,7 @@ DBλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →DBλ(Cost, Salvage, Life, [Months])¶" &
                             "DESCRIPTION:   →Fixed declining balance depreciation method for one asset or asset class¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
                             "VERSION:       →13 Sep 2026¶" &
                             "NOTES:         →For a positive whole-number Life, returns Life schedule values.¶" &
                             "               →The first Life-1 values use Excel's DB calculation.¶" &
@@ -1593,7 +1593,7 @@ DDBλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →DDBλ(Cost, Salvage, Life, [Factor])¶" &
                             "DESCRIPTION:   →Double-declining balance depreciation method for one asset or asset class.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
                             "VERSION:       →13 Sep 2026¶" &
                             "NOTES:         →For a positive whole-number Life, returns Life schedule values.¶" &
                             "               →The first Life-1 values use Excel's DDB calculation.¶" &
@@ -1644,7 +1644,7 @@ VDBλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →VDBλ(Cost, Salvage, Life, [Factor], [No_Switch])¶" &
                             "DESCRIPTION:   →Variable declining balance depreciation method for one asset or asset class.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Cost           →(Required) Asset's initial cost.¶" &                   
@@ -2187,7 +2187,7 @@ PeriodStartλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →PeriodStartλ(AnyPeriodStart, MonthsPerPeriod, DateOfInterest)¶" &
                             "DESCRIPTION:   →Determine when the period containing a date of interest starts.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "AnyPeriodStart →(Required) Any start date within a timeline.¶" &                   
@@ -2605,7 +2605,7 @@ Varianceλ = LAMBDA(
                             "FUNCTION:      →Varianceλ(Actual, Budget, [Type])¶" &
                             "DESCRIPTION:   →Actual less budget, signed so a favourable variance is positive for income and expense lines alike.¶" &
                             "NOTES!         →Type 1 marks income, where an actual above budget is favourable; -1 marks an¶               →expense, where an actual below budget is favourable. Enter expenses as positive¶               →costs: for a ledger that stores them as negative balances, negate both amounts¶               →first. Give one Type for all lines, one for each row or one for each cell. Actual¶               →and Budget must be the same shape and hold numbers or blank cells, which count as¶               →0; text and TRUE or FALSE return a message. Budget may also be a prior period.¶               →VariancePctλ() gives the percentage.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Oct 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Actual         →(Required) One or more actual amounts.¶" &
@@ -2659,7 +2659,7 @@ VariancePctλ = LAMBDA(
                             "FUNCTION:      →VariancePctλ(Actual, Budget, [Type])¶" &
                             "DESCRIPTION:   →The variance from Varianceλ() as a fraction of the budget's size.¶" &
                             "NOTES!         →Dividing by the budget's absolute value keeps the sign of the variance, so a¶               →favourable variance stays positive when the budget is negative, as a work in¶               →progress movement or a loss can be. A zero budget returns #DIV/0!. Type 1 marks¶               →income and -1 an expense recorded as a positive cost, and the inputs follow the¶               →same rules as in Varianceλ().¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Oct 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Actual         →(Required) One or more actual amounts.¶" &
@@ -2711,7 +2711,7 @@ YearToDateλ = LAMBDA(
                             "FUNCTION:      →YearToDateλ(Values, Dates, AsAt, [StartMonth])¶" &
                             "DESCRIPTION:   →Totals each row of Values from the start of AsAt's financial year to AsAt.¶" &
                             "NOTES!         →A column counts when its date is on or after the first day of the financial¶               →year that contains AsAt, and on or before AsAt; a time of day is ignored. Date¶               →each column by the first day of its period, or by its last day and an AsAt at a¶               →period end. A part period counts in full, not pro rata. Values must hold numbers¶               →or blank cells, which count as 0; text and TRUE or FALSE return a message, and an¶               →error in any column shows. The result is one total for each row of Values. A¶               →financial year starting before 1 January 1900 returns #NUM!.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Oct 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Values         →(Required) A row or block of amounts, one column for each date in Dates.¶" &
@@ -4297,7 +4297,7 @@ AnnualRateλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →AnnualRateλ(PeriodRate, [PeriodsPerYear])¶" &
                             "DESCRIPTION:   →Converts a rate per period to the effective annual rate.¶NOTES!         →(1 + PeriodRate) ^ PeriodsPerYear - 1, the inverse of PeriodRateλ().¶               →Use it to state a rate per period, such as a lease rate solved per¶               →month, as the annual figure a reader expects.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
                             "VERSION:       →28 Sep 2026¶" &
                             "PARAMETERS:    →¶" &
                             "PeriodRate     →(Required) Rate per period, or a row or column of them.¶" &
