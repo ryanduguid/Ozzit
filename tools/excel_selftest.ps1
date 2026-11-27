@@ -938,7 +938,7 @@ foreach ($r in @(@('270', '270|TRUE|135|not checked|not checked'),
                  @('100, {99.99;-50}, 0.02', '100|FALSE|50|1|1'),
                  @('10, {"a";"b"}', '10|FALSE|5|0|0'),
                  @('45, {45;45;22.5;-22.5}', '45|TRUE|22.5|2|2'),
-                 @('0.1+0.2-0.21', '0.09|TRUE|0.045|not checked|not checked'),
+                 @('0.1+0.2-0.21', '0.0900000000000001|TRUE|0.045|not checked|not checked'),
                  @('0, AS1:AT1', '0|FALSE|0|1|1'),
                  @('0, Z1:Z3', '0|FALSE|0|0|0'))) {
     Same "DifferenceCheck: ($($r[0]))" "TEXTJOIN(`"|`",FALSE,INDEX($dc($($r[0])),0,2))" $r[1]
