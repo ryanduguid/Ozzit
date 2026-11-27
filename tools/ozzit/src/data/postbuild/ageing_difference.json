@@ -15,8 +15,8 @@
  ],
  "about": {
   "Financial": [
-   "\"YearToDateλ        →Totals each row from the start of the financial year to an as-at date¶\"",
-   null,
+   "\"SensitivityGridλ   →Two-way sensitivity grid from a calculation and its row and column values¶\"",
+   "CHECKS AND AGEING  →",
    19,
    "/*  FUNCTION NAME:  FCFFBridgeλ"
   ]

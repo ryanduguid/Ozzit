@@ -189,8 +189,8 @@ blocks before the index factor pass's. The check roll-up pass is the native
 `ozzit check_rollup`: it adds `oz.CheckRollUpλ` to Essentials and its copy
 `oz.CheckRollUpUλ` to Utilities, each after the module's `IsInList` row and with its block
 before the module's `RangeToDA` block. The debtor ageing and difference check pass is the
-native `ozzit ageing_difference`: it adds `oz.AgeDebtorsλ` and `oz.DifferenceCheckλ` to the
-REPORTING rows after `YearToDateλ`, with their blocks before `FCFFBridgeλ`. The cover-label pass is
+native `ozzit ageing_difference`: it adds `oz.AgeDebtorsλ` and `oz.DifferenceCheckλ` under a
+new CHECKS AND AGEING heading after the VALUATION rows, with their blocks before `FCFFBridgeλ`. The cover-label pass is
 one swap in `xl/sharedStrings.xml`:
 Cover!A3 kept reading 20 August 2026 and 130 functions after 3 cuts, and
 `ozzit verify_cover` now keeps that label equal to `functions.csv` and the
