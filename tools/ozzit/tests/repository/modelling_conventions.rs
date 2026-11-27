@@ -160,7 +160,7 @@ fn utilities_repeats_the_essentials_functions() {
 #[test]
 fn if_and_nested_if() {
     let page = page();
-    assert_eq!(calling(r"\bIF\(").len(), 101);
+    assert_eq!(calling(r"\bIF\(").len(), 103);
     let nested_if = bounded(r"\bIF\(");
     let nested = function_bodies()
         .into_values()
@@ -229,6 +229,7 @@ fn rounding_and_the_days_a_month_constant() {
             "CGTParcelsλ",
             "DayCountRateλ",
             "Depreciateλ",
+            "DifferenceCheckλ",
             "DiminishingValueλ",
             "Div7AMinRepaymentλ",
             "HPScheduleλ",

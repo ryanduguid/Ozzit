@@ -116,9 +116,9 @@ fn the_first_coming_soon_webpage_is_rejected() {
     let f = Fixture::published();
     f.edit(
         "Financial",
-        "\"WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶\"",
+        "\"WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶\"",
         "\"WEBPAGE:       →<Coming Soon>¶\"",
-        15,
+        27,
     );
     f.refuses("Coming Soon");
 }
