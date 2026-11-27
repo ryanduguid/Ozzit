@@ -902,6 +902,10 @@ foreach ($r in @(@("INDEX($ad($adArgs),1,0)", 'Debtor|Current|1-30 days|31-60 da
                  @("INDEX($ad($adArgs, , {14,28}),2,0)", 'Total|40|0|0|350|390'),
                  @("INDEX($ad($adArgs, , 30),1,0)", 'Debtor|Current|1-30 days|Over 30 days|Total'),
                  @("INDEX($ad({1;2;4;8;16}, DATE(2026,6,30)-{0;30;31;91;-5}, DATE(2026,6,30)),2,0)", 'Total|17|2|4|0|8|31'),
+                 @("INDEX($ad({1;2;4;8}, DATE(2026,6,30)-{1;60;61;90}, DATE(2026,6,30)),2,0)", 'Total|0|1|2|12|0|15'),
+                 @("INDEX($ad({1;2;4}, {1;1;1}, 3, {`"Ash`";`"ASH`";`"Bay`"}),0,1)", 'Debtor|Ash|Bay|Total'),
+                 @("INDEX($ad({1;2;4}, {1;1;1}, 3, {`"Ash`";`"ASH`";`"Bay`"}),2,0)", 'Ash|0|3|0|0|0|3'),
+                 @("INDEX($ad(AD1:AF1, AD1:AF1, 3),2,0)", 'Total|0|3|0|0|0|3'),
                  @("INDEX($ad({100;`"`";40}, DATE(2026,{6;5;7},{1;15;31}), DATE(2026,6,30)),2,0)", 'Total|40|100|0|0|0|140'),
                  @("INDEX($ad({100;`"`";40}, DATE(2026,{6;5;7},{1;15;31}), DATE(2026,6,30), {`"Ash`";`"Bay`";`"Cy`"}),0,1)", 'Debtor|Ash|Cy|Total'),
                  @("INDEX($ad({`"`";`"`"}, {1;2}, 3, {`"Ash`";`"Bay`"}),0,1)", 'Debtor|Total'),
@@ -917,7 +921,7 @@ foreach ($r in @(@('{1;2}, {1}, 3', $adShape), @('{1;2}, {1;2}, 3, {"a"}', $adSh
                  @('{1}, {1}, 3, , {30,30}', $adDays), @('{1}, {1}, 3, , 0', $adDays), @('{1}, {1}, 3, , 30.5', $adDays),
                  @('{1}, {1}, 3, , {60,30}', $adDays), @('{1}, {1}, 3, , "30"', $adDays),
                  @('{1;"x"}, {1;2}, 3', $adValues), @('{1;2}, {1;"x"}, 3', $adValues), @('{1;2}, {1;""}, 3', $adValues),
-                 @('{1;2}, IF({1;0}, 1, NA()), 3', $adValues))) {
+                 @('{1;2}, IF({1;0}, 1, NA()), 3', $adValues), @('AE1:AF1, AD1:AE1, 3', $adValues))) {
     Same "AgeDebtors refuses ($($r[0]))" "LET(x, $ad($($r[0])), $one)" $r[1]
 }
 
@@ -933,7 +937,10 @@ foreach ($r in @(@('270', '270|TRUE|135|not checked|not checked'),
                  @('100, {100.004;99.99;"x";50}', '100|FALSE|50|1|1'),
                  @('100, {99.99;-50}, 0.02', '100|FALSE|50|1|1'),
                  @('10, {"a";"b"}', '10|FALSE|5|0|0'),
-                 @('45, {45;45;22.5;-22.5}', '45|TRUE|22.5|2|2'))) {
+                 @('45, {45;45;22.5;-22.5}', '45|TRUE|22.5|2|2'),
+                 @('0.1+0.2-0.21', '0.09|TRUE|0.045|not checked|not checked'),
+                 @('0, AS1:AT1', '0|FALSE|0|1|1'),
+                 @('0, Z1:Z3', '0|FALSE|0|0|0'))) {
     Same "DifferenceCheck: ($($r[0]))" "TEXTJOIN(`"|`",FALSE,INDEX($dc($($r[0])),0,2))" $r[1]
 }
 $dcDiff = 'DifferenceCheck' + $L + ' needs Difference to be one number.'

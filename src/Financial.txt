@@ -2800,9 +2800,9 @@ AgeDebtorsλ = LAMBDA(
         ValidDays?,     IFERROR( AND( ISNUMBER( Limits), Limits = INT( Limits), Limits >= 1,
                             IFERROR( AND( DROP( Limits, , 1) > DROP( Limits, , -1)), TRUE)), FALSE),
         DaysMessage,    "AgeDebtorsλ needs Days to be whole numbers rising from 1.",
-    //  Each amount kept is a number with a date; a blank amount is skipped
+    //  Each amount kept is a number with a date, which a blank due date is not; a blank amount is skipped
         Values,         TOCOL( Amounts),
-        Due,            TOCOL( DueDates),
+        Due,            TOCOL( IF( ISBLANK( DueDates), "", DueDates)),
         Skip,           TOCOL( ISBLANK( Amounts)) + IFERROR( Values = "", FALSE) > 0,
         ValidValues?,   IFERROR( AND( Skip + ISNUMBER( Values) * ISNUMBER( Due) > 0), FALSE),
         ValuesMessage,  "AgeDebtorsλ needs a number for each amount and a date for each due date.",
@@ -2872,9 +2872,9 @@ DifferenceCheckλ = LAMBDA(
         Cents,          ROUND( Size * 100, 0),
         Nines?,         AND( Cents > 0, MOD( Cents, 9) = 0),
         Half,           Difference / 2,
-    //  Count the numbers in Amounts whose size matches the difference or its half
+    //  Count the numbers in Amounts whose size matches the difference or its half; TOCOL drops blank cells, which it would read as 0
         Unchecked?,     ISOMITTED( Amounts),
-        Numbers,        IF( Unchecked?, 0, LET( All, TOCOL( Amounts), ABS( FILTER( All, ISNUMBER( All), "")))),
+        Numbers,        IF( Unchecked?, 0, LET( All, TOCOL( Amounts, 1), ABS( FILTER( All, ISNUMBER( All), "")))),
         Matches,        LAMBDA( Target, IF( Unchecked?, "not checked", SUM( --( IFERROR( ABS( Numbers - ABS( Target)) <= Allowed, FALSE))))),
         Result,         HSTACK( {"Difference"; "Divisible by 9"; "Half the difference"; "Amounts equal to the difference"; "Amounts equal to half"},
                             VSTACK( Difference, Nines?, Half, Matches( Difference), Matches( Half))),
