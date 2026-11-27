@@ -10,6 +10,7 @@ oz.AboutEssentialsλ,1,0,0,1
 oz.AboutFinancialλ,1,0,0,0
 oz.AboutRatiosλ,1,0,0,0
 oz.AboutUtilitiesλ,1,0,0,0
+oz.AgeDebtorsλ,1,2,2,0
 oz.Allocateλ,1,2,11,0
 oz.AmortiseBλ,1,2,1,0
 oz.Amortiseλ,1,1,65,5
@@ -62,6 +63,7 @@ oz.DebtToCapitalRatioλ,1,1,0,1
 oz.DebtToEquityRatioλ,1,1,0,1
 oz.Depreciateλ,1,2,36,5
 oz.DepreciateλDV,1,0,7,0
+oz.DifferenceCheckλ,1,2,3,0
 oz.DiminishingValueλ,1,2,10,1
 oz.Div7AMinRepaymentλ,1,2,17,0
 oz.DividendYieldRatioλ,1,1,0,1
