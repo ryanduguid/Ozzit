@@ -16,10 +16,13 @@ const FIELDS: &[&str] = &[
     "signature",
     "description",
 ];
-const GOOD: &str = "OK: all 178 functions.csv rows match the workbook and source modules";
 
 fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
+}
+fn good_line() -> String {
+    let rows = Csv::read(&root().join("functions.csv")).unwrap().rows.len();
+    format!("OK: all {rows} functions.csv rows match the workbook and source modules")
 }
 fn newline() -> &'static str {
     if cfg!(windows) { "\r\n" } else { "\n" }
@@ -170,7 +173,7 @@ impl Fixture {
 
 fn good(output: Output) {
     assert_eq!(output.code, 0, "{:?} {:?}", output.out, output.err);
-    assert_eq!(output.out, [GOOD]);
+    assert_eq!(output.out, [good_line()]);
     assert!(output.err.is_empty());
 }
 fn failure(output: Output) -> Vec<String> {
@@ -554,7 +557,10 @@ fn physical_defaults_and_explicit_arguments_preserve_inputs_and_output_channels(
     for length in 0..=3 {
         let output = f.cli(&f.args()[..length]);
         assert_eq!(output.status.code(), Some(0));
-        assert_eq!(output.stdout, format!("{GOOD}{}", newline()).into_bytes());
+        assert_eq!(
+            output.stdout,
+            format!("{}{}", good_line(), newline()).into_bytes()
+        );
         assert!(output.stderr.is_empty());
     }
 }

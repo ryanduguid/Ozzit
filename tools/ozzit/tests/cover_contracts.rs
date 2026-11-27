@@ -11,9 +11,18 @@ use std::{
 
 const LABEL: &str = "Version 1 May 2026 - 3 functions - Excel";
 const CELL: &str = "<c r=\"A3\" t=\"s\"><v>0</v></c>";
-const GOOD: &str = "OK: cover label states 24 November 2026 and 172 functions";
 fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
+}
+/// The functions the committed `functions.csv` publishes, help tables apart.
+fn published() -> usize {
+    cover::published_functions(&root().join("functions.csv")).unwrap()
+}
+fn good_line() -> String {
+    format!(
+        "OK: cover label states 24 November 2026 and {} functions",
+        published()
+    )
 }
 fn newline() -> &'static str {
     if cfg!(windows) { "\r\n" } else { "\n" }
@@ -186,32 +195,41 @@ fn ignored_columns_and_minimal_reordered_indexes_remain_usable() {
         (vec!["Function", "extra", "function"], vec![], true),
     ] {
         f.columns(&columns, &overrides, false, bom);
-        good(f.run(), GOOD);
+        good(f.run(), &good_line());
     }
 }
 
 #[test]
 fn committed_cover_matches_index_and_changelog() {
-    good(Fixture::published().run(), GOOD);
+    good(Fixture::published().run(), &good_line());
 }
 
 #[test]
 fn stale_function_count_fails() {
     let f = Fixture::published();
-    f.rewrite("xl/sharedStrings.xml", "172 functions", "133 functions");
+    let published = published();
+    f.rewrite(
+        "xl/sharedStrings.xml",
+        &format!("{published} functions"),
+        "133 functions",
+    );
     failure(
         f.run(),
-        &["FAIL: cover says 133 functions; functions.csv publishes 172"],
+        &[format!("FAIL: cover says 133 functions; functions.csv publishes {published}").as_str()],
     );
 }
 
 #[test]
 fn current_looking_decoy_does_not_rescue_the_stale_displayed_cell() {
     let f = Fixture::published();
-    let current = "Version 24 November 2026    -    172 functions    -    Microsoft 365 or Excel 2024 and later";
-    let stale = current
-        .replace("24 November 2026", "20 August 2026")
-        .replace("172", "133");
+    let published = published();
+    let label = |date: &str, functions: usize| {
+        format!(
+            "Version {date}    -    {functions} functions    -    Microsoft 365 or Excel 2024 and later"
+        )
+    };
+    let current = label("24 November 2026", published);
+    let stale = label("20 August 2026", 133);
     f.rewrite(
         "xl/sharedStrings.xml",
         &format!("<t>{current}</t>"),
@@ -225,7 +243,7 @@ fn current_looking_decoy_does_not_rescue_the_stale_displayed_cell() {
     failure(
         f.run(),
         &[
-            "FAIL: cover says 133 functions; functions.csv publishes 172",
+            format!("FAIL: cover says 133 functions; functions.csv publishes {published}").as_str(),
             "FAIL: cover is dated 20 August 2026; the changelog's current cut is 24 November 2026",
         ],
     );
@@ -236,7 +254,7 @@ fn byte_order_marked_index_is_read() {
     let f = Fixture::published();
     let bytes = std::fs::read(&f.index).unwrap();
     std::fs::write(&f.index, [b"\xef\xbb\xbf".as_slice(), &bytes].concat()).unwrap();
-    good(f.run(), GOOD);
+    good(f.run(), &good_line());
 }
 
 #[test]
@@ -253,7 +271,7 @@ fn missing_function_names_fail_without_a_false_count() {
         .position(|name| !name.starts_with("oz.About"))
         .unwrap();
     names.remove(removed);
-    assert_eq!(names.len(), 177);
+    assert_eq!(names.len(), csv.rows.len() - 1);
     for missing in [None, Some(""), Some("   ")] {
         let mut text = "signature,function\r\n".to_owned();
         for name in &names {
@@ -438,7 +456,7 @@ fn physical_command_defaults_and_explicit_inputs_preserve_path_policy() {
         assert!(output.stderr.is_empty());
         assert_eq!(
             String::from_utf8(output.stdout).unwrap(),
-            GOOD.to_owned() + newline()
+            good_line() + newline()
         );
     }
 }

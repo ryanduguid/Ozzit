@@ -55,7 +55,7 @@ fn every_shipped_function_keeps_its_help_assertion() {
             &text
         )
         .len(),
-        178
+        Csv::read(&root().join("functions.csv")).unwrap().rows.len()
     );
     for expected in [
         r#"Same 'help: CountDOW${L}' "INDEX(oz.CountDOW${L}(),1,1)" 'FUNCTION:'"#,

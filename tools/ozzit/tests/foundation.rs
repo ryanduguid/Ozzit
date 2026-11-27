@@ -11,6 +11,17 @@ use std::{
 fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
+/// The rows of the committed `functions.csv`, and how many of them have a
+/// signature that takes arguments.
+fn register() -> (usize, usize) {
+    let csv = Csv::read(&root().join("functions.csv")).unwrap();
+    let with_arguments = csv
+        .rows
+        .iter()
+        .filter(|row| csv.get(row, "signature").unwrap().contains('('))
+        .count();
+    (csv.rows.len(), with_arguments)
+}
 fn library() -> BTreeSet<String> {
     ["Otherλ", "Thisλ"].map(String::from).into_iter().collect()
 }
@@ -363,14 +374,15 @@ fn new_source_names_must_be_added_to_the_workbook_before_compiling() {
 #[test]
 fn source_and_help_checks_read_the_whole_shipped_library() {
     let fixture = Fixture::new();
+    let (rows, with_arguments) = register();
     let result = sources::verify(&fixture.args());
     assert_eq!(result.code, 0, "{result:?}");
-    assert!(result.out[0].contains("all 178 functions"));
+    assert!(result.out[0].contains(&format!("all {rows} functions")));
     let result = help::verify(&[display(&fixture.src)]);
     assert_eq!(result.code, 0, "{result:?}");
-    assert!(result.out[0].starts_with(
-        "178 declarations read: 169 signatures, 169 parameter tables and 169 example blocks"
-    ));
+    assert!(result.out[0].starts_with(&format!(
+        "{rows} declarations read: {with_arguments} signatures, {with_arguments} parameter tables and {with_arguments} example blocks"
+    )));
 }
 #[test]
 fn source_verification_includes_additional_txt_modules() {

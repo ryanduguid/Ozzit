@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! Signature command contracts retained from the Python tests.
-use ozzit::{common::*, formula, help};
+use ozzit::{common::*, cover, formula, help};
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
@@ -87,14 +87,37 @@ impl Fixture {
     }
 }
 
+/// The report for the committed sources, from what `functions.csv` publishes:
+/// help tables are not LAMBDAs, and a function whose signature takes no
+/// arguments has no FUNCTION line or parameter table.
 fn published_output() -> Vec<String> {
-    [
-        "178 declarations read: 169 signatures, 169 parameter tables and 169 example blocks checked",
-        "   no FUNCTION line (3): AmortiseλDV, CorkscrewλDV, DepreciateλDV",
-        "   no parameter table (3): AmortiseλDV, CorkscrewλDV, DepreciateλDV",
-        "   not a LAMBDA (6): AboutDatesλ, AboutDebtλ, AboutEssentialsλ, AboutFinancialλ, AboutRatiosλ, AboutUtilitiesλ",
-        "OK: all 169 signatures, 169 parameter tables and 169 example blocks describe their own function",
-    ].map(String::from).to_vec()
+    let csv = Csv::read(&root().join("functions.csv")).unwrap();
+    let (mut tables, mut bare) = (Vec::new(), Vec::new());
+    for row in &csv.rows {
+        let function = csv.get(row, "function").unwrap();
+        let name = function.trim_start_matches("oz.");
+        if cover::is_help(function) {
+            tables.push(name);
+        } else if !csv.get(row, "signature").unwrap().contains('(') {
+            bare.push(name);
+        }
+    }
+    tables.sort_unstable();
+    bare.sort_unstable();
+    let read = csv.rows.len();
+    let n = read - tables.len() - bare.len();
+    let bare = format!("({}): {}", bare.len(), bare.join(", "));
+    vec![
+        format!(
+            "{read} declarations read: {n} signatures, {n} parameter tables and {n} example blocks checked"
+        ),
+        format!("   no FUNCTION line {bare}"),
+        format!("   no parameter table {bare}"),
+        format!("   not a LAMBDA ({}): {}", tables.len(), tables.join(", ")),
+        format!(
+            "OK: all {n} signatures, {n} parameter tables and {n} example blocks describe their own function"
+        ),
+    ]
 }
 
 #[test]

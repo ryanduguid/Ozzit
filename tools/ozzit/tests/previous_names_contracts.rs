@@ -11,7 +11,21 @@ use std::{
 fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
-const GOOD: &str = "OK: 178 functions, 130 of them replacing a name from released-names-v1.2.6.txt, 48 new since it";
+/// The passing report for the committed `functions.csv`, which counts the rows
+/// that name a previous name and those that do not.
+fn good_line() -> String {
+    let csv = Csv::read(&root().join("functions.csv")).unwrap();
+    let fresh = csv
+        .rows
+        .iter()
+        .filter(|row| csv.get(row, "previous_name").unwrap().trim().is_empty())
+        .count();
+    let rows = csv.rows.len();
+    format!(
+        "OK: {rows} functions, {} of them replacing a name from released-names-v1.2.6.txt, {fresh} new since it",
+        rows - fresh
+    )
+}
 const FIELDS: &[&str] = &[
     "function",
     "module",
@@ -34,7 +48,6 @@ impl Fixture {
         let dir = tempfile::tempdir().unwrap();
         let index = dir.path().join("functions.csv");
         let csv = Csv::read(&root().join("functions.csv")).unwrap();
-        assert_eq!(csv.rows.len(), 178);
         Self { dir, index, csv }
     }
     fn write(
@@ -97,7 +110,7 @@ impl Fixture {
 }
 fn good(output: Output) {
     assert_eq!(output.code, 0, "{:?} {:?}", output.out, output.err);
-    assert_eq!(output.out, [GOOD]);
+    assert_eq!(output.out, [good_line()]);
     assert!(output.err.is_empty(), "{:?}", output.err);
 }
 fn duplicate(f: &Fixture, fields: &[&str]) {
@@ -427,9 +440,9 @@ fn physical_command_defaults_use_owned_csv_and_embedded_baseline() {
         assert_eq!(result.status.code(), Some(0), "{:?}", result);
         assert!(result.stderr.is_empty(), "{:?}", result.stderr);
         let expected = if args.len() == 2 {
-            GOOD.replace("released-names-v1.2.6.txt", "baseline.txt")
+            good_line().replace("released-names-v1.2.6.txt", "baseline.txt")
         } else {
-            GOOD.into()
+            good_line()
         };
         assert_eq!(
             String::from_utf8(result.stdout).unwrap(),
