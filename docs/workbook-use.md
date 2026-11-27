@@ -186,6 +186,22 @@ For a banner, put the roll-up in a cell near the top of the cover or summary she
 
 Then add a conditional formatting rule to that cell with the formula `=LEFT(ModelStatus,3)<>"OK:"` and a fill that stands out. The rule also catches the refusal messages, which do not start with `OK:`. Because the roll-up reads every check in its range, `ozzit audit` does not report those rows as buried checks.
 
+## Age debtors and test a difference
+
+`oz.AgeDebtorsλ(Amounts, DueDates, AsAt, [Debtors], [Days])` ages the amounts owed on a date. Days overdue are `AsAt` less each due date, and an amount due on or after `AsAt` is Current. `Days` gives the upper limit of each overdue bucket, whole numbers rising from 1; omitted, the buckets are 1-30, 31-60, 61-90 and over 90 days. The result is a header row, a row for each debtor in the order they first appear when `Debtors` is given, and a Total row. A blank amount is skipped; an amount with no date, or a due date that is not a date, is refused.
+
+| Amounts | Due | Formula | Total row |
+|---|---|---|---|
+| 100, 250, 40 | 1 June, 15 May, 31 July 2026 | `=oz.AgeDebtorsλ({100;250;40}, DATE(2026,{6;5;7},{1;15;31}), DATE(2026,6,30))` | Current 40, 1-30 days 100, 31-60 days 250, Total 390 |
+| The same | The same | `=oz.AgeDebtorsλ({100;250;40}, DATE(2026,{6;5;7},{1;15;31}), DATE(2026,6,30), , {14,28})` | Current 40, 1-14 days 0, 15-28 days 0, Over 28 days 350, Total 390 |
+
+`oz.DifferenceCheckλ(Difference, [Amounts], [Tolerance])` tests a difference, such as an out-of-balance trial balance, for the usual causes. It returns 5 labelled rows: the difference; whether it is divisible by 9 in whole cents, which swapping 2 digits or moving a decimal point leaves; half the difference, the size of an amount posted to the wrong side; and how many of `Amounts` equal the difference, as an amount left out would, and equal its half. Sizes within `Tolerance` (0.005 when omitted) count as equal, and signs are ignored. Each result is a clue for the reviewer, not a finding.
+
+| Formula | Divisible by 9 | Half | Equal to the difference | Equal to half |
+|---|---|---|---|---|
+| `=oz.DifferenceCheckλ(270)` | TRUE | 135 | not checked | not checked |
+| `=oz.DifferenceCheckλ(-300, {1200;150;-75})` | FALSE | -150 | 0 | 1 |
+
 ## Modern Excel
 
 Excel 365 has gained functions since the earlier workbook of July 2024. Several helpers point to native options in their inline help's `SEE ALSO` line. Native functions can have different inputs and behaviour, so compare their contracts before replacing a helper. The table also includes a newer Beta preview:

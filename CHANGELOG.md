@@ -7,6 +7,15 @@ release; until then v3.8.0 behaves as it did.
 
 ### Added
 
+- `oz.AgeDebtorsλ(Amounts, DueDates, AsAt, [Debtors], [Days])` ages amounts owed into
+  Current and overdue-day buckets (1-30, 31-60, 61-90 and over 90 days unless `Days` sets
+  other limits), with a row for each debtor when debtors are given and a Total row.
+  `oz.DifferenceCheckλ(Difference, [Amounts], [Tolerance])` tests an out-of-balance
+  difference for its usual causes: divisible by 9 in whole cents, half the difference, and
+  amounts equal to the difference or its half. `ozzit ageing_difference` adds them.
+  [Workbook use](docs/workbook-use.md#age-debtors-and-test-a-difference) gives examples.
+- Each function's inline help now links to the page that documents it; 19 linked to the
+  repository's front page.
 - `oz.FCFFBridgeλ(EBIT, TaxRate, Depreciation, CapitalExpenditure, WorkingCapitalChange)`
   returns free cash flow to the firm for each period as 7 rows, from EBIT to FCFF;
   `oz.WACCλ(EquityValue, DebtValue, RiskFreeRate, Beta, EquityRiskPremium, CostOfDebt, TaxRate)`
