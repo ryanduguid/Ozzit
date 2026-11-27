@@ -10,6 +10,7 @@ oz.AboutEssentialsλ,Essentials,nabla.e.Aboutλ,AboutEssentialsλ,Displays this 
 oz.AboutFinancialλ,Financial,nabla.f.Aboutλ,AboutFinancialλ,Displays this module's repository URL and function list
 oz.AboutRatiosλ,Ratios,nabla.r.Aboutλ,AboutRatiosλ,Displays this module's repository URL and function list
 oz.AboutUtilitiesλ,Utilities,nabla.u.Aboutλ,AboutUtilitiesλ,Displays this module's repository URL and function list
+oz.AgeDebtorsλ,Financial,,"AgeDebtorsλ(Amounts, DueDates, AsAt, [Debtors], [Days])","Ages amounts owed into buckets by days overdue as at a date, with a row for each debtor when debtors are given"
 oz.Allocateλ,Financial,nabla.f.Allocateλ,"Allocateλ(Amounts, [FromInterval], [ToInterval])",Divide one or more amounts equally across smaller periods
 oz.AmortiseBλ,Debt,nabla.debt.Amortiseλ,"AmortiseBλ(Principal, APR, Term, ModelPeriods, [StartPeriod], [MonthsPerPeriod])",Creates an amortisation schedule for a debt/loan across a model's periods
 oz.Amortiseλ,Financial,nabla.f.Amortiseλ,"Amortiseλ( Principals, APRs, Terms, StartDates, [Timeline], [FinalPeriodEnd])",Creates a corkscrew amortisation schedule
@@ -62,6 +63,7 @@ oz.DebtToCapitalRatioλ,Ratios,nabla.r.DebtToCapitalRatioλ,"DebtToCapitalRatio�
 oz.DebtToEquityRatioλ,Ratios,nabla.r.DebtToEquityRatioλ,"DebtToEquityRatioλ( TotalLiabilities, ShareholdersEquity)",Measures the degree to which a company is financing operations with debt rather than its own resources. (Total Liabilities/Shareholders' Equity)
 oz.Depreciateλ,Financial,nabla.f.Depreciateλ,"Depreciateλ(InitialValues, InServiceDates, LifeInYears, Timeline, [SalvageValues], [DisposalDates], [DisposalCosts], [Methods], [Factors])","Create a block of CAPEX, Opening Balance, Depreciation Values, and Book Value for each asset"
 oz.DepreciateλDV,Financial,nabla.f.DepreciateλDV,DepreciateλDV,Provides extended data validation of arguments for Depreciateλ
+oz.DifferenceCheckλ,Financial,,"DifferenceCheckλ(Difference, [Amounts], [Tolerance])","Tests a difference for the usual causes: divisible by 9 for a transposition or slide, and half the difference posted on the wrong side"
 oz.DiminishingValueλ,Financial,nabla.f.DiminishingValueλ,"DiminishingValueλ(Cost, Life)","Diminishing-balance depreciation schedule at 200% of the straight-line rate, writing the residual off in the final period. A modelling schedule, not a tax calculation."
 oz.Div7AMinRepaymentλ,Financial,,"Div7AMinRepaymentλ(OpeningBalance, BenchmarkRate, RemainingTerm)","Minimum yearly repayment of a Division 7A amalgamated loan under ITAA 1936 s 109E(6), unrounded"
 oz.DividendYieldRatioλ,Ratios,nabla.r.DividendYieldRatioλ,"DividendYieldRatioλ( AnnualDividendsPerShare, SharePrice)",Dividend yield ratio shows how much a company pays out in dividends each year relative to its stock price (Annual Dividends Pe rShare/Share Price)

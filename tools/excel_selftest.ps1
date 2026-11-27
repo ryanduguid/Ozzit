@@ -889,6 +889,67 @@ foreach ($c in @(@("oz.CheckRollUp$L", 'CheckRollUp'), @("oz.CheckRollUpU$L", 'C
     }
 }
 
+# --- Debtor ageing. Days overdue are AsAt less the due date; due on or after AsAt is Current;
+# each limit is the top of its bucket and the last bucket takes everything older.
+$ad = "oz.AgeDebtors$L"
+$adArgs = '{100;250;40}, DATE(2026,{6;5;7},{1;15;31}), DATE(2026,6,30)'
+foreach ($r in @(@("INDEX($ad($adArgs),1,0)", 'Debtor|Current|1-30 days|31-60 days|61-90 days|Over 90 days|Total'),
+                 @("INDEX($ad($adArgs),2,0)", 'Total|40|100|250|0|0|390'),
+                 @("INDEX($ad($adArgs, {`"Ash`";`"Bay`";`"Ash`"}),2,0)", 'Ash|40|100|0|0|0|140'),
+                 @("INDEX($ad($adArgs, {`"Ash`";`"Bay`";`"Ash`"}),3,0)", 'Bay|0|0|250|0|0|250'),
+                 @("INDEX($ad($adArgs, {`"Ash`";`"Bay`";`"Ash`"}),4,0)", 'Total|40|100|250|0|0|390'),
+                 @("INDEX($ad($adArgs, , {14,28}),1,0)", 'Debtor|Current|1-14 days|15-28 days|Over 28 days|Total'),
+                 @("INDEX($ad($adArgs, , {14,28}),2,0)", 'Total|40|0|0|350|390'),
+                 @("INDEX($ad($adArgs, , 30),1,0)", 'Debtor|Current|1-30 days|Over 30 days|Total'),
+                 @("INDEX($ad({1;2;4;8;16}, DATE(2026,6,30)-{0;30;31;91;-5}, DATE(2026,6,30)),2,0)", 'Total|17|2|4|0|8|31'),
+                 @("INDEX($ad({1;2;4;8}, DATE(2026,6,30)-{1;60;61;90}, DATE(2026,6,30)),2,0)", 'Total|0|1|2|12|0|15'),
+                 @("INDEX($ad({1;2;4}, {1;1;1}, 3, {`"Ash`";`"ASH`";`"Bay`"}),0,1)", 'Debtor|Ash|Bay|Total'),
+                 @("INDEX($ad({1;2;4}, {1;1;1}, 3, {`"Ash`";`"ASH`";`"Bay`"}),2,0)", 'Ash|0|3|0|0|0|3'),
+                 @("INDEX($ad(AD1:AF1, AD1:AF1, 3),2,0)", 'Total|0|3|0|0|0|3'),
+                 @("INDEX($ad({100;`"`";40}, DATE(2026,{6;5;7},{1;15;31}), DATE(2026,6,30)),2,0)", 'Total|40|100|0|0|0|140'),
+                 @("INDEX($ad({100;`"`";40}, DATE(2026,{6;5;7},{1;15;31}), DATE(2026,6,30), {`"Ash`";`"Bay`";`"Cy`"}),0,1)", 'Debtor|Ash|Cy|Total'),
+                 @("INDEX($ad({`"`";`"`"}, {1;2}, 3, {`"Ash`";`"Bay`"}),0,1)", 'Debtor|Total'),
+                 @("INDEX($ad({100,250;40,10}, DATE(2026,{6,5;7,4},{1,15;31,1}), DATE(2026,6,30)),2,0)", 'Total|40|100|250|10|0|400'))) {
+    Same "AgeDebtors: ($($r[0]))" "TEXTJOIN(`"|`",FALSE,$($r[0]))" $r[1]
+}
+$adShape = 'AgeDebtors' + $L + ' needs DueDates and Debtors the same shape as Amounts.'
+$adAsAt = 'AgeDebtors' + $L + ' needs AsAt to be one date.'
+$adDays = 'AgeDebtors' + $L + ' needs Days to be whole numbers rising from 1.'
+$adValues = 'AgeDebtors' + $L + ' needs a number for each amount and a date for each due date.'
+foreach ($r in @(@('{1;2}, {1}, 3', $adShape), @('{1;2}, {1;2}, 3, {"a"}', $adShape), @('{1;2}', $adShape),
+                 @('{1}, {1}, {1,2}', $adAsAt), @('{1}, {1}, "x"', $adAsAt), @('{1}, {1}', $adAsAt),
+                 @('{1}, {1}, 3, , {30,30}', $adDays), @('{1}, {1}, 3, , 0', $adDays), @('{1}, {1}, 3, , 30.5', $adDays),
+                 @('{1}, {1}, 3, , {60,30}', $adDays), @('{1}, {1}, 3, , "30"', $adDays),
+                 @('{1;"x"}, {1;2}, 3', $adValues), @('{1;2}, {1;"x"}, 3', $adValues), @('{1;2}, {1;""}, 3', $adValues),
+                 @('{1;2}, IF({1;0}, 1, NA()), 3', $adValues), @('AE1:AF1, AD1:AE1, 3', $adValues))) {
+    Same "AgeDebtors refuses ($($r[0]))" "LET(x, $ad($($r[0])), $one)" $r[1]
+}
+
+# --- Difference check. Whole cents divisible by 9 point to a transposition or slide; half the
+# difference is the size of a wrong-side posting; sizes within the tolerance count as equal.
+$dc = "oz.DifferenceCheck$L"
+Same 'DifferenceCheck: labels' "TEXTJOIN(`"|`",FALSE,INDEX($dc(270),0,1))" 'Difference|Divisible by 9|Half the difference|Amounts equal to the difference|Amounts equal to half'
+foreach ($r in @(@('270', '270|TRUE|135|not checked|not checked'),
+                 @('-300, {1200;150;-75}', '-300|FALSE|-150|0|1'),
+                 @('0.27', '0.27|TRUE|0.135|not checked|not checked'),
+                 @('0', '0|FALSE|0|not checked|not checked'),
+                 @('18.004', '18.004|TRUE|9.002|not checked|not checked'),
+                 @('100, {100.004;99.99;"x";50}', '100|FALSE|50|1|1'),
+                 @('100, {99.99;-50}, 0.02', '100|FALSE|50|1|1'),
+                 @('10, {"a";"b"}', '10|FALSE|5|0|0'),
+                 @('45, {45;45;22.5;-22.5}', '45|TRUE|22.5|2|2'),
+                 @('0.1+0.2-0.21', '0.0900000000000001|TRUE|0.045|not checked|not checked'),
+                 @('0, AS1:AT1', '0|FALSE|0|1|1'),
+                 @('0, Z1:Z3', '0|FALSE|0|0|0'))) {
+    Same "DifferenceCheck: ($($r[0]))" "TEXTJOIN(`"|`",FALSE,INDEX($dc($($r[0])),0,2))" $r[1]
+}
+$dcDiff = 'DifferenceCheck' + $L + ' needs Difference to be one number.'
+$dcTol = 'DifferenceCheck' + $L + ' needs Tolerance to be one number, 0 or more.'
+foreach ($r in @(@('{1,2}', $dcDiff), @('"x"', $dcDiff), @('NA()', $dcDiff),
+                 @('1, , -1', $dcTol), @('1, , "a"', $dcTol), @('1, , {0,1}', $dcTol))) {
+    Same "DifferenceCheck refuses ($($r[0]))" "LET(x, $dc($($r[0])), $one)" $r[1]
+}
+
 # --- Movement. Each row's opening is its own: a blank one defaults only that row.
 Near 'Movement, per-row opening'       "INDEX($mv({100;`"`";50},{110,120;5,6;60,70}),1,1)" '10'
 Near 'Movement, blank opening row'     "INDEX($mv({100;`"`";50},{110,120;5,6;60,70}),2,1)" '5'

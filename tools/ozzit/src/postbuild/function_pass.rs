@@ -7,8 +7,8 @@
 //! withholding, the lease and hire purchase journals and finance comparison, and
 //! the CGT parcels and net capital gain, income tax, the Division 7A minimum
 //! yearly repayment, margin scheme GST, the FBT gross-up, the depreciation pools, the index
-//! factor and bullet loan, the valuation and sensitivity functions, and the check
-//! roll-up.
+//! factor and bullet loan, the valuation and sensitivity functions, the check
+//! roll-up, and the debtor ageing and difference check.
 //!
 //! Each adds functions and About rows to `src/`, the defined names and the About
 //! tables to the workbook, and rows to functions.csv, in one recoverable step.
@@ -60,7 +60,7 @@ macro_rules! added {
     };
 }
 
-const SPECS: [Spec; 16] = [
+const SPECS: [Spec; 17] = [
     Spec {
         stem: "working_capital_days",
         data: include_str!("../data/postbuild/working_capital_days.json"),
@@ -137,6 +137,11 @@ const SPECS: [Spec; 16] = [
         "valuation and sensitivity"
     ),
     added!("check_rollup", "check roll-up functions", "check roll-up"),
+    added!(
+        "ageing_difference",
+        "debtor ageing and difference check functions",
+        "debtor ageing and difference check"
+    ),
 ];
 
 struct Function {
@@ -571,6 +576,9 @@ pub fn valuation_sensitivity(args: &[String]) -> Output {
 }
 pub fn check_rollup(args: &[String]) -> Output {
     command(&SPECS[15], args)
+}
+pub fn ageing_difference(args: &[String]) -> Output {
+    command(&SPECS[16], args)
 }
 
 #[cfg(test)]

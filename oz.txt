@@ -795,7 +795,7 @@ FinancialMonthλ = LAMBDA(
                             "FUNCTION:      →FinancialMonthλ(Dates, [StartMonth])¶" &
                             "DESCRIPTION:   →Numbers each date's month within its financial year, from 1 to 12.¶" &
                             "NOTES!         →With the default 1 July start, July is month 1 and June is month 12.¶               →Dates may be one date or a range, and the result takes their shape.¶               →FinancialYearλ() labels the year and FinancialQuarterλ() the quarter.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
                             "VERSION:       →20 Oct 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Dates          →(Required) One or more dates, numeric or text. A blank cell returns a blank.¶" &
@@ -840,7 +840,7 @@ FinancialQuarterλ = LAMBDA(
                             "FUNCTION:      →FinancialQuarterλ(Dates, [StartMonth])¶" &
                             "DESCRIPTION:   →Numbers each date's quarter within its financial year, from 1 to 4.¶" &
                             "NOTES!         →Each quarter is 3 months counted from StartMonth. With the default 1 July¶               →start, July to September is quarter 1 and April to June is quarter 4.¶               →Dates may be one date or a range, and the result takes their shape.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
                             "VERSION:       →20 Oct 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Dates          →(Required) One or more dates, numeric or text. A blank cell returns a blank.¶" &
@@ -886,7 +886,7 @@ RateAtDateλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →RateAtDateλ(EffectiveDates, Rates, Dates)¶" &
                             "DESCRIPTION:   →Returns the rate in effect on each date from your table of effective dates and rates.¶NOTES!         →Each rate applies from its effective date until the next one. Dates may¶               →be one date or a row or column of them, and the result takes their shape.¶               →A date before the first effective date has no rate in effect and returns¶               →#N/A. The table must be complete and in order, so instead of a result it¶               →returns a message when EffectiveDates and Rates differ in length or hold¶               →a blank or text entry, when the dates are not in ascending order, or when¶               →a date repeats. A text or blank date in Dates returns #VALUE!. The¶               →library ships no rate table: supply your own, with its source and the¶               →date you checked it. ScheduleRatesλ() lays rates across a timeline¶               →without these checks.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →19 Oct 2026¶" &
                             "PARAMETERS:    →¶" &
                             "EffectiveDates →(Required) A row or column of dates from which each rate applies, in ascending order.¶" &
@@ -941,7 +941,7 @@ DateDifλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →DateDifλ(StartDate, EndDate, [Unit])¶" &
                             "DESCRIPTION:   →Whole years, months or days between two dates, and the remainders.¶NOTES!         →Excel documents DATEDIF as a legacy compatibility function and warns¶               →its MD unit can return a negative or wrong day count. This counts a¶               →month as complete when EDATE() of the start date has arrived, so a¶               →month after 31 January is the last day of February, and takes every¶               →remainder from there. A reversed range or an unknown unit returns #NUM!.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →28 Sep 2026¶" &
                             "PARAMETERS:    →¶" &
                             "StartDate      →(Required) The earlier date, numeric or text.¶" &
@@ -1679,7 +1679,11 @@ AboutFinancialλ = TRIM(TEXTSPLIT(
                                            "VALUATION          →¶" &
                                            "FCFFBridgeλ        →Free cash flow to the firm from EBIT, tax, depreciation, capital expenditure and working capital¶" &
                                            "WACCλ              →Weighted average cost of capital with a CAPM cost of equity¶" &
-                                           "SensitivityGridλ   →Two-way sensitivity grid from a calculation and its row and column values¶" & 
+                                           "SensitivityGridλ   →Two-way sensitivity grid from a calculation and its row and column values¶" &
+                                           "→¶" &
+                                           "CHECKS AND AGEING  →¶" &
+                                           "AgeDebtorsλ        →Ages amounts owed into overdue-day buckets as at a date¶" &
+                                           "DifferenceCheckλ   →Tests a difference for a transposition, slide or wrong-side posting¶" & 
     "→¶" &
     "SUBROUTINES        →Functions used by other functions or general purpose functions.¶" & 
     "FilterContainsλ    →Filter an array by another array that contains specific text¶" & 
@@ -1777,7 +1781,7 @@ CorkScrewReversalλ=LAMBDA(
     LET(Help,           TRIM(TEXTSPLIT(
                         "FUNCTION:      →CorkScrewReversalλ( Opening, ReversalFlags, Flow1, [Flow2], [Flow3], [Flow4])¶" & 
                         "DESCRIPTION:   →Create a corkscrew where the opening balance is reversed in the next period based on a timing parameter¶" & 
-                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                        "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/level-payment-and-corkscrew-rate.md¶" &
                         "VERSION:       →16 Nov 2026¶" &
                         "PARAMETERS:→¶" &
                         "Opening        →(Required) First periods opening balance: a single number or a blank cell.¶" &
@@ -2057,7 +2061,7 @@ RollingAvgλ = LAMBDA(
                             "FUNCTION:      →RollingAvgλ( Values, Size)¶" &
                             "DESCRIPTION:   →Creates averages for preceding values of a set size moving¶" &
                                            "→from beginning to end over a row of values¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Values         →(Required) A row of values to be averaged.¶" & 
@@ -2103,7 +2107,7 @@ RollingMaxλ = LAMBDA(
                             "FUNCTION:      →RollingMaxλ( Values, Size)¶" &
                             "DESCRIPTION:   →Creates the maximum for preceding values of a set size moving¶" &
                                            "→from beginning to end over a row of values¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Values         →(Required) A row of values to be maxed.¶" & 
@@ -2149,7 +2153,7 @@ RollingMinλ = LAMBDA(
                             "FUNCTION:      →RollingMinλ( Values, Size)¶" &
                             "DESCRIPTION:   →Creates the minimum for preceding values of a set size moving¶" &
                                            "→from beginning to end over a row of values¶" & 
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →24 Oct 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Values         →(Required) A row of values to take the minimum of.¶" & 
@@ -2988,7 +2992,7 @@ PeriodDiffλ = LAMBDA(
                             "FUNCTION:      →PeriodDiffλ(StartDate, EndDate, Interval)¶" &
                             "DESCRIPTION:   →Determine the number of periods between two dates.¶" &
                             "NOTES!         →This improves on, and corrects problems w/Excel's deprecated DATEDIF() function.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
                             "VERSION:       →16 Sep 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "StartDate      →(Required) Start Date.¶" &                   
@@ -3038,7 +3042,7 @@ SLNλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →SLNλ(Cost, Salvage, Life)¶" &
                             "DESCRIPTION:   →Straight Line Depreciation Method for one asset or asset class.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
                             "VERSION:       →13 Sep 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Cost           →(Required) Asset's initial cost.¶" &                   
@@ -3082,7 +3086,7 @@ SYDλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →SYDλ(Cost, Salvage, Life)¶" &
                             "DESCRIPTION:   →Sum-of-years' digits depreciation method for one asset or asset class.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Cost           →(Required) Asset's initial cost.¶" &                   
@@ -3123,7 +3127,7 @@ DBλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →DBλ(Cost, Salvage, Life, [Months])¶" &
                             "DESCRIPTION:   →Fixed declining balance depreciation method for one asset or asset class¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
                             "VERSION:       →13 Sep 2026¶" &
                             "NOTES:         →For a positive whole-number Life, returns Life schedule values.¶" &
                             "               →The first Life-1 values use Excel's DB calculation.¶" &
@@ -3174,7 +3178,7 @@ DDBλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →DDBλ(Cost, Salvage, Life, [Factor])¶" &
                             "DESCRIPTION:   →Double-declining balance depreciation method for one asset or asset class.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
                             "VERSION:       →13 Sep 2026¶" &
                             "NOTES:         →For a positive whole-number Life, returns Life schedule values.¶" &
                             "               →The first Life-1 values use Excel's DDB calculation.¶" &
@@ -3225,7 +3229,7 @@ VDBλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →VDBλ(Cost, Salvage, Life, [Factor], [No_Switch])¶" &
                             "DESCRIPTION:   →Variable declining balance depreciation method for one asset or asset class.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "Cost           →(Required) Asset's initial cost.¶" &                   
@@ -3768,7 +3772,7 @@ PeriodStartλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT( 
                             "FUNCTION:      →PeriodStartλ(AnyPeriodStart, MonthsPerPeriod, DateOfInterest)¶" &
                             "DESCRIPTION:   →Determine when the period containing a date of interest starts.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" & 
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" & 
                             "VERSION:       →20 Aug 2026¶" &
                             "PARAMETERS:    →¶" & 
                             "AnyPeriodStart →(Required) Any start date within a timeline.¶" &                   
@@ -4186,7 +4190,7 @@ Varianceλ = LAMBDA(
                             "FUNCTION:      →Varianceλ(Actual, Budget, [Type])¶" &
                             "DESCRIPTION:   →Actual less budget, signed so a favourable variance is positive for income and expense lines alike.¶" &
                             "NOTES!         →Type 1 marks income, where an actual above budget is favourable; -1 marks an¶               →expense, where an actual below budget is favourable. Enter expenses as positive¶               →costs: for a ledger that stores them as negative balances, negate both amounts¶               →first. Give one Type for all lines, one for each row or one for each cell. Actual¶               →and Budget must be the same shape and hold numbers or blank cells, which count as¶               →0; text and TRUE or FALSE return a message. Budget may also be a prior period.¶               →VariancePctλ() gives the percentage.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Oct 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Actual         →(Required) One or more actual amounts.¶" &
@@ -4240,7 +4244,7 @@ VariancePctλ = LAMBDA(
                             "FUNCTION:      →VariancePctλ(Actual, Budget, [Type])¶" &
                             "DESCRIPTION:   →The variance from Varianceλ() as a fraction of the budget's size.¶" &
                             "NOTES!         →Dividing by the budget's absolute value keeps the sign of the variance, so a¶               →favourable variance stays positive when the budget is negative, as a work in¶               →progress movement or a loss can be. A zero budget returns #DIV/0!. Type 1 marks¶               →income and -1 an expense recorded as a positive cost, and the inputs follow the¶               →same rules as in Varianceλ().¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Oct 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Actual         →(Required) One or more actual amounts.¶" &
@@ -4292,7 +4296,7 @@ YearToDateλ = LAMBDA(
                             "FUNCTION:      →YearToDateλ(Values, Dates, AsAt, [StartMonth])¶" &
                             "DESCRIPTION:   →Totals each row of Values from the start of AsAt's financial year to AsAt.¶" &
                             "NOTES!         →A column counts when its date is on or after the first day of the financial¶               →year that contains AsAt, and on or before AsAt; a time of day is ignored. Date¶               →each column by the first day of its period, or by its last day and an AsAt at a¶               →period end. A part period counts in full, not pro rata. Values must hold numbers¶               →or blank cells, which count as 0; text and TRUE or FALSE return a message, and an¶               →error in any column shows. The result is one total for each row of Values. A¶               →financial year starting before 1 January 1900 returns #NUM!.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶" &
                             "VERSION:       →20 Oct 2026¶" &
                             "PARAMETERS:    →¶" &
                             "Values         →(Required) A row or block of amounts, one column for each date in Dates.¶" &
@@ -4327,6 +4331,137 @@ YearToDateλ = LAMBDA(
     //  Return Result, Help or the message
         Return,         IF(Help?, 2, IF(NOT(ValidStart?), 3, IF(NOT(Shaped?), 4, IF(NOT(OneDate?), 5, IF(NOT(Numbers?), 6, 1))))),
         CHOOSE( Return, Result, Help, StartMessage, ShapeMessage, AsAtMessage, ValuesMessage)
+    )
+);
+
+
+
+/*  FUNCTION NAME:  AgeDebtorsλ
+    DESCRIPTION:*//**Ages amounts owed into buckets by days overdue as at a date, with a row for each debtor when debtors are given*/
+AgeDebtorsλ = LAMBDA(
+//  Parameter Declaration
+    [Amounts],
+    [DueDates],
+    [AsAt],
+    [Debtors],
+    [Days],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →AgeDebtorsλ(Amounts, DueDates, AsAt, [Debtors], [Days])¶" &
+                            "DESCRIPTION:   →Age amounts owed into buckets by days overdue as at a date.¶NOTES!         →Each cell of Amounts is one invoice or balance, due on the date in the¶               →same position of DueDates. Days overdue are AsAt less the due date; an¶               →amount due on or after AsAt is Current. Days are the upper limits of the¶               →overdue buckets, whole numbers rising from 1, and the last bucket takes¶               →everything older. Returns a header row, a row for each debtor in the¶               →order they first appear, and a Total row; without Debtors, the Total row¶               →alone. A blank amount is skipped. Unrounded.¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/workbook-use.md¶" &
+                            "VERSION:       →27 Nov 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "Amounts        →(Required) The amount owed on each invoice or balance.¶" &
+                            "DueDates       →(Required) The date each amount fell or falls due, the same shape as Amounts.¶" &
+                            "AsAt           →(Required) The date to age the amounts at.¶" &
+                            "Debtors        →(Optional) The debtor who owes each amount, the same shape as Amounts.¶" &
+                            "Days           →(Optional) Upper limits of the overdue buckets in days. Defaults to {30,60,90}.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.AgeDebtorsλ({100;250;40}, DATE(2026, {6;5;7}, {1;15;31}), DATE(2026, 6, 30))¶" &
+                            "→Result¶" &
+                            "→Total row: Current 40, 1-30 days 100, 31-60 days 250, Total 390¶" &
+                            "→=oz.AgeDebtorsλ({100;250;40}, DATE(2026, {6;5;7}, {1;15;31}), DATE(2026, 6, 30), {""Ash"";""Bay"";""Ash""})¶" &
+                            "→Result¶" &
+                            "→Ash: Current 40, 1-30 days 100; Bay: 31-60 days 250",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          ISOMITTED( Amounts),
+    //  DueDates, and Debtors when given, match Amounts cell for cell
+        ValidShape?,    IFERROR( AND( NOT( ISOMITTED( DueDates)), ROWS( DueDates) = ROWS( Amounts), COLUMNS( DueDates) = COLUMNS( Amounts),
+                            IF( ISOMITTED( Debtors), TRUE, AND( ROWS( Debtors) = ROWS( Amounts), COLUMNS( Debtors) = COLUMNS( Amounts)))), FALSE),
+        ShapeMessage,   "AgeDebtorsλ needs DueDates and Debtors the same shape as Amounts.",
+        ValidAsAt?,     IFERROR( AND( NOT( ISOMITTED( AsAt)), ROWS( AsAt) = 1, COLUMNS( AsAt) = 1, ISNUMBER( AsAt)), FALSE),
+        AsAtMessage,    "AgeDebtorsλ needs AsAt to be one date.",
+    //  Days whole numbers rising from 1; omitted is 30, 60 and 90
+        Limits,         IF( ISOMITTED( Days), {30,60,90}, TOROW( Days)),
+        ValidDays?,     IFERROR( AND( ISNUMBER( Limits), Limits = INT( Limits), Limits >= 1,
+                            IFERROR( AND( DROP( Limits, , 1) > DROP( Limits, , -1)), TRUE)), FALSE),
+        DaysMessage,    "AgeDebtorsλ needs Days to be whole numbers rising from 1.",
+    //  Each amount kept is a number with a date, which a blank due date is not; a blank amount is skipped
+        Values,         TOCOL( Amounts),
+        Due,            TOCOL( IF( ISBLANK( DueDates), "", DueDates)),
+        Skip,           TOCOL( ISBLANK( Amounts)) + IFERROR( Values = "", FALSE) > 0,
+        ValidValues?,   IFERROR( AND( Skip + ISNUMBER( Values) * ISNUMBER( Due) > 0), FALSE),
+        ValuesMessage,  "AgeDebtorsλ needs a number for each amount and a date for each due date.",
+    //  Procedure - bucket 1 is Current, then one for each limit and one beyond the last
+        Over,           IF( Skip, 0, AsAt - Due),
+        Width,          COLUMNS( Limits) + 2,
+        Bucket,         IF( Over <= 0, 1, 2 + MMULT( --( Over > Limits), SEQUENCE( COLUMNS( Limits), 1, 1, 0))),
+        Spread,         ( Bucket = SEQUENCE( 1, Width)) * IF( Skip, 0, Values),
+        Ones,           SEQUENCE( Width, 1, 1, 0),
+        Totals,         MMULT( SEQUENCE( 1, ROWS( Spread), 1, 0), Spread),
+        TotalRow,       HSTACK( "Total", Totals, MMULT( Totals, Ones)),
+    //  A row for each debtor in the order they first appear
+        Kept,           NOT( Skip),
+        Names,          TOCOL( IF( ISBLANK( Debtors), "", Debtors)),
+        Body,           IF( OR( ISOMITTED( Debtors), SUM( --Kept) = 0), TotalRow,
+                            LET( Keys, UNIQUE( FILTER( Names, Kept)),
+                                ByDebtor, MMULT( --( Keys = TOROW( Names)) * TOROW( Kept), Spread),
+                                VSTACK( HSTACK( Keys, ByDebtor, MMULT( ByDebtor, Ones)), TotalRow))),
+        Lower,          TAKE( HSTACK( 0, Limits), , COLUMNS( Limits)) + 1,
+        Header,         HSTACK( "Debtor", "Current", Lower & "-" & Limits & " days", "Over " & TAKE( Limits, , -1) & " days", "Total"),
+        Result,         VSTACK( Header, Body),
+    //  Return Result, help or a message
+        Return,         IF( Help?, 2, IF( NOT( ValidShape?), 3, IF( NOT( ValidAsAt?), 4, IF( NOT( ValidDays?), 5, IF( NOT( ValidValues?), 6, 1))))),
+        CHOOSE( Return, Result, Help, ShapeMessage, AsAtMessage, DaysMessage, ValuesMessage)
+    )
+);
+
+
+/*  FUNCTION NAME:  DifferenceCheckλ
+    DESCRIPTION:*//**Tests a difference for the usual causes: divisible by 9 for a transposition or slide, and half the difference posted on the wrong side*/
+DifferenceCheckλ = LAMBDA(
+//  Parameter Declaration
+    [Difference],
+    [Amounts],
+    [Tolerance],
+    LET(
+    //  Help
+        Help,           TRIM(TEXTSPLIT(
+                            "FUNCTION:      →DifferenceCheckλ(Difference, [Amounts], [Tolerance])¶" &
+                            "DESCRIPTION:   →Test a difference, such as an out-of-balance trial balance, for its usual causes.¶NOTES!         →Returns 5 rows of a label and a value: the difference; whether, in¶               →whole cents, it is divisible by 9, as swapping 2 digits or moving a¶               →decimal point leaves; half the difference, the size of an amount posted to¶               →the wrong side; and how many of Amounts equal the difference, as an¶               →amount left out would, and equal half of it. An amount equals one when¶               →their sizes are within Tolerance. Without Amounts the last 2 rows read¶               →not checked. A clue, not a finding: the cause is for the reviewer.¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/workbook-use.md¶" &
+                            "VERSION:       →27 Nov 2026¶" &
+                            "PARAMETERS:    →¶" &
+                            "Difference     →(Required) One difference, such as total debits less total credits.¶" &
+                            "Amounts        →(Optional) The amounts to search, such as the trial balance; blanks and text are ignored.¶" &
+                            "Tolerance      →(Optional) The largest gap in size still counted as equal, 0 or more. Defaults to 0.005.¶" &
+                            "EXAMPLES:      →¶" &
+                            "→Formula (oz is assumed to be the module's name)¶" &
+                            "→=oz.DifferenceCheckλ(270)¶" &
+                            "→Result¶" &
+                            "→Divisible by 9: TRUE; half the difference: 135¶" &
+                            "→=oz.DifferenceCheckλ(-300, {1200;150;-75})¶" &
+                            "→Result¶" &
+                            "→Amounts equal to the difference: 0; amounts equal to half: 1",
+                            "→", "¶"
+                        )),
+    //  Check inputs - Omitted required arguments
+        Help?,          ISOMITTED( Difference),
+        ValidDifference?, IFERROR( AND( ROWS( Difference) = 1, COLUMNS( Difference) = 1, ISNUMBER( Difference)), FALSE),
+        DifferenceMessage, "DifferenceCheckλ needs Difference to be one number.",
+    //  Tolerance one number, 0 or more; omitted is half a cent
+        Allowed,        IF( ISOMITTED( Tolerance), 0.005, Tolerance),
+        ValidTolerance?, IFERROR( AND( ROWS( Allowed) = 1, COLUMNS( Allowed) = 1, ISNUMBER( Allowed), Allowed >= 0), FALSE),
+        ToleranceMessage, "DifferenceCheckλ needs Tolerance to be one number, 0 or more.",
+    //  Procedure - in whole cents, a transposition or slide leaves a multiple of 9
+        Size,           ABS( Difference),
+        Cents,          ROUND( Size * 100, 0),
+        Nines?,         AND( Cents > 0, MOD( Cents, 9) = 0),
+        Half,           Difference / 2,
+    //  Count the numbers in Amounts whose size matches the difference or its half; TOCOL drops blank cells, which it would read as 0
+        Unchecked?,     ISOMITTED( Amounts),
+        Numbers,        IF( Unchecked?, 0, LET( All, TOCOL( Amounts, 1), ABS( FILTER( All, ISNUMBER( All), "")))),
+        Matches,        LAMBDA( Target, IF( Unchecked?, "not checked", SUM( --( IFERROR( ABS( Numbers - ABS( Target)) <= Allowed, FALSE))))),
+        Result,         HSTACK( {"Difference"; "Divisible by 9"; "Half the difference"; "Amounts equal to the difference"; "Amounts equal to half"},
+                            VSTACK( Difference, Nines?, Half, Matches( Difference), Matches( Half))),
+    //  Return Result, help or a message
+        Return,         IF( Help?, 2, IF( NOT( ValidDifference?), 3, IF( NOT( ValidTolerance?), 4, 1))),
+        CHOOSE( Return, Result, Help, DifferenceMessage, ToleranceMessage)
     )
 );
 
@@ -5878,7 +6013,7 @@ AnnualRateλ = LAMBDA(
         Help,           TRIM(TEXTSPLIT(
                             "FUNCTION:      →AnnualRateλ(PeriodRate, [PeriodsPerYear])¶" &
                             "DESCRIPTION:   →Converts a rate per period to the effective annual rate.¶NOTES!         →(1 + PeriodRate) ^ PeriodsPerYear - 1, the inverse of PeriodRateλ().¶               →Use it to state a rate per period, such as a lease rate solved per¶               →month, as the annual figure a reader expects.¶" &
-                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶" &
+                            "WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/australian-modelling.md¶" &
                             "VERSION:       →28 Sep 2026¶" &
                             "PARAMETERS:    →¶" &
                             "PeriodRate     →(Required) Rate per period, or a row or column of them.¶" &

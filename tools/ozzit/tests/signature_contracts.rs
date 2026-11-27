@@ -89,11 +89,11 @@ impl Fixture {
 
 fn published_output() -> Vec<String> {
     [
-        "176 declarations read: 167 signatures, 167 parameter tables and 167 example blocks checked",
+        "178 declarations read: 169 signatures, 169 parameter tables and 169 example blocks checked",
         "   no FUNCTION line (3): AmortiseλDV, CorkscrewλDV, DepreciateλDV",
         "   no parameter table (3): AmortiseλDV, CorkscrewλDV, DepreciateλDV",
         "   not a LAMBDA (6): AboutDatesλ, AboutDebtλ, AboutEssentialsλ, AboutFinancialλ, AboutRatiosλ, AboutUtilitiesλ",
-        "OK: all 167 signatures, 167 parameter tables and 167 example blocks describe their own function",
+        "OK: all 169 signatures, 169 parameter tables and 169 example blocks describe their own function",
     ].map(String::from).to_vec()
 }
 
@@ -116,9 +116,9 @@ fn the_first_coming_soon_webpage_is_rejected() {
     let f = Fixture::published();
     f.edit(
         "Financial",
-        "\"WEBPAGE:       →https://github.com/ryanduguid/Ozzit¶\"",
+        "\"WEBPAGE:       →https://github.com/ryanduguid/Ozzit/blob/main/docs/function-guide.md¶\"",
         "\"WEBPAGE:       →<Coming Soon>¶\"",
-        15,
+        27,
     );
     f.refuses("Coming Soon");
 }
